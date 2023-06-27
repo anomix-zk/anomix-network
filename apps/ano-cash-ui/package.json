@@ -1,0 +1,29 @@
+{
+  "name": "ano-cash-ui",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "serve": "vite --host",
+    "build": "vue-tsc --noEmit && vite build",
+    "lint": "eslint \"src/**/*.{ts,js,vue}\" --fix",
+    "preview": "vite preview --port 5050",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@anomix/shared": "0.0.0",
+    "@anomix/utils": "0.0.0",
+    "@quasar/extras": "^1.13.6",
+    "@vee-validate/i18n": "^4.5.11",
+    "@vueuse/core": "^8.4.2",
+    "@vueuse/integrations": "^8.5.0",
+    "axios": "^0.27.2",
+    "pinia": "^2.0.13",
+    "quasar": "^2.6.6",
+    "universal-cookie": "^4.0.4",
+    "vee-validate": "^4.5.11",
+    "vue": "^3.2.33",
+    "vue-i18n": "^9.1.10",
+    "vue-router": "^4.0.14",
+    "yup": "^0.32.11"
+  }
+}

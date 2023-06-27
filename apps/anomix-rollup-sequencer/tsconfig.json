@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "../../_dist/server/build",
+
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}
