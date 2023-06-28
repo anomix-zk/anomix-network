@@ -18,5 +18,13 @@
     "lib:build": "concurrently \"tsc --build tsconfig.json\" \"tsc --build tsconfig.es.json\"",
     "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
     "lib:lint": "eslint \"src/**/*.ts\" --fix"
+  },
+  "dependencies": {
+    "levelup": "^5.1.1",
+    "memdown": "^6.1.1"
+  },
+  "devDependencies": {
+    "@types/levelup": "^5.1.2",
+    "@types/memdown": "^3.0.1"
   }
 }
