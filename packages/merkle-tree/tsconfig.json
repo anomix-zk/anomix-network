@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.base.json",
 
   "compilerOptions": {
+    "target": "esnext",
     "baseUrl": "./",
     "outDir": "./dist",
     "rootDir": "./src",
