@@ -10,10 +10,20 @@ import { AppModule } from './app.module';
 import { YupValidationPipe } from './common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { Logger } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
     const server = express();
     const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
+
+    const config = new DocumentBuilder()
+        .setTitle('Anomix-OpenApi')
+        .setDescription('API for all within Anomix Network')
+        .setVersion('1.0')
+        .addTag('Anomix')
+        .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
 
     const configService = app.get(ConfigService);
     const logger = new Logger('APP');
