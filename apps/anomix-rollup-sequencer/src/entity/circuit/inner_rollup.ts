@@ -64,7 +64,7 @@ export class InnerRollupEntity {
     resultingDataRreeRoot: Field;
     resultingNullifierTreeRoot: Field;
 
-    totalTxFee: [{ assetId: UInt32; totalTxFee: UInt64 }]; // TODO currently just support Mina
+    totalTxFee: [{ assetId: UInt32; totalTxFee: UInt64 }]; // // TODO 需要优化，如固定数组为20个, assetId从0递增？
 
     txId: Field[]; //[inner_rollup_count] TODO 为了让任何人按序重建merkle tree
 
