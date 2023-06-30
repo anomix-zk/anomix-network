@@ -1,4 +1,4 @@
-import { Field } from 'snarkyjs';
+import { Field, UInt32, UInt64 } from 'snarkyjs';
 import { L2Tx as CircuitL2Tx } from './l2_tx.js';
 import { DataTreeMerklePath, NullifierTreeMerklePath, RootTreeMerklePath } from './leaf_merkle_path.js';
 
@@ -45,8 +45,28 @@ export class CommonUserTxWrapper {
 
     static zeroCommonUserTxWrapper() {
         return new CommonUserTxWrapper(
-            CircuitL2Tx.zeroL2Tx(),
-            ...// TODO
+            //CircuitL2Tx.zeroL2Tx(),
+            //... TODO
         );
     }
+}
+
+export class InnerRollupEntity {
+    innerRollupId: Field;
+
+    innerRollupSize: UInt32;
+
+    rootTreeRoot0: Field;
+
+    dataTreeRoot0: Field;
+    nullifierTreeRoot0: Field;
+
+    resultingDataRreeRoot: Field;
+    resultingNullifierTreeRoot: Field;
+
+    totalTxFee: [{ assetId: UInt32; totalTxFee: UInt64 }]; // TODO currently just support Mina
+
+    txId: Field[]; //[inner_rollup_count] TODO 为了让任何人按序重建merkle tree
+
+    proof: any;
 }
