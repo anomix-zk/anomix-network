@@ -36,9 +36,9 @@ export class AccountViewKey implements CommitmentNullifier {
 }
 
 /**
- *
- * * alias_nullifier = hash(hash('name'), hash(zeroAccountViewKey))
- * * accountViewKey_nullifier = hash(hash(zeroAlias), hash(accountViewKey)),
+ * 
+ * * alias_nullifier = hash(hash('name'), hash(ZeroAccountViewKey))
+ * * accountViewKey_nullifier = hash(hash(ZeroAlias), hash(accountViewKey)),
  * 
  */
 export class AliasViewKey implements CommitmentNullifier {
