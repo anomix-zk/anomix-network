@@ -1,4 +1,4 @@
-import { UInt64, Field } from 'snarkyjs';
+import { UInt64, Field, Poseidon, Provable } from 'snarkyjs';
 
 export const MERKLE_TREE_HEIGHT = 8; // TODO dynamic, should read from config
 
@@ -15,14 +15,25 @@ export interface MerklePath {
 
 export class AbstractMerklePath implements MerklePath {
     constructor(
-        readonly data: LeafHash,
         readonly leafIndex: UInt64,
+        readonly data: LeafHash,
         readonly path: [Field, Field, Field, Field, Field, Field, Field] // TODO array.length is up to *MERKLE_TREE_HEIGHT*
     ) {
         // TODO
     }
 
-    get root(): Field {// TODO
+    get root(): Field {
+        let node = this.data.hash();
+        let leafIndexTmp = UInt64.fromFields(this.leafIndex.toFields());
+        for (let index = 0; index < this.path.length; index++) {
+            const element = this.path[index];
+            const { rest } = leafIndexTmp.divMod(2);
+
+            node = Provable.if(rest.equals(UInt64.one), Poseidon.hash([element, node]), Poseidon.hash([node, element]));
+
+            leafIndexTmp = this.leafIndex.div(2);
+        }
+
         return Field(0);
     }
 }
