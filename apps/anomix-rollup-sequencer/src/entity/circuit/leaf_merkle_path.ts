@@ -35,7 +35,7 @@ export class DataTreeLeaf implements LeafHash {
 
 }
 
-export class NullifierTreeLeafData implements LeafHash {
+export class NullifierTreeLeafValue {
     proofId: UInt32;
     aliasViewKey: AliasViewKey;
     valueNote: ValueNote;
@@ -54,11 +54,10 @@ export class NullifierTreeLeafData implements LeafHash {
             [valueNoteHash, valueNoteHash, valueNoteHash, aliasViewKeyHash]
         );
     }
-
 }
 
 export class NullifierTreeLeaf implements LeafHash {
-    value: NullifierTreeLeafData;
+    value: NullifierTreeLeafValue;
     nextIndex: UInt32;
     nextValue: Field;
 
