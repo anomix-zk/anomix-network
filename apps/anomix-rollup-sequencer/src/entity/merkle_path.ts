@@ -17,7 +17,7 @@ export class AbstractMerklePath implements MerklePath {
     constructor(
         readonly data: LeafHash,
         readonly leafIndex: UInt64,
-        readonly path: [Field, Field, Field, Field, Field, Field, Field, Field] // TODO array.length is up to *MERKLE_TREE_HEIGHT*
+        readonly path: [Field, Field, Field, Field, Field, Field, Field] // TODO array.length is up to *MERKLE_TREE_HEIGHT*
     ) {
         // TODO
     }
