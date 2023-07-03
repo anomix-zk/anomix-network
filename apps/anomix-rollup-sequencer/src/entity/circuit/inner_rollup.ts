@@ -54,7 +54,7 @@ export class CommonUserTxWrapper {
 export class InnerRollupEntity {
     innerRollupId: Field;
 
-    innerRollupSize: UInt32;
+    innerRollupSize: UInt32; // indicate the number of non-padding tx,
 
     rootTreeRoot0: Field;
 
@@ -90,7 +90,7 @@ export class InnerRollupEntity {
         { assetId: UInt32; totalTxFee: UInt64 }
     ]; // 需要优化，如固定数组为20个, assetId从0递增？
 
-    txId: Field[]; //[inner_rollup_count] TODO 为了让任何人按序重建merkle tree
+    txIds: [Field, Field, Field, Field, Field, Field, Field, Field]; //fixed number, [inner_rollup_count] TODO 为了让任何人按序重建merkle tree
 
     proof: any;
 }
