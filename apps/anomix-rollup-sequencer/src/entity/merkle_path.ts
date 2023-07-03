@@ -34,6 +34,6 @@ export class AbstractMerklePath implements MerklePath {
             leafIndexTmp = this.leafIndex.div(2);
         }
 
-        return Field(0);
+        return node;
     }
 }
