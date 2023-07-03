@@ -32,22 +32,22 @@ export class CommonUserTxWrapper {
 
     resultingMerkleWitness: {
         // resultingBPredecessorNullifierTreeRoot,
-        zeroNullifierLeafB_MerklePath: NullifierTreeMerklePath,
+        zeroNullifierLeafB_MerklePath: NullifierTreeMerklePath;
 
-        resultingNullifierTreeRoot: Field,
+        resultingNullifierTreeRoot: Field;
         // nullifierB_predecessor_resulting_merkleWitness: `input_note_nullifier_B's predecessor's middle existence merkleWitness on nullifier tree`, // TODO no need??
         // nullifierA_resulting_merkleWitness: `input_note_nullifier_A's resulting existence merkleWitness on nullifier tree`, // TODO no need??
 
-        resultingDataTreeRoot: Field,
+        resultingDataTreeRoot: Field;
 
         //commitmentC_resulting_merkleWitness: `output_note_commitment_C's resulting exisence merkleWitness on data tree`,      
     };
 
     static zeroCommonUserTxWrapper() {
-        return new CommonUserTxWrapper(
-            //CircuitL2Tx.zeroL2Tx(),
-            //... TODO
-        );
+        // TODO need improve here with data_tree_root & nullifier_tree_root
+        // let l2_tx = CircuitL2Tx.zeroL2Tx();
+
+        return new CommonUserTxWrapper();
     }
 }
 
@@ -64,7 +64,31 @@ export class InnerRollupEntity {
     resultingDataRreeRoot: Field;
     resultingNullifierTreeRoot: Field;
 
-    totalTxFee: [{ assetId: UInt32; totalTxFee: UInt64 }]; // // TODO 需要优化，如固定数组为20个, assetId从0递增？
+    totalTxFee: [
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 }
+    ]; // 需要优化，如固定数组为20个, assetId从0递增？
 
     txId: Field[]; //[inner_rollup_count] TODO 为了让任何人按序重建merkle tree
 

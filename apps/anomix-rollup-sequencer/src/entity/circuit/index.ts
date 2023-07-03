@@ -9,6 +9,9 @@ export class AccountRequired {
     }
 }
 
+/**
+ * asset_id = 0, 1 ... 19, 20
+ */
 export class AssetId {
     static get MINA(): UInt32 {
         return UInt32.zero;

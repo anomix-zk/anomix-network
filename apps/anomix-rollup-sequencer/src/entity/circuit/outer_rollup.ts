@@ -14,7 +14,31 @@ export class OuterRollupEntity {
     dataTreeRoot1: Field;
     nullifierTreeRoot1: Field;
 
-    totalTxFee: [{ assetId: UInt32; totalTxFee: UInt64 }]; // TODO 需要优化，如固定数组为20个, assetId从0递增？
+    totalTxFee: [
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 },
+        { assetId: UInt32; totalTxFee: UInt64 }
+    ]; // 需要优化，如固定数组为20个, assetId从0递增？
 
     rollupBeneficiary: PublicKey;
 
