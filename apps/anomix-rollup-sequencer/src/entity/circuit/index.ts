@@ -1,4 +1,6 @@
 import { UInt32 } from "snarkyjs";
+export { L2Tx, WithdrawInfo } from './l2_tx.js';
+export { Alias, AccountViewKey, AccountNote } from './account.js';
 
 export class AccountRequired {
     static get REQUIRED(): UInt32 {
@@ -6,6 +8,15 @@ export class AccountRequired {
     }
     static get NOTREQUIRED(): UInt32 {
         return UInt32.zero;
+    }
+}
+
+export class NoteType {
+    static get NORMAL(): UInt32 {
+        return UInt32.zero;
+    }
+    static get WITHDRAWAL(): UInt32 {
+        return UInt32.one;
     }
 }
 
@@ -36,5 +47,3 @@ export class ProofId {
     }
 }
 
-export { L2Tx, WithdrawInfo } from './l2_tx.js';
-export { Alias, AccountViewKey, AccountNote } from './account.js';
