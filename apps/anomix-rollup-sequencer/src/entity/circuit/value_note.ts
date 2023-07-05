@@ -1,6 +1,6 @@
 import { PublicKey, Field, UInt64, UInt32, Poseidon } from 'snarkyjs';
 import { CommitmentNullifier } from '../commitment_nullifier.js';
-import { AssetId, AccountRequired } from '.';
+import { AssetId, AccountRequired, NoteType } from '.';
 
 export class ValueNote implements CommitmentNullifier {
     constructor(
@@ -10,7 +10,8 @@ export class ValueNote implements CommitmentNullifier {
         readonly creator_pubkey: PublicKey,
         readonly value: UInt64,
         readonly asset_id: UInt32,
-        readonly input_nullifier: Field
+        readonly input_nullifier: Field,
+        readonly note_type: UInt32
     ) { }
 
     commitment(): Field {
@@ -22,6 +23,7 @@ export class ValueNote implements CommitmentNullifier {
             ...this.value.toFields(),
             ...this.asset_id.toFields(),
             this.input_nullifier,
+            ...this.note_type.toFields()
         ]);
     }
 
@@ -34,7 +36,8 @@ export class ValueNote implements CommitmentNullifier {
             ...this.creator_pubkey.toFields(),
             ...this.value.toFields(),
             ...this.asset_id.toFields(),
-            this.input_nullifier
+            this.input_nullifier,
+            ...this.note_type.toFields()
         ]);
     }
 
@@ -51,7 +54,8 @@ export class ValueNote implements CommitmentNullifier {
             PublicKey.empty(),
             UInt64.zero,
             asset_id,
-            Field(0)
+            Field(0),
+            NoteType.NORMAL
         );
     }
 }
