@@ -19,8 +19,7 @@
     "libs:build": "npm run lib:build --workspaces --if-present",
     "build": "npm run lib:build --workspaces --if-present && npm run build --workspaces --if-present",
     "clean": "rimraf ./_dist && npm run lib:clean --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present && npm run lib:lint --workspaces --if-present",
-    "clean-node-modules": "rimraf node-modules"
+    "lint": "npm run lint --workspaces --if-present && npm run lib:lint --workspaces --if-present"
   },
   "dependencies": {
     "axios": "^0.27.2",
