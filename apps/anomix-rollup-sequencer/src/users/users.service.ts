@@ -1,10 +1,10 @@
 import crypto from 'crypto';
-import { UserCreateDto } from '@monorepo-ts-vue-nestjs/shared';
+import { UserCreateDto } from '@anomix/shared';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { User } from '@/db/user.entity';
 import { hashPassword } from '@/auth/utils/hash-password';
 import { ConfigService } from '@nestjs/config';
-import { UserProfileResponse } from '@monorepo-ts-vue-nestjs/shared';
+import { UserProfileResponse } from '@anomix/shared';
 
 @Injectable()
 export class UsersService {
