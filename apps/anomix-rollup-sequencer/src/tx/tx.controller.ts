@@ -15,7 +15,7 @@
  */
 import { Controller, Get, Post, Query } from "@nestjs/common";
 
-@Controller('tx')
+@Controller("tx")
 export class TxController {
     constructor() {}
 
@@ -25,30 +25,30 @@ export class TxController {
      */
     @Post()
     public recieveTx() {
-        return '';
+        return "";
     }
 
     /**
      * 供client根据TxId查询L2 tx的状态、数据
      */
-    @Get(':id')
+    @Get(":id")
     public queryByTxid() {
-        return '';
+        return "";
     }
 
     /**
      * 根据alias_nullifier/account_viewing_key/valueNote_commitment/nullifier查询L2Tx
      */
-    @Get('notehash')
-    public queryTxByNoteHashes(@Query hashes: any) {
-        return '';
+    @Get("notehash")
+    public queryTxByNoteHashes(hashes: any) {
+        return "";
     }
 
     /**
      * 提现场景中，提供L1Addr来查询相关的所有pending value notes
      */
-    @Get('l1addr')
-    public queryWithdrawalNotesByL1Addr(@Query addr: any) {
-        return '';
+    @Get("l1addr")
+    public queryWithdrawalNotesByL1Addr(addr: any) {
+        return "";
     }
 }

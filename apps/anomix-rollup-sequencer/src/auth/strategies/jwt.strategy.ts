@@ -1,8 +1,8 @@
-import { Strategy } from 'passport-jwt';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { ConfigService } from '@nestjs/config';
-import { Session } from '@/db/session.entity';
+import { Strategy } from "passport-local";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { PassportStrategy } from "@nestjs/passport";
+import { ConfigService } from "@nestjs/config";
+import { Session } from "@/db/session.entity";
 
 export interface JwtPayload {
     id: string;
@@ -13,11 +13,11 @@ function cookieExtractor(req: any): null | string {
 }
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
     constructor(configService: ConfigService) {
         super({
             jwtFromRequest: cookieExtractor,
-            secretOrKey: configService.get<string>('keys.jwt'),
+            secretOrKey: configService.get<string>("keys.jwt"),
         });
     }
 
@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         }
 
         const userSession = await Session.findOne({
-            relations: ['user'],
+            relations: ["user"],
 
             where: {
                 token: payload.id,

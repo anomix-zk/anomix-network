@@ -33,6 +33,7 @@
     "nest-commander": "^2.5.0",
     "nestjs-console": "^7.0.1",
     "passport": "^0.5.2",
+    "passport-local": "^1.0.0",
     "passport-jwt": "^4.0.0",
     "pg": "^8.7.3",
     "reflect-metadata": "^0.1.13",
