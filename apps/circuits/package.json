@@ -1,5 +1,5 @@
 {
-  "name": "package-name",
+  "name": "@anomix/circuits",
   "version": "0.1.0",
   "description": "",
   "author": "",
@@ -48,5 +48,3 @@
     "snarkyjs": "0.11.*"
   }
 }
-
-

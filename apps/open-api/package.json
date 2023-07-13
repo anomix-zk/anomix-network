@@ -1,5 +1,5 @@
 {
-  "name": "anomix-circuits",
+  "name": "@anomix/open-api",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT"
