@@ -1,8 +1,7 @@
 import { ValueNote } from './value_note.js';
 import { AbstractMerklePath, LeafHash } from '../merkle_path.js';
-import { PublicKey, Field, UInt64, UInt32, Provable, Poseidon } from 'snarkyjs';
-import { AccountNote, Alias, AccountViewKey, AliasViewKey } from './account';
-import { CommitmentNullifier } from '../commitment_nullifier';
+import { Field, UInt32, Provable, Poseidon } from 'snarkyjs';
+import { AccountNote, AliasViewKey } from './account.js';
 import { ProofId } from './index.js';
 
 export class RootTreeLeaf implements LeafHash {
