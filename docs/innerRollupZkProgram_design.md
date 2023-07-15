@@ -200,7 +200,7 @@ tips: 其中存在可并行的环节，开发时可以考虑优化。
 
 所谓PADDING tx，则是指'和前一个L2 tx merge后并不引起状态变更', 这意味着PADDING tx的CommonUserTxWrapper.`resulting data tree root`/`resulting nullifier tree root`保持和前一笔L2 tx插入Dirty Tree后的一致。以此倒推CommonUserTxWrapper的其他字段。
 
-```JSON
+```js
 CommonUserTxWrapper -> {
     origin: {
         proof_id: PADDING
@@ -352,6 +352,7 @@ tips: 此阶段可以根据OuterRollup的容量并行地调用多个InnerRollupZ
 
 
 # 组装InnerRollupEntity
+```js
 InnerRollupEntity {
   innerRollupId: hash of the entity,
 
@@ -370,5 +371,6 @@ InnerRollupEntity {
   proof
 }
 
+```
 至此，我们拥有了n个InnerRollupEntity。
 
