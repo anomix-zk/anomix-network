@@ -51,7 +51,7 @@ This kind of value notes vary from both _asset_id_ and _account_required_, all o
 
 Tips: currently, Anomix just support MINA, ie. asset_id = 0.
 
-```JSON
+```js
 this is for unregistered account:
 {
   secret:0
