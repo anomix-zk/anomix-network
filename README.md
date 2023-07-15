@@ -1,4 +1,4 @@
-<img src="./pic/anomix_logo.jpg" style="border-radius: 20px">
+<img src="./docs/pic/anomix_logo.jpg" style="border-radius: 20px">
 
 # Description
 Anomix Network, formerly called 'Shadow' in zkApp Builders Program 1,  is a zk-zkRollup layer2 solution on Mina, focusing on Privacy&Scalablility. It grows up alongside with the upgrade of SnarkyJS.<br>
