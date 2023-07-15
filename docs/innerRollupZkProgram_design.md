@@ -56,7 +56,7 @@ NOTE: 既然来到了rollup阶段，说明了每笔L2 tx都经过sequencer预验
 
 # Tx pattern
 设计InnerRollupZkPragram电路method参数的统一INPUT格式：
-```JSON
+```js
 // tips: 这是理论完整冗余版。在工程实践中可以优化，如各merkle path中的重复项可以考虑精简等等。
 CommonUserTxWrapper -> {
     origin: {
