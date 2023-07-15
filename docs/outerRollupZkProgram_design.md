@@ -7,7 +7,7 @@ Tips: As talked within [merkle_tree_storage.md](./merkle_tree_storage.md#switch-
 因为要实现动态扩容，所以outerRollupZkProgram必须采取'前面InnerRollupEntity累积的proof 聚合 下一个InnerRollupEntity'的形式。InnerRollupEntity的聚合个数可以动态调整。
 
 每x(x>=1)个InnerRollupEntity合并后，我们将构造出如下OuterRollupEntity：
-```json
+```js
 OuterRollupEntity {
   OuterRollupId: hash of the entity, also the L2 Block ID
 
