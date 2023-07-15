@@ -54,8 +54,8 @@ http:
 # Database server settings
 # More info: https://typeorm.io
 db:
-  # Database type (postgres, mysql etc.)
-  type: 'postgres' 
+  # Database type (mysql, mysql etc.)
+  type: 'mysql' 
 
   # Database server address
   host: 'localhost' 
