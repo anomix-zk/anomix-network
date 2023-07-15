@@ -22,7 +22,7 @@ Tips: if the number of onchain actions is less than 32, then will prepare some *
 
 2. Following the original sequence of actions, sequencer inserts all non-padding items directly into *deposit_tree* one by one, from the leaf index (`handledActionsNum` + 1). Along the way, sequence meanwhile calculates the merkle paths of each one for further circuit run.
 
-```JSON
+```js
     DepositActionsEntity: {
         zeroLeaf[0]'s existence merkle proof on *current* `deposit tree root`,
         // then insert actions[0] on zeroLeaf[0] and calculate the new deposit tree root, denoted as `dirty deposit tree root[1]`
