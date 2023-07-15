@@ -35,7 +35,7 @@ User deposits L1 funds to `Anomix Deposit Contract`, and will be watched by `Ano
 The user executes the method about fund deposits on [`Anomix Deposit Contract`](./deposit_contract.md#deposit-for-users) locally, and then construct an _L1 tx_ with specified L1 fund amount.
 
 1. user prepare the value_note as below:
-```JSON
+```js
   value_note_outputC {
     secret, // from Randomness
     owner_pubkey: recipient's viewing pubkey,
