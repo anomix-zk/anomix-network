@@ -2,7 +2,7 @@
   "name": "@anomix/sdk",
   "private": true,
   "description": "sdk within Anomix-Network",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "main": "dist/index.js",
   "module": "dist_es/index.js",
   "types": "dist/index.d.ts",

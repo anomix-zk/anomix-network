@@ -1,0 +1,36 @@
+{
+  "name": "@anomix/rollup-sequencer",
+  "version": "0.1.0",
+  "main": "dist/index",
+  "typings": "dist/index",
+  "license": "MIT",
+  "dependencies": {
+    "@anomix/circuits": "0.1.0",
+    "@inip/http-codes": "^2.0.0",
+    "@types/ws": "^8.5.3",
+    "ajv-formats": "^2.1.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "fastify": "^3.27.2",
+    "fastify-cors": "^6.0.3",
+    "fastify-helmet": "^7.0.1",
+    "fastify-multer": "^2.0.2",
+    "fastify-plugin": "^3.0.1",
+    "fastify-swagger": "^5.0.0",
+    "fastify-websocket": "^4.2.0",
+    "jsonwebtoken": "^8.5.1",
+    "mysql2": "2.3.3",
+    "reflect-metadata": "^0.1.13",
+    "typeorm": "^0.2.45"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "serve": "tsc && node dist/index.js",
+    "build": "tsc",
+    "dev": "nodemon src/index.ts",
+    "test": "jest",
+    "test:watch": "jest --watchAll",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint \"src/**/*.ts\" --fix"
+  }
+}

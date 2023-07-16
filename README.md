@@ -1,5 +1,14 @@
-Anomix Network 
-## Description
+<img src="./docs/pic/anomix_logo.jpg" style="border-radius: 20px">
+
+# Description
+Anomix Network, formerly called 'Shadow' in zkApp Builders Program 1,  is a zk-zkRollup layer2 solution on Mina, focusing on Privacy&Scalablility. It grows up alongside with the upgrade of SnarkyJS.<br>
+
+Basically, On Anomix Network, you could make your L2 account anonymous and your on-chain operations private(invisible&untraceable). Besides, As a layer2, Anomix Network batches L2 txs to make fee apportioned(much lower cost), and furthermore it’s easy to build private defi/nft/DID, etc.<br>
+Within zkIgnite cohort1, We will provide a zkApp, named as Ano-Cash, as the officially first entry of Anomix Network.<br>
+
+NOTE: Thanks to ZKRollup's predecessors such as zkSync, Aztec, etc, and ZK Layer1 such as Mina, IRon Fish, with reference on design documentation of them, this design could be completed.
+
+Please go to [doc](./docs/README.md) for more details on tech!!
 
 ## Prerequisites
 
@@ -54,8 +63,8 @@ http:
 # Database server settings
 # More info: https://typeorm.io
 db:
-  # Database type (postgres, mysql etc.)
-  type: 'postgres' 
+  # Database type (mysql, mysql etc.)
+  type: 'mysql' 
 
   # Database server address
   host: 'localhost' 
