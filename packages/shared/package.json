@@ -19,7 +19,7 @@
     "lib:lint": "eslint \"src/**/*.ts\" --fix"
   },
   "dependencies": {
-    "@anomix/utils": "0.0.0",
+    "@anomix/utils": "0.1.0",
     "yup": "^0.32.11"
   }
 }
