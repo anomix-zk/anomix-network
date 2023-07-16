@@ -27,14 +27,14 @@ cd anomix-network
 # 3. Install the project and build packages in libs folder
 npm install
 
-# 4. Dev: Run frontend with hot reload 
-npm run web:dev
-
-# 5. Dev: Run backend with hot reload 
+# 4. Dev: Run backend with hot reload 
 # Note that you need to create the config.yaml file in the server directory beforehand
 # You can copy the config.example.yaml file and rename it to config.yaml
 # Then you can configure database access and other server settings
 npm run server:dev
+
+# 5. Dev: Run frontend with hot reload 
+npm run web:dev
 
 ```
 
@@ -108,7 +108,6 @@ More info here: https://vuejs.org/guide/typescript/overview.html#takeover-mode
 * `libs:dev` - run all lib packages simultaneously with hot reload
 * `web:dev` - run front-end with hot reload
 * `server:dev` - run back-end with hot reload
-* `server:cli` - run back-end console
 * `libs:build` - build packages in `libs` folder
 * `build` - build all packages
 * `clean` - clean all packages

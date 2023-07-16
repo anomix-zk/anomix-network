@@ -1,6 +1,5 @@
 {
   "extends": "./tsconfig.base.json",
-  
   "compilerOptions": {
     "module": "esnext",
     "target": "esnext",
@@ -14,7 +13,7 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "sourceMap": false,
-    
+    "strictPropertyInitialization": false,
     "lib": [
       "esnext",
       "dom",

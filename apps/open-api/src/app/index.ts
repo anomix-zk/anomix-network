@@ -3,7 +3,6 @@ import "../augmentations/fastify"
 import fastify, { FastifyInstance } from "fastify"
 import fastifyCors from "fastify-cors"
 import helmet from "fastify-helmet"
-import multer from "fastify-multer"
 import config from '../lib/config'
 import ws from "fastify-websocket"
 import { IncomingMessage, Server, ServerResponse } from 'http'
@@ -33,7 +32,6 @@ export class FastifyCore {
 
         // Core plugins
         this.server.register(helmet, config.helmet)
-        this.server.register(multer.contentParser)
         this.server.register(fastifyCors)
         this.server.register(ws)
 
