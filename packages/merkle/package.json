@@ -1,5 +1,5 @@
 {
-  "name": "circuits",
+  "name": "merkle",
   "version": "0.1.0",
   "description": "",
   "author": "",
@@ -28,7 +28,13 @@
       "prettier --write --ignore-unknown"
     ]
   },
+  "dependencies": {
+    "levelup": "^5.1.1",
+    "memdown": "^6.1.1"
+  },
   "devDependencies": {
+    "@types/levelup": "^5.1.2",
+    "@types/memdown": "^3.0.1",
     "@babel/preset-env": "^7.16.4",
     "@babel/preset-typescript": "^7.16.0",
     "@types/jest": "^27.0.3",
