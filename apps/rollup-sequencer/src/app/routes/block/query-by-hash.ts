@@ -1,1 +1,0 @@
-// @Get('block/hash/:hash')
