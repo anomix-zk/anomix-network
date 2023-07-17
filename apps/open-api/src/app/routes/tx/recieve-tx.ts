@@ -33,6 +33,8 @@ export const handler: RequestHandler<L2TxDTO, null> = async function (req, res):
 
     const l2TxBody = req.body;
 
+    // validate tx's proof
+
     try {
         l2TxRepository.save([l2TxBody], {});
         return { data: 'ok' } as Response
