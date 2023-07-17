@@ -45,21 +45,3 @@ export class ActionType {
     }
 }
 
-export class ProofId {
-    static get DEPOSIT(): UInt32 {
-        return UInt32.zero;
-    }
-    static get TRANSFER(): UInt32 {
-        return UInt32.one;
-    }
-    static get WITHDRAW(): UInt32 {
-        return new UInt32(2);
-    }
-    static get ACCOUNT(): UInt32 {
-        return new UInt32(3);
-    }
-    static get PADDING(): UInt32 {
-        return new UInt32(4);
-    }
-}
-
