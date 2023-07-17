@@ -1,23 +1,23 @@
 import { FastifyPlugin } from "fastify"
 import { IncomingMessage, Server } from 'http';
 
-import { RequestHandler } from '../../types';
+import { RequestHandler } from '@anomix/types';
 
-export const health: FastifyPlugin = async function(
-	instance,
-	options,
-	done
+export const health: FastifyPlugin = async function (
+    instance,
+    options,
+    done
 ): Promise<void> {
-	instance.route({
-		method: "GET",
-		url: "/health",
-		handler
-	})
+    instance.route({
+        method: "GET",
+        url: "/health",
+        handler
+    })
 }
 
-const handler: RequestHandler = async function(
-	req,
-	reply
+const handler: RequestHandler = async function (
+    req,
+    reply
 ): Promise<void> {
-	reply.send("alive")
+    reply.send("alive")
 }
