@@ -60,7 +60,7 @@ NOTE: 既然来到了rollup阶段，说明了每笔L2 tx都经过sequencer预验
 // tips: 这是理论完整冗余版。在工程实践中可以优化，如各merkle path中的重复项可以考虑精简等等。
 CommonUserTxWrapper -> {
     origin: {
-        proof_id
+        action_type
         input_note_nullifier_A,
         input_note_nullifier_B,
         output_note_commitment_C,
@@ -203,7 +203,7 @@ tips: 其中存在可并行的环节，开发时可以考虑优化。
 ```js
 CommonUserTxWrapper -> {
     origin: {
-        proof_id: PADDING
+        action_type: PADDING
         input_note_nullifier_A: From ZERO_Value_Note
         input_note_nullifier_B: From ZERO_Value_Note
         output_note_commitment_C: From ZERO_Value_Note

@@ -46,7 +46,7 @@ _NOTE:_ Anomix Network does not ensure one _account spending keypair_ is registe
 ## Account Register L2 Tx
 * {
   * tx_id: hash of the tx
-  * proof_id: Proof.ACCOUNT
+  * action_type: Proof.ACCOUNT
   * input_note_nullifier_A, // `alias_nullifier`
   * input_note_nullifier_B, // `account viewing key nullifier`
   * output_note_commitment_C, // account_note_commitment_0 <-- spending_key_0

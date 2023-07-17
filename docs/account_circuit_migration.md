@@ -62,7 +62,7 @@ When this L2 tx is done, then Anomix client will re-encrypt all historical value
 # Account Migration L2 Tx
 * {
   * tx_id: hash of the tx
-  * proof_id: Proof.ACCOUNT
+  * action_type: Proof.ACCOUNT
   * input_note_nullifier_A, // ~~`alias_nullifier`~~ ZERO
   * input_note_nullifier_B, // `new account viewing key nullifier`
   * output_note_commitment_C, // account_note_commitment_0  <--  spending_key_0

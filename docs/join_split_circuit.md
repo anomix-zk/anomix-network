@@ -11,7 +11,7 @@ That is:
 
 And the common public inputs are as below:
 ```
-  proof_id,
+  action_type,
   input_note_nullifier_A,
   input_note_nullifier_B,
   output_note_commitment_C,
@@ -84,7 +84,7 @@ In the flow, it should be: `value_note_inputA = ZERO Value Note` and `value_note
 
   1. to align with Joint-Split pattern, Sequencer locally construct these value notes as blows:
 
-    `proof_id`: = 'DEPOSIT', <br>
+    `action_type`: = 'DEPOSIT', <br>
     `input_note_nullifier_A`: = ZERO_VALUE_NOTE_nullifier, <br>
     `input_note_nullifier_B`: = ZERO_VALUE_NOTE_nullifier,<br>
     `output_note_commitment_C` = value_note_outputC_commitment,<br>
@@ -111,7 +111,7 @@ In the flow, it should be: `value_note_inputA = ZERO Value Note` and `value_note
   ```
     {
       tx_id: hash of the tx
-      proof_id: Proof.DEPOSIT
+      action_type: Proof.DEPOSIT
       input_note_nullifier_A,
       input_note_nullifier_B,
       output_note_commitment_C,
@@ -269,7 +269,7 @@ User Journey as blow:
      * `asset_id`
      * `public_owner`: 0
      * `public_value`: 0
-     * `proof_id`: 'TRANSFER',
+     * `action_type`: 'TRANSFER',
 
    * circuit constraints:
      * CHECK existence merkle proof of _Account_Note_commitment_ on _data tree_ (if account_required == 1)
@@ -382,7 +382,7 @@ User Journey as blow:
      * `asset_id`
      * `public_owner`: value_note_outputC.owner_pubkey
      * `public_value`: value_note_outputC.value
-     * `proof_id`: 'WITHDRAW',
+     * `action_type`: 'WITHDRAW',
 
    * circuit constraints:
      * CHECK existence merkle proof of _Account_Note_commitment_ on _data tree_ (if account_required == 1)
@@ -418,7 +418,7 @@ User Journey as blow:
 4. At last, user construct a L2 tx as below with the witness and broadcast it to `Anomix Sequencer`, 
     * {
       * tx_id: hash of the tx
-      * proof_id: Proof.WITHDRAW
+      * action_type: Proof.WITHDRAW
       * input_note_nullifier_A,
       * input_note_nullifier_B,
       * output_note_commitment_C,
