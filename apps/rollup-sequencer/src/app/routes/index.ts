@@ -9,5 +9,6 @@ export const routes: FastifyPlugin = async function (
     done
 ): Promise<void> {
     instance.register(health)
-    instance.register(user, { prefix: "/user" })
+    instance.register(user)
+
 }

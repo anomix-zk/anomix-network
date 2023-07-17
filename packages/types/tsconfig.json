@@ -1,15 +1,23 @@
 {
-  "extends": "../../tsconfig.base.json",
-
   "compilerOptions": {
-    "baseUrl": "./",
+    "baseUrl": ".",
     "outDir": "./dist",
-    "rootDir": "./src",
-    "composite": true
-  },
-
-  "include": [
-    "./src/**/*.ts", 
-    "./src/**/*.js"
-  ]
+    "target": "es2017",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "noImplicitAny": false,
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "strictPropertyInitialization": false,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  }
 }

@@ -1,3 +1,6 @@
+import { FastifyPlugin } from "fastify"
+import { queryByTxId } from "./query-by-tx-id";
+
 /**
  (5)供client查询encrypted data
     ①获取交易历史：TODO 怎么找到跟自己相关的tx?
@@ -12,3 +15,11 @@
 
 (7.5) 提现场景中，提供L1Addr来查询相关的所有pending value notes
  */
+
+export const tx: FastifyPlugin = async (
+    instance,
+    options,
+    done
+): Promise<void> => {
+    instance.register(queryByTxId)
+}

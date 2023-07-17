@@ -5,6 +5,10 @@ const server = async () => {
     // await initORM()
     const app = new FastifyCore()
     await app.listen()
+
+
+    // startup pipeline
+
 }
 
 export default server

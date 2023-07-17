@@ -1,9 +1,7 @@
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import MerklePathDTOSchema from "@/types/MerklePathDTO-schema.json";
-import MerkleProofReqParamSchema from "@/types/MerkleProofReqParam-schema.json";
-import { RequestHandler, MerklePathDTO, MerkleProofReqParam } from '@/types'
+import { RequestHandler, MerklePathDTO, MerkleProofReqParam, MerklePathDTOSchema, MerkleProofReqParamSchema } from '@anomix/types'
 
 /**
  * if nullifier_tree, then find out the target leaf or its predecessor;

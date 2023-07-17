@@ -1,10 +1,10 @@
-import { RequestHandler } from "@/types";
-import { L2TxDTO } from "@/types";
+import { RequestHandler } from '@anomix/types'
+import { L2TxDTO } from '@anomix/types'
 import { getConnection } from 'typeorm';
 import { FastifyPlugin } from "fastify";
 import httpCodes from "@inip/http-codes";
 import { L2Tx } from "@/lib/orm/entity/l2_tx";
-import L2TxDTOSchema from "@/types/L2TxDTO-schema.json";
+import L2TxDTOSchema from '@anomix/types';
 
 /**
 * 供client发送L2 tx

@@ -2,7 +2,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
 
-import { RequestHandler } from '@/types'
+import { RequestHandler } from '@anomix/types'
 import { User } from '../../../lib/orm/entity';
 import { UserDTO, UserRequestChangeUsernameBody } from '../../../types';
 
