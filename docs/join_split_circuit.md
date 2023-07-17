@@ -63,8 +63,6 @@ The user executes the method about fund deposits on [`Anomix Deposit Contract`](
 
 3. Ano-Cash construct a L1 tx and asks for its signature from Auro Wallet, and then broadcast it.
 
-============================================================================
-
 4. When _L1 tx_ is confirmed, the emited event will be listened to by `Anomix Sequencer`. <br>
 
 5. `Anomix Sequencer` will reduce fixed number of actions each time to insert pending `output_note_commitment_C` into `deposit_tree`.

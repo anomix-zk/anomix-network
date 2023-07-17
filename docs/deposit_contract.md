@@ -4,7 +4,7 @@ The page make a brief description on Anomix Start Contract.
 * `deposit tree root`, // record latest tree root of *handledActionsNum* actions.
 * `handledActionsNum`,// record the total number of the *deposit tree* size, also indicates the next insertion on *deposit tree*
 * `sequencer address`,// 2 Fields
-* `supportedAssets`,//能否采用bit的形式代替list
+* `supportedAssets`,// currently just support Mina.
 * `actionsHash`,// NFT-ZKAPP, TODO
 
 ## Functions
