@@ -106,7 +106,7 @@ CommonUserTxWrapper -> {
         <!-- 插入 input_note_nullifier_A -->
         `middle nullifier tree root`, // represents the middle nullifier tree root after insert `input_note_nullifier_A`
 
-        <!-- 获取 nullifierA's predecessor's existence merkle Witness ??我们还需要这个吗? 毕竟上面已经修改了“input_note_nullifier_A's predecessor”-->
+        <!-- 获取 nullifierA's predecessor's existence merkle Witness ??TODO我们还需要这个吗? 毕竟上面已经修改了“input_note_nullifier_A's predecessor”-->
         nullifierA_middle_predecessor_merkleWitness: `input_note_nullifier_A's predecessor's middle existence merkleWitness on nullifier tree`,
         
         <!-- 获取 nullifierB's predecessor's existence merkle Witness -->
