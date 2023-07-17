@@ -15,7 +15,7 @@ export interface L2TxDTO {
     /**
      * @requires
      */
-    roof_id: string
+    action_type: string
     /**
      * @requires
      */
@@ -69,7 +69,10 @@ export interface L2TxDTO {
      * @requires
      */
     creator_pubkey: string
-
+    /**
+     * @requires
+     */
+    encryptedData: string
     /**
      * @ignore
      * @TJS-type integer

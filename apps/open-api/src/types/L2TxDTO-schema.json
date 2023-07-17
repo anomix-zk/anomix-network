@@ -1,69 +1,74 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "properties": {
-    "asset_id": {
-      "type": "string"
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "action_type": {
+            "type": "string"
+        },
+        "asset_id": {
+            "type": "string"
+        },
+        "creator_pubkey": {
+            "type": "string"
+        },
+        "data_tree_root": {
+            "type": "string"
+        },
+        "encryptedData": {
+            "type": "string"
+        },
+        "input_note_nullifier_A": {
+            "type": "string"
+        },
+        "input_note_nullifier_B": {
+            "type": "string"
+        },
+        "nullifier_tree_root": {
+            "type": "string"
+        },
+        "output_note_commitment_C": {
+            "type": "string"
+        },
+        "output_note_commitment_D": {
+            "type": "string"
+        },
+        "proof": {
+            "type": "string"
+        },
+        "public_owner": {
+            "type": "string"
+        },
+        "public_value": {
+            "type": "string"
+        },
+        "secret": {
+            "type": "string"
+        },
+        "txId": {
+            "description": "txid from other fields",
+            "type": "string"
+        },
+        "tx_fee": {
+            "type": "string"
+        }
     },
-    "creator_pubkey": {
-      "type": "string"
-    },
-    "data_tree_root": {
-      "type": "string"
-    },
-    "input_note_nullifier_A": {
-      "type": "string"
-    },
-    "input_note_nullifier_B": {
-      "type": "string"
-    },
-    "nullifier_tree_root": {
-      "type": "string"
-    },
-    "output_note_commitment_C": {
-      "type": "string"
-    },
-    "output_note_commitment_D": {
-      "type": "string"
-    },
-    "proof": {
-      "type": "string"
-    },
-    "public_owner": {
-      "type": "string"
-    },
-    "public_value": {
-      "type": "string"
-    },
-    "roof_id": {
-      "type": "string"
-    },
-    "secret": {
-      "type": "string"
-    },
-    "txId": {
-      "description": "txid from other fields",
-      "type": "string"
-    },
-    "tx_fee": {
-      "type": "string"
-    }
-  },
-  "required": [
-    "asset_id",
-    "creator_pubkey",
-    "data_tree_root",
-    "input_note_nullifier_A",
-    "input_note_nullifier_B",
-    "nullifier_tree_root",
-    "output_note_commitment_C",
-    "output_note_commitment_D",
-    "proof",
-    "public_owner",
-    "public_value",
-    "roof_id",
-    "secret",
-    "txId",
-    "tx_fee"
-  ],
-  "type": "object"
+    "required": [
+        "action_type",
+        "asset_id",
+        "creator_pubkey",
+        "data_tree_root",
+        "encryptedData",
+        "input_note_nullifier_A",
+        "input_note_nullifier_B",
+        "nullifier_tree_root",
+        "output_note_commitment_C",
+        "output_note_commitment_D",
+        "proof",
+        "public_owner",
+        "public_value",
+        "secret",
+        "txId",
+        "tx_fee"
+    ],
+    "type": "object"
 }
+

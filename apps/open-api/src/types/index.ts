@@ -7,3 +7,4 @@ export * from "./jwt"
 export * from "./message"
 export * from "./l2tx"
 export * from "./merkle-path"
+export * from './constant'

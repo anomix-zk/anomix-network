@@ -2,7 +2,30 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "properties": {
         "data": {
-            "type": "string"
+            "anyOf": [
+                {
+                    "properties": {
+                        "nextIndex": {
+                            "type": "string"
+                        },
+                        "nextValue": {
+                            "type": "string"
+                        },
+                        "value": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "nextIndex",
+                        "nextValue",
+                        "value"
+                    ],
+                    "type": "object"
+                },
+                {
+                    "type": "string"
+                }
+            ]
         },
         "leafIndex": {
             "type": "integer"
