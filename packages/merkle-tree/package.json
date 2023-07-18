@@ -1,5 +1,5 @@
 {
-  "name": "merkle",
+  "name": "@anomix/merkle-tree",
   "version": "0.1.0",
   "description": "",
   "author": "",
@@ -14,6 +14,7 @@
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "scripts": {
+    "demo": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/new_tree_test.js",
     "build": "tsc",
     "buildw": "tsc --watch",
     "coverage": "node --experimental-vm-modules --experimental-wasm-threads node_modules/jest/bin/jest.js --coverage",
@@ -33,11 +34,12 @@
     "memdown": "^6.1.1"
   },
   "devDependencies": {
-    "@types/levelup": "^5.1.2",
-    "@types/memdown": "^3.0.1",
     "@babel/preset-env": "^7.16.4",
     "@babel/preset-typescript": "^7.16.0",
+    "@types/debug": "^4.1.8",
     "@types/jest": "^27.0.3",
+    "@types/levelup": "^5.1.2",
+    "@types/memdown": "^3.0.1",
     "@typescript-eslint/eslint-plugin": "^5.5.0",
     "@typescript-eslint/parser": "^5.5.0",
     "eslint": "^8.7.0",
@@ -53,5 +55,3 @@
     "snarkyjs": "0.12.*"
   }
 }
-
-

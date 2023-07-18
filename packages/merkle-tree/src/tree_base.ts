@@ -120,11 +120,9 @@ export abstract class TreeBase implements MerkleTree {
   ): Promise<BaseSiblingPath> {
     const path: Field[] = [];
     let level = this.depth;
-    const pathPosBits = Field(index).toBits(this.depth);
 
-    let pos = 0;
     while (level > 0) {
-      const isRight = pathPosBits[pos].toBoolean();
+      const isRight = index & 0x01n;
       const sibling = await this.getLatestValueAtIndex(
         level,
         isRight ? index - 1n : index + 1n,
@@ -132,7 +130,7 @@ export abstract class TreeBase implements MerkleTree {
       );
       path.push(sibling);
       level -= 1;
-      pos += 1;
+      index >>= 1n;
     }
 
     class SiblingPath_ extends SiblingPath(this.depth) {}
@@ -197,11 +195,9 @@ export abstract class TreeBase implements MerkleTree {
     let current = leaf;
     this.cache[key] = Buffer.from(current.toString());
     let level = this.depth;
-    const pathPosBits = Field(index).toBits(this.depth);
 
-    let pos = 0;
     while (level > 0) {
-      const isRight = pathPosBits[pos].toBoolean();
+      const isRight = index & 0x01n;
       const sibling = await this.getLatestValueAtIndex(
         level,
         isRight ? index - 1n : index + 1n,
@@ -211,7 +207,8 @@ export abstract class TreeBase implements MerkleTree {
       const rhs = isRight ? current : sibling;
       current = this.hasher.compress(lhs, rhs);
       level -= 1;
-      pos += 1;
+      index >>= 1n;
+
       const cacheKey = indexToKeyHash(this.name, level, index);
       this.cache[cacheKey] = Buffer.from(current.toString());
     }

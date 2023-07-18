@@ -1,6 +1,7 @@
 /* eslint-disable no-prototype-builtins */
 import { PoseidonHasher } from './poseidon_hasher';
-import { arrayProp, CircuitValue, Field } from 'snarkyjs';
+import { arrayProp, Bool, CircuitValue, Field, Provable } from 'snarkyjs';
+import { Hasher } from './hasher';
 
 export class BaseSiblingPath extends CircuitValue {
   static height: number;
@@ -34,6 +35,25 @@ export class BaseSiblingPath extends CircuitValue {
     return new this(path);
   }
 
+  public calculateRoot(
+    leaf: Field,
+    leafIndex: Field,
+    hasher: Hasher = new PoseidonHasher()
+  ): Field {
+    const h = this.height();
+    const pathPosBits = leafIndex.toBits(h);
+    let node = leaf;
+
+    for (let i = 0; i < h; i++) {
+      const currentNode = this.path[i];
+      const isRight = pathPosBits[i];
+
+      const [left, right] = maybeSwap(isRight, currentNode, node);
+      node = hasher.compress(left, right);
+    }
+    return node; // root
+  }
+
   public getSubtreeSiblingPath(subtreeHeight: number): BaseSiblingPath {
     // Drop the size of the subtree from the path, and return the rest.
     const subtreeData = this.path.slice(subtreeHeight);
@@ -60,4 +80,11 @@ export function SiblingPath(height: number): typeof BaseSiblingPath {
   arrayProp(Field, height)(SiblingPath_.prototype, 'path');
 
   return SiblingPath_;
+}
+
+function maybeSwap(b: Bool, x: Field, y: Field): [Field, Field] {
+  let m = b.toField().mul(x.sub(y)); // b*(x - y)
+  const x_ = y.add(m); // y + b*(x - y)
+  const y_ = x.sub(m); // x - b*(x - y) = x + b*(y - x)
+  return [x_, y_];
 }

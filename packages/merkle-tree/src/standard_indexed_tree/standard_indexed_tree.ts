@@ -565,7 +565,7 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
             await this.getSubtreeSiblingPath(subtreeHeight, true),
           ];
         }
-        const siblingPath = await this.getSiblingPath<TreeHeight>(
+        const siblingPath = await this.getSiblingPath(
           BigInt(indexOfPrevious.index),
           true
         );
