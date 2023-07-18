@@ -1,16 +1,12 @@
+
+import httpCodes from "@inip/http-codes"
+import { FastifyPlugin } from "fastify"
+import { RequestHandler, MerklePathDTO, MerkleProofReqParam, MerklePathDTOSchema, MerkleProofReqParamSchema } from '@anomix/types'
+
 /**
  * if nullifier_tree, then find out the target leaf or its predecessor;
  * if data_tree, then find out the target leaf;
  */
-// @Get('/merklepath/:tree_name/:hash')
-
-import httpCodes from "@inip/http-codes"
-import { FastifyPlugin } from "fastify"
-import { getConnection } from 'typeorm';
-import MerklePathDTOSchema from "@/types/MerklePathDTO-schema.json";
-
-import { RequestHandler, MerklePathDTO } from '@/types'
-
 export const queryMerkleProof: FastifyPlugin = async function (
     instance,
     options,
@@ -25,9 +21,7 @@ export const queryMerkleProof: FastifyPlugin = async function (
     })
 }
 
-type ReqParam = { tree_name: string, hash: string }
-
-export const handler: RequestHandler<null, ReqParam> = async function (
+export const handler: RequestHandler<null, MerkleProofReqParam> = async function (
     req,
     res
 ): Promise<MerklePathDTO> {
@@ -46,19 +40,16 @@ export const handler: RequestHandler<null, ReqParam> = async function (
 }
 
 const schema = {
-    tags: ["L2Tx"],
+    tags: ["MerkleProof"],
     params: {
-        type: "object",
-        properties: {
-            id: {
-                type: "string",
-            }
-        }
+        type: MerkleProofReqParamSchema.type,
+        properties: MerkleProofReqParamSchema.properties,
+        require: MerkleProofReqParamSchema.required
     },
     response: {
         200: {
-            "type": MerklePathDTOSchema.type,
-            "properties": MerklePathDTOSchema.properties,
+            type: MerklePathDTOSchema.type,
+            properties: MerklePathDTOSchema.properties,
         }
     }
 }

@@ -4,7 +4,7 @@ import { L2Tx as CircuitL2Tx, WithdrawInfo } from './circuit';
 
 export class L2Tx extends CircuitL2Tx {
     constructor(
-        proof_id: UInt32,
+        action_type: UInt32,
         input_note_nullifier_A: Field,
         input_note_nullifier_B: Field,
         output_note_commitment_C: Field,
@@ -20,7 +20,7 @@ export class L2Tx extends CircuitL2Tx {
         readonly encryptedData: string // base64 encoded
     ) {
         super(
-            proof_id,
+            action_type,
             input_note_nullifier_A,
             input_note_nullifier_B,
             output_note_commitment_C,

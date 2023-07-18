@@ -13,7 +13,7 @@ export class WithdrawInfo {
 
 export class L2Tx {
     constructor(
-        readonly proof_id: UInt32,
+        readonly action_type: UInt32,
         readonly input_note_nullifier_A: Field,
         readonly input_note_nullifier_B: Field,
         readonly output_note_commitment_C: Field,
@@ -33,7 +33,7 @@ export class L2Tx {
      */
     get txId(): Field {
         return Poseidon.hash([
-            ...this.proof_id.toFields(),
+            ...this.action_type.toFields(),
             this.input_note_nullifier_A,
             this.input_note_nullifier_B,
             this.output_note_commitment_C,

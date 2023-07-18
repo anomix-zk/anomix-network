@@ -6,9 +6,8 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
 
-import { RequestHandler } from '@/types'
-import { User } from '../../../lib/orm/entity';
-import { Account } from "@/lib/orm/entity/account";
+import { RequestHandler } from '@anomix/types'
+import { Account } from '@anomix/dao'
 
 export const queryAliasByAcctViewKey: FastifyPlugin = async function (
     instance,
@@ -32,7 +31,6 @@ export const handler: RequestHandler<null, AcctvkParam> = async function (
     res
 ): Promise<Response> {
     const { acctvk: p_acctvk } = req.params
-
     const accountRepository = getConnection().getRepository(Account)
     try {
         const account = await accountRepository.findOne({ where: { acctViewKey: p_acctvk } });

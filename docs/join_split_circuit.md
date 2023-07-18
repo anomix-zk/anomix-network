@@ -11,7 +11,7 @@ That is:
 
 And the common public inputs are as below:
 ```
-  proof_id,
+  action_type,
   input_note_nullifier_A,
   input_note_nullifier_B,
   output_note_commitment_C,
@@ -63,8 +63,6 @@ The user executes the method about fund deposits on [`Anomix Deposit Contract`](
 
 3. Ano-Cash construct a L1 tx and asks for its signature from Auro Wallet, and then broadcast it.
 
-============================================================================
-
 4. When _L1 tx_ is confirmed, the emited event will be listened to by `Anomix Sequencer`. <br>
 
 5. `Anomix Sequencer` will reduce fixed number of actions each time to insert pending `output_note_commitment_C` into `deposit_tree`.
@@ -86,7 +84,7 @@ In the flow, it should be: `value_note_inputA = ZERO Value Note` and `value_note
 
   1. to align with Joint-Split pattern, Sequencer locally construct these value notes as blows:
 
-    `proof_id`: = 'DEPOSIT', <br>
+    `action_type`: = 'DEPOSIT', <br>
     `input_note_nullifier_A`: = ZERO_VALUE_NOTE_nullifier, <br>
     `input_note_nullifier_B`: = ZERO_VALUE_NOTE_nullifier,<br>
     `output_note_commitment_C` = value_note_outputC_commitment,<br>
@@ -113,7 +111,7 @@ In the flow, it should be: `value_note_inputA = ZERO Value Note` and `value_note
   ```
     {
       tx_id: hash of the tx
-      proof_id: Proof.DEPOSIT
+      action_type: Proof.DEPOSIT
       input_note_nullifier_A,
       input_note_nullifier_B,
       output_note_commitment_C,
@@ -271,7 +269,7 @@ User Journey as blow:
      * `asset_id`
      * `public_owner`: 0
      * `public_value`: 0
-     * `proof_id`: 'TRANSFER',
+     * `action_type`: 'TRANSFER',
 
    * circuit constraints:
      * CHECK existence merkle proof of _Account_Note_commitment_ on _data tree_ (if account_required == 1)
@@ -315,7 +313,7 @@ User Journey as blow:
    * `output_note_commitment_D` will be added into _data tree_, if it's not from Zero Value Note
      * `Anomix Sequencer` set `input_note_nullifier_B` to a ZERO VALUE NOTE's _input_nullifier_ and hash it. if the hash equal to `output_note_commitment_D` then it will not store it into `data_tree`.
 
-
+**Updated**: To reduce the contraints at client part, the non-exitence merkle proof of _input_note_nullifier_A/B_ and related contraints mentioned above provided by user himself is cancelled here and has been migrated to InnerRollup sections and provided by `sequencer`. The new solution could samely works for proving the UTXO (value_note_inputA/B) are valid. 
      
 
 # Withdraw funds to L1
@@ -384,7 +382,7 @@ User Journey as blow:
      * `asset_id`
      * `public_owner`: value_note_outputC.owner_pubkey
      * `public_value`: value_note_outputC.value
-     * `proof_id`: 'WITHDRAW',
+     * `action_type`: 'WITHDRAW',
 
    * circuit constraints:
      * CHECK existence merkle proof of _Account_Note_commitment_ on _data tree_ (if account_required == 1)
@@ -420,7 +418,7 @@ User Journey as blow:
 4. At last, user construct a L2 tx as below with the witness and broadcast it to `Anomix Sequencer`, 
     * {
       * tx_id: hash of the tx
-      * proof_id: Proof.WITHDRAW
+      * action_type: Proof.WITHDRAW
       * input_note_nullifier_A,
       * input_note_nullifier_B,
       * output_note_commitment_C,
@@ -473,3 +471,5 @@ User Journey as blow:
    1. user prepare the original plain text of value_note_C,
    2. user obtain the existence merkle proof of `output_note_commitment_C` on *data_tree*,
    3. trigger the method inside *withdraw_contract* to transfer the assets back.(more details in [withdraw_contract](./withdraw_contract.md))
+
+**Updated**: To reduce the contraints at client part, the non-exitence merkle proof of _input_note_nullifier_A/B_ and related contraints mentioned above provided by user himself is cancelled here and has been migrated to InnerRollup sections and provided by `sequencer`. The new solution could samely works for proving the UTXO (value_note_inputA/B) are valid. 

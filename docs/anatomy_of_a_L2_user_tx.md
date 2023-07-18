@@ -5,7 +5,7 @@ Here, let us extract all public key fields at each flow.
 ## Account Register L2 Tx
 * {
   * tx_id: hash of the tx
-  * proof_id: Proof.ACCOUNT
+  * action_type: Proof.ACCOUNT
   * input_note_nullifier_A, // `alias_nullifier`
   * input_note_nullifier_B, // `account viewing key nullifier`
   * output_note_commitment_C, // account_note_commitment_0 <-- spending_key_0
@@ -27,7 +27,7 @@ Here, let us extract all public key fields at each flow.
 ## Account Update/Recovery L2 Tx
 * {
   * tx_id: hash of the tx
-  * proof_id: Proof.ACCOUNT
+  * action_type: Proof.ACCOUNT
   * input_note_nullifier_A, // ~~`alias_nullifier`~~ ZERO
   * input_note_nullifier_B, // ~~`account viewing key nullifier`~~ ZERO
   * output_note_commitment_C, // account_note_commitment_0  <--  spending_key_0
@@ -49,7 +49,7 @@ Here, let us extract all public key fields at each flow.
 ## Account Migration L2 Tx
 * {
   * tx_id: hash of the tx
-  * proof_id: Proof.ACCOUNT
+  * action_type: Proof.ACCOUNT
   * input_note_nullifier_A, // ~~`alias_nullifier`~~ ZERO
   * input_note_nullifier_B, // `new account viewing key nullifier`
   * output_note_commitment_C, // account_note_commitment_0  <--  spending_key_0
@@ -71,7 +71,7 @@ Here, let us extract all public key fields at each flow.
 ## Transfer L2 Tx
 * {
   * tx_id: hash of the tx
-  * proof_id: Proof.TRANSFER
+  * action_type: Proof.TRANSFER
   * input_note_nullifier_A,
   * input_note_nullifier_B,
   * output_note_commitment_C,
@@ -93,7 +93,7 @@ Here, let us extract all public key fields at each flow.
 ## Withdraw L2 Tx
 * {
   * tx_id: hash of the tx
-  * proof_id: Proof.WITHDRAW
+  * action_type: Proof.WITHDRAW
   * input_note_nullifier_A,
   * input_note_nullifier_B,
   * output_note_commitment_C,
@@ -120,7 +120,7 @@ Here, let us extract all public key fields at each flow.
 Here, for the convenience of the coming progress of `Sequencer`, we need to aggregate them into the same format.
 * {
   * tx_id: hash of the tx
-  * proof_id
+  * action_type
   * input_note_nullifier_A,
   * input_note_nullifier_B,
   * output_note_commitment_C,

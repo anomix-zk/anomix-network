@@ -1,3 +1,8 @@
+// TODO 
+# Improvements
+## support 'backward': A tx could spend UTXO from its predecessor's tx and both are batches into one L2 Block.
+
+
 // TODO Complete them
 
 # account维护没有tx_fee, 容易被攻击！

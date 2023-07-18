@@ -6,7 +6,7 @@ The page make a brief description on Anomix Start Contract.
 * `existing nullifier tree root`,
 * `sequencer address`,// 2 Fields
 * `slot`+ `escapeFactor`: //2字段压缩成一个field, 每间隔固定区块数量允许一个区块来自任何人！
-* `recorded_deposit_tree_root`:// the root of all recorded leaves on *deposit tree*
+~~* `recorded_deposit_tree_root`:// the root of all recorded leaves on deposit tree~~
 * `recorded_deposit_tree_size`: // the size of all recorded leaves on *deposit tree*
 
 ## Functions

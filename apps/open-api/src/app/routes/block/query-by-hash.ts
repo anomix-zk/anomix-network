@@ -1,13 +1,11 @@
 // @Get('block/hash/:hash')
 
-import { L2Tx } from "@/lib/orm/entity/l2_tx";
+import { L2Tx } from '@anomix/dao'
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
-import L2TxDTOSchema from "@/types/L2TxDTO-schema.json";
-
-import { RequestHandler, L2TxDTO } from '@/types'
+import { RequestHandler, L2TxDTO, L2TxDTOSchema } from '@anomix/types'
 
 export const queryByHash: FastifyPlugin = async function (
     instance,

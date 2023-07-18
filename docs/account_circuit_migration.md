@@ -58,11 +58,12 @@ Scenario steps: (TODO: User Journey 待敲定)
 
 When this L2 tx is done, then Anomix client will re-encrypt all historical value notes with `new account viewing public key`.
 
+**Updated**: To reduce the contraints at client part, the non-exitence merkle proof and related contraints mentioned above provided by user himself is cancelled here and has been migrated to InnerRollup sections and provided by `sequencer`. The new solution could samely works for proving the uniqueness. 
 
 # Account Migration L2 Tx
 * {
   * tx_id: hash of the tx
-  * proof_id: Proof.ACCOUNT
+  * action_type: Proof.ACCOUNT
   * input_note_nullifier_A, // ~~`alias_nullifier`~~ ZERO
   * input_note_nullifier_B, // `new account viewing key nullifier`
   * output_note_commitment_C, // account_note_commitment_0  <--  spending_key_0

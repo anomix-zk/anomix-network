@@ -18,5 +18,8 @@
     "lib:build": "concurrently \"tsc --build tsconfig.json\" \"tsc --build tsconfig.es.json\"",
     "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
     "lib:lint": "eslint \"src/**/*.ts\" --fix"
+  },
+  "dependencies": {
+    "fastify": "^3.27.2"
   }
 }

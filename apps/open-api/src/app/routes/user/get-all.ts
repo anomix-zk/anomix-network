@@ -1,8 +1,8 @@
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
 
-import { RequestHandler } from '@/types'
-import { User } from '../../../lib/orm/entity';
+import { RequestHandler } from '@anomix/types'
+import { User } from '@anomix/dao';
 import { PaginationParams, UserDTO } from '../../../types';
 
 export const getAll: FastifyPlugin = async function (
