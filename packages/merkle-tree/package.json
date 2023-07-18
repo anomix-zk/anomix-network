@@ -11,17 +11,22 @@
     "zkapp"
   ],
   "type": "module",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist_es/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "demo": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/new_tree_test.js",
-    "build": "tsc",
+    "build": "npm run lib:build",
     "buildw": "tsc --watch",
     "coverage": "node --experimental-vm-modules --experimental-wasm-threads node_modules/jest/bin/jest.js --coverage",
     "format": "prettier --write --ignore-unknown **/*",
     "test": "node --experimental-vm-modules --experimental-wasm-threads node_modules/jest/bin/jest.js",
     "testw": "node --experimental-vm-modules --experimental-wasm-threads node_modules/jest/bin/jest.js --watch",
-    "lint": "npx eslint src/* --fix"
+    "lint": "npm run lib:lint",
+    "lib:dev": "concurrently \"tsc --build tsconfig.json --watch\" \"tsc --build tsconfig.es.json --watch\"",
+    "lib:build": "concurrently \"tsc --build tsconfig.json\" \"tsc --build tsconfig.es.json\"",
+    "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
+    "lib:lint": "eslint \"src/**/*.ts\" --fix"
   },
   "lint-staged": {
     "**/*": [
