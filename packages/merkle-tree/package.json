@@ -10,10 +10,15 @@
     "mina-dapp",
     "zkapp"
   ],
-  "type": "module",
-  "main": "dist/index.js",
-  "module": "dist_es/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "module": "dist_es/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist_es/src/index.js",
+      "require": "./dist/src/index.js"
+    }
+  },
   "scripts": {
     "demo": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/new_tree_test.js",
     "build": "npm run lib:build",
@@ -23,8 +28,8 @@
     "test": "node --experimental-vm-modules --experimental-wasm-threads node_modules/jest/bin/jest.js",
     "testw": "node --experimental-vm-modules --experimental-wasm-threads node_modules/jest/bin/jest.js --watch",
     "lint": "npm run lib:lint",
-    "lib:dev": "concurrently \"tsc --build tsconfig.json --watch\" \"tsc --build tsconfig.es.json --watch\"",
-    "lib:build": "concurrently \"tsc --build tsconfig.json\" \"tsc --build tsconfig.es.json\"",
+    "lib:dev": "concurrently \"tsc --build tsconfig.json --watch\" \"tsc-alias -w\" \"tsc --build tsconfig.es.json --watch\" \"tsc-alias -w -p tsconfig.es.json\"",
+    "lib:build": "concurrently \"tsc --build tsconfig.json\" \"tsc-alias\" \"tsc --build tsconfig.es.json\" \"tsc-alias -p tsconfig.es.json\"",
     "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
     "lib:lint": "eslint \"src/**/*.ts\" --fix"
   },

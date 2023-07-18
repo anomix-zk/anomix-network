@@ -10,12 +10,16 @@
     "mina-dapp",
     "zkapp"
   ],
-  "type": "module",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "types": "dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist_es/src/index.js",
+      "require": "./dist/src/index.js"
+    }
+  },
   "scripts": {
-    "lib:dev": "concurrently \"tsc --build tsconfig.json --watch\" \"tsc --build tsconfig.es.json --watch\"",
-    "lib:build": "concurrently \"tsc --build tsconfig.json\" \"tsc --build tsconfig.es.json\"",
+    "lib:dev": "concurrently \"tsc --build tsconfig.json --watch\" \"tsc-alias -w\" \"tsc --build tsconfig.es.json --watch\" \"tsc-alias -w -p tsconfig.es.json\"",
+    "lib:build": "concurrently \"tsc --build tsconfig.json\" \"tsc-alias\" \"tsc --build tsconfig.es.json\" \"tsc-alias -p tsconfig.es.json\"",
     "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
     "lib:lint": "eslint \"src/**/*.ts\" --fix",
     "build": "npm run lib:build",

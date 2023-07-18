@@ -24,6 +24,10 @@ const server = async () => {
     // * save each batch to MysqlDB,
     // * send signal to start 'proof-generator',
     //   * 'proof-generator' server query them for inner merge,
+
+
+
+
 }
 
 export default server
