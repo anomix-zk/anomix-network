@@ -313,7 +313,7 @@ User Journey as blow:
    * `output_note_commitment_D` will be added into _data tree_, if it's not from Zero Value Note
      * `Anomix Sequencer` set `input_note_nullifier_B` to a ZERO VALUE NOTE's _input_nullifier_ and hash it. if the hash equal to `output_note_commitment_D` then it will not store it into `data_tree`.
 
-
+**Updated**: To reduce the contraints at client part, the non-exitence merkle proof of _input_note_nullifier_A/B_ and related contraints mentioned above provided by user himself is cancelled here and has been migrated to InnerRollup sections and provided by `sequencer`. The new solution could samely works for proving the UTXO (value_note_inputA/B) are valid. 
      
 
 # Withdraw funds to L1
@@ -471,3 +471,5 @@ User Journey as blow:
    1. user prepare the original plain text of value_note_C,
    2. user obtain the existence merkle proof of `output_note_commitment_C` on *data_tree*,
    3. trigger the method inside *withdraw_contract* to transfer the assets back.(more details in [withdraw_contract](./withdraw_contract.md))
+
+**Updated**: To reduce the contraints at client part, the non-exitence merkle proof of _input_note_nullifier_A/B_ and related contraints mentioned above provided by user himself is cancelled here and has been migrated to InnerRollup sections and provided by `sequencer`. The new solution could samely works for proving the UTXO (value_note_inputA/B) are valid. 

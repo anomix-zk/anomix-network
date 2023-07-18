@@ -42,6 +42,8 @@ Explorer wallet extention will be triggered to construct and broadcast a L1 tx w
 
 _NOTE:_ Anomix Network does not ensure one _account spending keypair_ is registered in Accounts of different _alias_. i.e. if a user might create multiple accounts(of seperate _alias_) based on different L1 wallets, then he might register the same spending keypair for his different accounts. But this is not really suggested!
 
+**Updated**: To reduce the contraints at client part, the non-exitence merkle proof and related contraints mentioned above provided by user himself is cancelled here and has been migrated to InnerRollup sections and provided by `sequencer`. The new solution could samely works for proving the uniqueness. 
+
 
 ## Account Register L2 Tx
 * {
