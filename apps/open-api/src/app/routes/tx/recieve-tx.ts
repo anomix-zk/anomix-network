@@ -3,7 +3,7 @@ import { L2TxDTO } from '@anomix/types'
 import { getConnection } from 'typeorm';
 import { FastifyPlugin } from "fastify";
 import httpCodes from "@inip/http-codes";
-import { L2Tx } from "@/lib/orm/entity/l2_tx";
+import { L2Tx } from '@anomix/dao'
 import L2TxDTOSchema from '@anomix/types';
 
 /**

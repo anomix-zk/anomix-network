@@ -1,7 +1,7 @@
 import fastify from "fastify"
 import { FastifyRequest, FastifyReply } from "fastify"
 
-import { User } from '../lib/orm/entity';
+import { User } from '@anomix/dao'
 
 declare module 'fastify' {
 

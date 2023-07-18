@@ -1,8 +1,8 @@
-export * from "@/fastify";
-export * from "@/jwt";
-export * from "@/l2tx";
-export * from "@/merkle-path";
-export * from '@/constant';
+export { RequestHandler } from "@/fastify";
+export { Jwt } from "@/jwt";
+export { L2TxDTO } from "@/l2tx";
+export { MerklePathDTO, MerkleProofReqParam } from "@/merkle-path";
+export { Tree } from '@/constant';
 
 import L2TxDTOSchema from '@/L2TxDTO-schema.json';
 import MerklePathDTOSchema from '@/MerklePathDTO-schema.json';

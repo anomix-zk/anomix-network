@@ -18,6 +18,9 @@ export interface MerklePathDTO {
     paths: string[] // TODO array.length is up to *MERKLE_TREE_HEIGHT*
 }
 
+/**
+ * request param for merkle proof
+ */
 export interface MerkleProofReqParam {
     /**
      * @requires

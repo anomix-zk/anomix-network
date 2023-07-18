@@ -7,7 +7,7 @@ import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
 
 import { RequestHandler } from '@anomix/types'
-import { Account } from "@/lib/orm/entity/account";
+import { Account } from '@anomix/dao'
 
 export const queryAcctViewKeyByAlias: FastifyPlugin = async function (
     instance,

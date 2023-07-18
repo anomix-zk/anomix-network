@@ -3,7 +3,7 @@ import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm'
 
 import { RequestHandler } from '@anomix/types'
-import { Paycard } from '../../../lib/orm/entity'
+import { Paycard } from '@anomix/dao';
 import { UserRequestTopUpBalanceBody, UserResponseTopUpBalance } from '@/types';
 
 export const topUpBalance: FastifyPlugin = async function (

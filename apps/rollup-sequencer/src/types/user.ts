@@ -1,4 +1,4 @@
-import { Paycard, Profile } from '@/lib/orm/entity';
+import { Paycard, Profile } from '@anomix/dao'
 
 export interface UserDTO {
     id: string,

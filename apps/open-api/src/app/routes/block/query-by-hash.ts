@@ -1,6 +1,6 @@
 // @Get('block/hash/:hash')
 
-import { L2Tx } from "@/lib/orm/entity/l2_tx";
+import { L2Tx } from '@anomix/dao'
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"

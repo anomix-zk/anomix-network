@@ -5,10 +5,10 @@ import { getConnection } from 'typeorm'
 import fp from "fastify-plugin"
 
 import { validateToken } from '../../lib/jwt'
-import { User } from '../../lib/orm/entity'
+import { User } from '@anomix/dao'
 import { UserDTO } from '../../types';
 
-const bearerPlugin: FastifyPlugin = async function(
+const bearerPlugin: FastifyPlugin = async function (
     instance,
     options,
     done
@@ -17,7 +17,7 @@ const bearerPlugin: FastifyPlugin = async function(
     instance.addHook('preHandler', bearerHook)
 }
 
-const bearerHook: preHandlerHookHandler = async function(
+const bearerHook: preHandlerHookHandler = async function (
     request,
     reply
 ): Promise<void> {
@@ -28,7 +28,7 @@ const bearerHook: preHandlerHookHandler = async function(
 
     const [scheme, token] = authHeader.split(/\s+/)
     if (scheme.toLowerCase() !== 'bearer') {
-        throw request.throwError( httpCodes.BAD_REQUEST, "Invalid bearer scheme")
+        throw request.throwError(httpCodes.BAD_REQUEST, "Invalid bearer scheme")
     }
 
     let decodedToken: JwtPayload & UserDTO
