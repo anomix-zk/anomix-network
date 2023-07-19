@@ -1,3 +1,5 @@
+**Both 'Account Circuit' and 'Funding Operation Circuit' are in fact merged into One circuit. But split them here for clear explanation.**
+
 In Anomix Network, `Anomix Rollup Processor Contract` store all the funds from L1. 
 
 Each fund deposit or withdraw operation will trigger `Anomix Rollup Processor Contract` to recieve funds from operator's L1 account or withdraw funds from `Anomix Rollup Processor Contract` account to recipient's L1 account.

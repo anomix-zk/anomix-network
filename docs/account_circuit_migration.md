@@ -1,3 +1,5 @@
+**Both 'Account Circuit' and 'Funding Operation Circuit' are in fact merged into One circuit. But split them here for clear explanation.**
+
 In this section, Let us walk through the detailed Account operations journey!
 
 ## Account Migration
