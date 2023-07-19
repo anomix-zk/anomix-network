@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "outDir": "./dist",
     "target": "es2017",
+    "module": "commonjs",
+    "outDir": "./dist",
+    "rootDir": ".",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "module": "commonjs",
     "esModuleInterop": true,
     "noImplicitAny": false,
     "sourceMap": true,
@@ -15,10 +15,14 @@
     "resolveJsonModule": true,
     "strictPropertyInitialization": false,
     "declaration": true,
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"
       ]
     }
-  }
+  },
+  "include": [
+    "./src"
+  ]
 }

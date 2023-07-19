@@ -1,9 +1,9 @@
 import httpCodes from "@inip/http-codes"
 import { preHandlerHookHandler } from "fastify"
 
-import { UserDTO } from '../../types';
+import { UserDTO } from '@anomix/types';
 
-export const adminGuard: preHandlerHookHandler = async function(
+export const adminGuard: preHandlerHookHandler = async function (
     request,
     reply
 ): Promise<void> {

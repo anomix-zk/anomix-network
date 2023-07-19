@@ -9,3 +9,7 @@ import MerklePathDTOSchema from './MerklePathDTO-schema.json';
 import MerkleProofReqParamSchema from './MerkleProofReqParam-schema.json';
 
 export { L2TxDTOSchema, MerklePathDTOSchema, MerkleProofReqParamSchema };
+
+export * from '@/message';
+export * from '@/request';
+export * from '@/user';

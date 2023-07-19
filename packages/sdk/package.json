@@ -3,13 +3,11 @@
   "private": true,
   "description": "sdk within Anomix-Network",
   "version": "0.1.0",
-  "main": "dist/index.js",
-  "module": "dist_es/index.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist_es/index.js",
-      "require": "./dist/index.js"
+      "import": "./dist_es/src/index.js",
+      "require": "./dist/src/index.js"
     }
   },
   "license": "MIT",

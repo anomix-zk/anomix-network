@@ -4,7 +4,7 @@ import { getConnection } from 'typeorm';
 
 import { RequestHandler } from '@anomix/types'
 import { User } from '@anomix/dao';
-import { UserDTO, UserRequestChangeUsernameBody } from '../../../types';
+import { UserDTO, UserRequestChangeUsernameBody } from '@anomix/types';
 
 export const changeUsername: FastifyPlugin = async function (
     instance,
