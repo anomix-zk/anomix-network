@@ -1,7 +1,7 @@
 // TODO 
 # Improvements
-## support 'backward': A tx could spend UTXO from its predecessor's tx and both are batches into one L2 Block.
-
+## support that A tx could spend UTXO from its predecessor's tx though the latter one is still pending.
+## support 'balane merge': user could merge all notes with small balances automatically.
 
 // TODO Complete them
 
