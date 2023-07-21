@@ -27,6 +27,8 @@ Tips: 之所以采用传入'InnerRollupZkPragram提供一个method, 入参是inn
 
 NOTE: 既然来到了rollup阶段，说明了每笔L2 tx都经过sequencer预验证通过(verify proof, 当然在rollup电路也会重新真正地验证), 故sequencer可以采用任何办法合理地将他们先后地rollup起来。
 
+**NOTE: Mina's Pickles only supports recursively verifying 0, 1 or 2 proofs, so inner_rollup_tx_count == 2.**
+
 ### 特殊情况
 1. TODO 当达到最大出块时间而L2 tx不足inner_rollup_count的整数倍，我们需要补充padding L2 tx.
 
