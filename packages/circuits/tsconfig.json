@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "module": "es2022",
+    "module": "commonjs",
     "lib": [
       "dom",
       "esnext"
     ],
-    "outDir": "./build",
+    "outDir": "./dist",
     "rootDir": ".",
     "strict": true,
     "strictPropertyInitialization": false, // to enable generic constructors, e.g. on CircuitValue
@@ -21,6 +21,8 @@
     "sourceMap": true,
     "noFallthroughCasesInSwitch": true,
     "allowSyntheticDefaultImports": true,
+    "noImplicitAny": false,
+    "resolveJsonModule": true,
     "paths": {
       "@/*": [
         "./src/*"

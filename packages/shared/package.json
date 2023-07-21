@@ -3,13 +3,11 @@
   "private": true,
   "version": "0.1.0",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "dist_es/index.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist_es/index.js",
-      "require": "./dist/index.js"
+      "import": "./dist_es/src/index.js",
+      "require": "./dist/src/index.js"
     }
   },
   "scripts": {

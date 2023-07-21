@@ -25,7 +25,7 @@ NOTE: Thanks to ZKRollup's predecessors such as zkSync, Aztec, etc, and ZK Layer
 - [Anomix-assets-transfer-withdrawal-journey](./pic/Anomix-assets-transfer-withdrawal-journey.png)
 
 ## Client Circuits
-- Both 'Account Circuit' and 'Funding Operation Circuit' are in fact merged into One circuit. But split them here for clear explanation.
+- **Both 'Account Circuit' and 'Funding Operation Circuit' are in fact merged into One circuit. But split them here for clear explanation.**
 - Account Circuit
   - [Account Creation](./account_circuit_creation.md)
   - [Account Registration](./account_circuit_registration.md)

@@ -9,7 +9,7 @@ import { L2Tx } from '@anomix/dao'
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
-import L2TxDTOSchema from '@anomix/types'
+import { L2TxDTOSchema } from '@anomix/types'
 
 import { RequestHandler, L2TxDTO } from '@anomix/types'
 
@@ -57,8 +57,8 @@ const schema = {
     },
     response: {
         200: {
-            "type": L2TxDTOSchema.type,
-            "properties": L2TxDTOSchema.properties,
+            "type": (L2TxDTOSchema as any).type,
+            "properties": (L2TxDTOSchema as any).properties,
         }
     }
 }

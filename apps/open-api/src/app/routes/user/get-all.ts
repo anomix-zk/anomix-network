@@ -3,7 +3,7 @@ import { getConnection } from 'typeorm';
 
 import { RequestHandler } from '@anomix/types'
 import { User } from '@anomix/dao';
-import { PaginationParams, UserDTO } from '../../../types';
+import { PaginationParams, UserDTO } from '@anomix/types';
 
 export const getAll: FastifyPlugin = async function (
     instance,

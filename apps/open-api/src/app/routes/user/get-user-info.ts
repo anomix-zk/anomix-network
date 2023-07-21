@@ -4,7 +4,7 @@ import { getConnection } from 'typeorm';
 
 import { RequestHandler } from '@anomix/types'
 import { User } from '@anomix/dao';
-import { UserDTO, UserRequestGetInfoParams } from '../../../types';
+import { UserDTO, UserRequestGetInfoParams } from '@anomix/types';
 
 export const getUserInfo: FastifyPlugin = async function (
     instance,

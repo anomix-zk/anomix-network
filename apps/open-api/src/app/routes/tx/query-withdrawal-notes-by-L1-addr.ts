@@ -3,10 +3,8 @@ import { L2Tx } from '@anomix/dao'
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
-import L2TxDTOSchema from '@anomix/types'
-
-import { RequestHandler, L2TxDTO } from '@anomix/types'
-// import { ActionType } from "@anomix/circuits"; TODO why cannot import
+import { RequestHandler, L2TxDTO, L2TxDTOSchema } from '@anomix/types'
+import { ActionType } from "@anomix/circuits";
 
 /**
 * 提现场景中，提供L1Addr来查询相关的所有pending value notes
@@ -39,7 +37,7 @@ export const handler: RequestHandler<null, WithdrawNotesReqParam> = async functi
 
     const txRepository = getConnection().getRepository(L2Tx)
     try {
-        const txList = await txRepository.find({ where: { action_type: '2', public_owner: l1addr } });// TODO replace 2 by ActionType.WITHDRAW
+        const txList = await txRepository.find({ where: { action_type: ActionType.WITHDRAW, public_owner: l1addr } });// TODO replace 2 by ActionType.WITHDRAW
         return (txList ?? []) as L2TxDTO[];
 
     } catch (err) {
@@ -60,8 +58,8 @@ const schema = {
     },
     response: {
         200: {
-            "type": L2TxDTOSchema.type,
-            "properties": L2TxDTOSchema.properties,
+            "type": (L2TxDTOSchema as any).type,
+            "properties": (L2TxDTOSchema as any).properties,
         }
     }
 }

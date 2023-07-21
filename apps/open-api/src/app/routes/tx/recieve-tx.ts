@@ -5,6 +5,7 @@ import { FastifyPlugin } from "fastify";
 import httpCodes from "@inip/http-codes";
 import { L2Tx } from '@anomix/dao'
 import L2TxDTOSchema from '@anomix/types';
+import { BaseSiblingPath } from "@anomix/merkle-tree";
 
 /**
 * 供client发送L2 tx
@@ -47,9 +48,9 @@ export const handler: RequestHandler<L2TxDTO, null> = async function (req, res):
 const schema = {
     tags: ["L2Tx"],
     body: {
-        "type": L2TxDTOSchema.type,
-        "properties": L2TxDTOSchema.properties,
-        "required": L2TxDTOSchema.required
+        "type": (L2TxDTOSchema as any).type,
+        "properties": (L2TxDTOSchema as any).properties,
+        "required": (L2TxDTOSchema as any).required
     },
     response: {
         200: {
