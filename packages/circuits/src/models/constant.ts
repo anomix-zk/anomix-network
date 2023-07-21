@@ -1,47 +1,65 @@
-import { UInt32 } from "snarkyjs";
+import { Field } from 'snarkyjs';
+
+export const DUMMY_FIELD = Field(0);
+
+const FIELD_ONE = Field(1);
+const FIELD_TWO = Field(2);
 
 export class AccountRequired {
-    static get REQUIRED(): UInt32 {
-        return UInt32.one;
-    }
-    static get NOTREQUIRED(): UInt32 {
-        return UInt32.zero;
-    }
+  static get REQUIRED(): Field {
+    return FIELD_ONE;
+  }
+  static get NOTREQUIRED(): Field {
+    return FIELD_TWO;
+  }
 }
 
 export class NoteType {
-    static get NORMAL(): UInt32 {
-        return UInt32.zero;
-    }
-    static get WITHDRAWAL(): UInt32 {
-        return UInt32.one;
-    }
+  static get NORMAL(): Field {
+    return DUMMY_FIELD;
+  }
+  static get WITHDRAWAL(): Field {
+    return FIELD_ONE;
+  }
 }
 
 /**
  * asset_id = 0, 1 ... 19, 20
  */
 export class AssetId {
-    static get MINA(): UInt32 {
-        return UInt32.zero;
-    }
+  static get MINA(): Field {
+    return FIELD_ONE;
+  }
 }
 
 export class ActionType {
-    static get DEPOSIT(): UInt32 {
-        return new UInt32(0);
-    }
-    static get TRANSFER(): UInt32 {
-        return new UInt32(1);
-    }
-    static get WITHDRAW(): UInt32 {
-        return new UInt32(2);
-    }
-    static get ACCOUNT(): UInt32 {
-        return new UInt32(3);
-    }
-    static get PADDING(): UInt32 {
-        return new UInt32(4);
-    }
+  static get DUMMY(): Field {
+    return DUMMY_FIELD;
+  }
+  static get DEPOSIT(): Field {
+    return FIELD_ONE;
+  }
+  static get SEND(): Field {
+    return FIELD_TWO;
+  }
+  static get WITHDRAW(): Field {
+    return Field(3);
+  }
+  static get ACCOUNT(): Field {
+    return Field(4);
+  }
 }
 
+export class AccountOperationType {
+  static get CREATE(): Field {
+    return FIELD_ONE;
+  }
+
+  static get MIGRATE(): Field {
+    return FIELD_TWO;
+  }
+
+  static get UPDATE(): Field {
+    return Field(3);
+  }
+}

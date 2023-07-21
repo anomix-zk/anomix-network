@@ -18,6 +18,8 @@
     }
   },
   "scripts": {
+    "ok": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/ok.js",
+    "demo": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/demo.js",
     "lib:dev": "concurrently \"tsc --build tsconfig.json --watch\" \"tsc-alias -w\" \"tsc --build tsconfig.es.json --watch\" \"tsc-alias -w -p tsconfig.es.json\"",
     "lib:build": "concurrently \"tsc --build tsconfig.json\" \"tsc-alias\" \"tsc --build tsconfig.es.json\" \"tsc-alias -p tsconfig.es.json\"",
     "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
@@ -52,5 +54,8 @@
   },
   "peerDependencies": {
     "snarkyjs": "0.12.*"
+  },
+  "dependencies": {
+    "@anomix/merkle-tree": "^0.1.0"
   }
 }
