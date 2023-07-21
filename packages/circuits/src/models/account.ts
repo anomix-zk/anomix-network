@@ -1,10 +1,7 @@
 import { Field, Poseidon, PublicKey, Struct } from 'snarkyjs';
-import { CommitmentNullifier } from './commitment_nullifier';
+import { Commitment } from './commitment';
 
-export class Alias
-  extends Struct({ value: Field })
-  implements CommitmentNullifier
-{
+export class Alias extends Struct({ value: Field }) implements Commitment {
   commitment(): Field {
     throw new Error('Method not implemented.');
   }
@@ -22,7 +19,7 @@ export class AccountViewKey
   extends Struct({
     value: PublicKey,
   })
-  implements CommitmentNullifier
+  implements Commitment
 {
   commitment(): Field {
     throw new Error('Method not implemented.');
@@ -48,7 +45,7 @@ export class AliasViewKey
     alias: Alias,
     accountViewKey: AccountViewKey,
   })
-  implements CommitmentNullifier
+  implements Commitment
 {
   commitment(): Field {
     throw new Error('Method not implemented.');
@@ -67,26 +64,26 @@ export class AliasViewKey
 }
 
 export class AccountNote
-  extends Struct({ aliasHash: Field, acctPk: PublicKey, spendingPk: PublicKey })
-  implements CommitmentNullifier
+  extends Struct({ aliasHash: Field, acctPk: PublicKey, signingPk: PublicKey })
+  implements Commitment
 {
   commitment(): Field {
     return Poseidon.hash([
       this.aliasHash,
       ...this.acctPk.toFields(),
-      ...this.spendingPk.toFields(),
+      ...this.signingPk.toFields(),
     ]);
   }
 
-  nullify(): Field {
-    throw new Error('Method not implemented.');
-  }
+  // nullify(): Field {
+  //   throw new Error('Method not implemented.');
+  // }
 
   static zero(): AccountNote {
     return new AccountNote({
       aliasHash: Field(0),
       acctPk: PublicKey.empty(),
-      spendingPk: PublicKey.empty(),
+      signingPk: PublicKey.empty(),
     });
   }
 }

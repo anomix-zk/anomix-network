@@ -62,7 +62,7 @@ const encodeTreeValue = (leafData: LeafData) => {
 
 const hashEncodedTreeValue = (leaf: LeafData, hasher: Hasher) => {
   return hasher.compressInputs(
-    [leaf.value, leaf.nextIndex, leaf.nextValue].map((val) => Field(val))
+    [leaf.value, leaf.nextValue, leaf.nextIndex].map((val) => Field(val))
   );
 };
 

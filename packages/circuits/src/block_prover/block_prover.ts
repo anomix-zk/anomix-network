@@ -1,0 +1,79 @@
+import { InnerRollupProof } from '../inner_rollup/inner_rollup_prover';
+import { Experimental } from 'snarkyjs';
+import { BlockProveInput, BlockProveOutput } from './models';
+import { checkMembershipAndAssert } from '../utils/utils';
+import { DUMMY_FIELD } from '../models/constant';
+import { RollupState, RollupStateTransition } from '../rollup_contract/models';
+
+export { BlockProver, RollupProof };
+
+let BlockProver = Experimental.ZkProgram({
+  publicOutput: BlockProveOutput,
+
+  methods: {
+    prove: {
+      privateInputs: [BlockProveInput, InnerRollupProof],
+      method(input: BlockProveInput, rollupProof: InnerRollupProof) {
+        rollupProof.verify();
+
+        const rollupOutput = rollupProof.publicOutput;
+
+        input.depositRoot.assertEquals(
+          rollupOutput.depositRoot,
+          'depositRoot should match'
+        );
+
+        input.txFeeReceiver
+          .isEmpty()
+          .assertFalse('txFeeReceiver should not be empty');
+
+        input.oldDataRootsRoot.assertEquals(
+          rollupOutput.dataRootsRoot,
+          'dataRootsRoot should match'
+        );
+
+        // check index and witness of old data roots root
+        checkMembershipAndAssert(
+          DUMMY_FIELD,
+          input.rootStartIndex,
+          input.oldRootWitness,
+          input.oldDataRootsRoot,
+          'rootStartIndex and oldRootWitness should illegal'
+        );
+
+        // use index and witness to update data roots root
+        const newDataRootsRoot = input.oldRootWitness.calculateRoot(
+          rollupOutput.newDataRoot,
+          input.rootStartIndex
+        );
+
+        let output = new BlockProveOutput({
+          blockId: DUMMY_FIELD,
+          stateTransition: new RollupStateTransition({
+            source: new RollupState({
+              dataRoot: rollupOutput.oldDataRoot,
+              nullRoot: rollupOutput.oldNullRoot,
+              dataRootsRoot: input.oldDataRootsRoot,
+              depositStartIndex: rollupOutput.oldDepositStartIndex,
+            }),
+            target: new RollupState({
+              dataRoot: rollupOutput.newDataRoot,
+              nullRoot: rollupOutput.newNullRoot,
+              dataRootsRoot: newDataRootsRoot,
+              depositStartIndex: rollupOutput.newDepositStartIndex,
+            }),
+          }),
+          depositRoot: rollupOutput.depositRoot,
+          totalTxFees: rollupOutput.totalTxFees,
+          txFeeReceiver: input.txFeeReceiver,
+        });
+        const blockId = output.generateBlockId();
+        output.blockId = blockId;
+
+        return output;
+      },
+    },
+  },
+});
+
+class RollupProof extends Experimental.ZkProgram.Proof(BlockProver) {}

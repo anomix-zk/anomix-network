@@ -1,75 +1,99 @@
-import { Field, Poseidon, PublicKey, Struct, UInt32, UInt64 } from 'snarkyjs';
-import { CommitmentNullifier } from './commitment_nullifier';
-import { AccountRequired, AssetId, NoteType } from './constant';
+import {
+  Encryption,
+  Field,
+  Group,
+  Poseidon,
+  PrivateKey,
+  Provable,
+  PublicKey,
+  Struct,
+  UInt64,
+} from 'snarkyjs';
+import { Commitment } from './commitment';
+import { NoteType } from './constant';
 
 export class ValueNote
-    extends Struct({
-        secret: Field,
-        owner_pubkey: PublicKey,
-        account_required: UInt32,
-        creator_pubkey: PublicKey,
-        value: UInt64,
-        asset_id: UInt32,
-        input_nullifier: Field,
-        note_type: UInt32,
-    })
-    implements CommitmentNullifier {
-    commitment(): Field {
-        return Poseidon.hash([
-            this.secret,
-            ...this.owner_pubkey.toFields(),
-            ...this.account_required.toFields(),
-            ...this.creator_pubkey.toFields(),
-            ...this.value.toFields(),
-            ...this.asset_id.toFields(),
-            this.input_nullifier,
-            ...this.note_type.toFields(),
-        ]);
-    }
+  extends Struct({
+    secret: Field,
+    ownerPk: PublicKey,
+    accountRequired: Field,
+    creatorPk: PublicKey,
+    value: UInt64,
+    assetId: Field,
+    inputNullifier: Field,
+    noteType: Field,
+  })
+  implements Commitment
+{
+  commitment(): Field {
+    return Poseidon.hash([
+      this.secret,
+      ...this.ownerPk.toFields(),
+      this.accountRequired,
+      ...this.creatorPk.toFields(),
+      ...this.value.toFields(),
+      this.assetId,
+      this.inputNullifier,
+      this.noteType,
+    ]);
+  }
 
-    nullify(): Field {
-        return Poseidon.hash([
-            this.commitment(), //!!TODO 是否需要优化?如加入AccountViewing_PrivateKey增强随机性
-            this.secret,
-            ...this.owner_pubkey.toFields(),
-            ...this.account_required.toFields(),
-            ...this.creator_pubkey.toFields(),
-            ...this.value.toFields(),
-            ...this.asset_id.toFields(),
-            this.input_nullifier,
-            ...this.note_type.toFields(),
-        ]);
-    }
+  // nullify(accountPrivateKey: PrivateKey): Field {
+  //   return Poseidon.hash([
+  //     this.commitment(), //!!TODO 是否需要优化?如加入AccountViewing_PrivateKey增强随机性
+  //     this.secret,
+  //     ...this.ownerPk.toFields(),
+  //     ...this.accountRequired.toFields(),
+  //     ...this.creatorPk.toFields(),
+  //     ...this.value.toFields(),
+  //     ...this.assetId.toFields(),
+  //     this.inputNullifier,
+  //     ...this.noteType.toFields(),
+  //   ]);
+  // }
 
-    /**
-     *
-     * @param asset_id
-     * @param account_required
-     */
-    static zero(
-        asset_id: UInt32,
-        account_required: UInt32,
-        secret: Field = Field.random()
-    ): ValueNote {
-        return new ValueNote({
-            secret,
-            owner_pubkey: PublicKey.empty(),
-            account_required,
-            creator_pubkey: PublicKey.empty(),
-            value: UInt64.zero,
-            asset_id,
-            input_nullifier: Field(0),
-            note_type: NoteType.NORMAL,
-        });
-    }
+  encrypt(): EncryptedValueNote {
+    let newFields = ValueNote.toFields(this).slice();
+
+    const cipherText = Encryption.encrypt(newFields, this.ownerPk);
+    return new EncryptedValueNote({
+      pubkey: cipherText.publicKey,
+      cipherText: cipherText.cipherText,
+    });
+  }
+  /**
+   *
+   * @param asset_id
+   * @param account_required
+   */
+  static zero(): ValueNote {
+    return new ValueNote({
+      secret: Field(0),
+      ownerPk: PublicKey.empty(),
+      accountRequired: Field(0),
+      creatorPk: PublicKey.empty(),
+      value: UInt64.zero,
+      assetId: Field(0),
+      inputNullifier: Field(0),
+      noteType: NoteType.NORMAL,
+    });
+  }
 }
 
-export const MINA_ACCTREQ_ZERO_VALUE_NOTE = ValueNote.zero(
-    AssetId.MINA,
-    AccountRequired.REQUIRED
-);
+const CIPHER_TEXT_LENGTH = ValueNote.sizeInFields() + 1;
 
-export const MINA_NOTACCTREQ_ZERO_VALUE_NOTE = ValueNote.zero(
-    AssetId.MINA,
-    AccountRequired.NOTREQUIRED
-);
+export class EncryptedValueNote extends Struct({
+  pubkey: Group,
+  cipherText: Provable.Array(Field, CIPHER_TEXT_LENGTH),
+}) {
+  decrypt(ownerPrivateKey: PrivateKey): ValueNote {
+    let newCipherText: Field[] = this.cipherText.slice();
+
+    const decryptedFields = Encryption.decrypt(
+      { publicKey: this.pubkey, cipherText: newCipherText },
+      ownerPrivateKey
+    );
+
+    return ValueNote.fromFields(decryptedFields) as ValueNote;
+  }
+}
