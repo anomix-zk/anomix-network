@@ -9,7 +9,7 @@ import {
   NoteType,
 } from '../models/constant';
 import {
-  calculateNullifier,
+  calculateNoteNullifier,
   checkMembership,
   checkMembershipAndAssert,
 } from '../utils/utils';
@@ -289,7 +289,7 @@ let JoinSplitProver = Experimental.ZkProgram({
           'InputNote2 commitment check membership failed or inputNote2 value is not 0'
         );
 
-        const nullifier1 = calculateNullifier(
+        const nullifier1 = calculateNoteNullifier(
           inputNote1Commitment,
           sendInput.accountPrivateKey,
           inputNote1InUse
@@ -297,7 +297,7 @@ let JoinSplitProver = Experimental.ZkProgram({
         const nullifier2 = Provable.if(
           inputNote2InUse,
           Field,
-          calculateNullifier(
+          calculateNoteNullifier(
             inputNote2Commitment,
             sendInput.accountPrivateKey,
             inputNote2InUse

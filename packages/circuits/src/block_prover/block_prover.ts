@@ -48,17 +48,18 @@ let BlockProver = Experimental.ZkProgram({
         );
 
         let output = new BlockProveOutput({
-          blockId: DUMMY_FIELD,
+          blockHash: DUMMY_FIELD,
+          rollupSize: rollupOutput.rollupSize,
           stateTransition: new RollupStateTransition({
             source: new RollupState({
               dataRoot: rollupOutput.oldDataRoot,
-              nullRoot: rollupOutput.oldNullRoot,
+              nullifierRoot: rollupOutput.oldNullRoot,
               dataRootsRoot: input.oldDataRootsRoot,
               depositStartIndex: rollupOutput.oldDepositStartIndex,
             }),
             target: new RollupState({
               dataRoot: rollupOutput.newDataRoot,
-              nullRoot: rollupOutput.newNullRoot,
+              nullifierRoot: rollupOutput.newNullRoot,
               dataRootsRoot: newDataRootsRoot,
               depositStartIndex: rollupOutput.newDepositStartIndex,
             }),
@@ -67,8 +68,8 @@ let BlockProver = Experimental.ZkProgram({
           totalTxFees: rollupOutput.totalTxFees,
           txFeeReceiver: input.txFeeReceiver,
         });
-        const blockId = output.generateBlockId();
-        output.blockId = blockId;
+        const blockHash = output.generateBlockHash();
+        output.blockHash = blockHash;
 
         return output;
       },

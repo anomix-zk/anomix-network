@@ -5,7 +5,7 @@ import {
   ROOT_TREE_HEIGHT,
 } from '../constant';
 import { SiblingPath } from '@anomix/merkle-tree';
-import { Field, Poseidon, Struct } from 'snarkyjs';
+import { Field, Poseidon, Provable, Struct } from 'snarkyjs';
 import { DUMMY_FIELD } from './constant';
 
 export class DepositMerkleWitness extends SiblingPath(DEPOSIT_TREE_HEIGHT) {}
@@ -32,17 +32,22 @@ export class LeafData extends Struct({
   }
 
   commitment(): Field {
-    return Poseidon.hash([this.value, this.nextValue, this.nextIndex]);
+    return Provable.if(
+      Provable.equal(LeafData, this, LeafData.zero()),
+      Field,
+      DUMMY_FIELD,
+      Poseidon.hash([this.value, this.nextValue, this.nextIndex])
+    );
   }
 }
 
-export class LowLeafWitness extends Struct({
+export class LowLeafWitnessData extends Struct({
   leafData: LeafData,
   siblingPath: NullifierMerkleWitness,
   index: Field,
 }) {
-  static zero(zeroWitness: NullifierMerkleWitness): LowLeafWitness {
-    return new LowLeafWitness({
+  static zero(zeroWitness: NullifierMerkleWitness): LowLeafWitnessData {
+    return new LowLeafWitnessData({
       leafData: LeafData.zero(),
       siblingPath: zeroWitness,
       index: DUMMY_FIELD,

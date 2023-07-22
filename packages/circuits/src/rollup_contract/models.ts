@@ -2,14 +2,14 @@ import { Field, Struct } from 'snarkyjs';
 
 export class RollupState extends Struct({
   dataRoot: Field,
-  nullRoot: Field,
+  nullifierRoot: Field,
   dataRootsRoot: Field,
   depositStartIndex: Field,
 }) {
   toPretty(): any {
     return {
-      dataTreeRoot: this.dataRoot.toString(),
-      nullRoot: this.nullRoot.toString(),
+      dataRoot: this.dataRoot.toString(),
+      nullifierRoot: this.nullifierRoot.toString(),
       dataRootsRoot: this.dataRootsRoot.toString(),
       depositStartIndex: this.depositStartIndex.toString(),
     };
