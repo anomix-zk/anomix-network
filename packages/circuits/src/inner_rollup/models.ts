@@ -7,11 +7,15 @@ import {
   RootMerkleWitness,
 } from '../models/merkle_witness';
 import { Field, Poseidon, Provable, Struct, UInt64 } from 'snarkyjs';
+import { Commitment } from '../models/commitment';
 
-export class TxFee extends Struct({
-  assetId: Field,
-  fee: UInt64,
-}) {
+export class TxFee
+  extends Struct({
+    assetId: Field,
+    fee: UInt64,
+  })
+  implements Commitment
+{
   static zero(): TxFee {
     return new TxFee({
       assetId: DUMMY_FIELD,
