@@ -12,7 +12,7 @@ export * from "./profile/profile"
 export * from "./bill"
 export * from "./message"
 
-export { Account } from './account'
-export { InnerRollupEntity } from './inner_rollup'
-export { L2Tx } from './l2_tx'
-export { OuterRollupEntity } from './outer_rollup'
+export * from './account'
+export * from './inner_rollup'
+export * from './l2_tx'
+export * from './outer_rollup'
