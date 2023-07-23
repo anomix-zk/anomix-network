@@ -11,8 +11,6 @@ Tips: As talked within [merkle_tree_storage.md](./merkle_tree_storage.md#switch-
 OuterRollupEntity {
   OuterRollupId: hash of the entity, also the L2 Block ID
 
-  innerRollupIds[聚合的个数], // TODO ?? 需要保留，为了让任何人按序重建merkle tree
-
   `root_tree root0`, //当前 root_tree root
   `root_tree root1`, // 聚合 n个InnerRollupEntity (n >= 1)后的root_tree root
 
