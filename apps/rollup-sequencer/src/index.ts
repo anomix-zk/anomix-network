@@ -1,10 +1,7 @@
 import { FastifyCore } from './app'
-import { initORM } from './lib/orm'
 
 const server = async () => {
     // init leveldb
-
-    await initORM()
     const app = new FastifyCore()
     await app.listen()
 
