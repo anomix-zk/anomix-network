@@ -16,6 +16,8 @@
     "@typescript-eslint"
   ],
   "rules": {
-    "no-mixed-spaces-and-tabs": "off"
+    "no-mixed-spaces-and-tabs": "off",
+    "no-unused-vars": "off",
+    "prefer-const": "off"
   }
 }
