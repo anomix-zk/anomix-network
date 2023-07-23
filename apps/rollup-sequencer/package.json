@@ -9,6 +9,7 @@
     "@anomix/types": "0.1.0",
     "@anomix/dao": "0.1.0",
     "@anomix/merkle-tree": "0.1.0",
+    "@anomix/utils": "0.1.0",
     "@inip/http-codes": "^2.0.0",
     "@types/ws": "^8.5.3",
     "ajv-formats": "^2.1.1",
