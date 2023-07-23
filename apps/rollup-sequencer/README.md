@@ -3,6 +3,6 @@
 - look for scripts in package.json
 
 ## The precedure of Version1(Current) and Version2(Future)
-<img src="../../docs/pic/how-sequencer-work-V1-current-V2-future.png" />
+<img src="../../docs/pic/how-sequencer-work-V1-old-V2-current.png" />
 
 
