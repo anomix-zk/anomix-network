@@ -3,3 +3,7 @@ node_modules
 dist
 db
 coverage
+
+
+package-lock.json
+settings.json
