@@ -69,3 +69,6 @@ dist/
 dist_es/
 _dist/
 apps/server/config.yaml
+
+package-lock.json
+settings.json
