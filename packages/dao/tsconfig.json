@@ -13,6 +13,7 @@
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
+    "moduleResolution": "Node",
     "strictPropertyInitialization": false,
     "declaration": true,
     "paths": {
