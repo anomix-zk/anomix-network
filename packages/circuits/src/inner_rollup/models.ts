@@ -1,4 +1,4 @@
-import { ROLLUP_TX_BATCH_SIZE } from '../constant';
+import { FEE_ASSET_ID_SUPPORT_NUM } from '../constant';
 import { DUMMY_FIELD } from '../models/constant';
 import {
   DataMerkleWitness,
@@ -41,8 +41,9 @@ export class InnerRollupOutput extends Struct({
   oldNullRoot: Field,
   newNullRoot: Field,
   dataRootsRoot: Field,
-  totalTxFees: Provable.Array(TxFee, ROLLUP_TX_BATCH_SIZE),
+  totalTxFees: Provable.Array(TxFee, FEE_ASSET_ID_SUPPORT_NUM),
   depositRoot: Field,
+  depositCount: Field,
   oldDepositStartIndex: Field,
   newDepositStartIndex: Field,
 }) {
@@ -56,6 +57,7 @@ export class InnerRollupOutput extends Struct({
       this.dataRootsRoot,
       ...this.totalTxFees.map((txFee) => txFee.commitment()),
       this.depositRoot,
+      this.depositCount,
       this.oldDepositStartIndex,
       this.newDepositStartIndex,
     ]);
@@ -68,6 +70,7 @@ export class InnerRollupInput extends Struct({
   //oldDataWitnesses: Provable.Array(DataMerkleWitness, ROLLUP_TX_BATCH_SIZE),
   tx1OldDataWitness1: DataMerkleWitness,
   tx1OldDataWitness2: DataMerkleWitness,
+
   tx2OldDataWitness1: DataMerkleWitness,
   tx2OldDataWitness2: DataMerkleWitness,
   nullStartIndex: Field,

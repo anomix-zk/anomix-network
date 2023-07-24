@@ -1,4 +1,4 @@
-import { ROLLUP_TX_BATCH_SIZE } from '../constant';
+import { FEE_ASSET_ID_SUPPORT_NUM } from '../constant';
 import {
   Bool,
   Empty,
@@ -55,7 +55,7 @@ let InnerRollupProver = Experimental.ZkProgram({
         const tx1OldNullWitness2 = input.tx1OldNullWitness2;
         const tx2OldNullWitness1 = input.tx2OldNullWitness1;
         const tx2OldNullWitness2 = input.tx2OldNullWitness2;
-        const totalTxFees: TxFee[] = Array(ROLLUP_TX_BATCH_SIZE).fill(
+        const totalTxFees: TxFee[] = Array(FEE_ASSET_ID_SUPPORT_NUM).fill(
           TxFee.zero()
         );
         totalTxFees[0].assetId = AssetId.MINA;
@@ -69,8 +69,10 @@ let InnerRollupProver = Experimental.ZkProgram({
         let currentDataIndex = dataStartIndex;
         let currentNullRoot = oldNullRoot;
         let currentNullIndex = nullStartIndex;
-
         let currentDepositStartIndex = input.oldDepositStartIndex;
+        let currentDepositCount = Field(0);
+
+        depositRoot.assertNotEquals(DUMMY_FIELD, 'Deposit root is illegal');
         let firstDepositIndex = DUMMY_FIELD;
         Provable.if(
           tx1IsDeposit.and(tx2IsDeposit),
@@ -106,6 +108,7 @@ let InnerRollupProver = Experimental.ZkProgram({
           currentDepositStartIndex: currentDepositStartIndex1,
           currentRollupSize: currentRollupSize1,
           txFee: txFee1,
+          currentDepositCount: currentDepositCount1,
         } = processTx({
           txProof: txProof1,
           depositRoot,
@@ -124,6 +127,7 @@ let InnerRollupProver = Experimental.ZkProgram({
           oldNullWitness1: tx1OldNullWitness1,
           oldNullWitness2: tx1OldNullWitness2,
           currentRollupSize,
+          currentDepositCount,
         });
 
         // process tx2
@@ -135,6 +139,7 @@ let InnerRollupProver = Experimental.ZkProgram({
           currentDepositStartIndex: currentDepositStartIndex2,
           currentRollupSize: currentRollupSize2,
           txFee: txFee2,
+          currentDepositCount: currentDepositCount2,
         } = processTx({
           txProof: txProof2,
           depositRoot,
@@ -153,6 +158,7 @@ let InnerRollupProver = Experimental.ZkProgram({
           oldNullWitness1: tx2OldNullWitness1,
           oldNullWitness2: tx2OldNullWitness2,
           currentRollupSize: currentRollupSize1,
+          currentDepositCount: currentDepositCount1,
         });
 
         totalTxFees[0] = txFee2;
@@ -167,6 +173,7 @@ let InnerRollupProver = Experimental.ZkProgram({
           dataRootsRoot: dataRootsRoot,
           totalTxFees: totalTxFees,
           depositRoot: depositRoot,
+          depositCount: currentDepositCount2,
           oldDepositStartIndex: input.oldDepositStartIndex,
           newDepositStartIndex: currentDepositStartIndex2,
         });
@@ -227,6 +234,7 @@ let InnerRollupProver = Experimental.ZkProgram({
           dataRootsRoot: p1Output.dataRootsRoot,
           totalTxFees: totalTxFees,
           depositRoot: p1Output.depositRoot,
+          depositCount: p1Output.depositCount.add(p2Output.depositCount),
           oldDepositStartIndex: p1Output.oldDepositStartIndex,
           newDepositStartIndex: p2Output.newDepositStartIndex,
         });
@@ -260,6 +268,7 @@ function processTx({
   oldNullWitness1,
   oldNullWitness2,
   currentRollupSize,
+  currentDepositCount,
 }: {
   txProof: JoinSplitProof;
   depositRoot: Field;
@@ -278,6 +287,7 @@ function processTx({
   oldNullWitness1: NullifierMerkleWitness;
   oldNullWitness2: NullifierMerkleWitness;
   currentRollupSize: Field;
+  currentDepositCount: Field;
 }): {
   currentDataRoot: Field;
   currentDataIndex: Field;
@@ -286,6 +296,7 @@ function processTx({
   currentDepositStartIndex: Field;
   currentRollupSize: Field;
   txFee: TxFee;
+  currentDepositCount: Field;
 } {
   txProof.verify();
   const txOutput = txProof.publicOutput;
@@ -311,10 +322,11 @@ function processTx({
   );
   txFee.fee.add(txOutput.txFee);
 
-  currentDepositStartIndex = Provable.if(
+  const [depositStartIndex, depositCount] = Provable.if(
     txIsDeposit,
-    currentDepositStartIndex.add(1),
-    currentDepositStartIndex
+    Provable.Array(Field, 2),
+    [currentDepositStartIndex.add(1), currentDepositCount.add(1)],
+    [currentDepositStartIndex, currentDepositCount]
   );
 
   // check tx data root validity
@@ -445,8 +457,9 @@ function processTx({
     currentDataIndex,
     currentNullRoot,
     currentNullIndex,
-    currentDepositStartIndex,
+    currentDepositStartIndex: depositStartIndex,
     currentRollupSize,
     txFee,
+    currentDepositCount: depositCount,
   };
 }

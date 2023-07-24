@@ -123,6 +123,21 @@ let JoinSplitProver = Experimental.ZkProgram({
         const outputNote1 = sendInput.outputNote1;
         const outputNote2 = sendInput.outputNote2;
 
+        outputNote1.accountRequired
+          .greaterThanOrEqual(0)
+          .assertTrue('Invalid outputNote1 accountRequired');
+        outputNote1.accountRequired
+          .lessThan(3)
+          .assertTrue('Invalid outputNote1 accountRequired');
+        outputNote2.accountRequired
+          .greaterThanOrEqual(0)
+          .assertTrue('Invalid outputNote2 accountRequired');
+        outputNote2.accountRequired
+          .lessThan(3)
+          .assertTrue('Invalid outputNote2 accountRequired');
+
+        // TODO no check account membership
+
         inputNote1.noteType.assertEquals(NoteType.NORMAL);
         inputNote2.noteType.assertEquals(NoteType.NORMAL);
 

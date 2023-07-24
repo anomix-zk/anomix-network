@@ -11,6 +11,7 @@ import {
   Struct,
   UInt64,
 } from 'snarkyjs';
+import { ActionType, DUMMY_FIELD } from '../models/constant';
 
 export class JoinSplitOutput extends Struct({
   actionType: Field,
@@ -31,19 +32,19 @@ export class JoinSplitOutput extends Struct({
 }) {
   static zero(): JoinSplitOutput {
     return new JoinSplitOutput({
-      actionType: Field(0),
-      outputNoteCommitment1: Field(0),
-      outputNoteCommitment2: Field(0),
-      nullifier1: Field(0),
-      nullifier2: Field(0),
+      actionType: ActionType.DUMMY,
+      outputNoteCommitment1: DUMMY_FIELD,
+      outputNoteCommitment2: DUMMY_FIELD,
+      nullifier1: DUMMY_FIELD,
+      nullifier2: DUMMY_FIELD,
       publicValue: UInt64.zero,
       publicOwner: PublicKey.empty(),
-      publicAssetId: Field(0),
-      dataRoot: Field(0),
+      publicAssetId: DUMMY_FIELD,
+      dataRoot: DUMMY_FIELD,
       txFee: UInt64.zero,
-      txFeeAssetId: Field(0),
-      depositRoot: Field(0),
-      depositIndex: Field(0),
+      txFeeAssetId: DUMMY_FIELD,
+      depositRoot: DUMMY_FIELD,
+      depositIndex: DUMMY_FIELD,
     });
   }
 }
@@ -53,6 +54,7 @@ export class JoinSplitDepositInput extends Struct({
   publicOwner: PublicKey,
   publicAssetId: Field,
   dataRoot: Field,
+  // DpositRoot can not be empty
   depositRoot: Field,
   //handledDepositIndex: Field,
   depositNoteCommitment: Field,
@@ -64,6 +66,7 @@ export class JoinSplitDepositInput extends Struct({
 export class JoinSplitSendInput extends Struct({
   actionType: Field,
   assetId: Field,
+  // 1 or 2
   inputNotesNum: Field,
   inputNote1Index: Field,
   inputNote2Index: Field,

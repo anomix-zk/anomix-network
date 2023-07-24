@@ -25,7 +25,7 @@ export class ValueNote
   })
   implements Commitment
 {
-  commitment(): Field {
+  public commitment(): Field {
     return Poseidon.hash([
       this.secret,
       ...this.ownerPk.toFields(),
@@ -52,7 +52,7 @@ export class ValueNote
   //   ]);
   // }
 
-  encrypt(): EncryptedValueNote {
+  public encrypt(): EncryptedValueNote {
     let newFields = ValueNote.toFields(this).slice();
 
     const cipherText = Encryption.encrypt(newFields, this.ownerPk);
@@ -66,7 +66,7 @@ export class ValueNote
    * @param asset_id
    * @param account_required
    */
-  static zero(): ValueNote {
+  public static zero(): ValueNote {
     return new ValueNote({
       secret: Field(0),
       ownerPk: PublicKey.empty(),
@@ -86,7 +86,7 @@ export class EncryptedValueNote extends Struct({
   pubkey: Group,
   cipherText: Provable.Array(Field, CIPHER_TEXT_LENGTH),
 }) {
-  decrypt(ownerPrivateKey: PrivateKey): ValueNote {
+  public decrypt(ownerPrivateKey: PrivateKey): ValueNote {
     let newCipherText: Field[] = this.cipherText.slice();
 
     const decryptedFields = Encryption.decrypt(
@@ -97,3 +97,38 @@ export class EncryptedValueNote extends Struct({
     return ValueNote.fromFields(decryptedFields) as ValueNote;
   }
 }
+
+export class ReceiverEncryptedInfo extends Struct({
+  value: Provable.Array(Field, 2),
+}) {
+  public static generate(
+    receiverPubKey: PublicKey,
+    senderPubKeyBigInt: bigint,
+    noteCommitmentBigInt: bigint
+  ): ReceiverEncryptedInfo {
+    const secret = senderPubKeyBigInt | noteCommitmentBigInt;
+    const receiverPubKeyFields = receiverPubKey.toFields();
+    const encryptedField0 = receiverPubKeyFields[0].toBigInt() ^ secret;
+
+    return new ReceiverEncryptedInfo({
+      value: [Field(encryptedField0), receiverPubKeyFields[1]],
+    });
+  }
+
+  public exportReceiverPublicKey(
+    senderPubKeyBigInt: bigint,
+    noteCommitmentBigInt: bigint
+  ): PublicKey {
+    const secret = senderPubKeyBigInt | noteCommitmentBigInt;
+    const originField0 = this.value[0].toBigInt() ^ secret;
+
+    return PublicKey.fromFields([Field(originField0), this.value[1]]);
+  }
+}
+
+export class EncryptedNote extends Struct({
+  noteCommitment: Field,
+  publicKey: PublicKey,
+  cipherText: Provable.Array(Field, CIPHER_TEXT_LENGTH),
+  reciverEncryptedInfo: ReceiverEncryptedInfo,
+}) {}

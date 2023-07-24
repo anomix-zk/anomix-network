@@ -21,7 +21,7 @@ let DepositRollupProver = Experimental.ZkProgram({
       privateInputs: [DepositRollupState, DepositActionBatch],
 
       method(state: DepositRollupState, actionBatch: DepositActionBatch) {
-        let currDepositTreeRoot = state.depositTreeRoot;
+        let currDepositTreeRoot = state.depositRoot;
         let currHandledActionsNum = state.handledActionsNum;
         let currActionsHash = state.currentActionsHash;
 
@@ -66,7 +66,7 @@ let DepositRollupProver = Experimental.ZkProgram({
         return new DepositRollupStateTransition({
           source: state,
           target: new DepositRollupState({
-            depositTreeRoot: currDepositTreeRoot,
+            depositRoot: currDepositTreeRoot,
             handledActionsNum: currHandledActionsNum,
             currentActionsHash: currActionsHash,
           }),

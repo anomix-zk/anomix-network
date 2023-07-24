@@ -1,5 +1,5 @@
 import { BaseSiblingPath } from '@anomix/merkle-tree';
-import { Bool, Field, Poseidon, PrivateKey } from 'snarkyjs';
+import { Bool, Field, Poseidon, PrivateKey, PublicKey } from 'snarkyjs';
 
 export function checkMembership(
   leaf: Field,
@@ -31,4 +31,26 @@ export function calculateNoteNullifier(
     Poseidon.hash(priKey.toFields()),
     isRealNote.toField(),
   ]);
+}
+
+export function genNewKeyPairForNote(
+  privateKeyBigInt: bigint,
+  noteCommitmentBigInt: bigint
+): { privateKey: PrivateKey; publicKey: PublicKey } {
+  const newKeyBigInt = privateKeyBigInt & noteCommitmentBigInt;
+  const newPriKey = PrivateKey.fromBigInt(newKeyBigInt);
+  const newPubKey = newPriKey.toPublicKey();
+
+  return { privateKey: newPriKey, publicKey: newPubKey };
+}
+
+export function calculatePublicKeyBigInt(publicKey: PublicKey): bigint {
+  return publicKey.toFields()[0].toBigInt();
+}
+
+export function calculateShareSecret(
+  priKey: PrivateKey,
+  otherPubKey: PublicKey
+): Field {
+  return Poseidon.hash(otherPubKey.toGroup().scale(priKey.s).toFields());
 }

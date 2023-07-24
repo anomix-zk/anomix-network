@@ -30,6 +30,11 @@ export class AnomixEntryContract extends SmartContract {
     super.deploy(args);
   }
 
+  @method getDepositRoot(): Field {
+    const depositState = this.depositState.getAndAssertEquals();
+    return depositState.depositRoot;
+  }
+
   @method deposit(payer: PublicKey, note: ValueNote) {
     let payerAccUpdate = AccountUpdate.createSigned(payer);
     payerAccUpdate.balance.subInPlace(note.value);

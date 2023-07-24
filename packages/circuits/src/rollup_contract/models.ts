@@ -1,4 +1,7 @@
-import { Field, Struct } from 'snarkyjs';
+import { Field, Provable, PublicKey, Struct } from 'snarkyjs';
+import { BlockProveOutput } from '../block_prover/models';
+import { FEE_ASSET_ID_SUPPORT_NUM } from '../constant';
+import { TxFee } from '../inner_rollup/models';
 
 export class RollupState extends Struct({
   dataRoot: Field,
@@ -27,3 +30,8 @@ export class RollupStateTransition extends Struct({
     };
   }
 }
+
+export class RollupBlockEvent extends Struct({
+  blockNumber: Field,
+  // blockInfo: BlockProveOutput,
+}) {}

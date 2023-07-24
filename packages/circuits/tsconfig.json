@@ -1,11 +1,8 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "module": "commonjs",
-    "lib": [
-      "dom",
-      "esnext"
-    ],
+    "module": "es2022",
+    "lib": ["dom", "esnext"],
     "outDir": "./dist",
     "rootDir": ".",
     "strict": true,
@@ -20,16 +17,7 @@
     "declaration": true,
     "sourceMap": true,
     "noFallthroughCasesInSwitch": true,
-    "allowSyntheticDefaultImports": true,
-    "noImplicitAny": false,
-    "resolveJsonModule": true,
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    }
+    "allowSyntheticDefaultImports": true
   },
-  "include": [
-    "./src"
-  ]
+  "include": ["./src"]
 }

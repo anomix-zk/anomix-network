@@ -1,6 +1,6 @@
 import { Field, Poseidon, Provable, PublicKey, Struct } from 'snarkyjs';
 import { TxFee } from '../inner_rollup/models';
-import { ROLLUP_TX_BATCH_SIZE } from '../constant';
+import { FEE_ASSET_ID_SUPPORT_NUM } from '../constant';
 import { RootMerkleWitness } from '../models/merkle_witness';
 import { RollupStateTransition } from '../rollup_contract/models';
 
@@ -9,13 +9,15 @@ export class BlockProveOutput extends Struct({
   rollupSize: Field,
   stateTransition: RollupStateTransition,
   depositRoot: Field,
-  totalTxFees: Provable.Array(TxFee, ROLLUP_TX_BATCH_SIZE),
+  depositCount: Field,
+  totalTxFees: Provable.Array(TxFee, FEE_ASSET_ID_SUPPORT_NUM),
   txFeeReceiver: PublicKey,
 }) {
   public generateBlockHash(): Field {
     return Poseidon.hash([
       ...RollupStateTransition.toFields(this.stateTransition),
       this.depositRoot,
+      this.depositCount,
       ...this.totalTxFees.map((txFee) => txFee.commitment()),
       ...this.txFeeReceiver.toFields(),
     ]);

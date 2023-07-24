@@ -10,3 +10,7 @@ console.log('inner rollup analyze result: ', result2);
 
 let result3 = BlockProver.analyzeMethods();
 console.log('block prover analyze result: ', result3);
+
+console.time('inner compile');
+InnerRollupProver.compile();
+console.timeEnd('inner compile');

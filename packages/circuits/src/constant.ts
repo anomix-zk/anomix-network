@@ -5,3 +5,4 @@ export const DATA_TREE_HEIGHT = TREE_HEIGHT;
 export const NULLIFIER_TREE_HEIGHT = TREE_HEIGHT;
 export const ROOT_TREE_HEIGHT = TREE_HEIGHT;
 export const ROLLUP_TX_BATCH_SIZE = 2;
+export const FEE_ASSET_ID_SUPPORT_NUM = 2;

@@ -10,19 +10,16 @@
     "mina-dapp",
     "zkapp"
   ],
+  "type": "module",
+  "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist_es/src/index.js",
-      "require": "./dist/src/index.js"
-    }
-  },
   "scripts": {
-    "ok": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/ok.js",
-    "demo": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./build/src/demo.js",
-    "lib:dev": "concurrently \"tsc --build tsconfig.json --watch\" \"tsc-alias -w\" \"tsc --build tsconfig.es.json --watch\" \"tsc-alias -w -p tsconfig.es.json\"",
-    "lib:build": "concurrently \"tsc --build tsconfig.json\" \"tsc-alias\" \"tsc --build tsconfig.es.json\" \"tsc-alias -p tsconfig.es.json\"",
-    "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
+    "enc": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/encrypt.js",
+    "ok": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/ok.js",
+    "demo": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/demo.js",
+    "lib:dev": "tsc --build tsconfig.json --watch",
+    "lib:build": "tsc --build tsconfig.json",
+    "lib:clean": "rimraf ./dist ./tsconfig.tsbuildinfo",
     "lib:lint": "eslint \"src/**/*.ts\" --fix",
     "build": "npm run lib:build",
     "buildw": "npm run lib:dev",

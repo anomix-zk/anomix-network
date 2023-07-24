@@ -65,6 +65,7 @@ let BlockProver = Experimental.ZkProgram({
             }),
           }),
           depositRoot: rollupOutput.depositRoot,
+          depositCount: rollupOutput.depositCount,
           totalTxFees: rollupOutput.totalTxFees,
           txFeeReceiver: input.txFeeReceiver,
         });

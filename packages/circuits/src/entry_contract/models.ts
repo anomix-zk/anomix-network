@@ -25,7 +25,7 @@ export class DepositActionBatch extends Struct({
 }
 
 export class DepositRollupState extends Struct({
-  depositTreeRoot: Field,
+  depositRoot: Field,
   handledActionsNum: Field,
   currentActionsHash: Field,
 }) {
@@ -35,7 +35,7 @@ export class DepositRollupState extends Struct({
 
   toPretty(): any {
     return {
-      depositTreeRoot: this.depositTreeRoot.toString(),
+      depositRoot: this.depositRoot.toString(),
       handledActionsNum: this.handledActionsNum.toString(),
       currentActionsHash: this.currentActionsHash.toString(),
     };
