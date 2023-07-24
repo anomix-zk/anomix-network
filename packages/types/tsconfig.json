@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es2017",
-    "module": "commonjs",
+    "target": "es2020",
+    "module": "es2022",
     "outDir": "./dist",
     "rootDir": ".",
     "experimentalDecorators": true,
@@ -15,7 +15,6 @@
     "resolveJsonModule": true,
     "strictPropertyInitialization": false,
     "declaration": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": [
         "./src/*"

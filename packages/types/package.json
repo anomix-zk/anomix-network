@@ -3,13 +3,8 @@
   "private": true,
   "description": "common types for Anomix-Network",
   "version": "0.1.0",
+  "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist_es/src/index.js",
-      "require": "./dist/src/index.js"
-    }
-  },
   "license": "MIT",
   "scripts": {
     "lib:dev": "npm run lib:build && concurrently \"tsc --build tsconfig.json --watch\" \"tsc-alias -w\" \"tsc --build tsconfig.es.json --watch\" \"tsc-alias -w -p tsconfig.es.json\"",

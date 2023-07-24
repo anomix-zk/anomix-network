@@ -2,13 +2,8 @@
   "name": "@anomix/utils",
   "private": true,
   "version": "0.1.0",
+  "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist_es/src/index.js",
-      "require": "./dist/src/index.js"
-    }
-  },
   "license": "MIT",
   "scripts": {
     "lib:dev": "concurrently \"tsc --build tsconfig.json --watch\" \"tsc --build tsconfig.es.json --watch\"",

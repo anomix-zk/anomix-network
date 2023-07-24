@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
+    "target": "es2020",
+    "module": "es2022",
     "outDir": "./dist",
-    "target": "es2017",
+    "rootDir": ".",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "module": "commonjs",
     "esModuleInterop": true,
     "noImplicitAny": false,
     "sourceMap": true,
@@ -14,10 +14,14 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "strictPropertyInitialization": false,
+    "declaration": true,
     "paths": {
       "@/*": [
         "./src/*"
       ]
     }
-  }
+  },
+  "include": [
+    "./src"
+  ]
 }

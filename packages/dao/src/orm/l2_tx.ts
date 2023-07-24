@@ -1,5 +1,5 @@
 import { PublicKey, Field, UInt32, UInt64, Poseidon } from 'snarkyjs';
-import { ActionType, AssetId } from "@anomix/circuits";
+import { ActionType, AssetId, JoinSplitOutput } from "@anomix/circuits";
 import {
     Column,
     CreateDateColumn,
@@ -9,7 +9,6 @@ import {
 } from 'typeorm'
 import { createHash } from 'crypto';
 
-let MINA_NOTACCTREQ_ZERO_VALUE_NOTE = {};
 
 export class TxStatus {
     static get FAILED(): number {
@@ -33,20 +32,21 @@ export class InnerRollupIdx {
 }
 
 export class CircuitL2Tx {
-    readonly action_type: Field
-    readonly input_note_nullifier_A: Field
-    readonly input_note_nullifier_B: Field
-    readonly output_note_commitment_C: Field
-    readonly output_note_commitment_D: Field
-    readonly public_value: UInt64
-    readonly public_owner: PublicKey
-    readonly asset_id: UInt32
-    readonly data_tree_root: Field
-    readonly nullifier_tree_root: Field
-    readonly tx_fee: UInt32
-    readonly proof: any// TODO need join-split circuit first
-    readonly secret: Field
-    readonly creator_pubkey: PublicKey
+    actionType: Field
+    outputNoteCommitment1: Field
+    outputNoteCommitment2: Field
+    nullifier1: Field
+    nullifier2: Field
+    publicValue: UInt64
+    publicOwner: PublicKey
+    publicAssetId: Field
+    dataRoot: Field
+    txFee: UInt64
+    txFeeAssetId: Field
+    // deposit
+    depositRoot: Field
+    depositIndex: Field
+    //handledDepositIndex: Field
 
     static zero() {
         return {} as CircuitL2Tx;
@@ -64,44 +64,50 @@ export class L2Tx {
     id: number
 
     @Column()
-    action_type: string
+    actionType: string
 
     @Column()
-    input_note_nullifier_A: string
+    nullifier1: string
     @Column()
-    nullifier_idx_A: string
+    nullifier1_idx: string
 
     @Column()
-    input_note_nullifier_B: string
+    nullifier2: string
     @Column()
-    nullifier_idx_B: string
+    nullifier2_idx: string
 
     @Column()
-    output_note_commitment_C: string
+    outputNoteCommitment1: string
     @Column()
-    commitment_idx_C: string
+    outputNoteCommitment1_idx: string
 
     @Column()
-    output_note_commitment_D: string
+    outputNoteCommitment2: string
     @Column()
-    commitment_idx_D: string
+    outputNoteCommitment2_idx: string
 
     @Column()
-    public_value: string
+    publicValue: string
     @Column()
-    public_owner: string
+    publicOwner: string
     @Column()
-    asset_id: string
+    publicAssetId: string
 
     @Column()
-    data_tree_root: string
+    dataRoot: string
     @Column()
-    nullifier_tree_root: string
+    depositRoot: string
+    @Column()
+    depositIndex: string
 
     @Column()
-    tx_fee: string
+    txFee: string
+    @Column()
+    txFeeAssetId: string
+
     @Column()
     proof: string
+
     @Column()
     secret: string
     @Column()
@@ -141,39 +147,24 @@ export class L2Tx {
         return new CircuitL2Tx();
     }
 
-    static circuit2primitive(
-        circuitL2tx: {
-            action_type: Field,
-            input_note_nullifier_A: Field,
-            input_note_nullifier_B: Field,
-            output_note_commitment_C: Field,
-            output_note_commitment_D: Field,
-            public_value: UInt64,
-            public_owner: PublicKey,
-            asset_id: Field,
-            data_tree_root: Field,
-            nullifier_tree_root: Field,
-            tx_fee: UInt32,
-            proof: string,
-            secret: Field,
-            creator_pubkey: PublicKey
-        }
+    static fromCircuitType(
+        joinSplitOutput: JoinSplitOutput
     ) {
         const tx = new L2Tx();
-        tx.action_type = circuitL2tx.action_type.toString();
-        tx.input_note_nullifier_A = circuitL2tx.input_note_nullifier_A.toString();
-        tx.input_note_nullifier_B = circuitL2tx.input_note_nullifier_B.toString();
-        tx.output_note_commitment_C = circuitL2tx.output_note_commitment_C.toString();
-        tx.output_note_commitment_D = circuitL2tx.output_note_commitment_D.toString();
-        tx.public_value = circuitL2tx.public_value.toString();
-        tx.public_owner = circuitL2tx.public_owner.toBase58();
-        tx.asset_id = circuitL2tx.asset_id.toString();
-        tx.data_tree_root = circuitL2tx.data_tree_root.toString();
-        tx.nullifier_tree_root = circuitL2tx.nullifier_tree_root.toString();
-        tx.tx_fee = circuitL2tx.tx_fee.toString();
-        tx.secret = circuitL2tx.secret.toString();
-        tx.creator_pubkey = circuitL2tx.creator_pubkey.toBase58();
-        tx.proof = circuitL2tx.proof;
+        tx.actionType = joinSplitOutput.actionType.toString();
+        tx.nullifier1 = joinSplitOutput.nullifier1.toString();
+        tx.nullifier2 = joinSplitOutput.nullifier2.toString();
+        tx.outputNoteCommitment1 = joinSplitOutput.outputNoteCommitment1.toString();
+        tx.outputNoteCommitment2 = joinSplitOutput.outputNoteCommitment2.toString();
+        tx.publicValue = joinSplitOutput.publicValue.toString();
+        tx.publicOwner = joinSplitOutput.publicOwner.toBase58();
+        tx.publicAssetId = joinSplitOutput.publicAssetId.toString();
+        tx.dataRoot = joinSplitOutput.dataRoot.toString();
+        tx.txFee = joinSplitOutput.txFee.toString();
+        tx.txFeeAssetId = joinSplitOutput.txFeeAssetId.toString();
+        tx.secret = joinSplitOutput.secret.toString();
+        tx.creator_pubkey = joinSplitOutput.creator_pubkey.toBase58();
+        tx.proof = joinSplitOutput.proof;
     }
 
     /**
@@ -182,41 +173,26 @@ export class L2Tx {
     @Column()
     get txId(): string {
         return Poseidon.hash([
-            ...new UInt32(this.action_type).toFields(),
-            Field(this.input_note_nullifier_A),
-            Field(this.input_note_nullifier_B),
-            Field(this.output_note_commitment_C),
-            Field(this.output_note_commitment_D),
-            ...new UInt64(this.public_value).toFields(),
-            ...PublicKey.fromBase58(this.public_owner).toFields(),
-            ...new UInt32(this.asset_id).toFields(),
-            Field(this.data_tree_root),
-            Field(this.nullifier_tree_root),
-            ...new UInt32(this.tx_fee).toFields(),
+            ...new UInt32(this.actionType).toFields(),
+            Field(this.nullifier1),
+            Field(this.nullifier2),
+            Field(this.outputNoteCommitment1),
+            Field(this.outputNoteCommitment2),
+            ...new UInt64(this.publicValue).toFields(),
+            ...PublicKey.fromBase58(this.publicOwner).toFields(),
+            ...new UInt32(this.publicAssetId).toFields(),
+            Field(this.dataRoot),
+            Field(this.depositRoot),
+            ...new UInt32(this.txFee).toFields(),
             ...PublicKey.fromBase58(this.creator_pubkey).toFields(),
             Field(this.secret),
             Field(createHash('sha256').update(this.proof).digest('hex'))
         ]).toString();
     }
 
-    static zeroL2Tx(data_tree_root: Field, nullifier_tree_root: Field) {
-        return L2Tx.circuit2primitive(
-            {
-                action_type: ActionType.DUMMY,
-                input_note_nullifier_A: (MINA_NOTACCTREQ_ZERO_VALUE_NOTE as any).nullify(),
-                input_note_nullifier_B: (MINA_NOTACCTREQ_ZERO_VALUE_NOTE as any).nullify(),
-                output_note_commitment_C: (MINA_NOTACCTREQ_ZERO_VALUE_NOTE as any).commitment(),
-                output_note_commitment_D: (MINA_NOTACCTREQ_ZERO_VALUE_NOTE as any).commitment(),
-                public_value: UInt64.zero,
-                public_owner: PublicKey.empty(),
-                asset_id: AssetId.MINA,
-                data_tree_root,
-                nullifier_tree_root,
-                tx_fee: UInt32.zero,
-                proof: '',// TODO proof, joint-split? emptyProof?
-                secret: Field(0),
-                creator_pubkey: PublicKey.empty()
-            }
+    static zeroL2Tx() {
+        return L2Tx.fromCircuitType(
+            JoinSplitOutput.zero()
         );
     }
 }

@@ -1,15 +1,27 @@
 {
-  "extends": "../../tsconfig.base.json",
-
   "compilerOptions": {
-    "baseUrl": "./",
+    "target": "es2020",
+    "module": "es2022",
     "outDir": "./dist",
-    "rootDir": "./src",
-    "composite": true
+    "rootDir": ".",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "esModuleInterop": true,
+    "noImplicitAny": false,
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "strictPropertyInitialization": false,
+    "declaration": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
   },
-
   "include": [
-    "./src/**/*.ts", 
-    "./src/**/*.js"
+    "./src"
   ]
 }
