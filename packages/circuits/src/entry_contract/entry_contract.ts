@@ -17,7 +17,7 @@ import { ValueNote } from '../models/value_note';
 
 export class AnomixEntryContract extends SmartContract {
   @state(DepositRollupState) depositState = State<DepositRollupState>();
-  @state(PublicKey) layer2ContractAddress = State<PublicKey>();
+  @state(PublicKey) rollupContractAddress = State<PublicKey>();
   @state(PublicKey) sequencerAddress = State<PublicKey>();
 
   reducer = Reducer({ actionType: Field });
@@ -36,9 +36,9 @@ export class AnomixEntryContract extends SmartContract {
   }
 
   @method deposit(payer: PublicKey, note: ValueNote) {
+    let rollupContractAddress = this.rollupContractAddress.getAndAssertEquals();
     let payerAccUpdate = AccountUpdate.createSigned(payer);
-    payerAccUpdate.balance.subInPlace(note.value);
-    this.balance.addInPlace(note.value);
+    payerAccUpdate.send({ to: rollupContractAddress, amount: note.value });
 
     note.assetId.assertEquals(AssetId.MINA, 'assetId is not MINA');
     note.noteType.assertEquals(NoteType.NORMAL, 'noteType is not NORMAL');
@@ -59,14 +59,13 @@ export class AnomixEntryContract extends SmartContract {
     this.reducer.dispatch(noteCommitment);
   }
 
-  @method depositRollup(proof: DepositRollupProof) {
+  @method updateDepositState(proof: DepositRollupProof) {
     proof.verify();
-
-    let state = this.depositState.getAndAssertEquals();
 
     this.account.actionState.assertEquals(
       proof.publicOutput.target.currentActionsHash
     );
+    let state = this.depositState.getAndAssertEquals();
     proof.publicOutput.source.assertEquals(state);
     this.depositState.set(proof.publicOutput.target);
     Provable.log('deposit-circuit-rollup success');
