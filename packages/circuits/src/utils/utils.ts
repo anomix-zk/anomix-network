@@ -21,7 +21,7 @@ export function checkMembershipAndAssert(
   checkMembership(leaf, leafIndex, witness, root).assertTrue(msg);
 }
 
-export function calculateNullifier(
+export function calculateNoteNullifier(
   commitment: Field,
   priKey: PrivateKey,
   isRealNote: Bool

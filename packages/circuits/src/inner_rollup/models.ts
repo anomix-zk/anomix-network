@@ -2,16 +2,20 @@ import { ROLLUP_TX_BATCH_SIZE } from '../constant';
 import { DUMMY_FIELD } from '../models/constant';
 import {
   DataMerkleWitness,
-  LowLeafWitness,
+  LowLeafWitnessData,
   NullifierMerkleWitness,
   RootMerkleWitness,
 } from '../models/merkle_witness';
 import { Field, Poseidon, Provable, Struct, UInt64 } from 'snarkyjs';
+import { Commitment } from '../models/commitment';
 
-export class TxFee extends Struct({
-  assetId: Field,
-  fee: UInt64,
-}) {
+export class TxFee
+  extends Struct({
+    assetId: Field,
+    fee: UInt64,
+  })
+  implements Commitment
+{
   static zero(): TxFee {
     return new TxFee({
       assetId: DUMMY_FIELD,
@@ -59,7 +63,6 @@ export class InnerRollupOutput extends Struct({
 }
 
 export class InnerRollupInput extends Struct({
-  rollupSize: Field,
   dataStartIndex: Field,
   oldDataRoot: Field,
   //oldDataWitnesses: Provable.Array(DataMerkleWitness, ROLLUP_TX_BATCH_SIZE),
@@ -70,10 +73,10 @@ export class InnerRollupInput extends Struct({
   nullStartIndex: Field,
   oldNullRoot: Field,
   //lowLeafWitnesses: Provable.Array(LowLeafWitness, ROLLUP_TX_BATCH_SIZE),
-  tx1LowLeafWitness1: LowLeafWitness,
-  tx1LowLeafWitness2: LowLeafWitness,
-  tx2LowLeafWitness1: LowLeafWitness,
-  tx2LowLeafWitness2: LowLeafWitness,
+  tx1LowLeafWitness1: LowLeafWitnessData,
+  tx1LowLeafWitness2: LowLeafWitnessData,
+  tx2LowLeafWitness1: LowLeafWitnessData,
+  tx2LowLeafWitness2: LowLeafWitnessData,
   // oldNullWitnesses: Provable.Array(
   //   NullifierMerkleWitness,
   //   ROLLUP_TX_BATCH_SIZE

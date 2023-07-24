@@ -18,7 +18,7 @@ import { ActionType, AssetId, DUMMY_FIELD } from '../models/constant';
 import { checkMembershipAndAssert } from '../utils/utils';
 import {
   DataMerkleWitness,
-  LowLeafWitness,
+  LowLeafWitnessData,
   NullifierMerkleWitness,
 } from '../models/merkle_witness';
 
@@ -96,6 +96,7 @@ let InnerRollupProver = Experimental.ZkProgram({
           'First deposit index should be equal to current deposit start index'
         );
 
+        let currentRollupSize = Field(0);
         // process tx1
         let {
           currentDataRoot: currentDataRoot1,
@@ -103,6 +104,7 @@ let InnerRollupProver = Experimental.ZkProgram({
           currentNullRoot: currentNullRoot1,
           currentNullIndex: currentNullIndex1,
           currentDepositStartIndex: currentDepositStartIndex1,
+          currentRollupSize: currentRollupSize1,
           txFee: txFee1,
         } = processTx({
           txProof: txProof1,
@@ -121,15 +123,17 @@ let InnerRollupProver = Experimental.ZkProgram({
           currentNullIndex,
           oldNullWitness1: tx1OldNullWitness1,
           oldNullWitness2: tx1OldNullWitness2,
+          currentRollupSize,
         });
 
         // process tx2
         let {
           currentDataRoot: currentDataRoot2,
-          currentDataIndex: currentDataIndex2,
+          // currentDataIndex: currentDataIndex2,
           currentNullRoot: currentNullRoot2,
-          currentNullIndex: currentNullIndex2,
+          // currentNullIndex: currentNullIndex2,
           currentDepositStartIndex: currentDepositStartIndex2,
+          currentRollupSize: currentRollupSize2,
           txFee: txFee2,
         } = processTx({
           txProof: txProof2,
@@ -148,13 +152,14 @@ let InnerRollupProver = Experimental.ZkProgram({
           currentNullIndex: currentNullIndex1,
           oldNullWitness1: tx2OldNullWitness1,
           oldNullWitness2: tx2OldNullWitness2,
+          currentRollupSize: currentRollupSize1,
         });
 
         totalTxFees[0] = txFee2;
 
         let output = new InnerRollupOutput({
           rollupId: DUMMY_FIELD,
-          rollupSize: Field(ROLLUP_TX_BATCH_SIZE),
+          rollupSize: currentRollupSize2,
           oldDataRoot: oldDataRoot,
           newDataRoot: currentDataRoot2,
           oldNullRoot: oldNullRoot,
@@ -184,10 +189,6 @@ let InnerRollupProver = Experimental.ZkProgram({
         const p1Output = p1.publicOutput;
         const p2Output = p2.publicOutput;
 
-        p1Output.rollupSize.assertEquals(
-          p2Output.rollupSize,
-          'Rollup size unequal'
-        );
         p1Output.newDataRoot.assertEquals(
           p2Output.oldDataRoot,
           'p1 new data root unequal p2 old data root'
@@ -214,9 +215,11 @@ let InnerRollupProver = Experimental.ZkProgram({
           p2Output.totalTxFees[0].fee
         );
 
+        let newRollupSize = p1Output.rollupSize.add(p2Output.rollupSize);
+
         let newOutput = new InnerRollupOutput({
           rollupId: DUMMY_FIELD,
-          rollupSize: p1Output.rollupSize,
+          rollupSize: newRollupSize,
           oldDataRoot: p1Output.oldDataRoot,
           newDataRoot: p2Output.newDataRoot,
           oldNullRoot: p1Output.oldNullRoot,
@@ -256,6 +259,7 @@ function processTx({
   currentNullIndex,
   oldNullWitness1,
   oldNullWitness2,
+  currentRollupSize,
 }: {
   txProof: JoinSplitProof;
   depositRoot: Field;
@@ -267,18 +271,20 @@ function processTx({
   currentDataIndex: Field;
   oldDataWitness1: DataMerkleWitness;
   oldDataWitness2: DataMerkleWitness;
-  lowLeafWitness1: LowLeafWitness;
-  lowLeafWitness2: LowLeafWitness;
+  lowLeafWitness1: LowLeafWitnessData;
+  lowLeafWitness2: LowLeafWitnessData;
   currentNullRoot: Field;
   currentNullIndex: Field;
   oldNullWitness1: NullifierMerkleWitness;
   oldNullWitness2: NullifierMerkleWitness;
+  currentRollupSize: Field;
 }): {
   currentDataRoot: Field;
   currentDataIndex: Field;
   currentNullRoot: Field;
   currentNullIndex: Field;
   currentDepositStartIndex: Field;
+  currentRollupSize: Field;
   txFee: TxFee;
 } {
   txProof.verify();
@@ -288,6 +294,12 @@ function processTx({
   const nullifier1 = txOutput.nullifier1;
   const nullifier2 = txOutput.nullifier2;
   const txIsDeposit = txOutput.actionType.equals(ActionType.DEPOSIT);
+
+  currentRollupSize = Provable.if(
+    txOutput.actionType.equals(ActionType.DUMMY),
+    currentRollupSize,
+    currentRollupSize.add(1)
+  );
 
   Provable.if(
     txIsDeposit,
@@ -434,6 +446,7 @@ function processTx({
     currentNullRoot,
     currentNullIndex,
     currentDepositStartIndex,
+    currentRollupSize,
     txFee,
   };
 }
