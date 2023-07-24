@@ -152,15 +152,21 @@ let JoinSplitProver = Experimental.ZkProgram({
           outputNote2.assetId.equals(sendInput.assetId)
         ).assertTrue('Invalid outputNote2 assetId');
 
-        const [checkNoteType, checkPublicValue, checkPublicOwner] = Provable.if(
+        const [
+          checkNoteType,
+          checkPublicValue,
+          checkPublicOwner,
+          checkCreatorPk,
+        ] = Provable.if(
           actionTypeIsWithdraw,
-          Provable.Array(Bool, 3),
+          Provable.Array(Bool, 4),
           [
             outputNote1.noteType
               .equals(NoteType.WITHDRAWAL)
               .and(outputNote2.noteType.equals(NoteType.NORMAL)),
             publicValue.greaterThan(UInt64.zero),
             isPublicOwnerEmpty.not(),
+            outputNote1.creatorPk.isEmpty(),
           ],
           [
             outputNote1.noteType
@@ -168,11 +174,15 @@ let JoinSplitProver = Experimental.ZkProgram({
               .and(outputNote2.noteType.equals(NoteType.NORMAL)),
             publicValue.equals(UInt64.zero),
             isPublicOwnerEmpty,
+            Bool(true),
           ]
         );
         checkNoteType.assertTrue('Invalid outputNote noteType');
         checkPublicValue.assertTrue('Invalid publicValue');
         checkPublicOwner.assertTrue('Invalid publicOwner');
+        checkCreatorPk.assertTrue(
+          'The CreatorPk of outputNote1 must be empty when actiontype is withdraw'
+        );
 
         const maxIndex = 2 ** DATA_TREE_HEIGHT;
         sendInput.inputNote1Index.assertLessThan(

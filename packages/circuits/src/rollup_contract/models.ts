@@ -33,5 +33,12 @@ export class RollupStateTransition extends Struct({
 
 export class RollupBlockEvent extends Struct({
   blockNumber: Field,
+  blockHash: Field,
+  rollupSize: Field,
+  stateTransition: RollupStateTransition,
+  depositRoot: Field,
+  depositCount: Field,
+  totalTxFees: Provable.Array(TxFee, FEE_ASSET_ID_SUPPORT_NUM),
+  txFeeReceiver: PublicKey,
   // blockInfo: BlockProveOutput,
 }) {}

@@ -21,9 +21,9 @@ export class AnomixRollupContract extends SmartContract {
   @state(Field) escapeSlots = State<Field>();
   @state(PublicKey) sequencerAddress = State<PublicKey>();
 
-  // events = {
-  //   blockEvent: RollupBlockEvent,
-  // };
+  events = {
+    blockEvent: RollupBlockEvent,
+  };
 
   deploy(args: DeployArgs) {
     super.deploy(args);
@@ -58,13 +58,19 @@ export class AnomixRollupContract extends SmartContract {
 
     let currentBlockNumber = this.blockNumber.getAndAssertEquals();
     this.blockNumber.set(currentBlockNumber.add(1));
-    // this.emitEvent(
-    //   'blockEvent',
-    //   new RollupBlockEvent({
-    //     blockNumber: currentBlockNumber,
-    //     blockInfo: proof.publicOutput,
-    //   })
-    // );
+    this.emitEvent(
+      'blockEvent',
+      new RollupBlockEvent({
+        blockNumber: currentBlockNumber,
+        blockHash: output.blockHash,
+        rollupSize: output.rollupSize,
+        stateTransition: output.stateTransition,
+        depositRoot: output.depositRoot,
+        depositCount: output.depositCount,
+        totalTxFees: output.totalTxFees,
+        txFeeReceiver: output.txFeeReceiver,
+      })
+    );
     Provable.log('anomix rollup success');
   }
 }
