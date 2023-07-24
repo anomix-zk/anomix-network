@@ -3,6 +3,7 @@
   "private": true,
   "description": "orm for Anomix-Network",
   "version": "0.1.0",
+  "type": "module",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "license": "MIT",
