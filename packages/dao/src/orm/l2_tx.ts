@@ -1,5 +1,5 @@
 import { PublicKey, Field, UInt32, UInt64, Poseidon } from 'snarkyjs';
-import { MINA_NOTACCTREQ_ZERO_VALUE_NOTE, ActionType, AssetId } from "@anomix/circuits";
+import { ActionType, AssetId } from "@anomix/circuits";
 import {
     Column,
     CreateDateColumn,
@@ -8,6 +8,8 @@ import {
     UpdateDateColumn
 } from 'typeorm'
 import { createHash } from 'crypto';
+
+let MINA_NOTACCTREQ_ZERO_VALUE_NOTE = {};
 
 export class TxStatus {
     static get FAILED(): number {
@@ -31,7 +33,7 @@ export class InnerRollupIdx {
 }
 
 export class CircuitL2Tx {
-    readonly action_type: UInt32
+    readonly action_type: Field
     readonly input_note_nullifier_A: Field
     readonly input_note_nullifier_B: Field
     readonly output_note_commitment_C: Field
@@ -141,14 +143,14 @@ export class L2Tx {
 
     static circuit2primitive(
         circuitL2tx: {
-            action_type: UInt32,
+            action_type: Field,
             input_note_nullifier_A: Field,
             input_note_nullifier_B: Field,
             output_note_commitment_C: Field,
             output_note_commitment_D: Field,
             public_value: UInt64,
             public_owner: PublicKey,
-            asset_id: UInt32,
+            asset_id: Field,
             data_tree_root: Field,
             nullifier_tree_root: Field,
             tx_fee: UInt32,
@@ -200,11 +202,11 @@ export class L2Tx {
     static zeroL2Tx(data_tree_root: Field, nullifier_tree_root: Field) {
         return L2Tx.circuit2primitive(
             {
-                action_type: ActionType.PADDING,
-                input_note_nullifier_A: MINA_NOTACCTREQ_ZERO_VALUE_NOTE.nullify(),
-                input_note_nullifier_B: MINA_NOTACCTREQ_ZERO_VALUE_NOTE.nullify(),
-                output_note_commitment_C: MINA_NOTACCTREQ_ZERO_VALUE_NOTE.commitment(),
-                output_note_commitment_D: MINA_NOTACCTREQ_ZERO_VALUE_NOTE.commitment(),
+                action_type: ActionType.DUMMY,
+                input_note_nullifier_A: (MINA_NOTACCTREQ_ZERO_VALUE_NOTE as any).nullify(),
+                input_note_nullifier_B: (MINA_NOTACCTREQ_ZERO_VALUE_NOTE as any).nullify(),
+                output_note_commitment_C: (MINA_NOTACCTREQ_ZERO_VALUE_NOTE as any).commitment(),
+                output_note_commitment_D: (MINA_NOTACCTREQ_ZERO_VALUE_NOTE as any).commitment(),
                 public_value: UInt64.zero,
                 public_owner: PublicKey.empty(),
                 asset_id: AssetId.MINA,
