@@ -1,73 +1,79 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "properties": {
-        "action_type": {
-            "type": "string"
-        },
-        "asset_id": {
+        "actionType": {
             "type": "string"
         },
         "creator_pubkey": {
+            "description": "optional",
             "type": "string"
         },
-        "data_tree_root": {
+        "dataRoot": {
+            "type": "string"
+        },
+        "depositIndex": {
+            "type": "string"
+        },
+        "depositRoot": {
             "type": "string"
         },
         "encryptedData": {
             "type": "string"
         },
-        "input_note_nullifier_A": {
+        "nullifier1": {
             "type": "string"
         },
-        "input_note_nullifier_B": {
+        "nullifier2": {
             "type": "string"
         },
-        "nullifier_tree_root": {
+        "outputNoteCommitment1": {
             "type": "string"
         },
-        "output_note_commitment_C": {
-            "type": "string"
-        },
-        "output_note_commitment_D": {
+        "outputNoteCommitment2": {
             "type": "string"
         },
         "proof": {
+            "description": "string from proof.toJSON()",
             "type": "string"
         },
-        "public_owner": {
+        "publicAssetId": {
             "type": "string"
         },
-        "public_value": {
+        "publicOwner": {
+            "type": "string"
+        },
+        "publicValue": {
             "type": "string"
         },
         "secret": {
+            "description": "optional",
             "type": "string"
         },
-        "txId": {
-            "description": "txid from other fields",
+        "txFee": {
             "type": "string"
         },
-        "tx_fee": {
+        "txFeeAssetId": {
             "type": "string"
         }
     },
     "required": [
-        "action_type",
-        "asset_id",
+        "actionType",
         "creator_pubkey",
-        "data_tree_root",
+        "dataRoot",
+        "depositIndex",
+        "depositRoot",
         "encryptedData",
-        "input_note_nullifier_A",
-        "input_note_nullifier_B",
-        "nullifier_tree_root",
-        "output_note_commitment_C",
-        "output_note_commitment_D",
+        "nullifier1",
+        "nullifier2",
+        "outputNoteCommitment1",
+        "outputNoteCommitment2",
         "proof",
-        "public_owner",
-        "public_value",
+        "publicAssetId",
+        "publicOwner",
+        "publicValue",
         "secret",
-        "txId",
-        "tx_fee"
+        "txFee",
+        "txFeeAssetId"
     ],
     "type": "object"
 }

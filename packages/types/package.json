@@ -12,8 +12,5 @@
     "lib:build": "tsc --build tsconfig.json && tsc-alias",
     "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
     "lib:lint": "eslint \"src/**/*.ts\" --fix"
-  },
-  "dependencies": {
-    "fastify": "^3.27.2"
   }
 }
