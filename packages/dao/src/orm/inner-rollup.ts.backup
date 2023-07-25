@@ -1,4 +1,4 @@
-import { L2Tx } from './l2-tx-memorypool';
+import { MemPlL2Tx } from './l2-tx-memorypool';
 import {
     Column,
     CreateDateColumn,
@@ -72,7 +72,7 @@ export class InnerRollupOutputEntity {
     @Column({ default: InnerRollupStatus.PENDING })
     status: number
 
-    @OneToMany(() => L2Tx, (tx) => tx.innerRollupOutputEntityId)
+    @OneToMany(() => MemPlL2Tx, (tx) => tx.innerRollupOutputEntityId)
     txList: L2Tx[]
 
     @Column()
