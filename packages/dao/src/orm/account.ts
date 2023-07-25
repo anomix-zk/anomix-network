@@ -1,26 +1,19 @@
-import { PublicKey, Field, Poseidon } from 'snarkyjs';
 import {
     Column,
-    CreateDateColumn,
     Entity,
-    Index, OneToOne, PrimaryGeneratedColumn,
-    UpdateDateColumn,
-    VersionColumn,
-    BeforeInsert,
-    JoinColumn,
-    ManyToOne
+    PrimaryGeneratedColumn
 } from 'typeorm'
 
-@Entity('account')
+@Entity('tb_account')
 export class Account {
 
     @PrimaryGeneratedColumn("increment")
-    id!: number
+    id: number
 
     @Column()
-    aliasHash!: string
+    aliasHash: string
 
     @Column()
-    acctViewKey!: string
+    acctViewKey: string
 
 }

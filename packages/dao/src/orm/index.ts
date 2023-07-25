@@ -13,6 +13,9 @@ export * from "./bill"
 export * from "./message"
 
 export * from './account'
-export * from './inner_rollup'
-export * from './l2_tx'
-export * from './outer_rollup'
+export * from './block-prover-output'
+export * from './l2-tx'
+export * from './l2-tx-memorypool'
+export * from './withdraw-info'
+export * from './deposit-info'
+
