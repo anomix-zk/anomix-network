@@ -4,7 +4,8 @@ import { L2Tx } from '@anomix/dao'
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
-import { RequestHandler, L2TxDTO, L2TxDTOSchema } from '@anomix/types'
+import { L2TxDTO, L2TxDTOSchema } from '@anomix/types'
+import { RequestHandler } from '@/lib/types'
 
 /**
 * 根据alias_nullifier/account_viewing_key/valueNote_commitment/nullifier查询L2Tx

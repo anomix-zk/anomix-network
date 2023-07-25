@@ -8,9 +8,8 @@ import ws from "fastify-websocket"
 import { IncomingMessage, Server, ServerResponse } from 'http'
 
 import { requestSerializer, responseSerializer } from './serializers'
-import { adminGuard, authGuard, throwError } from './decorators'
+import { throwError } from './decorators'
 import { routes } from './routes'
-import { bearer } from './plugins'
 
 export class FastifyCore {
 
@@ -36,7 +35,7 @@ export class FastifyCore {
         this.server.register(ws)
 
         // Documentation
-        this.server.register(require("fastify-swagger"), {
+        this.server.register(import("fastify-swagger"), {
             routePrefix: "/doc",
             swagger: config.swagger,
             exposeRoute: true
@@ -47,8 +46,6 @@ export class FastifyCore {
 
         // Decorators
         this.server.decorateRequest("throwError", throwError)
-        this.server.decorate("authGuard", authGuard)
-        this.server.decorate("adminGuard", adminGuard)
 
         // Routes
         this.server.register(routes)

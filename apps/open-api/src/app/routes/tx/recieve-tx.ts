@@ -1,10 +1,9 @@
-import { RequestHandler } from '@anomix/types'
-import { L2TxDTO } from '@anomix/types'
+import { L2TxDTOSchema, L2TxDTO } from '@anomix/types'
 import { getConnection } from 'typeorm';
 import { FastifyPlugin } from "fastify";
 import httpCodes from "@inip/http-codes";
 import { L2Tx } from '@anomix/dao'
-import L2TxDTOSchema from '@anomix/types';
+import { RequestHandler } from '@/lib/types';
 import { BaseSiblingPath } from "@anomix/merkle-tree";
 
 /**

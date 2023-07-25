@@ -1,10 +1,8 @@
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
-
-import { RequestHandler } from '@anomix/types'
 import { User } from '@anomix/dao';
-import { UserDTO, UserRequestChangeUsernameBody } from '@anomix/types';
+import { RequestHandler, UserDTO, UserRequestChangeUsernameBody } from '@/lib/types';
 
 export const changeUsername: FastifyPlugin = async function (
     instance,

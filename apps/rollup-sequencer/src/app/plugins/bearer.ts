@@ -6,7 +6,7 @@ import fp from "fastify-plugin"
 
 import { validateToken } from '../../lib/jwt'
 import { User } from '@anomix/dao'
-import { UserDTO } from '@anomix/types';
+import { UserDTO } from '@/lib/types';
 
 const bearerPlugin: FastifyPlugin = async function (
     instance,

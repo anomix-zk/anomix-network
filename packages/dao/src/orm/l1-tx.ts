@@ -6,7 +6,7 @@ import {
     UpdateDateColumn
 } from 'typeorm'
 
-export class TxStatus {
+export class L1TxStatus {
     static get FAILED(): number {
         return -1;
     }
@@ -18,6 +18,9 @@ export class TxStatus {
     }
 }
 
+/**
+ * record all L1_Tx from sequencer, like deposit_tree maintainance, trigger rollup_contract, etc.
+ */
 @Entity("tb_l1_tx")
 export class L1Tx {
     @PrimaryGeneratedColumn("increment")

@@ -11,7 +11,9 @@ import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
 import { L2TxDTOSchema } from '@anomix/types'
 
-import { RequestHandler, L2TxDTO } from '@anomix/types'
+import { L2TxDTO } from '@anomix/types'
+import { RequestHandler } from '@/lib/types'
+
 
 export const queryByTxId: FastifyPlugin = async function (
     instance,

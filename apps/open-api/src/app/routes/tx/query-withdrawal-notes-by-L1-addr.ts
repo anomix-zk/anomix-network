@@ -3,8 +3,9 @@ import { L2Tx } from '@anomix/dao'
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
-import { RequestHandler, L2TxDTO, L2TxDTOSchema } from '@anomix/types'
+import { L2TxDTO, L2TxDTOSchema } from '@anomix/types'
 import { ActionType } from "@anomix/circuits";
+import { RequestHandler } from '@/lib/types'
 
 /**
 * 提现场景中，提供L1Addr来查询相关的所有pending value notes

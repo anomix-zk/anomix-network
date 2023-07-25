@@ -6,7 +6,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
 
-import { RequestHandler } from '@anomix/types'
+import { RequestHandler } from '@/lib/types'
 import { Account } from '@anomix/dao'
 
 export const queryAcctViewKeyByAlias: FastifyPlugin = async function (

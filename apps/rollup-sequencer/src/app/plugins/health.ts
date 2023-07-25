@@ -1,7 +1,7 @@
 import { FastifyPlugin } from "fastify"
 import { IncomingMessage, Server } from 'http';
 
-import { RequestHandler } from '@anomix/types';
+import { RequestHandler } from '@/lib/types';
 
 export const health: FastifyPlugin = async function (
     instance,
