@@ -4,7 +4,7 @@
 // GET /tx/id/:id
 
 
-import { L2Tx } from '@anomix/dao'
+import { L2Tx, MemPlL2Tx } from '@anomix/dao'
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
@@ -13,7 +13,6 @@ import { L2TxDTOSchema } from '@anomix/types'
 
 import { L2TxDTO } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
-
 
 export const queryByTxId: FastifyPlugin = async function (
     instance,
@@ -37,9 +36,15 @@ export const handler: RequestHandler<null, TxReqParam> = async function (
 ): Promise<L2TxDTO> {
     const { txId } = req.params
 
-    const txRepository = getConnection().getRepository(L2Tx)
     try {
-        const tx = await txRepository.findOne({ where: { txId } });
+        const mpL2TxRepository = getConnection().getRepository(MemPlL2Tx)
+        // first query memory pool
+        let tx: any = await mpL2TxRepository.findOne({ where: { txId } });
+        if (!tx) {
+            const txRepository = getConnection().getRepository(L2Tx)
+            // then query confirmed tx collection
+            tx = await txRepository.findOne({ where: { txId } });
+        }
         return (tx ?? {}) as L2TxDTO;
 
     } catch (err) {
@@ -59,8 +64,13 @@ const schema = {
     },
     response: {
         200: {
-            "type": (L2TxDTOSchema as any).type,
-            "properties": (L2TxDTOSchema as any).properties,
+            type: "object",
+            properties: {
+                data: {
+                    type: (L2TxDTOSchema as any).type,
+                    properties: (L2TxDTOSchema as any).properties,
+                }
+            }
         }
     }
 }

@@ -1,5 +1,9 @@
 import { FastifyPlugin } from "fastify"
 import { queryByTxId } from "./query-by-tx-id";
+import { queryTxByNoteHash } from "./query-tx-by-note-hashes";
+import { queryPendingTxs } from "./query-pending-txs";
+import { queryWithdrawalNotesByL1Addr } from "./query-withdrawal-notes-by-L1-addr";
+import { recieveTx } from "./recieve-tx";
 
 /**
  (5)供client查询encrypted data
@@ -21,5 +25,9 @@ export const tx: FastifyPlugin = async (
     options,
     done
 ): Promise<void> => {
-    instance.register(queryByTxId)
+    instance.register(queryByTxId);
+    instance.register(queryPendingTxs);
+    instance.register(queryTxByNoteHash);
+    instance.register(recieveTx);
+    instance.register(queryWithdrawalNotesByL1Addr);
 }
