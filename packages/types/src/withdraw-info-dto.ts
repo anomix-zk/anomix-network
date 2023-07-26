@@ -1,4 +1,4 @@
-export interface WithdrawInfoDTO {
+export interface WithdrawInfoDto {
     id: number;
     /**
      * hash of corresponding L2 tx

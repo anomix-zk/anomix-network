@@ -1,4 +1,4 @@
-export interface L2TxDTO {
+export interface L2TxRespDto {
     /**
      * @requires
      */
