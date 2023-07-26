@@ -1,10 +1,8 @@
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
-
-import { RequestHandler } from '@anomix/types'
 import { User } from '@anomix/dao';
-import { UserDTO, UserRequestGetInfoParams } from '@anomix/types';
+import { UserDTO, UserRequestGetInfoParams, RequestHandler } from '@/lib/types';
 
 export const getUserInfo: FastifyPlugin = async function (
     instance,

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "module": "es2022",
+    "module": "ESNext",
     "outDir": "./dist",
     "rootDir": ".",
     "experimentalDecorators": true,

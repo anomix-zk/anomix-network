@@ -1,8 +1,9 @@
 {
   "name": "@anomix/open-api",
   "version": "0.1.0",
-  "main": "dist/index",
-  "typings": "dist/index",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "license": "MIT",
   "dependencies": {
     "@anomix/circuits": "0.1.0",
@@ -27,12 +28,14 @@
   },
   "devDependencies": {},
   "scripts": {
-    "serve": "tsc && tsc-alias && node ./dist/index.js",
-    "build": "tsc --build tsconfig.json --watch && (concurrently \"tsc --build tsconfig.json -w\" \"tsc-alias -w\")",
+    "serve": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/index.js",
+    "build": "tsc --build tsconfig.json && tsc-alias",
+    "buildw": "tsc --build tsconfig.json --watch && (concurrently \"tsc --build tsconfig.json -w\" \"tsc-alias -w\")",
     "dev": "nodemon src/index.ts",
     "test": "jest",
     "test:watch": "jest --watchAll",
     "test:coverage": "jest --coverage",
-    "lint": "eslint \"src/**/*.ts\" --fix"
+    "lint": "eslint \"src/**/*.ts\" --fix",
+    "clean": "rimraf ./dist ./tsconfig.tsbuildinfo"
   }
 }

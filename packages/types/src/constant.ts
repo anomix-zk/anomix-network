@@ -10,4 +10,8 @@ export class Tree {
     static get ROOT_TREE(): string {
         return 'root_tree'
     }
+
+    static get USER_NULLIFIER_TREE(): string {
+        return 'user_nullifier_tree'
+    }
 }

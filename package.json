@@ -11,13 +11,13 @@
   ],
   "scripts": {
     "install": "npm run libs:build",
-    "libs:build": "npm run lib:build --workspaces --if-present",
+    "libs:build": "npm run lib:build -w @anomix/merkle-tree && npm run lib:build -w @anomix/circuits && npm run lib:build -w @anomix/dao && npm run lib:build -w @anomix/types && npm run lib:build -w @anomix/utils && npm run lib:build -w @anomix/sdk",
     "libs:dev": "concurrently \"npm run lib:dev -w @anomix/utils\" \"npm run lib:dev -w @anomix/shared\"",
     "server:dev": "npm run serve -w @anomix/open-api",
     "web:dev": "npm run serve -w @anomix/ano-cash-ui",
     "apps:dev": "concurrently \"npm run serve -w @anomix/ano-cash-ui\" \"npm run serve -w @anomix/open-api\"",
-    "build": "npm run lib:build --workspaces --if-present && npm run build --workspaces --if-present",
-    "clean": "rimraf ./_dist && npm run lib:clean --workspaces --if-present",
+    "build": "npm run libs:build && npm run build --workspaces --if-present",
+    "clean": "rimraf ./_dist && npm run lib:clean --workspaces --if-present && npm run clean --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present && npm run lib:lint --workspaces --if-present"
   },
   "dependencies": {

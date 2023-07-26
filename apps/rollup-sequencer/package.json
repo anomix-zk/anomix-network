@@ -30,11 +30,13 @@
   "devDependencies": {},
   "scripts": {
     "serve": "tsc && tsc-alias",
-    "build": "tsc --build tsconfig.json --watch && (concurrently \"tsc --build tsconfig.json -w\" \"tsc-alias -w\")",
+    "buildw": "tsc --build tsconfig.json --watch && (concurrently \"tsc --build tsconfig.json -w\" \"tsc-alias -w\")",
+    "build": "tsc --build tsconfig.json && tsc-alias",
     "dev": "nodemon src/index.ts",
     "test": "jest",
     "test:watch": "jest --watchAll",
     "test:coverage": "jest --coverage",
-    "lint": "eslint \"src/**/*.ts\" --fix"
+    "lint": "eslint \"src/**/*.ts\" --fix",
+    "clean": "rimraf ./dist ./tsconfig.tsbuildinfo"
   }
 }
