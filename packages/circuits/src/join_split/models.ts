@@ -5,6 +5,7 @@ import {
 import { ValueNote } from '../models/value_note';
 import {
   Field,
+  Poseidon,
   PrivateKey,
   PublicKey,
   Signature,
@@ -46,6 +47,10 @@ export class JoinSplitOutput extends Struct({
       depositRoot: DUMMY_FIELD,
       depositIndex: DUMMY_FIELD,
     });
+  }
+
+  hash(): Field {
+    return Poseidon.hash(JoinSplitOutput.toFields(this));
   }
 }
 
