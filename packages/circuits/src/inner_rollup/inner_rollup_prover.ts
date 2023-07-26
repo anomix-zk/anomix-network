@@ -1,4 +1,4 @@
-import { FEE_ASSET_ID_SUPPORT_NUM } from '../constant';
+import { FEE_ASSET_ID_SUPPORT_NUM } from '../constants';
 import {
   Bool,
   Empty,
@@ -14,7 +14,7 @@ import {
   TxFee,
 } from './models';
 import { JoinSplitProof } from '../join_split/join_split_prover';
-import { ActionType, AssetId, DUMMY_FIELD } from '../models/constant';
+import { ActionType, AssetId, DUMMY_FIELD } from '../models/constants';
 import { checkMembershipAndAssert } from '../utils/utils';
 import {
   DataMerkleWitness,
@@ -343,43 +343,34 @@ function processTx({
     currentDataIndex,
     oldDataWitness1,
     currentDataRoot,
-    'oldDataWitness1 should be illegal'
+    'oldDataWitness1 illegal'
   );
   // use index, witness and new note commitment to update data root
   currentDataRoot = oldDataWitness1.calculateRoot(
     outputNoteCommitment1,
     currentDataIndex
   );
-  currentDataIndex = Provable.if(
-    outputNoteCommitment1.equals(DUMMY_FIELD),
-    Field,
-    currentDataIndex,
-    currentDataIndex.add(1)
-  );
+  currentDataIndex = currentDataIndex.add(1);
+
   // check index and witness of outputNoteCommitment2
   checkMembershipAndAssert(
     DUMMY_FIELD,
     currentDataIndex,
     oldDataWitness2,
     currentDataRoot,
-    'oldDataWitness2 should be illegal'
+    'oldDataWitness2 illegal'
   );
   // use index, witness and new note commitment to update data root
   currentDataRoot = oldDataWitness2.calculateRoot(
     outputNoteCommitment2,
     currentDataIndex
   );
-  currentDataIndex = Provable.if(
-    outputNoteCommitment2.equals(DUMMY_FIELD),
-    Field,
-    currentDataIndex,
-    currentDataIndex.add(1)
-  );
+  currentDataIndex = currentDataIndex.add(1);
 
   // check nullifier1 nonMembership
   lowLeafWitness1.checkMembershipAndAssert(
     currentNullRoot,
-    'lowLeafWitness1 should be illegal'
+    'lowLeafWitness1 illegal'
   );
   const null1IsDummy = nullifier1.equals(DUMMY_FIELD);
   Provable.if(
@@ -403,21 +394,16 @@ function processTx({
     currentNullIndex,
     oldNullWitness1,
     currentNullRoot,
-    'oldNullWitness1 should be illegal'
+    'oldNullWitness1 illegal'
   );
   // use index, witness and new nullifier to update null root
   currentNullRoot = oldNullWitness1.calculateRoot(nullifier1, currentNullIndex);
-  currentNullIndex = Provable.if(
-    nullifier1.equals(DUMMY_FIELD),
-    Field,
-    currentNullIndex,
-    currentNullIndex.add(1)
-  );
+  currentNullIndex = currentNullIndex.add(1);
 
   // check nullifier2 nonMembership
   lowLeafWitness2.checkMembershipAndAssert(
     currentNullRoot,
-    'LowLeafWitness2 should be illegal'
+    'LowLeafWitness2 illegal'
   );
   const null2IsDummy = nullifier2.equals(DUMMY_FIELD);
   Provable.if(
@@ -441,16 +427,11 @@ function processTx({
     currentNullIndex,
     oldNullWitness2,
     currentNullRoot,
-    'oldNullWitness2 should be illegal'
+    'oldNullWitness2 illegal'
   );
   // use index, witness and new nullifier to update null root
   currentNullRoot = oldNullWitness2.calculateRoot(nullifier2, currentNullIndex);
-  currentNullIndex = Provable.if(
-    nullifier2.equals(DUMMY_FIELD),
-    Field,
-    currentNullIndex,
-    currentNullIndex.add(1)
-  );
+  currentNullIndex = currentNullIndex.add(1);
 
   return {
     currentDataRoot,

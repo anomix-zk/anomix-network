@@ -1,5 +1,5 @@
-import { FEE_ASSET_ID_SUPPORT_NUM } from '../constant';
-import { DUMMY_FIELD } from '../models/constant';
+import { FEE_ASSET_ID_SUPPORT_NUM } from '../constants';
+import { DUMMY_FIELD } from '../models/constants';
 import {
   DataMerkleWitness,
   LowLeafWitnessData,

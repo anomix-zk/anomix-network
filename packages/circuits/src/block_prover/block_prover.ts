@@ -2,7 +2,7 @@ import { InnerRollupProof } from '../inner_rollup/inner_rollup_prover';
 import { Experimental } from 'snarkyjs';
 import { BlockProveInput, BlockProveOutput } from './models';
 import { checkMembershipAndAssert } from '../utils/utils';
-import { DUMMY_FIELD } from '../models/constant';
+import { DUMMY_FIELD } from '../models/constants';
 import { RollupState, RollupStateTransition } from '../rollup_contract/models';
 
 export { BlockProver, RollupProof };
@@ -38,7 +38,7 @@ let BlockProver = Experimental.ZkProgram({
           input.rootStartIndex,
           input.oldRootWitness,
           input.oldDataRootsRoot,
-          'rootStartIndex and oldRootWitness should illegal'
+          'rootStartIndex and oldRootWitness should be valid'
         );
 
         // use index and witness to update data roots root

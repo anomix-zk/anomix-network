@@ -1,4 +1,4 @@
-import { DATA_TREE_HEIGHT } from '../constant';
+import { DATA_TREE_HEIGHT } from '../constants';
 import { AccountNote } from '../models/account';
 import {
   AccountOperationType,
@@ -7,7 +7,7 @@ import {
   AssetId,
   DUMMY_FIELD,
   NoteType,
-} from '../models/constant';
+} from '../models/constants';
 import {
   calculateNoteNullifier,
   checkMembership,
@@ -221,8 +221,12 @@ let JoinSplitProver = Experimental.ZkProgram({
         inputNote1Commitment.assertNotEquals(inputNote2Commitment);
 
         const accountPk = sendInput.accountPrivateKey.toPublicKey();
+
+        const isAccountRequired = sendInput.accountRequired.equals(
+          AccountRequired.REQUIRED
+        );
         const signerPk = Provable.if(
-          sendInput.accountRequired.equals(AccountRequired.REQUIRED),
+          isAccountRequired,
           PublicKey,
           sendInput.signingPk,
           accountPk
@@ -233,6 +237,20 @@ let JoinSplitProver = Experimental.ZkProgram({
           signingPk: signerPk,
         });
         const accountNoteCommitment = accountNote.commitment();
+        // verify account membership
+        Provable.if(
+          isAccountRequired,
+          Bool,
+          checkMembership(
+            accountNoteCommitment,
+            sendInput.accountNoteIndex,
+            sendInput.accountNoteWitness,
+            sendInput.dataRoot
+          ),
+          Bool(true)
+        ).assertTrue(
+          'AccountNote commitment check membership failed when accountRequired is true'
+        );
 
         accountPk.assertEquals(inputNote1.ownerPk);
         //accountPk.assertEquals(inputNote2.ownerPk);
@@ -332,15 +350,6 @@ let JoinSplitProver = Experimental.ZkProgram({
 
         outputNote1.inputNullifier.assertEquals(nullifier1);
         outputNote2.inputNullifier.assertEquals(nullifier2);
-
-        // verify account membership
-        checkMembershipAndAssert(
-          accountNoteCommitment,
-          sendInput.accountNoteIndex,
-          sendInput.accountNoteWitness,
-          sendInput.dataRoot,
-          'AccountNote commitment check membership failed'
-        );
 
         const message = [
           outputNote1Commitment,

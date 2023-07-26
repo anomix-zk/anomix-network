@@ -11,7 +11,7 @@ import {
   Struct,
   UInt64,
 } from 'snarkyjs';
-import { ActionType, DUMMY_FIELD } from '../models/constant';
+import { ActionType, DUMMY_FIELD } from '../models/constants';
 
 export class JoinSplitOutput extends Struct({
   actionType: Field,

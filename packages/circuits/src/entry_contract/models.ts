@@ -1,5 +1,5 @@
 import { Field, Provable, PublicKey, Struct, UInt32, UInt64 } from 'snarkyjs';
-import { DEPOSIT_ACTION_BATCH_SIZE, DEPOSIT_TREE_HEIGHT } from '../constant';
+import { DEPOSIT_ACTION_BATCH_SIZE, DEPOSIT_TREE_HEIGHT } from '../constants';
 import { SiblingPath } from '@anomix/merkle-tree';
 import { EncryptedValueNote } from '../models/value_note';
 

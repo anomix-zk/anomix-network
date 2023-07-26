@@ -41,6 +41,16 @@ const tree: StandardTree = await newTree(
   PRIVATE_DATA_TREE_HEIGHT
 );
 
+const tree2: StandardIndexedTree = await newTree(
+  StandardIndexedTree,
+  db,
+  poseidonHasher,
+  'indexData',
+  20
+);
+
+console.log('indexTree init root20: ', tree2.getRoot(true).toString());
+
 await tree.appendLeaves([Field(11)]);
 await tree.appendLeaves([Field(21)]);
 await tree.appendLeaves([Field(31)]);

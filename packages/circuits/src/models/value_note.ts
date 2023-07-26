@@ -10,7 +10,7 @@ import {
   UInt64,
 } from 'snarkyjs';
 import { Commitment } from './commitment';
-import { NoteType } from './constant';
+import { NoteType } from './constants';
 
 export class ValueNote
   extends Struct({
@@ -126,9 +126,16 @@ export class ReceiverEncryptedInfo extends Struct({
   }
 }
 
-export class EncryptedNote extends Struct({
-  noteCommitment: Field,
-  publicKey: PublicKey,
-  cipherText: Provable.Array(Field, CIPHER_TEXT_LENGTH),
-  reciverEncryptedInfo: ReceiverEncryptedInfo,
-}) {}
+// export class EncryptedNote extends Struct({
+//   noteCommitment: Field,
+//   publicKey: PublicKey,
+//   cipherText: Provable.Array(Field, CIPHER_TEXT_LENGTH),
+//   reciverEncryptedInfo: ReceiverEncryptedInfo,
+// }) {}
+
+export interface EncryptedNote {
+  noteCommitment: string;
+  publicKey: string;
+  cipherText: string;
+  receiverInfo: string[];
+}

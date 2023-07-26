@@ -14,9 +14,10 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "scripts": {
+    "token": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/token.js",
     "enc": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/encrypt.js",
     "ok": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/ok.js",
-    "demo": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/demo.js",
+    "demo": "tsc -p tsconfig.json && node --stack-trace-limit=1000 --experimental-specifier-resolution=node ./dist/src/demo.js",
     "lib:dev": "tsc --build tsconfig.json --watch",
     "lib:build": "tsc --build tsconfig.json",
     "lib:clean": "rimraf ./dist ./tsconfig.tsbuildinfo",

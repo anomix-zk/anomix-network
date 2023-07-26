@@ -3,10 +3,10 @@ import {
   DEPOSIT_TREE_HEIGHT,
   NULLIFIER_TREE_HEIGHT,
   ROOT_TREE_HEIGHT,
-} from '../constant';
+} from '../constants';
 import { SiblingPath } from '@anomix/merkle-tree';
 import { Field, Poseidon, Provable, Struct } from 'snarkyjs';
-import { DUMMY_FIELD } from './constant';
+import { DUMMY_FIELD } from './constants';
 
 export class DepositMerkleWitness extends SiblingPath(DEPOSIT_TREE_HEIGHT) {}
 

@@ -1,6 +1,5 @@
-import { Field, Provable, PublicKey, Struct } from 'snarkyjs';
-import { BlockProveOutput } from '../block_prover/models';
-import { FEE_ASSET_ID_SUPPORT_NUM } from '../constant';
+import { Field, Provable, PublicKey, Struct, UInt64 } from 'snarkyjs';
+import { FEE_ASSET_ID_SUPPORT_NUM } from '../constants';
 import { TxFee } from '../inner_rollup/models';
 
 export class RollupState extends Struct({
@@ -41,4 +40,12 @@ export class RollupBlockEvent extends Struct({
   totalTxFees: Provable.Array(TxFee, FEE_ASSET_ID_SUPPORT_NUM),
   txFeeReceiver: PublicKey,
   // blockInfo: BlockProveOutput,
+}) {}
+
+export class WithdrawFundEvent extends Struct({
+  receiverAddress: PublicKey,
+  noteNullifier: Field,
+  nullifierIndex: Field,
+  amount: UInt64,
+  assetId: Field,
 }) {}
