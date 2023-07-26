@@ -1,5 +1,6 @@
 export { Tree } from './constant';
 export { BaseResponse } from './base-response';
+export { EncryptedNote } from './encrypted-note';
 export { L2TxReqDto } from './l2-tx-req-dto'
 export { L2TxRespDto } from "./l2-tx-resp-dto";
 export { MerkleProofDto } from "./merkle-proof-dto";
