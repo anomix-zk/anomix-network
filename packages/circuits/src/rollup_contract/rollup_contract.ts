@@ -17,7 +17,12 @@ import {
   AccountUpdate,
   UInt64,
 } from 'snarkyjs';
-import { RollupBlockEvent, RollupState, WithdrawFundEvent } from './models';
+import {
+  RollupBlockEvent,
+  RollupState,
+  WithdrawFundEvent,
+  WithdrawNoteWitnessData,
+} from './models';
 import { AnomixEntryContract } from '../entry_contract/entry_contract';
 import { BlockProveOutput } from '../block_prover/models';
 import {
@@ -176,12 +181,13 @@ export class AnomixRollupContract extends SmartContract {
 
   @method firstWithdraw(
     verificationKey: VerificationKey,
-    withdrawNote: ValueNote,
+    withdrawNoteWitnessData: WithdrawNoteWitnessData,
     lowLeafWitness: LowLeafWitnessData,
     oldNullWitness: NullifierMerkleWitness
   ) {
     verificationKey.hash.assertEquals(this.withdrawAccountVKHash, 'invalid vk');
 
+    const withdrawNote = withdrawNoteWitnessData.withdrawNote;
     withdrawNote.assetId.assertEquals(
       AssetId.MINA,
       'invalid asset id of withdraw note'
@@ -196,6 +202,18 @@ export class AnomixRollupContract extends SmartContract {
     );
 
     withdrawNote.value.assertGreaterThan(UInt64.zero, 'invalid note value');
+    const commitment = withdrawNote.commitment();
+
+    // check commitment exists in data tree
+    const state = this.state.getAndAssertEquals();
+    const dataRoot = state.dataRoot;
+    checkMembershipAndAssert(
+      commitment,
+      withdrawNoteWitnessData.index,
+      withdrawNoteWitnessData.witness,
+      dataRoot,
+      'withdrawNoteWitnessData illegal'
+    );
 
     const tokenId = this.token.id;
     const deployUpdate = Experimental.createChildAccountUpdate(
@@ -222,7 +240,7 @@ export class AnomixRollupContract extends SmartContract {
     deployUpdate.account.verificationKey.set(verificationKey);
     deployUpdate.account.isNew.assertEquals(Bool(true));
 
-    const nullifier = withdrawNote.commitment();
+    const nullifier = commitment;
     const initNullStartIndex = Field(0);
     const { nullifierRoot, nullStartIndex } =
       updateNullifierRootAndNullStartIndex(
@@ -260,10 +278,11 @@ export class AnomixRollupContract extends SmartContract {
   }
 
   @method withdraw(
-    withdrawNote: ValueNote,
+    withdrawNoteWitnessData: WithdrawNoteWitnessData,
     lowLeafWitness: LowLeafWitnessData,
     oldNullWitness: NullifierMerkleWitness
   ) {
+    const withdrawNote = withdrawNoteWitnessData.withdrawNote;
     withdrawNote.assetId.assertEquals(
       AssetId.MINA,
       'invalid asset id of withdraw note'
@@ -278,10 +297,21 @@ export class AnomixRollupContract extends SmartContract {
     );
 
     withdrawNote.value.assertGreaterThan(UInt64.zero, 'invalid note value');
+    const commitment = withdrawNote.commitment();
+    // check commitment exists in data tree
+    const state = this.state.getAndAssertEquals();
+    const dataRoot = state.dataRoot;
+    checkMembershipAndAssert(
+      commitment,
+      withdrawNoteWitnessData.index,
+      withdrawNoteWitnessData.witness,
+      dataRoot,
+      'withdrawNoteWitnessData illegal'
+    );
 
     const tokenId = this.token.id;
     const withdrawAccount = new WithdrawAccount(userAddress, tokenId);
-    const nullifier = withdrawNote.commitment();
+    const nullifier = commitment;
 
     const originNullStartIndex = withdrawAccount.updateState(
       nullifier,
