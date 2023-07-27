@@ -1,4 +1,4 @@
-import { PrivateKey, PublicKey } from "snarkyjs";
+import { Poseidon, PrivateKey, PublicKey, Sign, Signature } from "snarkyjs";
 
 export function genNewKeyPairForNote(
     privateKeyBigInt: bigint,
@@ -24,4 +24,15 @@ export function calculateShareSecret(
     const f2 = fields[1].toBigInt();
 
     return (f1 & f2).toString();
+}
+
+export function genNewKeyPairBySignature(
+    sign: Signature,
+    index: bigint = 0n
+): { privateKey: PrivateKey; publicKey: PublicKey } {
+    const randomValueBigInt = Poseidon.hash(sign.toFields()).toBigInt();
+    const privateKeyBigInt = randomValueBigInt & index;
+    const privateKey = PrivateKey.fromBigInt(privateKeyBigInt);
+
+    return { privateKey, publicKey: privateKey.toPublicKey() };
 }
