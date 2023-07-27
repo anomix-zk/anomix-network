@@ -337,15 +337,10 @@ let JoinSplitProver = Experimental.ZkProgram({
           sendInput.accountPrivateKey,
           inputNote1InUse
         );
-        const nullifier2 = Provable.if(
-          inputNote2InUse,
-          Field,
-          calculateNoteNullifier(
-            inputNote2Commitment,
-            sendInput.accountPrivateKey,
-            inputNote2InUse
-          ),
-          DUMMY_FIELD
+        const nullifier2 = calculateNoteNullifier(
+          inputNote2Commitment,
+          sendInput.accountPrivateKey,
+          inputNote2InUse
         );
 
         outputNote1.inputNullifier.assertEquals(nullifier1);
