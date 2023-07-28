@@ -55,7 +55,6 @@
   },
   "dependencies": {
     "@anomix/merkle-tree": "^0.1.0",
-    "@anomix/types": "^0.1.0",
     "@anomix/utils": "^0.1.0"
   }
 }

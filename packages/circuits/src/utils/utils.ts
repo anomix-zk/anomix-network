@@ -1,5 +1,4 @@
 import { BaseSiblingPath } from '@anomix/merkle-tree';
-import { EncryptedNote } from '@anomix/types';
 import {
   calculateShareSecret,
   derivePublicKeyBigInt,
@@ -8,7 +7,9 @@ import {
   genNewKeyPairForNote,
   maskReceiverBySender,
 } from '@anomix/utils';
-import { Bool, Field, Poseidon, PrivateKey, PublicKey } from 'snarkyjs';
+import { Bool, Field, Poseidon, PrivateKey, Encoding } from 'snarkyjs';
+import { DEPOSIT_NOTE_DATA_FIELDS_LENGTH } from '../constants';
+import { EncryptedNoteFieldData } from '../entry_contract/models';
 import { ValueNote } from '../models/value_note';
 
 export function checkMembership(
@@ -43,10 +44,10 @@ export function calculateNoteNullifier(
   ]);
 }
 
-export async function encryptValueNote(
+export async function encryptValueNoteToFieldData(
   note: ValueNote,
   senderPrivateKey: PrivateKey
-): Promise<EncryptedNote> {
+): Promise<EncryptedNoteFieldData> {
   const jsonStr = JSON.stringify(ValueNote.toJSON(note));
   const noteCommitment = note.commitment();
   const privateKeyBigInt = senderPrivateKey.toBigInt();
@@ -70,10 +71,16 @@ export async function encryptValueNote(
     shareSecret
   );
 
-  return {
+  const encryptedNoteJsonStr = JSON.stringify({
     noteCommitment: noteCommitment.toString(),
     publicKey: publicKey.toBase58(),
     cipherText,
     receiverInfo: fieldArrayToStringArray(receiverInfo),
-  };
+  });
+  let data = Encoding.Bijective.Fp.fromString(encryptedNoteJsonStr);
+  data = data.concat(
+    Array(DEPOSIT_NOTE_DATA_FIELDS_LENGTH - data.length).fill(Field(0))
+  );
+
+  return new EncryptedNoteFieldData({ data });
 }
