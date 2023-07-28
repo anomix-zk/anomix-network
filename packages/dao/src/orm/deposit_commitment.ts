@@ -36,34 +36,66 @@ export class DepositStatus {
     }
 }
 
-@Entity("tb_deposit_info")
-export class DepositInfo {
+@Entity("tb_deposit_commitment")
+export class DepositCommitment {
     @PrimaryGeneratedColumn("increment")
     id: number
 
     @Column()
-    noteCommitment: string
-
+    depositNoteCommitment: string
+    /**
+     * leaf index of `depositNoteCommitment` on deposit_tree
+     */
     @Column()
-    noteCommitment_idx: string // 待定
-
-    @Column()
-    l1TxId: string
+    depositNoteIndex: string
 
     @Column()
     depositValue: string
 
+    /**
+     * PublicKey.toBase58
+     */
     @Column()
     sender: string
 
     @Column()
     assetId: string
 
+    /**
+     * json string from {@link EncryptedNote}
+     */
     @Column()
     encryptedNote: string
 
+    /**
+     * L1Tx hash when user deposits
+     */
+    @Column()
+    userDepositL1TxHash: string
+
+    /**
+     * entity id of corresponding L2 tx, when account registration(join-split circuit)
+     */
+    @Column()
+    l2TxId: number
+
+    /**
+     * L2Tx hash after account registration(join-split circuit)
+     */
+    @Column()
+    l2TxHash: string
+
+    /**
+     * the status of depositNoteCommitment, reference to {@link DepositStatus}, 
+     * * will be updated, when 'markedL1TxHash' or 'l2TxHash' is confirmed, 
+     */
     @Column({ default: DepositStatus.PENDING })
-    status: number
+    depositStatus: number
+
+    /**
+     * L1Tx hash when being marked on 'Deposit_Tree', {@link DepositTreeTrans}
+     */
+    markedL1TxHash: string
 
     @UpdateDateColumn({
         default: () => 'CURRENT_TIMESTAMP',

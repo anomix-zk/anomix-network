@@ -1,8 +1,33 @@
 import {
     Column,
     PrimaryGeneratedColumn,
-    Entity
+    Entity,
+    CreateDateColumn,
+    UpdateDateColumn
 } from 'typeorm'
+
+export class WithdrawNoteStatus {
+    /**
+     * its initial status
+     */
+    static PENDING() {
+        return 0;
+    }
+
+    /**
+     * when it's claimed and L1Tx is broadcast
+     */
+    static PROCESSING() {
+        return 0;
+    }
+
+    /**
+     * when it's claimed and L1Tx is confirmed
+     */
+    static DONE() {
+        return -1;
+    }
+}
 
 /**
  * record all value note's fields for withdraw
@@ -13,14 +38,8 @@ export class WithdrawInfo {
     id: number
 
     /**
-     * hash of corresponding L2 tx
+     * from L2tx's publicOwner
      */
-    @Column()
-    l2TxHash: string
-
-    @Column()
-    secret: string
-
     @Column()
     ownerPk: string
 
@@ -43,5 +62,56 @@ export class WithdrawInfo {
     inputNullifier: string
 
     @Column()
+    secret: string
+
+    @Column()
     noteType: string
+
+    /**
+     * entity id of corresponding L2 tx
+     */
+    @Column()
+    txId: number
+
+    /**
+     * hash of corresponding L2 tx
+     */
+    @Column()
+    l2TxHash: string
+
+    /**
+     * here is a unique index here
+     */
+    @Column()
+    outputNoteCommitment1: string
+
+    /**
+     * the leaf index on data_tree, will be updated when L2tx is confirmed at L2's Block
+     */
+    @Column()
+    outputNoteCommitmentIdx1: string
+
+    /**
+     * record the L1TxHash when it's claimed
+     */
+    @Column()
+    l1TxHash: string
+
+    /**
+     * record if it has already been claimed.
+     */
+    @Column({ default: 0 })
+    status: number
+
+
+    @UpdateDateColumn({
+        default: () => 'CURRENT_TIMESTAMP',
+    })
+    updatedAt: Date
+
+
+    @CreateDateColumn({
+        default: () => 'CURRENT_TIMESTAMP',
+    })
+    createdAt: Date
 }

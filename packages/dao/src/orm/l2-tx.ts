@@ -20,39 +20,56 @@ export class L2Tx {
     @Column()
     nullifier1: string
     @Column()
-    nullifier1_idx: string
+    nullifierIdx1: string
 
     @Column()
     nullifier2: string
     @Column()
-    nullifier2_idx: string
+    nullifierIdx2: string
 
     @Column()
     outputNoteCommitment1: string
+    /**
+     * leaf index on data_tree
+     */
     @Column()
-    outputNoteCommitment1_idx: string
+    outputNoteCommitmentIdx1: string
 
     @Column()
     outputNoteCommitment2: string
+    /**
+     * leaf index on data_tree
+     */
     @Column()
-    outputNoteCommitment2_idx: string
+    outputNoteCommitmentIdx2: string
 
     @Column()
     publicValue: string
+
     @Column()
     publicOwner: string
+
     @Column()
     publicAssetId: string
 
     @Column()
     dataRoot: string
+
+    /**
+     * for deposit L2tx
+     */
     @Column()
     depositRoot: string
+
+    /**
+     * leaf index of `outputNoteCommitment1` on deposit_tree
+     */
     @Column()
     depositIndex: string
 
     @Column()
     txFee: string
+
     @Column()
     txFeeAssetId: string
 
@@ -60,12 +77,10 @@ export class L2Tx {
     proof: string
 
     @Column()
-    secret: string
-    @Column()
-    creator_pubkey: string
+    encryptedData1: string
 
     @Column()
-    encryptedData: string
+    encryptedData2: string
 
     @Column()
     status: number
@@ -76,17 +91,25 @@ export class L2Tx {
     @Column()
     blockId: number
 
+    /**
+     * blockHash
+     */
+    @Column()
+    blockHash: string
+
+    /**
+     * the index within a block
+     */
     @Column()
     indexInBlock: number
-
-    @CreateDateColumn({
-        default: () => 'CURRENT_TIMESTAMP',
-    })
-    createdAt: Date
 
     @UpdateDateColumn({
         default: () => 'CURRENT_TIMESTAMP',
     })
     updatedAt: Date
 
+    @CreateDateColumn({
+        default: () => 'CURRENT_TIMESTAMP',
+    })
+    createdAt: Date
 }

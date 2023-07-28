@@ -12,9 +12,15 @@ export class BlockStatus {
     static get FAILED(): number {// no need?
         return -1;
     }
+    /**
+     * before L1Tx is confirmed
+     */
     static get PENDING(): number {
         return 1;
     }
+    /**
+     * when L1Tx is confirmed
+     */
     static get CONFIRMED(): number {
         return 2;
     }
@@ -79,14 +85,18 @@ export class BlockProverOutputEntity {
     @Column()
     txFeeReceiver: string
 
+    /**
+     * record the L1TxHash when it's broadcast
+     */
+    @Column()
+    l1TxHash: string
 
     @Column({ default: BlockStatus.PENDING })
     status: number
 
-    @OneToMany(type => L2Tx, (l2Tx) => l2Tx.blockId)
-    l2TxList: L2Tx[]
-
-    @CreateDateColumn()
+    @CreateDateColumn({
+        default: () => 'CURRENT_TIMESTAMP',
+    })
     createdAt: Date
 
     @UpdateDateColumn({

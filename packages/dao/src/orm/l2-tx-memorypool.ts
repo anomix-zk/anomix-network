@@ -50,30 +50,6 @@ export class MemPlL2Tx extends L2Tx {
         return tx;
     }
 
-    /**
-     * should get tx id after populate all key fields
-     */
-    get txId(): string {// TODO should mv to be as a util??
-        this.txHash = Poseidon.hash([
-            ...new UInt32(this.actionType).toFields(),
-            Field(this.nullifier1),
-            Field(this.nullifier2),
-            Field(this.outputNoteCommitment1),
-            Field(this.outputNoteCommitment2),
-            ...new UInt64(this.publicValue).toFields(),
-            ...PublicKey.fromBase58(this.publicOwner).toFields(),
-            ...new UInt32(this.publicAssetId).toFields(),
-            Field(this.dataRoot),
-            Field(this.depositRoot),
-            ...new UInt32(this.txFee).toFields(),
-            ...PublicKey.fromBase58(this.creator_pubkey).toFields(),
-            Field(this.secret),
-            Field(createHash('sha256').update(this.proof).digest('hex'))
-        ]).toString();
-
-        return this.txHash;
-    }
-
     static zeroL2Tx() {
         return MemPlL2Tx.fromJoinSplitOutput(
             JoinSplitOutput.zero()
