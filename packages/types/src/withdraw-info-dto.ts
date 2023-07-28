@@ -1,18 +1,67 @@
 export interface WithdrawInfoDto {
-    id: number;
+    id: number
+
     /**
-     * hash of corresponding L2 tx
+     * from L2tx's publicOwner
      */
-    l2TxHash: string;
-    secret: string;
-    ownerPk: string;
-    accountRequired: string;
+    ownerPk: string
+
+
+    accountRequired: string
+
     /**
      * could be optional
      */
-    creatorPk: string;
-    value: string;
-    assetId: string;
-    inputNullifier: string;
-    noteType: string;
+    creatorPk: string
+
+
+    value: string
+
+
+    assetId: string
+
+
+    inputNullifier: string
+
+
+    secret: string
+
+
+    noteType: string
+
+    /**
+     * entity id of corresponding L2 tx
+     */
+    txId: number
+
+    /**
+     * hash of corresponding L2 tx
+     */
+    l2TxHash: string
+
+    /**
+     * here is a unique index here
+     */
+    outputNoteCommitment1: string
+
+    /**
+     * the leaf index on data_tree, will be updated when L2tx is confirmed at L2's Block
+     */
+    outputNoteCommitmentIdx1: string
+
+    /**
+     * record the L1TxHash when it's claimed
+     */
+    l1TxHash: string
+
+    /**
+     * record if it has already been claimed.
+     */
+    status: number
+
+
+    updatedAt: Date
+
+
+    createdAt: Date
 }

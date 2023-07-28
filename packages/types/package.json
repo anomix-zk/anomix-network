@@ -9,13 +9,14 @@
   "license": "MIT",
   "scripts": {
     "lib:dev": "npm run lib:build && (concurrently \"tsc --build tsconfig.json --watch\" \"tsc-alias -w\")",
-    "lib:build": "npm run gen-schema-txreqdto && npm run gen-schema-txrespdto && npm run gen-schema-mpdto && npm run gen-schema-widto && npm run gen-schema-enib && tsc --build tsconfig.json && tsc-alias",
+    "lib:build": "npm run gen-schema-aibreqdto && npm run gen-schema-aibdto && npm run gen-schema-txreqdto && npm run gen-schema-txrespdto && npm run gen-schema-mpdto && npm run gen-schema-widto && tsc --build tsconfig.json && tsc-alias",
     "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
     "lib:lint": "eslint \"src/**/*.ts\" --fix",
+    "gen-schema-aibreqdto": "npx typescript-json-schema ./src/asset-in-block-req-dto.ts AssetInBlockReqDto -o /src/asset-in-block-req-dto-schema.json",
+    "gen-schema-aibdto": "npx typescript-json-schema ./src/asset-in-block-dto.ts AssetsInBlockDto -o /src/asset-in-block-dto-schema.json",
     "gen-schema-txreqdto": "npx typescript-json-schema ./src/l2-tx-req-dto.ts L2TxReqDto -o /src/l2-tx-req-dto-schema.json",
     "gen-schema-txrespdto": "npx typescript-json-schema ./src/l2-tx-resp-dto.ts L2TxRespDto -o /src/l2-tx-resp-dto-schema.json",
     "gen-schema-mpdto": "npx typescript-json-schema ./src/merkle-proof-dto.ts MerkleProofDto -o /src/merkle-proof-dto-schema.json",
-    "gen-schema-widto": "npx typescript-json-schema ./src/withdraw-info-dto.ts WithdrawInfoDto -o /src/withdraw-info-dto-schema.json",
-    "gen-schema-enib": "npx typescript-json-schema ./src/encrypted-asset-in-block.ts EncryptedNoteInBlock -o /src/encrypted-asset-in-block-schema.json"
+    "gen-schema-widto": "npx typescript-json-schema ./src/withdraw-info-dto.ts WithdrawInfoDto -o /src/withdraw-info-dto-schema.json"
   }
 }

@@ -1,72 +1,113 @@
+import { EncryptedNote } from "./encrypted-note";
+import { WithdrawInfoDto } from "./withdraw-info-dto";
+
 export interface L2TxRespDto {
-    /**
-     * @requires
-     */
+    id: number
+
+
+    txHash: string
+
+
     actionType: string
-    /**
-     * @requires
-     */
+
+
     nullifier1: string
-    /**
-     * @requires
-     */
+
+    nullifierIdx1: string
+
+
     nullifier2: string
-    /**
-     * @requires
-     */
+
+    nullifierIdx2: string
+
+
     outputNoteCommitment1: string
     /**
-     * @requires
+     * leaf index on data_tree
      */
+    outputNoteCommitmentIdx1: string
+
+
     outputNoteCommitment2: string
     /**
-     * @requires
+     * leaf index on data_tree
      */
+    outputNoteCommitmentIdx2: string
+
+
     publicValue: string
-    /**
-     * @requires
-     */
+
+
     publicOwner: string
-    /**
-     * @requires
-     */
+
+
     publicAssetId: string
-    /**
-     * @requires
-     */
+
+
     dataRoot: string
+
     /**
-     * @requires
+     * for deposit L2tx
      */
     depositRoot: string
+
     /**
-     * @requires
+     * leaf index of `outputNoteCommitment1` on deposit_tree
      */
     depositIndex: string
-    /**
-     * @requires
-     */
+
+
     txFee: string
-    /**
-     * @requires
-     */
+
+
     txFeeAssetId: string
-    /**
-     * string from proof.toJSON()
-     * @requires
-     */
+
+
     proof: string
+
+    extraData: {
+        /**
+         * from encryptedData1
+         */
+        outputNote1: EncryptedNote,
+        /**
+         * from encryptedData2
+         */
+        outputNote2: EncryptedNote,
+        /**
+         * used at Account Registration section
+         */
+        accountPublicKey: string,
+        /**
+         * used at Account Registration section
+         */
+        aliasHash: string,
+        /**
+         * used at Withdrawal section
+         */
+        withdrawNote: WithdrawInfoDto
+    }
+
+    status: number
+
     /**
-     * optional
-     * @requires
+     * blockId, ie. blockHeight, as the primary key of block table
      */
-    secret: string
+    blockId: number
+
     /**
-     * optional
+     * blockHash
      */
-    creator_pubkey: string
+    blockHash: string
+
     /**
-     * @requires
+     * the index within a block
      */
-    encryptedData: string
+    indexInBlock: number
+
+
+    updatedAt: Date
+
+
+    createdAt: Date
 }
