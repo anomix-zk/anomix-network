@@ -21,19 +21,24 @@ import {
   DUMMY_FIELD,
   NoteType,
 } from '../models/constants';
-import { DepositEvent, DepositRollupState } from './models';
+import {
+  DepositEvent,
+  DepositRollupState,
+  DepositRollupStateTransition,
+  EncryptedNoteFieldData,
+} from './models';
 import { ValueNote } from '../models/value_note';
 import { STANDARD_TREE_INIT_ROOT_20 } from '../constants';
 
 export class AnomixEntryContract extends SmartContract {
   @state(DepositRollupState) depositState = State<DepositRollupState>();
   @state(PublicKey) rollupContractAddress = State<PublicKey>();
-  // @state(PublicKey) operatorAddress = State<PublicKey>();
 
   reducer = Reducer({ actionType: Field });
 
   events = {
     deposit: DepositEvent,
+    depositStateUpdate: DepositRollupStateTransition,
   };
 
   deployEntryContract(args: DeployArgs, rollupContractAddress: PublicKey) {
@@ -68,7 +73,11 @@ export class AnomixEntryContract extends SmartContract {
     return depositState.depositRoot;
   }
 
-  @method deposit(payer: PublicKey, note: ValueNote) {
+  @method deposit(
+    payer: PublicKey,
+    note: ValueNote,
+    encryptedNoteData: EncryptedNoteFieldData
+  ) {
     note.assetId.assertEquals(AssetId.MINA, 'assetId is not MINA');
     note.noteType.assertEquals(NoteType.NORMAL, 'noteType is not NORMAL');
     note.value.assertGreaterThan(UInt64.zero, 'note value is zero');
@@ -86,7 +95,7 @@ export class AnomixEntryContract extends SmartContract {
     payerAccUpdate.send({ to: rollupContractAddress, amount: note.value });
 
     const noteCommitment = note.commitment();
-    const encryptedNote = note.encrypt();
+
     this.emitEvent(
       'deposit',
       new DepositEvent({
@@ -94,7 +103,7 @@ export class AnomixEntryContract extends SmartContract {
         assetId: note.assetId,
         depositValue: note.value,
         sender: payer,
-        encryptedNote: encryptedNote,
+        encryptedNoteData,
       })
     );
 
@@ -110,7 +119,8 @@ export class AnomixEntryContract extends SmartContract {
     let state = this.depositState.getAndAssertEquals();
     proof.publicOutput.source.assertEquals(state);
     this.depositState.set(proof.publicOutput.target);
-    Provable.log('deposit-circuit-rollup success');
+    this.emitEvent('depositStateUpdate', proof.publicOutput);
+    Provable.log('update deposit state success');
   }
 
   @method updateVerificationKey(
@@ -118,6 +128,7 @@ export class AnomixEntryContract extends SmartContract {
     operatorAddress: PublicKey,
     operatorSign: Signature
   ) {
+    verificationKey.toString();
     const rollupContractAddress =
       this.rollupContractAddress.getAndAssertEquals();
 

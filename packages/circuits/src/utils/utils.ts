@@ -1,5 +1,15 @@
 import { BaseSiblingPath } from '@anomix/merkle-tree';
+import { EncryptedNote } from '@anomix/types';
+import {
+  calculateShareSecret,
+  derivePublicKeyBigInt,
+  encrypt,
+  fieldArrayToStringArray,
+  genNewKeyPairForNote,
+  maskReceiverBySender,
+} from '@anomix/utils';
 import { Bool, Field, Poseidon, PrivateKey, PublicKey } from 'snarkyjs';
+import { ValueNote } from '../models/value_note';
 
 export function checkMembership(
   leaf: Field,
@@ -33,24 +43,37 @@ export function calculateNoteNullifier(
   ]);
 }
 
-export function genNewKeyPairForNote(
-  privateKeyBigInt: bigint,
-  noteCommitmentBigInt: bigint
-): { privateKey: PrivateKey; publicKey: PublicKey } {
-  const newKeyBigInt = privateKeyBigInt & noteCommitmentBigInt;
-  const newPriKey = PrivateKey.fromBigInt(newKeyBigInt);
-  const newPubKey = newPriKey.toPublicKey();
+export async function encryptValueNote(
+  note: ValueNote,
+  senderPrivateKey: PrivateKey
+): Promise<EncryptedNote> {
+  const jsonStr = JSON.stringify(ValueNote.toJSON(note));
+  const noteCommitment = note.commitment();
+  const privateKeyBigInt = senderPrivateKey.toBigInt();
+  const noteCommitmentBigInt = noteCommitment.toBigInt();
+  const publicKey = genNewKeyPairForNote(
+    privateKeyBigInt,
+    noteCommitmentBigInt
+  ).publicKey;
+  const senderPubKeyBigInt = derivePublicKeyBigInt(
+    senderPrivateKey.toPublicKey()
+  );
+  const receiverInfo = maskReceiverBySender(
+    note.ownerPk,
+    senderPubKeyBigInt,
+    noteCommitment.toBigInt()
+  );
+  const shareSecret = calculateShareSecret(senderPrivateKey, note.ownerPk);
+  const cipherText = await encrypt(
+    jsonStr,
+    noteCommitment.toString(),
+    shareSecret
+  );
 
-  return { privateKey: newPriKey, publicKey: newPubKey };
-}
-
-export function calculatePublicKeyBigInt(publicKey: PublicKey): bigint {
-  return publicKey.toFields()[0].toBigInt();
-}
-
-export function calculateShareSecret(
-  priKey: PrivateKey,
-  otherPubKey: PublicKey
-): Field {
-  return Poseidon.hash(otherPubKey.toGroup().scale(priKey.s).toFields());
+  return {
+    noteCommitment: noteCommitment.toString(),
+    publicKey: publicKey.toBase58(),
+    cipherText,
+    receiverInfo: fieldArrayToStringArray(receiverInfo),
+  };
 }

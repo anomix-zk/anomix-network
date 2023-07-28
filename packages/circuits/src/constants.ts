@@ -30,3 +30,4 @@ export const ROLLUP_TX_BATCH_SIZE = 2;
 export const FEE_ASSET_ID_SUPPORT_NUM = 2;
 
 export const MINA = 1000_000_000n;
+export const DEPOSIT_NOTE_DATA_FIELDS_LENGTH = 50;
