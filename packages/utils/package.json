@@ -17,6 +17,6 @@
     "snarkyjs": "0.12.*"
   },
   "dependencies": {
-    "uncrypto": "^0.1.3",
+    "uncrypto": "^0.1.3"
   }
 }
