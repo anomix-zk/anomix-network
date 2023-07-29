@@ -1,5 +1,5 @@
 import { Field } from 'snarkyjs';
-import { BaseSiblingPath } from '../sibling_path';
+import { BaseSiblingPath } from '@anomix/types';
 
 /**
  * Defines the interface for a source of sibling paths.

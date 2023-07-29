@@ -1,5 +1,5 @@
 import { Field } from 'snarkyjs';
-import { BaseSiblingPath } from '../sibling_path';
+import { BaseSiblingPath } from '@anomix/types';
 import { LowLeafWitnessData } from '../standard_indexed_tree/standard_indexed_tree';
 import { AppendOnlyTree } from './append_only_tree';
 

@@ -17,5 +17,8 @@
     "gen-schema-mpdto": "npx typescript-json-schema ./src/merkle-proof-dto.ts MerkleProofDto -o /src/merkle-proof-dto-schema.json",
     "gen-schema-widto": "npx typescript-json-schema ./src/withdraw-info-dto.ts WithdrawInfoDto -o /src/withdraw-info-dto-schema.json",
     "gen-schema-enib": "npx typescript-json-schema ./src/encrypted-asset-in-block.ts EncryptedNoteInBlock -o /src/encrypted-asset-in-block-schema.json"
+  },
+  "peerDependencies": {
+    "snarkyjs": "0.12.*"
   }
 }

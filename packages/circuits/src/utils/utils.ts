@@ -1,4 +1,4 @@
-import { BaseSiblingPath } from '@anomix/merkle-tree';
+import { BaseSiblingPath } from '@anomix/types';
 import {
   calculateShareSecret,
   derivePublicKeyBigInt,

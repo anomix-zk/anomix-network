@@ -1,12 +1,9 @@
-import { Field, Provable, PublicKey, Struct, UInt32, UInt64 } from 'snarkyjs';
+import { Field, Provable, PublicKey, Struct, UInt64 } from 'snarkyjs';
 import {
   DEPOSIT_ACTION_BATCH_SIZE,
   DEPOSIT_NOTE_DATA_FIELDS_LENGTH,
-  DEPOSIT_TREE_HEIGHT,
 } from '../constants';
-import { SiblingPath } from '@anomix/merkle-tree';
-
-class DepositMerkleWitness extends SiblingPath(DEPOSIT_TREE_HEIGHT) {}
+import { DepositMerkleWitness } from '../models/merkle_witness';
 
 export class DepositActionBatch extends Struct({
   actions: Provable.Array(Field, DEPOSIT_ACTION_BATCH_SIZE),

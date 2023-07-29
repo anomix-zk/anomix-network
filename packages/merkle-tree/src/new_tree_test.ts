@@ -1,7 +1,7 @@
 import { newTree } from './new_tree.js';
 import { default as levelup } from 'levelup';
 import { default as memdown, type MemDown } from 'memdown';
-import { PoseidonHasher } from './poseidon_hasher';
+import { PoseidonHasher } from '@anomix/types';
 import { StandardIndexedTree } from './standard_indexed_tree/standard_indexed_tree';
 import { IndexedTree } from './interfaces/indexed_tree';
 import { Field, Provable } from 'snarkyjs';

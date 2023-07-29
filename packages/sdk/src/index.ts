@@ -1,6 +1,1 @@
-export class Apple {
-
-    constructor(private txId: bigint) {
-        
-    }
-}
+export * from './sdk_interface';
