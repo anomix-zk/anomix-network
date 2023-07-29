@@ -1,9 +1,9 @@
 import { FastifyPlugin } from "fastify"
-import { queryByTxId } from "./query-by-tx-id";
+import { queryByTxIds } from "./query-by-txids";
 import { queryTxByNoteHash } from "./query-tx-by-note-hashes";
-import { queryPendingTxs } from "./query-pending-txs";
 import { queryWithdrawalNotesByL1Addr } from "./query-withdrawal-notes-by-L1-addr";
 import { recieveTx } from "./recieve-tx";
+import { withdrawAsset } from "./withdraw-assets";
 
 /**
  (5)供client查询encrypted data
@@ -20,14 +20,14 @@ import { recieveTx } from "./recieve-tx";
 (7.5) 提现场景中，提供L1Addr来查询相关的所有pending value notes
  */
 
-export const tx: FastifyPlugin = async (
+export const txEndpoint: FastifyPlugin = async (
     instance,
     options,
     done
 ): Promise<void> => {
-    instance.register(queryByTxId);
-    instance.register(queryPendingTxs);
-    instance.register(queryTxByNoteHash);
     instance.register(recieveTx);
+    instance.register(queryByTxIds);
+    instance.register(queryTxByNoteHash);
     instance.register(queryWithdrawalNotesByL1Addr);
+    instance.register(withdrawAsset);
 }

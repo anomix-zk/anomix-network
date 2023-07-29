@@ -1,10 +1,10 @@
-import { L2TxDTOSchema, L2TxDTO } from '@anomix/types'
+import { BaseResponse, L2TxReqDtoSchema, L2TxReqDto } from '@anomix/types'
 import { getConnection } from 'typeorm';
 import { FastifyPlugin } from "fastify";
 import httpCodes from "@inip/http-codes";
 import { MemPlL2Tx } from '@anomix/dao'
 import { RequestHandler } from '@/lib/types';
-import { JoinSplitProof } from "@anomix/circuits";
+import { JoinSplitProof, ValueNote } from "@anomix/circuits";
 import config from "@/lib/config";
 import { verify } from "snarkyjs";
 /**
@@ -24,20 +24,21 @@ export const recieveTx: FastifyPlugin = async function (
     })
 }
 
-type Response = { data: string }
-
-export const handler: RequestHandler<L2TxDTO, null> = async function (req, res): Promise<Response> {
-    const l2TxBody = req.body;
+export const handler: RequestHandler<L2TxReqDto, null> = async function (req, res): Promise<BaseResponse<string>> {
+    const l2TxReqDto = req.body;
 
     // validate tx's proof
-    const proof = JoinSplitProof.fromJSON(JSON.parse(l2TxBody.proof));// TODO need 'fromJSON(*)'??
+    const proof = JoinSplitProof.fromJSON(l2TxReqDto.proof);
     const ok = await verify(proof.toJSON(), config.joinSplitVK);
 
     if (!ok) {
         throw req.throwError(httpCodes.BAD_REQUEST, { data: 'verify failed!' })
     }
 
-    // TODO need compare each fields in L2TxDTO with that within 'proof'
+    let valueNote = ValueNote.fromJSON(l2TxReqDto.extraData.withdrawNote);
+
+
+    // TODO need compare hash(aliasHash) and aliasHash in L2TxReqDto with that within 'proof'
     // 
     //
 
@@ -46,8 +47,8 @@ export const handler: RequestHandler<L2TxDTO, null> = async function (req, res):
         // TODO merge fields
         //
         //
-        memPlL2TxRepository.save([l2TxBody], {});
-        return { data: 'ok' } as Response
+        memPlL2TxRepository.save([l2TxReqDto], {});
+        return { code: 0, data: '', msg: '' };
 
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
@@ -55,26 +56,25 @@ export const handler: RequestHandler<L2TxDTO, null> = async function (req, res):
 }
 
 const schema = {
+    description: 'recieve tx from client',
     tags: ["L2Tx"],
     body: {
         type: "object",
-        properties: (L2TxDTOSchema as any).properties,
-        required: (L2TxDTOSchema as any).required
+        properties: (L2TxReqDtoSchema as any).properties,
+        required: (L2TxReqDtoSchema as any).required
     },
     response: {
         200: {
-            type: "object",
+            type: 'object',
             properties: {
-                "data": {
-                    type: "string",
-                }
-            }
-        },
-        400: {
-            type: "object",
-            properties: {
-                "data": {
-                    type: "string",
+                code: {
+                    type: 'number',
+                },
+                data: {
+                    type: 'string'
+                },
+                msg: {
+                    type: 'string'
                 }
             }
         }

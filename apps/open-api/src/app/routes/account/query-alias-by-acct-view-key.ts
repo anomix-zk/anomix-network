@@ -8,6 +8,7 @@ import { getConnection } from 'typeorm';
 
 import { RequestHandler } from '@/lib/types'
 import { Account } from '@anomix/dao'
+import { BaseResponse } from "@anomix/types";
 
 export const queryAliasByAcctViewKey: FastifyPlugin = async function (
     instance,
@@ -24,40 +25,46 @@ export const queryAliasByAcctViewKey: FastifyPlugin = async function (
 }
 
 type AcctvkParam = { acctvk: string }
-type Response = { data: string }
 
 export const handler: RequestHandler<null, AcctvkParam> = async function (
     req,
     res
-): Promise<Response> {
+): Promise<BaseResponse<string>> {
     const { acctvk: p_acctvk } = req.params
     const accountRepository = getConnection().getRepository(Account)
     try {
         const account = await accountRepository.findOne({ where: { acctViewKey: p_acctvk } });
-        return { data: (account?.aliasHash) ?? '' }
+        return { code: 0, data: (account?.aliasHash) ?? '', msg: '' }
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
 
 const schema = {
+    description: 'query aliashash by acct-view-key',
     tags: ["Account"],
     params: {
         type: "object",
         properties: {
-            aliashash: {
+            acctvk: {
                 type: "string",
             }
         }
     },
     response: {
         200: {
-            type: "object",
+            type: 'object',
             properties: {
+                code: {
+                    type: 'number',
+                },
                 data: {
                     type: "string"
+                },
+                msg: {
+                    type: 'string'
                 }
-            },
+            }
         }
     }
 }

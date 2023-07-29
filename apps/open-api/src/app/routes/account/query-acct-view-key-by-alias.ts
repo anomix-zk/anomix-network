@@ -8,6 +8,7 @@ import { getConnection } from 'typeorm';
 
 import { RequestHandler } from '@/lib/types'
 import { Account } from '@anomix/dao'
+import { BaseResponse } from "@anomix/types";
 
 export const queryAcctViewKeyByAlias: FastifyPlugin = async function (
     instance,
@@ -24,22 +25,23 @@ export const queryAcctViewKeyByAlias: FastifyPlugin = async function (
 }
 
 type AliasHashParam = { aliashash: string }
-type Response = { data: string[] }
 
 export const handler: RequestHandler<null, AliasHashParam> = async function (
     req,
     res
-): Promise<Response> {
+): Promise<BaseResponse<string[]>> {
     const { aliashash: p_aliashash } = req.params
 
     const accountRepository = getConnection().getRepository(Account)
     try {
         const accountList = await accountRepository.find({ where: { aliashash: p_aliashash } });
         return {
+            code: 0,
             data: accountList.map(acct => {
                 return acct.acctViewKey;
-            })
-        } as Response;
+            }),
+            msg: ''
+        };
 
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
@@ -47,6 +49,7 @@ export const handler: RequestHandler<null, AliasHashParam> = async function (
 
 }
 const schema = {
+    description: 'query acct-view-key by aliashash',
     tags: ["Account"],
     params: {
         type: "object",
@@ -58,18 +61,19 @@ const schema = {
     },
     response: {
         200: {
-            type: "object",
+            type: 'object',
             properties: {
+                code: {
+                    type: 'number',
+                },
                 data: {
-                    type: "object",
-                    properties: {
-                        acctvkList: {
-                            type: "array",
-                            items: {
-                                type: "string"
-                            }
-                        }
+                    type: "array",
+                    items: {
+                        type: 'string'
                     }
+                },
+                msg: {
+                    type: 'string'
                 }
             }
         }

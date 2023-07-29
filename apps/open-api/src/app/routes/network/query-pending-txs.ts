@@ -3,9 +3,9 @@ import { L2Tx, MemPlL2Tx, TxStatus } from '@anomix/dao'
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
-import { L2TxDTOSchema } from '@anomix/types'
+import { L2TxRespDtoSchema } from '@anomix/types'
 
-import { L2TxDTO } from '@anomix/types'
+import { L2TxRespDto, BaseResponse } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 
 /**
@@ -21,7 +21,7 @@ export const queryPendingTxs: FastifyPlugin = async function (
 ): Promise<void> {
     instance.route({
         method: "GET",
-        url: "/tx/pending",
+        url: "/network/pending-txs",
         //preHandler: [instance.authGuard],
         schema,
         handler
@@ -31,30 +31,41 @@ export const queryPendingTxs: FastifyPlugin = async function (
 export const handler: RequestHandler<null, null> = async function (
     req,
     res
-): Promise<L2TxDTO[]> {
+): Promise<BaseResponse<L2TxRespDto[]>> {
     try {
         const mpL2TxRepository = getConnection().getRepository(MemPlL2Tx)
         // first query memory pool
         const tx = await mpL2TxRepository.find({ where: [{ status: TxStatus.PENDING }, { status: TxStatus.PROCESSING }] });
-        return (tx ?? []) as L2TxDTO[];
-
+        return {
+            code: 0,
+            data: ((tx ?? []) as any) as L2TxRespDto[],
+            msg: ''
+        };
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
 
 const schema = {
-    tags: ["L2Tx"],
+    description: 'query all pending txs',
+
+    tags: ["Network"],
     response: {
         200: {
-            type: "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "type": (L2TxDTOSchema as any).type,
-                        "properties": (L2TxDTOSchema as any).properties,
+            type: 'object',
+            properties: {
+                code: {
+                    type: 'number',
+                },
+                data: {
+                    type: "array",
+                    items: {
+                        type: (L2TxRespDtoSchema as any).type,
+                        properties: (L2TxRespDtoSchema as any).properties,
                     }
+                },
+                msg: {
+                    type: 'string'
                 }
             }
         }

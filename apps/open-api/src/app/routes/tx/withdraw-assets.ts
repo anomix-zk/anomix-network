@@ -4,37 +4,41 @@ import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { WithdrawInfo } from "@anomix/dao";
-import { WithdrawInfoDtoSchema, BaseResponse, WithdrawInfoDto } from "@anomix/types";
+import { WithdrawInfoDtoSchema, BaseResponse } from "@anomix/types";
+import { Signature, PublicKey, Field } from "snarkyjs";
 
 /**
-* 提现场景中，提供L1Addr来查询相关的所有pending value notes
+* 提现场景中，用户提供noteCommitment, 服务器执行合约并协助提现
 */
-export const queryWithdrawalNotesByL1Addr: FastifyPlugin = async function (
+export const withdrawAsset: FastifyPlugin = async function (
     instance,
     options,
     done
 ): Promise<void> {
     instance.route({
-        method: "GET",
-        url: "/tx/withdraw/:l1addr",
+        method: "POST",
+        url: "/tx/withdraw",
         //preHandler: [instance.authGuard],
         schema,
         handler
     })
 }
 
-export const handler: RequestHandler<null, string> = async function (
+export const handler: RequestHandler<{ l1addr: string, noteCommitment: string, signature: any }, null> = async function (
     req,
     res
-): Promise<BaseResponse<WithdrawInfoDto[]>> {
-    const l1addr = req.params
+): Promise<BaseResponse<WithdrawInfo[]>> {
+    const { l1addr, noteCommitment, signature } = req.body
+
+    // check sig to avoid evil requests.
+    const rs = Signature.fromJSON(signature).verify(PublicKey.fromBase58(l1addr), [Field(noteCommitment)]);
 
     const withdrawInfoRepository = getConnection().getRepository(WithdrawInfo)
     try {
         const withdrawInfoList = await withdrawInfoRepository.find({ where: { ownerPk: l1addr } });
         return {
             code: 0,
-            data: (withdrawInfoList ?? []) as WithdrawInfoDto[],
+            data: (withdrawInfoList ?? []) as WithdrawInfo[],
             msg: ''
         };
 

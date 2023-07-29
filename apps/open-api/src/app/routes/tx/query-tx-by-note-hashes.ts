@@ -1,10 +1,8 @@
 
-import { L2Tx } from '@anomix/dao'
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { getConnection } from 'typeorm';
-import { L2TxDTO, L2TxDTOSchema } from '@anomix/types'
+import { BaseResponse, L2TxRespDto } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 
 /**
@@ -31,7 +29,7 @@ type NotesReqBody = {
 export const handler: RequestHandler<NotesReqBody, null> = async function (
     req,
     res
-): Promise<L2TxDTO[]> {
+): Promise<BaseResponse<L2TxRespDto[]>> {
     const { notehashes: hash } = req.body
 
     // TODO will improve the code by building a new KV db[nodehash -> L2tx].
@@ -48,22 +46,27 @@ export const handler: RequestHandler<NotesReqBody, null> = async function (
         // if ((txList?.length == 0) || (txList ?? true)) {
         //     txList = await txRepository.find({ where: { input_note_nullifier_B: hash } });
         // }
-        // return (txList ?? []) as L2TxDTO[];
-        return []
+        // return (txList ?? []) as L2TxRespDto[];
+        return {
+            code: 0,
+            data: ([] as any) as L2TxRespDto[],
+            msg: ''
+        };
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
 
 const schema = {
+    description: 'query tx list by note hash list',
     tags: ["L2Tx"],
     params: {
         type: "object",
         properties: {
             'notehashes': {
-                "type": "array",
-                "items": {
-                    "type": "string"
+                type: "array",
+                items: {
+                    type: "string"
                 }
             }
         },
@@ -71,21 +74,27 @@ const schema = {
     },
     response: {
         200: {
-            type: "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "note": {
-                                "type": "string"
+            type: 'object',
+            properties: {
+                code: {
+                    type: 'number',
+                },
+                data: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            note: {
+                                type: "string"
                             },
-                            "txHash": {
-                                "type": "string"
+                            txHash: {
+                                type: "string"
                             },
                         }
                     }
+                },
+                msg: {
+                    type: 'string'
                 }
             }
         }
