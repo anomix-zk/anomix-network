@@ -14,7 +14,7 @@ export interface L2TxReqDto {
         /**
          * used at Account Registration section
          */
-        accountPublicKey: string,
+        acctPk: string,
         /**
          * used at Account Registration section
          */

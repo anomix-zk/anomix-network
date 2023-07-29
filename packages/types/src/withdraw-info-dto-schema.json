@@ -29,6 +29,10 @@
             "description": "hash of corresponding L2 tx",
             "type": "string"
         },
+        "l2TxId": {
+            "description": "entity id of corresponding L2 tx",
+            "type": "number"
+        },
         "noteType": {
             "type": "string"
         },
@@ -49,10 +53,6 @@
         },
         "status": {
             "description": "record if it has already been claimed.",
-            "type": "number"
-        },
-        "txId": {
-            "description": "entity id of corresponding L2 tx",
             "type": "number"
         },
         "updatedAt": {

@@ -32,7 +32,7 @@ export interface WithdrawInfoDto {
     /**
      * entity id of corresponding L2 tx
      */
-    txId: number
+    l2TxId: number
 
     /**
      * hash of corresponding L2 tx

@@ -28,7 +28,7 @@
     "properties": {
         "extraData": {
             "properties": {
-                "accountPublicKey": {
+                "acctPk": {
                     "description": "used at Account Registration section",
                     "type": "string"
                 },
