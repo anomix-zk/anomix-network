@@ -1,9 +1,21 @@
 
 export interface AssetInBlockReqDto {
-    blocks: number[];
+    /**
+     * block height list, no requirements on sequence.
+     */
+    blocks: number[],
     range: {
-        start: number;
-        end: number;
-    };
-    flag: number;
+        /**
+         * less than 'end'
+         */
+        start: number,
+        /**
+         * greater than 'start'
+         */
+        end: number,
+    },
+    /**
+     * @requires
+     */
+    flag: number
 }

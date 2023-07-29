@@ -1,29 +1,164 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "EncryptedNote": {
+            "properties": {
+                "cipherText": {
+                    "description": "long text. from encrypt(valueNote.json())",
+                    "type": "string"
+                },
+                "noteCommitment": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "description": "Base58",
+                    "type": "string"
+                },
+                "receiverInfo": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "WithdrawInfoDto": {
+            "properties": {
+                "accountRequired": {
+                    "type": "string"
+                },
+                "assetId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "creatorPk": {
+                    "description": "could be optional",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "number"
+                },
+                "inputNullifier": {
+                    "type": "string"
+                },
+                "l1TxHash": {
+                    "description": "record the L1TxHash when it's claimed",
+                    "type": "string"
+                },
+                "l2TxHash": {
+                    "description": "hash of corresponding L2 tx",
+                    "type": "string"
+                },
+                "noteType": {
+                    "type": "string"
+                },
+                "outputNoteCommitment1": {
+                    "description": "here is a unique index here",
+                    "type": "string"
+                },
+                "outputNoteCommitmentIdx1": {
+                    "description": "the leaf index on data_tree, will be updated when L2tx is confirmed at L2's Block",
+                    "type": "string"
+                },
+                "ownerPk": {
+                    "description": "from L2tx's publicOwner",
+                    "type": "string"
+                },
+                "secret": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "record if it has already been claimed.",
+                    "type": "number"
+                },
+                "txId": {
+                    "description": "entity id of corresponding L2 tx",
+                    "type": "number"
+                },
+                "updatedAt": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    },
     "properties": {
         "actionType": {
             "type": "string"
         },
-        "creator_pubkey": {
-            "description": "optional",
+        "blockHash": {
+            "description": "blockHash",
+            "type": "string"
+        },
+        "blockId": {
+            "description": "blockId, ie. blockHeight, as the primary key of block table",
+            "type": "number"
+        },
+        "createdAt": {
+            "format": "date-time",
             "type": "string"
         },
         "dataRoot": {
             "type": "string"
         },
         "depositIndex": {
+            "description": "leaf index of `outputNoteCommitment1` on deposit_tree",
             "type": "string"
         },
         "depositRoot": {
+            "description": "for deposit L2tx",
             "type": "string"
         },
-        "encryptedData": {
-            "type": "string"
+        "extraData": {
+            "properties": {
+                "accountPublicKey": {
+                    "description": "used at Account Registration section",
+                    "type": "string"
+                },
+                "aliasHash": {
+                    "description": "used at Account Registration section",
+                    "type": "string"
+                },
+                "outputNote1": {
+                    "$ref": "#/definitions/EncryptedNote",
+                    "description": "from encryptedData1"
+                },
+                "outputNote2": {
+                    "$ref": "#/definitions/EncryptedNote",
+                    "description": "from encryptedData2"
+                },
+                "withdrawNote": {
+                    "$ref": "#/definitions/WithdrawInfoDto",
+                    "description": "used at Withdrawal section"
+                }
+            },
+            "type": "object"
+        },
+        "id": {
+            "type": "number"
+        },
+        "indexInBlock": {
+            "description": "the index within a block",
+            "type": "number"
         },
         "nullifier1": {
             "type": "string"
         },
         "nullifier2": {
+            "type": "string"
+        },
+        "nullifierIdx1": {
+            "type": "string"
+        },
+        "nullifierIdx2": {
             "type": "string"
         },
         "outputNoteCommitment1": {
@@ -32,8 +167,15 @@
         "outputNoteCommitment2": {
             "type": "string"
         },
+        "outputNoteCommitmentIdx1": {
+            "description": "leaf index on data_tree",
+            "type": "string"
+        },
+        "outputNoteCommitmentIdx2": {
+            "description": "leaf index on data_tree",
+            "type": "string"
+        },
         "proof": {
-            "description": "string from proof.toJSON()",
             "type": "string"
         },
         "publicAssetId": {
@@ -45,36 +187,23 @@
         "publicValue": {
             "type": "string"
         },
-        "secret": {
-            "description": "optional",
-            "type": "string"
+        "status": {
+            "type": "number"
         },
         "txFee": {
             "type": "string"
         },
         "txFeeAssetId": {
             "type": "string"
+        },
+        "txHash": {
+            "type": "string"
+        },
+        "updatedAt": {
+            "format": "date-time",
+            "type": "string"
         }
     },
-    "required": [
-        "actionType",
-        "creator_pubkey",
-        "dataRoot",
-        "depositIndex",
-        "depositRoot",
-        "encryptedData",
-        "nullifier1",
-        "nullifier2",
-        "outputNoteCommitment1",
-        "outputNoteCommitment2",
-        "proof",
-        "publicAssetId",
-        "publicOwner",
-        "publicValue",
-        "secret",
-        "txFee",
-        "txFeeAssetId"
-    ],
     "type": "object"
 }
 

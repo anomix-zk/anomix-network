@@ -1,0 +1,84 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "EncryptedNote": {
+            "properties": {
+                "cipherText": {
+                    "description": "long text. from encrypt(valueNote.json())",
+                    "type": "string"
+                },
+                "noteCommitment": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "description": "Base58",
+                    "type": "string"
+                },
+                "receiverInfo": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        }
+    },
+    "description": "used for All L2 tx scenarios",
+    "properties": {
+        "extraData": {
+            "properties": {
+                "accountPublicKey": {
+                    "description": "used at Account Registration section",
+                    "type": "string"
+                },
+                "aliasHash": {
+                    "description": "used at Account Registration section",
+                    "type": "string"
+                },
+                "outputNote1": {
+                    "$ref": "#/definitions/EncryptedNote"
+                },
+                "outputNote2": {
+                    "$ref": "#/definitions/EncryptedNote"
+                },
+                "withdrawNote": {
+                    "description": "used at Withdrawal section",
+                    "properties": {
+                        "accountRequired": {
+                            "type": "string"
+                        },
+                        "assetId": {
+                            "type": "string"
+                        },
+                        "creatorPk": {
+                            "type": "string"
+                        },
+                        "inputNullifier": {
+                            "type": "string"
+                        },
+                        "noteType": {
+                            "type": "string"
+                        },
+                        "ownerPk": {
+                            "type": "string"
+                        },
+                        "secret": {
+                            "type": "string"
+                        },
+                        "value": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "proof": {
+            "description": "from execution result of Join-Split circuit"
+        }
+    },
+    "type": "object"
+}
+

@@ -1,0 +1,76 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "EncryptedNote": {
+            "properties": {
+                "cipherText": {
+                    "description": "long text. from encrypt(valueNote.json())",
+                    "type": "string"
+                },
+                "noteCommitment": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "description": "Base58",
+                    "type": "string"
+                },
+                "receiverInfo": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        }
+    },
+    "properties": {
+        "blockHeight": {
+            "type": "number"
+        },
+        "timestamp": {
+            "type": "number"
+        },
+        "txList": {
+            "items": {
+                "properties": {
+                    "nullifier1": {
+                        "type": "string"
+                    },
+                    "nullifier2": {
+                        "type": "string"
+                    },
+                    "output1": {
+                        "properties": {
+                            "data": {
+                                "$ref": "#/definitions/EncryptedNote"
+                            },
+                            "index": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "output2": {
+                        "properties": {
+                            "data": {
+                                "$ref": "#/definitions/EncryptedNote"
+                            },
+                            "index": {
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "txHash": {
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "type": "array"
+        }
+    },
+    "type": "object"
+}
+

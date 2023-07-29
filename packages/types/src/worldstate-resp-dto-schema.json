@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "dataTree": {
+            "properties": {
+                "root": {
+                    "type": "string"
+                },
+                "totalNum": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "nullifierTree": {
+            "properties": {
+                "root": {
+                    "type": "string"
+                },
+                "totalNum": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        },
+        "rootTree": {
+            "properties": {
+                "root": {
+                    "type": "string"
+                },
+                "totalNum": {
+                    "type": "string"
+                }
+            },
+            "type": "object"
+        }
+    },
+    "type": "object"
+}
+

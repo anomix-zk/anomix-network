@@ -12,13 +12,13 @@
     "lib:build": "npm run gen-schema-aibreqdto && npm run gen-schema-aibdto && npm run gen-schema-txreqdto && npm run gen-schema-txrespdto && npm run gen-schema-mpdto && npm run gen-schema-tfsdto && npm run gen-schema-widto && npm run gen-schema-wsrespdto && tsc --build tsconfig.json && tsc-alias",
     "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
     "lib:lint": "eslint \"src/**/*.ts\" --fix",
-    "gen-schema-aibreqdto": "npx typescript-json-schema ./src/asset-in-block-req-dto.ts AssetInBlockReqDto -o /src/asset-in-block-req-dto-schema.json",
-    "gen-schema-aibdto": "npx typescript-json-schema ./src/asset-in-block-dto.ts AssetsInBlockDto -o /src/asset-in-block-dto-schema.json",
-    "gen-schema-txreqdto": "npx typescript-json-schema ./src/l2-tx-req-dto.ts L2TxReqDto -o /src/l2-tx-req-dto-schema.json",
-    "gen-schema-txrespdto": "npx typescript-json-schema ./src/l2-tx-resp-dto.ts L2TxRespDto -o /src/l2-tx-resp-dto-schema.json",
-    "gen-schema-mpdto": "npx typescript-json-schema ./src/merkle-proof-dto.ts MerkleProofDto -o /src/merkle-proof-dto-schema.json",
-    "gen-schema-tfsdto": "npx typescript-json-schema ./src/txfee-suggestion-dto.ts TxFeeSuggestionDto -o /src/txfee-suggestion-dto-schema.json",
-    "gen-schema-widto": "npx typescript-json-schema ./src/withdraw-info-dto.ts WithdrawInfoDto -o /src/withdraw-info-dto-schema.json",
-    "gen-schema-wsrespdto": "npx typescript-json-schema ./src/worldstate-resp-dto.ts WorldStateRespDto -o /src/worldstate-resp-dto-schema.json"
+    "gen-schema-aibreqdto": "npx typescript-json-schema ./src/asset-in-block-req-dto.ts AssetInBlockReqDto -o ./src/asset-in-block-req-dto-schema.json",
+    "gen-schema-aibdto": "npx typescript-json-schema ./src/asset-in-block-dto.ts AssetsInBlockDto -o ./src/asset-in-block-dto-schema.json",
+    "gen-schema-txreqdto": "npx typescript-json-schema ./src/l2-tx-req-dto.ts L2TxReqDto -o ./src/l2-tx-req-dto-schema.json",
+    "gen-schema-txrespdto": "npx typescript-json-schema ./src/l2-tx-resp-dto.ts L2TxRespDto -o ./src/l2-tx-resp-dto-schema.json",
+    "gen-schema-mpdto": "npx typescript-json-schema ./src/merkle-proof-dto.ts MerkleProofDto -o ./src/merkle-proof-dto-schema.json",
+    "gen-schema-tfsdto": "npx typescript-json-schema ./src/txfee-suggestion-dto.ts TxFeeSuggestionDto -o ./src/txfee-suggestion-dto-schema.json",
+    "gen-schema-widto": "npx typescript-json-schema ./src/withdraw-info-dto.ts WithdrawInfoDto -o ./src/withdraw-info-dto-schema.json",
+    "gen-schema-wsrespdto": "npx typescript-json-schema ./src/worldstate-resp-dto.ts WorldStateRespDto -o ./src/worldstate-resp-dto-schema.json"
   }
 }

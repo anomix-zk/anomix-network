@@ -1,0 +1,68 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "accountRequired": {
+            "type": "string"
+        },
+        "assetId": {
+            "type": "string"
+        },
+        "createdAt": {
+            "format": "date-time",
+            "type": "string"
+        },
+        "creatorPk": {
+            "description": "could be optional",
+            "type": "string"
+        },
+        "id": {
+            "type": "number"
+        },
+        "inputNullifier": {
+            "type": "string"
+        },
+        "l1TxHash": {
+            "description": "record the L1TxHash when it's claimed",
+            "type": "string"
+        },
+        "l2TxHash": {
+            "description": "hash of corresponding L2 tx",
+            "type": "string"
+        },
+        "noteType": {
+            "type": "string"
+        },
+        "outputNoteCommitment1": {
+            "description": "here is a unique index here",
+            "type": "string"
+        },
+        "outputNoteCommitmentIdx1": {
+            "description": "the leaf index on data_tree, will be updated when L2tx is confirmed at L2's Block",
+            "type": "string"
+        },
+        "ownerPk": {
+            "description": "from L2tx's publicOwner",
+            "type": "string"
+        },
+        "secret": {
+            "type": "string"
+        },
+        "status": {
+            "description": "record if it has already been claimed.",
+            "type": "number"
+        },
+        "txId": {
+            "description": "entity id of corresponding L2 tx",
+            "type": "number"
+        },
+        "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+        },
+        "value": {
+            "type": "string"
+        }
+    },
+    "type": "object"
+}
+

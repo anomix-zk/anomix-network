@@ -1,37 +1,20 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "for existence or non-existence merkle proof",
-  "properties": {
-    "data": {
-      "anyOf": [
-        {
-          "properties": {
-            "nextIndex": {
-              "type": "string"
-            },
-            "nextValue": {
-              "type": "string"
-            },
-            "value": {
-              "type": "string"
-            }
-          },
-          "type": "object"
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "description": "for existence merkle proof",
+    "properties": {
+        "commitment": {
+            "type": "string"
         },
-        {
-          "type": "string"
+        "leafIndex": {
+            "type": "integer"
+        },
+        "paths": {
+            "items": {
+                "type": "string"
+            },
+            "type": "array"
         }
-      ]
     },
-    "leafIndex": {
-      "type": "integer"
-    },
-    "paths": {
-      "items": {
-        "type": "string"
-      },
-      "type": "array"
-    }
-  },
-  "type": "object"
+    "type": "object"
 }
+
