@@ -1,5 +1,5 @@
 import { LevelUp } from 'levelup';
-import { Hasher } from './hasher.js';
+import { Hasher } from '@anomix/types';
 import { TreeBase, decodeMeta } from './tree_base.js';
 
 /**
@@ -14,7 +14,7 @@ export async function loadTree<T extends TreeBase>(
   c: new (...args: any[]) => T,
   db: LevelUp,
   hasher: Hasher,
-  name: string,
+  name: string
 ): Promise<T> {
   const meta: Buffer = await db.get(name);
   const { root, depth, size } = decodeMeta(meta);

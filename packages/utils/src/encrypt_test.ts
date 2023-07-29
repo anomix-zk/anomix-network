@@ -1,5 +1,4 @@
-
-import { Field, PrivateKey, PublicKey} from "snarkyjs";
+import { Field, PrivateKey, PublicKey, Signature, Encoding } from "snarkyjs";
 import { decrypt, encrypt } from "./encrypt";
 import { calculateShareSecret } from "./keys_helper";
 

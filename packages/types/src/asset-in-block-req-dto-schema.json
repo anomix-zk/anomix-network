@@ -2,6 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "properties": {
         "blocks": {
+            "description": "block height list, no requirements on sequence.",
             "items": {
                 "type": "number"
             },
@@ -13,9 +14,11 @@
         "range": {
             "properties": {
                 "end": {
+                    "description": "greater than 'start'",
                     "type": "number"
                 },
                 "start": {
+                    "description": "less than 'end'",
                     "type": "number"
                 }
             },

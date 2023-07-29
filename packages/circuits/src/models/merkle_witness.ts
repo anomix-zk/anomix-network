@@ -4,7 +4,7 @@ import {
   NULLIFIER_TREE_HEIGHT,
   ROOT_TREE_HEIGHT,
 } from '../constants';
-import { SiblingPath } from '@anomix/merkle-tree';
+import { SiblingPath } from '@anomix/types';
 import { Field, Poseidon, Provable, Struct } from 'snarkyjs';
 import { DUMMY_FIELD } from './constants';
 

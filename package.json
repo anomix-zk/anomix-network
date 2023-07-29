@@ -11,8 +11,7 @@
   ],
   "scripts": {
     "install": "npm run libs:build",
-    "libs:build": "npm run lib:build -w @anomix/merkle-tree && npm run lib:build -w @anomix/circuits && npm run lib:build -w @anomix/dao && npm run lib:build -w @anomix/types && npm run lib:build -w @anomix/utils && npm run lib:build -w @anomix/sdk",
-    "libs:dev": "concurrently \"npm run lib:dev -w @anomix/utils\" \"npm run lib:dev -w @anomix/shared\"",
+    "libs:build": "npm run lib:build -w @anomix/types && npm run lib:build -w @anomix/merkle-tree && npm run lib:build -w @anomix/utils && npm run lib:build -w @anomix/circuits && npm run lib:build -w @anomix/dao && npm run lib:build -w @anomix/sdk",
     "server:dev": "npm run serve -w @anomix/open-api",
     "web:dev": "npm run serve -w @anomix/ano-cash-ui",
     "apps:dev": "concurrently \"npm run serve -w @anomix/ano-cash-ui\" \"npm run serve -w @anomix/open-api\"",

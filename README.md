@@ -105,7 +105,6 @@ More info here: https://vuejs.org/guide/typescript/overview.html#takeover-mode
 ## Top-Level Scripts
  
 * `apps:dev` - run front-end and back-end simultaneously with hot reload
-* `libs:dev` - run all lib packages simultaneously with hot reload
 * `web:dev` - run front-end with hot reload
 * `server:dev` - run back-end with hot reload
 * `libs:build` - build packages in `libs` folder

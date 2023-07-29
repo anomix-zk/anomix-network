@@ -21,3 +21,6 @@ import WorldStateRespDtoSchema from './worldstate-resp-dto-schema.json' assert {
 
 export { L2TxReqDtoSchema, L2TxRespDtoSchema, MerkleProofDtoSchema, WithdrawInfoDtoSchema, AssetInBlockReqDtoSchema, AssetsInBlockDtoSchema, WorldStateRespDtoSchema, TxFeeSuggestionDtoSchema };
 
+export * from "./merkle_tree/hasher";
+export * from "./merkle_tree/poseidon_hasher";
+export * from "./merkle_tree/sibling_path";

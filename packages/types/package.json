@@ -20,5 +20,8 @@
     "gen-schema-tfsdto": "npx typescript-json-schema ./src/txfee-suggestion-dto.ts TxFeeSuggestionDto -o ./src/txfee-suggestion-dto-schema.json",
     "gen-schema-widto": "npx typescript-json-schema ./src/withdraw-info-dto.ts WithdrawInfoDto -o ./src/withdraw-info-dto-schema.json",
     "gen-schema-wsrespdto": "npx typescript-json-schema ./src/worldstate-resp-dto.ts WorldStateRespDto -o ./src/worldstate-resp-dto-schema.json"
+  },
+  "peerDependencies": {
+    "snarkyjs": "0.12.*"
   }
 }

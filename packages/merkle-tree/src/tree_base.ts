@@ -1,6 +1,6 @@
 import { LevelUp, LevelUpChain } from 'levelup';
-import { BaseSiblingPath, SiblingPath } from './sibling_path';
-import { Hasher } from './hasher.js';
+import { BaseSiblingPath, SiblingPath } from '@anomix/types';
+import { Hasher } from '@anomix/types';
 import { MerkleTree } from './interfaces/merkle_tree.js';
 import { toBigIntLE, toBufferLE } from './utils';
 import { Field } from 'snarkyjs';

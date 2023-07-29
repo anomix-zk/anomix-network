@@ -10,7 +10,6 @@
     "typecheck": "vue-tsc --noEmit"
   },
   "dependencies": {
-    "@anomix/shared": "0.1.0",
     "@anomix/utils": "0.1.0",
     "@quasar/extras": "^1.13.6",
     "@vee-validate/i18n": "^4.5.11",
