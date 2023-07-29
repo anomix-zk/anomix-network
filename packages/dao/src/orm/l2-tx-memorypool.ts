@@ -25,7 +25,21 @@ export class TxStatus {
 export class MemPlL2Tx extends L2Tx {
 
     /**
-     * transmit the common properties from joinSplitOutput to L2Tx obj.
+     * transmit the common properties from joinSplitOutput to L2Tx obj. <br>
+     * 
+     * should populate the properties below later:
+     * * id: number
+     * * txHash: string
+     * * nullifierIdx1: string
+     * * nullifierIdx2
+     * * outputNoteCommitmentIdx1
+     * * outputNoteCommitmentIdx2
+     * * proof: string
+     * * status: number
+     * * blockId: number
+     * * blockHash: string
+     * * indexInBlock: number
+     * 
      * @param joinSplitOutput 
      */
     static fromJoinSplitOutput(

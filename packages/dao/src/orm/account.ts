@@ -16,14 +16,14 @@ export class Account {
     aliasHash: string
 
     @Column()
-    acctViewKey: string
+    acctPk: string
 
 
     /**
      * entity id of corresponding L2 tx, when account registration
      */
     @Column()
-    txId: number
+    l2TxId: number
 
     /**
      * hash of corresponding L2 tx, when account registration

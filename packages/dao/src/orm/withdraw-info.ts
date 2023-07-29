@@ -71,7 +71,7 @@ export class WithdrawInfo {
      * entity id of corresponding L2 tx
      */
     @Column()
-    txId: number
+    l2TxId: number
 
     /**
      * hash of corresponding L2 tx
