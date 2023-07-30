@@ -1,15 +1,15 @@
-import { L2Tx, MemPlL2Tx, TxStatus } from '@anomix/dao'
+import { L2Tx, MemPlL2Tx, L2TxStatus } from '@anomix/dao'
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { getConnection } from 'typeorm';
+import { getConnection, In } from 'typeorm';
 import { L2TxRespDtoSchema } from '@anomix/types'
 
 import { L2TxRespDto, BaseResponse } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 
 /**
- * return all pending txs
+ * return pending txs by tx hashes
  * @param instance 
  * @param options 
  * @param done 
@@ -20,25 +20,34 @@ export const queryPendingTxs: FastifyPlugin = async function (
     done
 ): Promise<void> {
     instance.route({
-        method: "GET",
-        url: "/network/pending-txs",
+        method: "POST",
+        url: "/tx/pending-txs",
         //preHandler: [instance.authGuard],
         schema,
         handler
     })
 }
 
-export const handler: RequestHandler<null, null> = async function (
+export const handler: RequestHandler<string[], null> = async function (
     req,
     res
 ): Promise<BaseResponse<L2TxRespDto[]>> {
+    const txHashList = req.body
+
     try {
         const mpL2TxRepository = getConnection().getRepository(MemPlL2Tx)
         // first query memory pool
-        const tx = await mpL2TxRepository.find({ where: [{ status: TxStatus.PENDING }, { status: TxStatus.PROCESSING }] });
+        const txList = await mpL2TxRepository.find({ where: { status: In([L2TxStatus.PENDING, L2TxStatus.PROCESSING]), txHash: In(txHashList) } }) ?? [];
+        const l2TxRespDtoList = txList.map(tx => {
+            const { updatedAt, createdAt, proof, ...restObj } = tx;
+            const txDto = (restObj as any) as L2TxRespDto;
+            txDto.finalizedTs = 0;
+            txDto.createdTs = 0;
+            return txDto;
+        });
         return {
             code: 0,
-            data: ((tx ?? []) as any) as L2TxRespDto[],
+            data: l2TxRespDtoList,
             msg: ''
         };
     } catch (err) {
@@ -48,8 +57,13 @@ export const handler: RequestHandler<null, null> = async function (
 
 const schema = {
     description: 'query all pending txs',
-
-    tags: ["Network"],
+    tags: ["L2Tx"],
+    body: {
+        type: "array",
+        items: {
+            type: "string"
+        }
+    },
     response: {
         200: {
             type: 'object',

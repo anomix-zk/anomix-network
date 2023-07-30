@@ -4,6 +4,7 @@ import { queryTxByNoteHash } from "./query-tx-by-note-hashes";
 import { queryWithdrawalNotes } from "./query-withdrawal-notes";
 import { recieveTx } from "./recieve-tx";
 import { withdrawAsset } from "./withdraw-assets";
+import { queryPendingTxs } from "./query-pending-txs";
 
 /**
  (5)供client查询encrypted data
@@ -26,6 +27,7 @@ export const txEndpoint: FastifyPlugin = async (
     done
 ): Promise<void> => {
     instance.register(recieveTx);
+    instance.register(queryPendingTxs);
     instance.register(queryByTxHashes);
     instance.register(queryTxByNoteHash);
     instance.register(queryWithdrawalNotes);

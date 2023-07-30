@@ -2,7 +2,7 @@
 * 供client根据TxId查询L2 tx的状态、数据
 */
 // GET /tx/id/:id
-import { L2Tx, MemPlL2Tx } from '@anomix/dao'
+import { BlockProverOutputEntity, L2Tx, MemPlL2Tx } from '@anomix/dao'
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { In, getConnection } from 'typeorm';
@@ -11,6 +11,9 @@ import { BaseResponse, L2TxRespDtoSchema } from '@anomix/types'
 import { L2TxRespDto } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 
+/**
+ * query confirmed tx by tx hashes
+ */
 export const queryByTxHashes: FastifyPlugin = async function (
     instance,
     options,
@@ -32,42 +35,32 @@ export const handler: RequestHandler<string[], null> = async function (
     const txHashList = req.body
 
     try {
-        const mpL2TxRepository = getConnection().getRepository(MemPlL2Tx)
-        const mptxList = await mpL2TxRepository.find({
+        const txRepository = getConnection().getRepository(L2Tx)
+        // then query confirmed tx collection
+        const ctxList = await txRepository.find({
             where: {
                 txHash: In(txHashList)
             }
         }) ?? [];
 
-        let ctxList: any[] = [];
-        if (mptxList.length < txHashList.length) {
-            // exclude mptxList-related from txIdList
-            const txHashList1: string[] = [];
-            txHashList.forEach(txHash => {
-                let r = false;
-                for (const mptx of mptxList) {
-                    if (mptx.txHash == txHash) {
-                        r = true;
-                        break;
-                    }
-                }
-                if (!r) {
-                    txHashList1.push(txHash);
-                }
-            })
+        const l2TxRespDtoList = await Promise.all(ctxList.map(async tx => {
+            const blockRepository = getConnection().getRepository(BlockProverOutputEntity)
+            const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx.blockId } });
 
-            const txRepository = getConnection().getRepository(L2Tx)
-            // then query confirmed tx collection
-            ctxList = await txRepository.find({
-                where: {
-                    txHash: In(txHashList1)
-                }
-            }) ?? [];
-        }
+            const { updatedAt, createdAt, proof, ...restObj } = tx;
+            const txDto = (restObj as any) as L2TxRespDto;
+
+            txDto.finalizedTs = block!.finalizedAt.getTime();
+            txDto.createdTs = block!.createdAt.getTime();
+
+            txDto.extraData.withdrawNote.createdTs = txDto.createdTs;
+
+            return txDto;
+        }));
 
         return {
             code: 0,
-            data: (Array.from([...ctxList, ...mptxList]) as any) as L2TxRespDto[],
+            data: l2TxRespDtoList,
             msg: ''
         };
     } catch (err) {

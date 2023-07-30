@@ -1,4 +1,4 @@
-import { L2Tx, MemPlL2Tx, TxStatus } from '@anomix/dao'
+import { L2Tx, MemPlL2Tx, L2TxStatus } from '@anomix/dao'
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"

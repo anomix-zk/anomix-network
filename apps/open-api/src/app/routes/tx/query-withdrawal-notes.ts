@@ -3,7 +3,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
-import { WithdrawInfo, WithdrawNoteStatus } from "@anomix/dao";
+import { BlockProverOutputEntity, L2Tx, WithdrawInfo, WithdrawNoteStatus } from "@anomix/dao";
 import { WithdrawInfoDtoSchema, BaseResponse, WithdrawInfoDto } from "@anomix/types";
 
 /**
@@ -40,14 +40,30 @@ export const handler: RequestHandler<string[], string> = async function (
     const withdrawInfoRepository = getConnection().getRepository(WithdrawInfo)
     try {
         const withdrawInfoList = (await withdrawInfoRepository.find({ where: whereConditions })) ?? [];
-        withdrawInfoList.forEach(wInfo => {
-            if (wInfo.status == WithdrawNoteStatus.DONE) {
-                wInfo.l1TxBody = '';
+        const withdrawInfoDtoList = await Promise.all(withdrawInfoList.map(async wInfo => {
+            const { createdAt, updatedAt, ...restObj } = wInfo;
+            const withdrawInfoDto = (restObj as any) as WithdrawInfoDto;
+            if (withdrawInfoDto.status == WithdrawNoteStatus.DONE) {
+                withdrawInfoDto.l1TxBody = '';
             }
-        });
+
+            const txRepository = getConnection().getRepository(L2Tx)
+            // then query confirmed tx collection
+            const tx = await txRepository.findOne({
+                where: {
+                    id: withdrawInfoDto.l2TxId
+                }
+            });
+
+            const blockRepository = getConnection().getRepository(BlockProverOutputEntity)
+            const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx!.blockId } });
+            withdrawInfoDto.createdTs = block!.createdAt.getTime();
+            withdrawInfoDto.finalizedTs = block!.finalizedAt.getTime();
+            return withdrawInfoDto;
+        }));
         return {
             code: 0,
-            data: (withdrawInfoList ?? [] as any) as WithdrawInfoDto[],
+            data: withdrawInfoDtoList,
             msg: ''
         };
 

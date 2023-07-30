@@ -6,7 +6,6 @@
 */
 
 import { FastifyPlugin } from "fastify"
-import { queryPendingTxs } from "./query-pending-txs";
 import { queryTxFeeSuggestions } from "./query-txfees-suggestion";
 import { queryWorldStateStatus } from "./query-worldstate-status";
 
@@ -15,7 +14,6 @@ export const networkEndpoint: FastifyPlugin = async (
     options,
     done
 ): Promise<void> => {
-    instance.register(queryPendingTxs);
     instance.register(queryTxFeeSuggestions);
     instance.register(queryWorldStateStatus);
 }
