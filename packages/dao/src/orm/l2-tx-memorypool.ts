@@ -6,16 +6,29 @@ import {
 import { createHash } from 'crypto';
 import { L2Tx } from './l2-tx';
 
-export class TxStatus {
+export class L2TxStatus {
+
     static get FAILED(): number {
         return -1;
     }
+
+    /**
+     * initial
+     */
     static get PENDING(): number {
         return 0;
     }
+
+    /**
+     * before L2Block where l2tx is included is created
+     */
     static get PROCESSING(): number {
         return 1;
     }
+
+    /**
+     * L2Block where l2tx is included is created
+     */
     static get CONFIRMED(): number {
         return 2;
     }

@@ -71,4 +71,13 @@ export class Task {
     @Column()
     taskType: string
 
+    @UpdateDateColumn({
+        default: () => 'CURRENT_TIMESTAMP',
+    })
+    updatedAt: Date
+
+    @CreateDateColumn({
+        default: () => 'CURRENT_TIMESTAMP',
+    })
+    createdAt: Date
 }

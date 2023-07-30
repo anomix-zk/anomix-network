@@ -103,11 +103,17 @@ export class L2Tx {
     @Column()
     indexInBlock: number
 
+    /**
+     * just the insert timestamp,for later statistic
+     */
     @UpdateDateColumn({
         default: () => 'CURRENT_TIMESTAMP',
     })
     updatedAt: Date
 
+    /**
+     * just the insert timestamp,for later statistic
+     */
     @CreateDateColumn({
         default: () => 'CURRENT_TIMESTAMP',
     })

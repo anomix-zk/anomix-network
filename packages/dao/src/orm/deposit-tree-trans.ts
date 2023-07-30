@@ -26,4 +26,19 @@ export class DepositTreeTrans {
     @Column()
     txType: string
 
+    /**
+     * just record
+     */
+    @UpdateDateColumn({
+        default: () => 'CURRENT_TIMESTAMP',
+    })
+    updatedAt: Date
+
+    /**
+     * the timestamp when L2Block is created at Layer2
+     */
+    @CreateDateColumn({
+        default: () => 'CURRENT_TIMESTAMP',
+    })
+    createdAt: Date
 }

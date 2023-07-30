@@ -109,14 +109,24 @@ export class WithdrawInfo {
     @Column({ default: 0 })
     status: number
 
+    /**
+     * the timestamp when L1Tx is finalized at Layer1
+     */
+    @Column()
+    finalizedAt: Date
 
+    /**
+     * just record the timestamp
+     */
     @UpdateDateColumn({
         default: () => 'CURRENT_TIMESTAMP',
     })
     updatedAt: Date
 
-
-    @CreateDateColumn({
+    /**
+     * just the timestamp when into db
+     */
+    @UpdateDateColumn({
         default: () => 'CURRENT_TIMESTAMP',
     })
     createdAt: Date
