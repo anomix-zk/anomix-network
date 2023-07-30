@@ -7,13 +7,17 @@
         "assetId": {
             "type": "string"
         },
-        "createdAt": {
-            "format": "date-time",
-            "type": "string"
+        "createdTs": {
+            "description": "the timestamp when the corresponding L2Block which includes L2tx is created",
+            "type": "number"
         },
         "creatorPk": {
             "description": "could be optional",
             "type": "string"
+        },
+        "finalizedTs": {
+            "description": "the timestamp when L1Tx is finalized at Layer1",
+            "type": "number"
         },
         "id": {
             "type": "number"
@@ -58,10 +62,6 @@
         "status": {
             "description": "record if it has already been claimed.",
             "type": "number"
-        },
-        "updatedAt": {
-            "format": "date-time",
-            "type": "string"
         },
         "value": {
             "type": "string"

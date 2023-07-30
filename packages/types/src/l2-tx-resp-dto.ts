@@ -110,9 +110,13 @@ export interface L2TxRespDto {
      */
     indexInBlock: number
 
+    /**
+     * the timestamp when L2Block is finalized at Layer1
+     */
+    finalizedTs: number
 
-    updatedAt: Date
-
-
-    createdAt: Date
+    /**
+     * the timestamp when L2Block is created at Layer2
+     */
+    createdTs: number
 }

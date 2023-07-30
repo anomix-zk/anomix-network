@@ -65,9 +65,13 @@ export interface WithdrawInfoDto {
      */
     status: number
 
+    /**
+     * the timestamp when L1Tx is finalized at Layer1
+     */
+    finalizedTs: number
 
-    updatedAt: Date
-
-
-    createdAt: Date
+    /**
+     * the timestamp when the corresponding L2Block which includes L2tx is created
+     */
+    createdTs: number
 }
