@@ -1,12 +1,12 @@
-import { BaseResponse, L2TxReqDtoSchema, L2TxReqDto } from '@anomix/types'
+import { BaseResponse, L2TxReqDtoSchema, L2TxReqDto, EncryptedNote } from '@anomix/types'
 import { getConnection } from 'typeorm';
 import { FastifyPlugin } from "fastify";
 import httpCodes from "@inip/http-codes";
-import { MemPlL2Tx } from '@anomix/dao'
+import { Account, MemPlL2Tx, WithdrawInfo } from '@anomix/dao'
 import { RequestHandler } from '@/lib/types';
-import { JoinSplitProof, ValueNote } from "@anomix/circuits";
+import { ActionType, JoinSplitProof, ValueNote } from "@anomix/circuits";
 import config from "@/lib/config";
-import { verify } from "snarkyjs";
+import { verify, Field } from "snarkyjs";
 /**
 * 供client发送L2 tx
 *  ① 如果是withdraw, 则返回url
@@ -28,31 +28,86 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
     const l2TxReqDto = req.body;
 
     // validate tx's proof
-    const proof = JoinSplitProof.fromJSON(l2TxReqDto.proof);
-    const ok = await verify(proof.toJSON(), config.joinSplitVK);
-
+    const joinSplitProof = JoinSplitProof.fromJSON(l2TxReqDto.proof);
+    const ok = await verify(joinSplitProof.toJSON(), config.joinSplitVK);
     if (!ok) {
         throw req.throwError(httpCodes.BAD_REQUEST, { data: 'verify failed!' })
     }
 
-    let valueNote = ValueNote.fromJSON(l2TxReqDto.extraData.withdrawNote);
-
-
-    // TODO need compare hash(aliasHash) and aliasHash in L2TxReqDto with that within 'proof'
-    // 
-    //
+    let withdrawNote: ValueNote = {} as ValueNote;
+    const actionType = joinSplitProof.publicOutput.actionType;
+    if (actionType.equals(ActionType.WITHDRAW)) {
+        // TODO const withdrawNote = ValueNote.fromJSON(l2TxReqDto.extraData.withdrawNote);
+        withdrawNote = {} as any;
+        if (joinSplitProof.publicOutput.outputNoteCommitment1.equals(withdrawNote.commitment()).not()) {
+            throw req.throwError(httpCodes.BAD_REQUEST, { data: 'verify failed!' })
+        }
+    } else if (actionType.equals(ActionType.ACCOUNT)) {
+        const aliasHash = l2TxReqDto.extraData.aliasHash;
+        const acctPk = l2TxReqDto.extraData.acctPk;
+        if (aliasHash && acctPk) {// true: registration
+            if (Field.from(aliasHash).equals(joinSplitProof.publicOutput.nullifier1).not()
+                .and(Field.from(acctPk).equals(joinSplitProof.publicOutput.nullifier2))) {
+                throw req.throwError(httpCodes.BAD_REQUEST, { data: 'verify failed!' })
+            }
+        }
+    }
 
     try {
-        const memPlL2TxRepository = getConnection().getRepository(MemPlL2Tx);
-        // TODO merge fields
-        //
-        //
-        memPlL2TxRepository.save([l2TxReqDto], {});
-        return { code: 0, data: '', msg: '' };
+        const connection = getConnection();
 
-    } catch (err) {
+        const queryRunner = connection.createQueryRunner();
+        await queryRunner.connect();
+
+        try {
+            // !! in a transaction!!
+            await queryRunner.startTransaction();
+
+            queryRunner.startTransaction();
+
+            const memPlL2TxRepository = connection.getRepository(MemPlL2Tx);
+
+            const mpL2Tx = MemPlL2Tx.fromJoinSplitOutput(joinSplitProof.publicOutput);
+            const outputNote1: EncryptedNote = l2TxReqDto.extraData.outputNote1;
+            const outputNote2: EncryptedNote = l2TxReqDto.extraData.outputNote2;
+            mpL2Tx.encryptedData1 = JSON.stringify(outputNote1);
+            mpL2Tx.encryptedData2 = JSON.stringify(outputNote2);
+            mpL2Tx.proof = JSON.stringify(l2TxReqDto.proof); // TODO ??should be JSON.stringfy(joinSplitProof.proof)
+
+            await memPlL2TxRepository.createQueryBuilder(undefined, queryRunner).insert().into(MemPlL2Tx).values([mpL2Tx]);
+
+            if (actionType.equals(ActionType.WITHDRAW)) {
+                const withdrawInfoRepository = connection.getRepository(WithdrawInfo);
+                const withdrawInfo = (withdrawNote as unknown) as WithdrawInfo;
+                withdrawInfo.l2TxHash = mpL2Tx.txHash;
+                withdrawInfo.l2TxId = mpL2Tx.id;
+
+                withdrawInfoRepository.createQueryBuilder(undefined, queryRunner).insert().into(WithdrawInfo).values([withdrawInfo]);
+
+            } else if (actionType.equals(ActionType.ACCOUNT)) {
+                const aliasHash = l2TxReqDto.extraData.aliasHash;
+                const acctPk = l2TxReqDto.extraData.acctPk;
+                if (aliasHash && acctPk) {// true: registration
+                    const accountRepository = connection.getRepository(Account);
+                    const accountEntity = ({ aliasHash, acctPk } as unknown) as Account;
+                    accountEntity.l2TxHash = mpL2Tx.txHash;
+                    accountEntity.l2TxId = mpL2Tx.id;
+
+                    accountRepository.createQueryBuilder(undefined, queryRunner).insert().into(Account).values([accountEntity]);
+                }
+            }
+            queryRunner.commitTransaction();
+
+            return { code: 0, data: 'ok', msg: '' };
+        } catch (err) {
+            queryRunner.rollbackTransaction();
+
+            throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+        }
+    } catch (error) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
+
 }
 
 const schema = {

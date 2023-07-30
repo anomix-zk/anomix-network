@@ -38,7 +38,7 @@ export const handler: RequestHandler<null, AliasHashParam> = async function (
         return {
             code: 0,
             data: accountList.map(acct => {
-                return acct.acctViewKey;
+                return acct.acctPk;
             }),
             msg: ''
         };

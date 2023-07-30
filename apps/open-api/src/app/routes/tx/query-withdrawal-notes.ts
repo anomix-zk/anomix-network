@@ -1,21 +1,21 @@
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { getConnection } from 'typeorm';
+import { In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
-import { WithdrawInfo } from "@anomix/dao";
+import { WithdrawInfo, WithdrawNoteStatus } from "@anomix/dao";
 import { WithdrawInfoDtoSchema, BaseResponse, WithdrawInfoDto } from "@anomix/types";
 
 /**
 * 提现场景中，提供L1Addr来查询相关的所有pending value notes
 */
-export const queryWithdrawalNotesByL1Addr: FastifyPlugin = async function (
+export const queryWithdrawalNotes: FastifyPlugin = async function (
     instance,
     options,
     done
 ): Promise<void> {
     instance.route({
-        method: "GET",
+        method: "POST",
         url: "/tx/withdraw/:l1addr",
         //preHandler: [instance.authGuard],
         schema,
@@ -23,18 +23,31 @@ export const queryWithdrawalNotesByL1Addr: FastifyPlugin = async function (
     })
 }
 
-export const handler: RequestHandler<null, string> = async function (
+export const handler: RequestHandler<string[], string> = async function (
     req,
     res
 ): Promise<BaseResponse<WithdrawInfoDto[]>> {
-    const l1addr = req.params
+    const l1addr = req.params;
+    const noteCommitments = req.body;
+
+    const whereConditions: { ownerPk: string, outputNoteCommitment?: any } = { ownerPk: l1addr };
+    if (noteCommitments?.length == 1) {
+        whereConditions.outputNoteCommitment = noteCommitments[0];
+    } else if (noteCommitments?.length > 1) {
+        whereConditions.outputNoteCommitment = In(noteCommitments);
+    }
 
     const withdrawInfoRepository = getConnection().getRepository(WithdrawInfo)
     try {
-        const withdrawInfoList = await withdrawInfoRepository.find({ where: { ownerPk: l1addr } });
+        const withdrawInfoList = (await withdrawInfoRepository.find({ where: whereConditions })) ?? [];
+        withdrawInfoList.forEach(wInfo => {
+            if (wInfo.status == WithdrawNoteStatus.DONE) {
+                wInfo.l1TxBody = '';
+            }
+        });
         return {
             code: 0,
-            data: (withdrawInfoList ?? []) as WithdrawInfoDto[],
+            data: (withdrawInfoList ?? [] as any) as WithdrawInfoDto[],
             msg: ''
         };
 
@@ -54,6 +67,17 @@ const schema = {
             }
         },
         required: ['l1addr']
+    },
+    body: {
+        type: 'object',
+        properties: {
+            'noteCommitments': {
+                type: "array",
+                items: {
+                    type: "string"
+                }
+            }
+        },
     },
     response: {
         200: {

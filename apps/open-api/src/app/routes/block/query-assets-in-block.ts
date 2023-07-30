@@ -1,8 +1,8 @@
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { In, getConnection } from 'typeorm';
+import { Connection, In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
-import { L2Tx } from "@anomix/dao";
+import { BlockProverOutputEntity, L2Tx } from "@anomix/dao";
 import { BaseResponse, EncryptedNote, AssetInBlockReqDto, AssetInBlockReqDtoSchema, AssetsInBlockDto, AssetsInBlockDtoSchema } from '@anomix/types'
 
 export const queryAssetsInBlocks: FastifyPlugin = async function (
@@ -25,30 +25,32 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
 ): Promise<BaseResponse<AssetsInBlockDto[]>> {
     const assetInBlockReqDto = req.body;
 
-    let blockList: number[] = [];
+    let blockNumList: number[] = [];
 
     if (assetInBlockReqDto.flag == 0) {
-        blockList = assetInBlockReqDto.blocks;
+        blockNumList = assetInBlockReqDto.blocks;
     } else {
         const start = assetInBlockReqDto.range.start;
         const end = assetInBlockReqDto.range.end;
         const gap = end - start;
         for (let index = start; index <= gap; index++) {
-            blockList.push(index);
+            blockNumList.push(index);
         }
     }
 
     const blockTxListMap = new Map<number, AssetsInBlockDto>();
-    blockList.forEach(blockNum => {
-        blockTxListMap.set(blockNum, {
+    blockNumList.forEach(blockNum => {
+        blockTxListMap.set(blockNum, ({
             blockHeight: blockNum,
             txList: [],
-            timestamp: 0
-        });
+            createdTs: 0,
+            finalizedTs: 0
+        } as unknown) as AssetsInBlockDto);
     });
 
     try {
-        const txRepository = getConnection().getRepository(L2Tx)
+        const connection = getConnection();
+        const txRepository = connection.getRepository(L2Tx)
         // then query confirmed tx collection
         await txRepository.find({
             select: [
@@ -61,7 +63,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
                 'nullifier2'
             ],
             where: {
-                blockId: In(blockList)
+                blockId: In(blockNumList)
             }
         }).then(txList => {
             console.log('query txList: ', JSON.stringify(txList));
@@ -69,11 +71,11 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
             txList.forEach(tx => {
                 blockTxListMap.get(tx.blockId)?.txList.push({
                     txHash: tx.txHash,
-                    output1: {
+                    outputNote1: {
                         data: (tx.encryptedData1 as any) as EncryptedNote,
                         index: tx.outputNoteCommitmentIdx1
                     },
-                    output2: {
+                    outputNote2: {
                         data: (tx.encryptedData2 as any) as EncryptedNote,
                         index: tx.outputNoteCommitmentIdx2
                     },
@@ -82,6 +84,31 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
                 });
             });
         });
+
+        const blockEntities = await connection.getRepository(BlockProverOutputEntity).find({
+            select: [
+                'id',
+                'blockHash',
+                'l1TxHash',
+                'status',
+                'createdAt',
+                'updatedAt'
+            ],
+            where: {
+                blockId: In(blockNumList)
+            }
+        });
+
+        blockEntities?.forEach(blockEntity => {
+            const dto = blockTxListMap.get(blockEntity.id);
+            if (dto) {
+                dto.blockHash = blockEntity.blockHash;
+                dto.l1TxHash = blockEntity.l1TxHash;
+                dto.status = blockEntity.status;
+                dto.createdTs = blockEntity.createdAt.getTime();
+                dto.finalizedTs = blockEntity.updatedAt.getTime();
+            }
+        })
 
         const data = new Array<AssetsInBlockDto>();
         blockTxListMap.forEach(function (value, key, map) {
@@ -98,7 +125,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
 }
 
 const schema = {
-    description: 'query encrypted assets in blocks',
+    description: 'query assets in blocks',
     tags: ["Block"],
     body: {
         type: (AssetInBlockReqDtoSchema as any).type,

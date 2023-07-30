@@ -1,9 +1,9 @@
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { getConnection } from 'typeorm';
+import { In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
-import { WithdrawInfo } from "@anomix/dao";
+import { WithdrawInfo, WithdrawNoteStatus } from "@anomix/dao";
 import { WithdrawInfoDtoSchema, BaseResponse } from "@anomix/types";
 import { Signature, PublicKey, Field } from "snarkyjs";
 
@@ -27,19 +27,38 @@ export const withdrawAsset: FastifyPlugin = async function (
 export const handler: RequestHandler<{ l1addr: string, noteCommitment: string, signature: any }, null> = async function (
     req,
     res
-): Promise<BaseResponse<WithdrawInfo[]>> {
+): Promise<BaseResponse<string>> {
     const { l1addr, noteCommitment, signature } = req.body
 
     // check sig to avoid evil requests.
     const rs = Signature.fromJSON(signature).verify(PublicKey.fromBase58(l1addr), [Field(noteCommitment)]);
-
+    if (rs) {
+        throw req.throwError(httpCodes.BAD_REQUEST, "signature verified fail!")
+    }
     const withdrawInfoRepository = getConnection().getRepository(WithdrawInfo)
     try {
-        const withdrawInfoList = await withdrawInfoRepository.find({ where: { ownerPk: l1addr } });
+        const withdrawInfoList = await withdrawInfoRepository.find({
+            where: {
+                ownerPk: l1addr,
+                outputNoteCommitment: noteCommitment,
+                status: WithdrawNoteStatus.PENDING
+            }
+        });
+        if (withdrawInfoList) {
+            return {
+                code: 1,
+                data: '',
+                msg: 'no PENDING withdraw info found!'
+            };
+        }
+        // TODO send to 'Sequencer' for further handle.
+        //
+        //
+
         return {
             code: 0,
-            data: (withdrawInfoList ?? []) as WithdrawInfo[],
-            msg: ''
+            data: '',
+            msg: 'in queue'
         };
 
     } catch (err) {
@@ -50,14 +69,20 @@ export const handler: RequestHandler<{ l1addr: string, noteCommitment: string, s
 const schema = {
     description: 'query withdrawal notes by L1addr',
     tags: ["L2Tx"],
-    params: {
+    body: {
         type: "object",
         properties: {
             'l1addr': {
                 type: "string",
+            },
+            'noteCommitment': {
+                type: "string",
+            },
+            'signature': {
+                type: 'string'
             }
         },
-        required: ['l1addr']
+        required: ['l1addr', 'noteCommitment', 'signature']
     },
     response: {
         200: {
@@ -65,16 +90,14 @@ const schema = {
             properties: {
                 code: {
                     type: 'number',
+                    description: '0: success, 1: failure.'
                 },
                 data: {
-                    type: "array",
-                    items: {
-                        type: (WithdrawInfoDtoSchema as any).type,
-                        properties: (WithdrawInfoDtoSchema as any).properties,
-                    }
+                    type: 'string'
                 },
                 msg: {
-                    type: 'string'
+                    type: 'string',
+                    description: 'the reason or msg related to \'code\''
                 }
             },
         }

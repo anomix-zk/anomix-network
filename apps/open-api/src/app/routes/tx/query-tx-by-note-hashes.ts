@@ -22,15 +22,11 @@ export const queryTxByNoteHash: FastifyPlugin = async function (
     })
 }
 
-type NotesReqBody = {
-    notehashes: string[]
-}
-
-export const handler: RequestHandler<NotesReqBody, null> = async function (
+export const handler: RequestHandler<string[], null> = async function (
     req,
     res
 ): Promise<BaseResponse<L2TxRespDto[]>> {
-    const { notehashes: hash } = req.body
+    const notehashes = req.body
 
     // TODO will improve the code by building a new KV db[nodehash -> L2tx].
 
@@ -60,17 +56,11 @@ export const handler: RequestHandler<NotesReqBody, null> = async function (
 const schema = {
     description: 'query tx list by note hash list',
     tags: ["L2Tx"],
-    params: {
-        type: "object",
-        properties: {
-            'notehashes': {
-                type: "array",
-                items: {
-                    type: "string"
-                }
-            }
-        },
-        required: ['hash']
+    body: {
+        type: "array",
+        items: {
+            type: "string"
+        }
     },
     response: {
         200: {
