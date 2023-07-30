@@ -10,7 +10,6 @@
     "apps/*"
   ],
   "scripts": {
-    "install": "npm run libs:build",
     "libs:build": "npm run lib:build -w @anomix/types && npm run lib:build -w @anomix/merkle-tree && npm run lib:build -w @anomix/utils && npm run lib:build -w @anomix/circuits && npm run lib:build -w @anomix/dao && npm run lib:build -w @anomix/sdk",
     "server:dev": "npm run serve -w @anomix/open-api",
     "web:dev": "npm run serve -w @anomix/ano-cash-ui",
