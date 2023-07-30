@@ -1,29 +1,5 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "definitions": {
-        "EncryptedNote": {
-            "properties": {
-                "cipherText": {
-                    "description": "long text. from encrypt(valueNote.json())",
-                    "type": "string"
-                },
-                "noteCommitment": {
-                    "type": "string"
-                },
-                "publicKey": {
-                    "description": "Base58",
-                    "type": "string"
-                },
-                "receiverInfo": {
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array"
-                }
-            },
-            "type": "object"
-        }
-    },
     "description": "used for All L2 tx scenarios",
     "properties": {
         "extraData": {
@@ -37,10 +13,48 @@
                     "type": "string"
                 },
                 "outputNote1": {
-                    "$ref": "#/definitions/EncryptedNote"
+                    "properties": {
+                        "cipherText": {
+                            "description": "long text. from encrypt(valueNote.json())",
+                            "type": "string"
+                        },
+                        "noteCommitment": {
+                            "type": "string"
+                        },
+                        "publicKey": {
+                            "description": "Base58",
+                            "type": "string"
+                        },
+                        "receiverInfo": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "type": "object"
                 },
                 "outputNote2": {
-                    "$ref": "#/definitions/EncryptedNote"
+                    "properties": {
+                        "cipherText": {
+                            "description": "long text. from encrypt(valueNote.json())",
+                            "type": "string"
+                        },
+                        "noteCommitment": {
+                            "type": "string"
+                        },
+                        "publicKey": {
+                            "description": "Base58",
+                            "type": "string"
+                        },
+                        "receiverInfo": {
+                            "items": {
+                                "type": "string"
+                            },
+                            "type": "array"
+                        }
+                    },
+                    "type": "object"
                 },
                 "withdrawNote": {
                     "description": "used at Withdrawal section",
@@ -76,7 +90,33 @@
             "type": "object"
         },
         "proof": {
-            "description": "from execution result of Join-Split circuit"
+            "description": "from execution result of Join-Split circuit",
+            "properties": {
+                "maxProofsVerified": {
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ],
+                    "type": "number"
+                },
+                "proof": {
+                    "type": "string"
+                },
+                "publicInput": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "publicOutput": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "type": "array"
+                }
+            },
+            "type": "object"
         }
     },
     "type": "object"

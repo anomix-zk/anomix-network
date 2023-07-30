@@ -1,37 +1,28 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "definitions": {
-        "EncryptedNote": {
-            "properties": {
-                "cipherText": {
-                    "description": "long text. from encrypt(valueNote.json())",
-                    "type": "string"
-                },
-                "noteCommitment": {
-                    "type": "string"
-                },
-                "publicKey": {
-                    "description": "Base58",
-                    "type": "string"
-                },
-                "receiverInfo": {
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array"
-                }
-            },
-            "type": "object"
-        }
-    },
     "properties": {
+        "blockHash": {
+            "type": "string"
+        },
         "blockHeight": {
             "type": "number"
         },
-        "timestamp": {
+        "createdTs": {
+            "description": "the timestamp when this L2Block is created at Layer2",
+            "type": "number"
+        },
+        "finalizedTs": {
+            "description": "the timestamp when this L2Block is finalized at Layer1",
+            "type": "number"
+        },
+        "l1TxHash": {
+            "type": "string"
+        },
+        "status": {
             "type": "number"
         },
         "txList": {
+            "description": "L2 tx list",
             "items": {
                 "properties": {
                     "nullifier1": {
@@ -40,10 +31,29 @@
                     "nullifier2": {
                         "type": "string"
                     },
-                    "output1": {
+                    "outputNote1": {
                         "properties": {
                             "data": {
-                                "$ref": "#/definitions/EncryptedNote"
+                                "properties": {
+                                    "cipherText": {
+                                        "description": "long text. from encrypt(valueNote.json())",
+                                        "type": "string"
+                                    },
+                                    "noteCommitment": {
+                                        "type": "string"
+                                    },
+                                    "publicKey": {
+                                        "description": "Base58",
+                                        "type": "string"
+                                    },
+                                    "receiverInfo": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    }
+                                },
+                                "type": "object"
                             },
                             "index": {
                                 "type": "string"
@@ -51,10 +61,29 @@
                         },
                         "type": "object"
                     },
-                    "output2": {
+                    "outputNote2": {
                         "properties": {
                             "data": {
-                                "$ref": "#/definitions/EncryptedNote"
+                                "properties": {
+                                    "cipherText": {
+                                        "description": "long text. from encrypt(valueNote.json())",
+                                        "type": "string"
+                                    },
+                                    "noteCommitment": {
+                                        "type": "string"
+                                    },
+                                    "publicKey": {
+                                        "description": "Base58",
+                                        "type": "string"
+                                    },
+                                    "receiverInfo": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    }
+                                },
+                                "type": "object"
                             },
                             "index": {
                                 "type": "string"

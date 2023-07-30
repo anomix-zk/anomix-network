@@ -21,6 +21,10 @@
         "inputNullifier": {
             "type": "string"
         },
+        "l1TxBody": {
+            "description": "store the entire L1Tx. client will fetch it later for further signatures.\n* when it's at 'DONE', then will not return this field to client.",
+            "type": "string"
+        },
         "l1TxHash": {
             "description": "record the L1TxHash when it's claimed",
             "type": "string"
@@ -36,11 +40,11 @@
         "noteType": {
             "type": "string"
         },
-        "outputNoteCommitment1": {
+        "outputNoteCommitment": {
             "description": "here is a unique index here",
             "type": "string"
         },
-        "outputNoteCommitmentIdx1": {
+        "outputNoteCommitmentIdx": {
             "description": "the leaf index on data_tree, will be updated when L2tx is confirmed at L2's Block",
             "type": "string"
         },

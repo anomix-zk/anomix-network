@@ -7,7 +7,12 @@ export interface L2TxReqDto {
     /**
      * from execution result of Join-Split circuit
      */
-    proof: any
+    proof: {
+        publicInput: string[];
+        publicOutput: string[];
+        maxProofsVerified: 0 | 1 | 2;
+        proof: string;
+    }
     extraData: {
         outputNote1: EncryptedNote,
         outputNote2: EncryptedNote,

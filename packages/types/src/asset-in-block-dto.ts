@@ -2,18 +2,32 @@ import { EncryptedNote } from "./encrypted-note";
 
 export interface AssetsInBlockDto {
     blockHeight: number,
+    blockHash: string,
+    l1TxHash: string,
+    status: number;
+
+    /**
+     * L2 tx list
+     */
     txList: {
         txHash: string,
-        output1: {
+        outputNote1: {
             data: EncryptedNote,
             index: string
         },
-        output2: {
+        outputNote2: {
             data: EncryptedNote,
             index: string
         },
         nullifier1: string,
         nullifier2: string
     }[],
-    timestamp: number
+    /**
+     * the timestamp when this L2Block is created at Layer2
+     */
+    createdTs: number,
+    /**
+     * the timestamp when this L2Block is finalized at Layer1
+     */
+    finalizedTs: number
 }

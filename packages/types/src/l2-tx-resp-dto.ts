@@ -63,7 +63,12 @@ export interface L2TxRespDto {
     txFeeAssetId: string
 
 
-    proof: string
+    proof: {
+        publicInput: string[];
+        publicOutput: string[];
+        maxProofsVerified: 0 | 1 | 2;
+        proof: string;
+    }
 
     extraData: {
         /**

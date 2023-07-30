@@ -42,17 +42,23 @@ export interface WithdrawInfoDto {
     /**
      * here is a unique index here
      */
-    outputNoteCommitment1: string
+    outputNoteCommitment: string
 
     /**
      * the leaf index on data_tree, will be updated when L2tx is confirmed at L2's Block
      */
-    outputNoteCommitmentIdx1: string
+    outputNoteCommitmentIdx: string
 
     /**
      * record the L1TxHash when it's claimed
      */
     l1TxHash: string
+
+    /**
+     * store the entire L1Tx. client will fetch it later for further signatures.
+     * * when it's at 'DONE', then will not return this field to client.
+     */
+    l1TxBody: string
 
     /**
      * record if it has already been claimed.
