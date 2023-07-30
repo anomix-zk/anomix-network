@@ -10,22 +10,22 @@ export class WithdrawNoteStatus {
     /**
      * its initial status
      */
-    static PENDING() {
+    static get PENDING() {
         return 0;
     }
 
     /**
-     * when it's claimed and L1Tx is broadcast
+     * when it's claimed
      */
-    static PROCESSING() {
-        return 0;
+    static get PROCESSING() {
+        return 1;
     }
 
     /**
-     * when it's claimed and L1Tx is confirmed
+     * when L1Tx is confirmed
      */
-    static DONE() {
-        return -1;
+    static get DONE() {
+        return 2;
     }
 }
 
@@ -83,19 +83,25 @@ export class WithdrawInfo {
      * here is a unique index here
      */
     @Column()
-    outputNoteCommitment1: string
+    outputNoteCommitment: string
 
     /**
      * the leaf index on data_tree, will be updated when L2tx is confirmed at L2's Block
      */
     @Column()
-    outputNoteCommitmentIdx1: string
+    outputNoteCommitmentIdx: string
 
     /**
      * record the L1TxHash when it's claimed
      */
     @Column()
     l1TxHash: string
+
+    /**
+     * store the entire L1Tx. client will fetch it later for further signatures.
+     */
+    @Column()
+    l1TxBody: string
 
     /**
      * record if it has already been claimed.
