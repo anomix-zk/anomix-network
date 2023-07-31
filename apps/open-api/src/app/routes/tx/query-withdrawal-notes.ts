@@ -3,8 +3,8 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
-import { BlockProverOutputEntity, L2Tx, WithdrawInfo, WithdrawNoteStatus } from "@anomix/dao";
-import { WithdrawInfoDtoSchema, BaseResponse, WithdrawInfoDto } from "@anomix/types";
+import { BlockProverOutputEntity, L2Tx, WithdrawInfo } from "@anomix/dao";
+import { WithdrawInfoDtoSchema, BaseResponse, WithdrawInfoDto, WithdrawNoteStatus } from "@anomix/types";
 
 /**
 * 提现场景中，提供L1Addr来查询相关的所有pending value notes

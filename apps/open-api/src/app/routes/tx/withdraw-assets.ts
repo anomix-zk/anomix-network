@@ -3,8 +3,8 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
-import { WithdrawInfo, WithdrawNoteStatus } from "@anomix/dao";
-import { WithdrawInfoDtoSchema, BaseResponse } from "@anomix/types";
+import { WithdrawInfo } from "@anomix/dao";
+import { WithdrawInfoDtoSchema, BaseResponse, WithdrawNoteStatus } from "@anomix/types";
 import { Signature, PublicKey, Field } from "snarkyjs";
 
 /**

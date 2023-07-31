@@ -1,9 +1,9 @@
-import { L2Tx, MemPlL2Tx, L2TxStatus } from '@anomix/dao'
+import { L2Tx, MemPlL2Tx } from '@anomix/dao'
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
-import { WorldStateRespDto, WorldStateRespDtoSchema, BaseResponse } from '@anomix/types'
+import { WorldStateRespDto, WorldStateRespDtoSchema, BaseResponse, L2TxStatus } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 
 /**
