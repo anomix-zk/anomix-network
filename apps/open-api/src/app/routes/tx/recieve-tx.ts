@@ -69,9 +69,11 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
 
             const mpL2Tx = MemPlL2Tx.fromJoinSplitOutput(joinSplitProof.publicOutput);
             const outputNote1: EncryptedNote = l2TxReqDto.extraData.outputNote1;
-            const outputNote2: EncryptedNote = l2TxReqDto.extraData.outputNote2;
+            const outputNote2 = l2TxReqDto.extraData.outputNote2;
             mpL2Tx.encryptedData1 = JSON.stringify(outputNote1);
-            mpL2Tx.encryptedData2 = JSON.stringify(outputNote2);
+            if (outputNote2) {
+                mpL2Tx.encryptedData2 = JSON.stringify(outputNote2);
+            }
             mpL2Tx.proof = JSON.stringify(l2TxReqDto.proof); // TODO ??should be JSON.stringfy(joinSplitProof.proof)
 
             await memPlL2TxRepository.createQueryBuilder(undefined, queryRunner).insert().into(MemPlL2Tx).values([mpL2Tx]);

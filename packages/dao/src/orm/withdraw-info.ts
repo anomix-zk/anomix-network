@@ -6,28 +6,6 @@ import {
     UpdateDateColumn
 } from 'typeorm'
 
-export class WithdrawNoteStatus {
-    /**
-     * its initial status
-     */
-    static get PENDING() {
-        return 0;
-    }
-
-    /**
-     * when it's claimed
-     */
-    static get PROCESSING() {
-        return 1;
-    }
-
-    /**
-     * when L1Tx is confirmed
-     */
-    static get DONE() {
-        return 2;
-    }
-}
 
 /**
  * record all value note's fields for withdraw

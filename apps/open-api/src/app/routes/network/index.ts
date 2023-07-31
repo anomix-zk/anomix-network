@@ -8,12 +8,14 @@
 import { FastifyPlugin } from "fastify"
 import { queryTxFeeSuggestions } from "./query-txfees-suggestion";
 import { queryWorldStateStatus } from "./query-worldstate-status";
+import { isNetworkReady } from "./network-is-ready";
 
 export const networkEndpoint: FastifyPlugin = async (
     instance,
     options,
     done
 ): Promise<void> => {
+    instance.register(isNetworkReady);
     instance.register(queryTxFeeSuggestions);
     instance.register(queryWorldStateStatus);
 }

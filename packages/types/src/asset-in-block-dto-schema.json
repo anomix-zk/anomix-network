@@ -19,6 +19,7 @@
             "type": "string"
         },
         "status": {
+            "description": "1: before L1Tx is confirmed\n2: when L1Tx is confirmed;",
             "type": "number"
         },
         "txList": {

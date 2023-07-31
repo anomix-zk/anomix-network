@@ -28,10 +28,10 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
     let blockNumList: number[] = [];
 
     if (assetInBlockReqDto.flag == 0) {
-        blockNumList = assetInBlockReqDto.blocks;
+        blockNumList = assetInBlockReqDto.blocks!;
     } else {
-        const start = assetInBlockReqDto.range.start;
-        const end = assetInBlockReqDto.range.end;
+        const start = assetInBlockReqDto.range!.from;
+        const end = start + assetInBlockReqDto.range!.take - 1;
         const gap = end - start;
         for (let index = start; index <= gap; index++) {
             blockNumList.push(index);

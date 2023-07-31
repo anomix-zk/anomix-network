@@ -1,11 +1,10 @@
-import { L2Tx, MemPlL2Tx, L2TxStatus } from '@anomix/dao'
+import { L2Tx, MemPlL2Tx } from '@anomix/dao'
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection, In } from 'typeorm';
-import { L2TxRespDtoSchema } from '@anomix/types'
 
-import { L2TxRespDto, BaseResponse } from '@anomix/types'
+import { L2TxRespDto, BaseResponse, L2TxRespDtoSchema, L2TxStatus } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 
 /**
