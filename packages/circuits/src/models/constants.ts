@@ -23,9 +23,6 @@ export class NoteType {
   }
 }
 
-/**
- * asset_id = 0, 1 ... 19, 20
- */
 export class AssetId {
   static get MINA(): Field {
     return FIELD_ONE;

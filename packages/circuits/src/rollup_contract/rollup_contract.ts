@@ -128,7 +128,7 @@ export class AnomixRollupContract extends SmartContract {
   static escapeSlots = UInt32.from(20); // default: 20 slots, 60 minutes, the period during which third parties are allowed to publish blocks
 
   @state(RollupState) state = State<RollupState>();
-  @state(Field) blockNumber = State<Field>();
+  @state(Field) blockHeight = State<Field>();
   @state(PublicKey) operatorAddress = State<PublicKey>();
 
   events = {
@@ -155,7 +155,7 @@ export class AnomixRollupContract extends SmartContract {
         depositStartIndex: Field(0),
       })
     );
-    this.blockNumber.set(Field(0));
+    this.blockHeight.set(Field(0));
     this.account.permissions.set({
       ...Permissions.default(),
       editState: Permissions.proof(),
@@ -387,8 +387,8 @@ export class AnomixRollupContract extends SmartContract {
     // Pay block tx fee to tx fee receiver(mina)
     this.send({ to: output.txFeeReceiver, amount: output.totalTxFees[0].fee });
 
-    let currentBlockNumber = this.blockNumber.getAndAssertEquals();
-    this.blockNumber.set(currentBlockNumber.add(1));
+    let currentBlockNumber = this.blockHeight.getAndAssertEquals();
+    this.blockHeight.set(currentBlockNumber.add(1));
     this.emitEvent(
       'blockEvent',
       new RollupBlockEvent({
