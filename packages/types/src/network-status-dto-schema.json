@@ -1,0 +1,114 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "properties": {
+        "blocks": {
+            "properties": {
+                "confirmed": {
+                    "type": "number"
+                },
+                "pending": {
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "depositActions": {
+            "properties": {
+                "confirmed": {
+                    "type": "number"
+                },
+                "marked": {
+                    "type": "number"
+                },
+                "pending": {
+                    "type": "number"
+                },
+                "processing": {
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "l2txs": {
+            "properties": {
+                "confirmed": {
+                    "type": "number"
+                },
+                "pending": {
+                    "type": "number"
+                },
+                "processing": {
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "latestBlock": {
+            "description": "the newest generated block",
+            "properties": {
+                "blockHash": {
+                    "type": "string"
+                },
+                "blockHeight": {
+                    "type": "number"
+                },
+                "createdTs": {
+                    "description": "the timestamp when this L2Block is created at Layer2",
+                    "type": "number"
+                },
+                "finalizedTs": {
+                    "description": "the timestamp when this L2Block is finalized at Layer1",
+                    "type": "number"
+                },
+                "l1TxHash": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "1: before L1Tx is confirmed\n2: when L1Tx is confirmed;",
+                    "type": "number"
+                }
+            },
+            "type": "object"
+        },
+        "worldStates": {
+            "properties": {
+                "dataTree": {
+                    "properties": {
+                        "root": {
+                            "type": "string"
+                        },
+                        "totalNum": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "nullifierTree": {
+                    "properties": {
+                        "root": {
+                            "type": "string"
+                        },
+                        "totalNum": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
+                "rootTree": {
+                    "properties": {
+                        "root": {
+                            "type": "string"
+                        },
+                        "totalNum": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        }
+    },
+    "type": "object"
+}
+

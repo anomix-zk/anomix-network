@@ -12,7 +12,7 @@ import { BlockStatus } from "@anomix/types";
 @Entity('tb_block')
 export class BlockProverOutputEntity {
     /**
-     * i.e. blockHeight
+     * i.e. blockHeight, should starts from 1
      */
     @PrimaryGeneratedColumn("increment")
     id: number

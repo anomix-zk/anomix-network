@@ -92,7 +92,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
                 'l1TxHash',
                 'status',
                 'createdAt',
-                'updatedAt'
+                'finalizedAt'
             ],
             where: {
                 blockId: In(blockNumList)
@@ -106,7 +106,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
                 dto.l1TxHash = blockEntity.l1TxHash;
                 dto.status = blockEntity.status;
                 dto.createdTs = blockEntity.createdAt.getTime();
-                dto.finalizedTs = blockEntity.updatedAt.getTime();
+                dto.finalizedTs = blockEntity.finalizedAt.getTime();
             }
         })
 
