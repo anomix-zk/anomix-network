@@ -7,24 +7,7 @@ import {
     OneToMany
 } from 'typeorm'
 import { L2Tx } from './l2-tx';
-
-export class BlockStatus {
-    static get FAILED(): number {// no need?
-        return -1;
-    }
-    /**
-     * before L1Tx is confirmed
-     */
-    static get PENDING(): number {
-        return 1;
-    }
-    /**
-     * when L1Tx is confirmed
-     */
-    static get CONFIRMED(): number {
-        return 2;
-    }
-}
+import { BlockStatus } from "@anomix/types";
 
 @Entity('tb_block')
 export class BlockProverOutputEntity {

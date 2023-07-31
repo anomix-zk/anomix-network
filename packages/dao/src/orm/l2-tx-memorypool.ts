@@ -5,34 +5,7 @@ import {
 } from 'typeorm'
 import { createHash } from 'crypto';
 import { L2Tx } from './l2-tx';
-
-export class L2TxStatus {
-
-    static get FAILED(): number {
-        return -1;
-    }
-
-    /**
-     * initial
-     */
-    static get PENDING(): number {
-        return 0;
-    }
-
-    /**
-     * before L2Block where l2tx is included is created
-     */
-    static get PROCESSING(): number {
-        return 1;
-    }
-
-    /**
-     * L2Block where l2tx is included is created
-     */
-    static get CONFIRMED(): number {
-        return 2;
-    }
-}
+import { L2TxStatus } from "@anomix/types";
 
 @Entity("tb_mempl_l2_tx")
 export class MemPlL2Tx extends L2Tx {

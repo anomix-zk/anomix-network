@@ -8,33 +8,8 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn
 } from 'typeorm'
+import { DepositStatus } from "@anomix/types";
 
-export class DepositStatus {
-    /**
-     * initial status
-     */
-    static get PENDING(): number {
-        return 0;
-    }
-    /**
-     * marked on deposit_tree
-     */
-    static get MARKED(): number {
-        return 1;
-    }
-    /**
-     * during join-split or inner-rollup progress
-     */
-    static get PROCESSING(): number {
-        return 2;
-    }
-    /**
-     * already on data_tree
-     */
-    static get CONFIRMED(): number {
-        return 3;
-    }
-}
 
 @Entity("tb_deposit_commitment")
 export class DepositCommitment {
