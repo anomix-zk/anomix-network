@@ -9,16 +9,15 @@
             "type": "array"
         },
         "flag": {
+            "description": "0: blocks, 1: range",
             "type": "number"
         },
         "range": {
             "properties": {
-                "end": {
-                    "description": "greater than 'start'",
+                "from": {
                     "type": "number"
                 },
-                "start": {
-                    "description": "less than 'end'",
+                "take": {
                     "type": "number"
                 }
             },

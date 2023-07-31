@@ -1,4 +1,4 @@
-export { Tree } from './constant';
+export * from './constant';
 export { AssetInBlockReqDto } from './asset-in-block-req-dto';
 export { AssetsInBlockDto } from './asset-in-block-dto';
 export { BaseResponse } from './base-response';
