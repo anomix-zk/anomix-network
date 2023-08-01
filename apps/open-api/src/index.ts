@@ -1,8 +1,8 @@
 import { FastifyCore } from './app'
-// import { initORM } from './lib/orm'
+import { initORM } from './lib/orm'
 
 const server = async () => {
-    // await initORM()
+    await initORM()
     const app = new FastifyCore()
     await app.listen()
 }

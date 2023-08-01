@@ -34,7 +34,7 @@ export const handler: RequestHandler<null, AliasHashParam> = async function (
 
     const accountRepository = getConnection().getRepository(Account)
     try {
-        const accountList = await accountRepository.find({ where: { aliashash: p_aliashash } });
+        const accountList = await accountRepository.find({ where: { aliasHash: p_aliashash } });
         return {
             code: 0,
             data: accountList.map(acct => {
@@ -44,6 +44,8 @@ export const handler: RequestHandler<null, AliasHashParam> = async function (
         };
 
     } catch (err) {
+        console.log(err);
+
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 
