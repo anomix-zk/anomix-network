@@ -112,3 +112,15 @@ export class WithdrawNoteStatus {
         return 2;
     }
 }
+
+export class L1TxStatus {
+    static get FAILED(): number {
+        return -1;
+    }
+    static get PROCESSING(): number {
+        return 1;
+    }
+    static get CONFIRMED(): number {
+        return 2;
+    }
+}

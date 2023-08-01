@@ -12,7 +12,7 @@ export const queryAssetsInBlocks: FastifyPlugin = async function (
 ): Promise<void> {
     instance.route({
         method: "POST",
-        url: "/assets",
+        url: "/block/assets",
         //preHandler: [instance.authGuard],
         schema,
         handler

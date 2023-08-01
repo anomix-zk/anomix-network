@@ -21,10 +21,7 @@ export class DepositTreeTrans {
     txHash: string
 
     @Column()
-    status: string
-
-    @Column()
-    txType: string
+    status: number
 
     /**
      * just record

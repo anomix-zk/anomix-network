@@ -1,10 +1,10 @@
-import { L2Tx, MemPlL2Tx } from '@anomix/dao'
+import { Account, L2Tx, MemPlL2Tx, WithdrawInfo } from '@anomix/dao'
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { getConnection, In } from 'typeorm';
+import { FindOperator, getConnection, In } from 'typeorm';
 
-import { L2TxRespDto, BaseResponse, L2TxRespDtoSchema, L2TxStatus } from '@anomix/types'
+import { L2TxRespDto, BaseResponse, L2TxRespDtoSchema, L2TxStatus, L2TxSimpleDto, WithdrawInfoDto, WithdrawNoteStatus } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 
 /**
@@ -30,23 +30,47 @@ export const queryPendingTxs: FastifyPlugin = async function (
 export const handler: RequestHandler<string[], null> = async function (
     req,
     res
-): Promise<BaseResponse<L2TxRespDto[]>> {
+): Promise<BaseResponse<L2TxSimpleDto[]>> {
     const txHashList = req.body
 
+    const connection = getConnection();
     try {
-        const mpL2TxRepository = getConnection().getRepository(MemPlL2Tx)
+        const mpL2TxRepository = connection.getRepository(MemPlL2Tx)
+
         // first query memory pool
-        const txList = await mpL2TxRepository.find({ where: { status: In([L2TxStatus.PENDING, L2TxStatus.PROCESSING]), txHash: In(txHashList) } }) ?? [];
-        const l2TxRespDtoList = txList.map(tx => {
-            const { updatedAt, createdAt, proof, ...restObj } = tx;
-            const txDto = (restObj as any) as L2TxRespDto;
-            txDto.finalizedTs = 0;
-            txDto.createdTs = 0;
-            return txDto;
-        });
+        const whereConditions = { status: In([L2TxStatus.PENDING, L2TxStatus.PROCESSING]) };
+        if (txHashList?.length > 0) {
+            (whereConditions as any).txHash = In(txHashList);
+        }
+        const txList = await mpL2TxRepository.find({ where: whereConditions }) ?? [];
+        const l2TxSimpleDtoList = await Promise.all(txList.map(async tx => {
+            const { proof, blockId, blockHash, updatedAt, createdAt, encryptedData1, encryptedData2, ...restObj } = tx;
+            const dto = restObj as any as L2TxSimpleDto;
+
+            const withdrawInfoRepository = connection.getRepository(WithdrawInfo);
+            const wInfo = await withdrawInfoRepository.findOne({ where: { l2TxId: tx.id } });
+            const { createdAt: createdAtW, updatedAt: updatedAtW, ...restObjW } = wInfo!;
+            const withdrawInfoDto = (restObjW as any) as WithdrawInfoDto;
+            if (withdrawInfoDto.status == WithdrawNoteStatus.DONE) {
+                withdrawInfoDto.l1TxBody = '';
+            }
+
+            const accountRepository = connection.getRepository(Account)
+            const account = await accountRepository.findOne({ where: { l2TxId: tx.id } });
+
+            dto.extraData = {
+                outputNote1: JSON.parse(encryptedData1),
+                outputNote2: encryptedData2 ? {} : JSON.parse(encryptedData2),
+                aliasHash: account!.aliasHash,
+                accountPublicKey: account!.acctPk,
+                withdrawNote: withdrawInfoDto
+            }
+
+            return dto;
+        }));
         return {
             code: 0,
-            data: l2TxRespDtoList,
+            data: l2TxSimpleDtoList,
             msg: ''
         };
     } catch (err) {

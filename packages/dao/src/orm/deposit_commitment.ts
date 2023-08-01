@@ -70,6 +70,7 @@ export class DepositCommitment {
     /**
      * L1Tx hash when being marked on 'Deposit_Tree', {@link DepositTreeTrans}
      */
+    @Column()
     markedL1TxHash: string
 
     @UpdateDateColumn({

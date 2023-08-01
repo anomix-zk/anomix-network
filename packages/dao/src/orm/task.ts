@@ -5,6 +5,7 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn
 } from 'typeorm'
+import { L1TxStatus } from "@anomix/types";
 
 export class TaskType {
     /**
@@ -29,17 +30,6 @@ export class TaskType {
     }
 }
 
-export class L1TxStatus {
-    static get FAILED(): number {
-        return -1;
-    }
-    static get PROCESSING(): number {
-        return 1;
-    }
-    static get CONFIRMED(): number {
-        return 2;
-    }
-}
 
 /**
  * mainly for L1 tx status trace of DepositContract Maintainance, RollupContract Maintaince, Withdraw Maintainance.
@@ -66,10 +56,10 @@ export class Task {
     txHash: string
 
     @Column()
-    status: string
+    status: number
 
     @Column()
-    taskType: string
+    taskType: number
 
     @UpdateDateColumn({
         default: () => 'CURRENT_TIMESTAMP',
