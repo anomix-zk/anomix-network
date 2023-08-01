@@ -31,13 +31,6 @@ export class Account {
     @Column()
     l2TxHash: string
 
-
-    @UpdateDateColumn({
-        default: () => 'CURRENT_TIMESTAMP',
-    })
-    updatedAt: Date
-
-
     @CreateDateColumn({
         default: () => 'CURRENT_TIMESTAMP',
     })
