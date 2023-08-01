@@ -13,7 +13,7 @@ export const isNetworkReady: FastifyPlugin = async function (
     done
 ): Promise<void> {
     instance.route({
-        method: "POST",
+        method: "GET",
         url: "/network/isready",
         //preHandler: [instance.authGuard],
         schema,
@@ -24,13 +24,13 @@ export const isNetworkReady: FastifyPlugin = async function (
 export const handler: RequestHandler<string[], null> = async function (
     req,
     res
-): Promise<BaseResponse<string>> {
+): Promise<BaseResponse<boolean>> {
     try {
         /**
          * TODO  request sequencer for the result.
          */
 
-        return { code: 0, data: 'ok', msg: '' };
+        return { code: 0, data: true, msg: '' };
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
@@ -47,7 +47,7 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: 'string'
+                    type: 'boolean'
                 },
                 msg: {
                     type: 'string'
