@@ -34,6 +34,10 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
         throw req.throwError(httpCodes.BAD_REQUEST, { data: 'verify failed!' })
     }
 
+    // TODO check if nullifier1&2 is not on nullifier_tree
+
+    // TODO check if nullifier1 or nullifier2 has been already used in tx of MemoryPool, then rid the one with less txFee
+
     let withdrawNote: ValueNote = {} as ValueNote;
     const actionType = joinSplitProof.publicOutput.actionType;
     if (actionType.equals(ActionType.WITHDRAW)) {
