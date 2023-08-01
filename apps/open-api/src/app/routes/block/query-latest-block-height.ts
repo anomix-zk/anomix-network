@@ -58,7 +58,7 @@ export const handler: RequestHandler<null, null> = async function (
         latestBlockDto.finalizedTs = blockEntity.finalizedAt.getTime();
         */
 
-        return { code: 0, data: blockEntity.id, msg: '' };
+        return { code: 0, data: blockEntity?.id ?? 0, msg: '' };
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
