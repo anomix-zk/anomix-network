@@ -49,7 +49,7 @@ export function maskReceiverBySender(
 export function recoverReceiverBySender(
     receiverInfo: Field[],
     senderPubKeyBigInt: bigint,
-    randValueBigInt
+    randValueBigInt: bigint
 ): PublicKey {
     if (receiverInfo.length !== 2) {
         throw new Error("receiverInfo length must be 2");
