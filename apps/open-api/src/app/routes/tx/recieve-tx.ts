@@ -100,7 +100,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
             }
             queryRunner.commitTransaction();
 
-            return { code: 0, data: 'ok', msg: '' };
+            return { code: 0, data: joinSplitProof.publicOutput.hash().toString(), msg: '' };
         } catch (err) {
             queryRunner.rollbackTransaction();
 
