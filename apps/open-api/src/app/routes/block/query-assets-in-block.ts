@@ -2,8 +2,8 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { Connection, In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
-import { BlockProverOutputEntity, L2Tx } from "@anomix/dao";
-import { BaseResponse, EncryptedNote, AssetInBlockReqDto, AssetInBlockReqDtoSchema, AssetsInBlockDto, AssetsInBlockDtoSchema } from '@anomix/types'
+import { Account, BlockProverOutputEntity, L2Tx, WithdrawInfo } from "@anomix/dao";
+import { BaseResponse, EncryptedNote, AssetInBlockReqDto, AssetInBlockReqDtoSchema, AssetsInBlockDto, AssetsInBlockDtoSchema, L2TxSimpleDto, WithdrawNoteStatus, WithdrawInfoDto } from '@anomix/types'
 
 export const queryAssetsInBlocks: FastifyPlugin = async function (
     instance,
@@ -53,35 +53,37 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
         const txRepository = connection.getRepository(L2Tx)
         // then query confirmed tx collection
         await txRepository.find({
-            select: [
-                'txHash',
-                'outputNoteCommitmentIdx1',
-                'encryptedData1',
-                'outputNoteCommitmentIdx2',
-                'encryptedData1',
-                'nullifier1',
-                'nullifier2'
-            ],
             where: {
                 blockId: In(blockNumList)
-            }
-        }).then(txList => {
+            },
+            order: { indexInBlock: 'ASC' }
+        }).then(async txList => {
             console.log('query txList: ', JSON.stringify(txList));
 
-            txList.forEach(tx => {
-                blockTxListMap.get(tx.blockId)?.txList.push({
-                    txHash: tx.txHash,
-                    outputNote1: {
-                        data: (tx.encryptedData1 as any) as EncryptedNote,
-                        index: tx.outputNoteCommitmentIdx1
-                    },
-                    outputNote2: {
-                        data: (tx.encryptedData2 as any) as EncryptedNote,
-                        index: tx.outputNoteCommitmentIdx2
-                    },
-                    nullifier1: tx.nullifier1,
-                    nullifier2: tx.nullifier2
-                });
+            await txList.forEach(async tx => {
+                const { proof, blockId, blockHash, updatedAt, createdAt, encryptedData1, encryptedData2, ...restObj } = tx;
+                const dto = restObj as any as L2TxSimpleDto;
+
+                const withdrawInfoRepository = connection.getRepository(WithdrawInfo);
+                const wInfo = await withdrawInfoRepository.findOne({ where: { l2TxId: tx.id } });
+                const { createdAt: createdAtW, updatedAt: updatedAtW, ...restObjW } = wInfo!;
+                const withdrawInfoDto = (restObjW as any) as WithdrawInfoDto;
+                if (withdrawInfoDto.status == WithdrawNoteStatus.DONE) {
+                    withdrawInfoDto.l1TxBody = '';
+                }
+
+                const accountRepository = connection.getRepository(Account)
+                const account = await accountRepository.findOne({ where: { l2TxId: tx.id } });
+
+                dto.extraData = {
+                    outputNote1: JSON.parse(encryptedData1),
+                    outputNote2: encryptedData2 ? {} : JSON.parse(encryptedData2),
+                    aliasHash: account!.aliasHash,
+                    accountPublicKey: account!.acctPk,
+                    withdrawNote: withdrawInfoDto
+                }
+
+                blockTxListMap.get(tx.blockId)?.txList.push(dto);
             });
         });
 

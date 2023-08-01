@@ -26,71 +26,197 @@
             "description": "L2 tx list",
             "items": {
                 "properties": {
+                    "actionType": {
+                        "type": "string"
+                    },
+                    "dataRoot": {
+                        "type": "string"
+                    },
+                    "depositIndex": {
+                        "description": "leaf index of `outputNoteCommitment1` on deposit_tree",
+                        "type": "string"
+                    },
+                    "depositRoot": {
+                        "description": "for deposit L2tx",
+                        "type": "string"
+                    },
+                    "extraData": {
+                        "properties": {
+                            "accountPublicKey": {
+                                "description": "used at Account Registration section",
+                                "type": "string"
+                            },
+                            "aliasHash": {
+                                "description": "used at Account Registration section",
+                                "type": "string"
+                            },
+                            "outputNote1": {
+                                "description": "from encryptedData1",
+                                "properties": {
+                                    "cipherText": {
+                                        "description": "long text. from encrypt(valueNote.json())",
+                                        "type": "string"
+                                    },
+                                    "noteCommitment": {
+                                        "type": "string"
+                                    },
+                                    "publicKey": {
+                                        "description": "Base58",
+                                        "type": "string"
+                                    },
+                                    "receiverInfo": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "outputNote2": {
+                                "description": "from encryptedData2",
+                                "properties": {
+                                    "cipherText": {
+                                        "description": "long text. from encrypt(valueNote.json())",
+                                        "type": "string"
+                                    },
+                                    "noteCommitment": {
+                                        "type": "string"
+                                    },
+                                    "publicKey": {
+                                        "description": "Base58",
+                                        "type": "string"
+                                    },
+                                    "receiverInfo": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "type": "array"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "withdrawNote": {
+                                "description": "used at Withdrawal section",
+                                "properties": {
+                                    "accountRequired": {
+                                        "type": "string"
+                                    },
+                                    "assetId": {
+                                        "type": "string"
+                                    },
+                                    "createdTs": {
+                                        "description": "the timestamp when the corresponding L2Block which includes L2tx is created",
+                                        "type": "number"
+                                    },
+                                    "creatorPk": {
+                                        "description": "could be optional",
+                                        "type": "string"
+                                    },
+                                    "finalizedTs": {
+                                        "description": "the timestamp when L1Tx is finalized at Layer1",
+                                        "type": "number"
+                                    },
+                                    "id": {
+                                        "type": "number"
+                                    },
+                                    "inputNullifier": {
+                                        "type": "string"
+                                    },
+                                    "l1TxBody": {
+                                        "description": "store the entire L1Tx. client will fetch it later for further signatures.\n* when it's at 'DONE', then will not return this field to client.",
+                                        "type": "string"
+                                    },
+                                    "l1TxHash": {
+                                        "description": "record the L1TxHash when it's claimed",
+                                        "type": "string"
+                                    },
+                                    "l2TxHash": {
+                                        "description": "hash of corresponding L2 tx",
+                                        "type": "string"
+                                    },
+                                    "l2TxId": {
+                                        "description": "entity id of corresponding L2 tx",
+                                        "type": "number"
+                                    },
+                                    "noteType": {
+                                        "type": "string"
+                                    },
+                                    "outputNoteCommitment": {
+                                        "description": "here is a unique index here",
+                                        "type": "string"
+                                    },
+                                    "outputNoteCommitmentIdx": {
+                                        "description": "the leaf index on data_tree, will be updated when L2tx is confirmed at L2's Block",
+                                        "type": "string"
+                                    },
+                                    "ownerPk": {
+                                        "description": "from L2tx's publicOwner",
+                                        "type": "string"
+                                    },
+                                    "secret": {
+                                        "type": "string"
+                                    },
+                                    "status": {
+                                        "description": "record if it has already been claimed.",
+                                        "type": "number"
+                                    },
+                                    "value": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "id": {
+                        "type": "number"
+                    },
+                    "indexInBlock": {
+                        "description": "the index within a block",
+                        "type": "number"
+                    },
                     "nullifier1": {
                         "type": "string"
                     },
                     "nullifier2": {
                         "type": "string"
                     },
-                    "outputNote1": {
-                        "properties": {
-                            "data": {
-                                "properties": {
-                                    "cipherText": {
-                                        "description": "long text. from encrypt(valueNote.json())",
-                                        "type": "string"
-                                    },
-                                    "noteCommitment": {
-                                        "type": "string"
-                                    },
-                                    "publicKey": {
-                                        "description": "Base58",
-                                        "type": "string"
-                                    },
-                                    "receiverInfo": {
-                                        "items": {
-                                            "type": "string"
-                                        },
-                                        "type": "array"
-                                    }
-                                },
-                                "type": "object"
-                            },
-                            "index": {
-                                "type": "string"
-                            }
-                        },
-                        "type": "object"
+                    "nullifierIdx1": {
+                        "type": "string"
                     },
-                    "outputNote2": {
-                        "properties": {
-                            "data": {
-                                "properties": {
-                                    "cipherText": {
-                                        "description": "long text. from encrypt(valueNote.json())",
-                                        "type": "string"
-                                    },
-                                    "noteCommitment": {
-                                        "type": "string"
-                                    },
-                                    "publicKey": {
-                                        "description": "Base58",
-                                        "type": "string"
-                                    },
-                                    "receiverInfo": {
-                                        "items": {
-                                            "type": "string"
-                                        },
-                                        "type": "array"
-                                    }
-                                },
-                                "type": "object"
-                            },
-                            "index": {
-                                "type": "string"
-                            }
-                        },
-                        "type": "object"
+                    "nullifierIdx2": {
+                        "type": "string"
+                    },
+                    "outputNoteCommitment1": {
+                        "type": "string"
+                    },
+                    "outputNoteCommitment2": {
+                        "type": "string"
+                    },
+                    "outputNoteCommitmentIdx1": {
+                        "description": "leaf index on data_tree",
+                        "type": "string"
+                    },
+                    "outputNoteCommitmentIdx2": {
+                        "description": "leaf index on data_tree",
+                        "type": "string"
+                    },
+                    "publicAssetId": {
+                        "type": "string"
+                    },
+                    "publicOwner": {
+                        "type": "string"
+                    },
+                    "publicValue": {
+                        "type": "string"
+                    },
+                    "txFee": {
+                        "type": "string"
+                    },
+                    "txFeeAssetId": {
+                        "type": "string"
                     },
                     "txHash": {
                         "type": "string"
