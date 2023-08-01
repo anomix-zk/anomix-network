@@ -76,12 +76,12 @@ export interface L2TxSimpleDto {
     /**
      * for deposit L2tx
      */
-    depositRoot?: string
+    depositRoot: string
 
     /**
      * leaf index of `outputNoteCommitment1` on deposit_tree
      */
-    depositIndex?: string
+    depositIndex: string
 
 
     txFee: string
