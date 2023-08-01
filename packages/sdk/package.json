@@ -8,6 +8,8 @@
   "types": "dist/src/index.d.ts",
   "license": "MIT",
   "scripts": {
+    "node": "tsc --build tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/rollup_node/node_Provider_test.js",
+    "demo": "tsc --build tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/demo_test.js",
     "lib:dev": "npm run lib:build && (concurrently \"tsc --build tsconfig.json --watch\" \"tsc-alias -w\")",
     "lib:build": "tsc --build tsconfig.json && tsc-alias",
     "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
@@ -16,6 +18,7 @@
   "devDependencies": {
     "@babel/preset-env": "^7.16.4",
     "@babel/preset-typescript": "^7.16.0",
+    "@types/isomorphic-fetch": "^0.0.36",
     "@types/jest": "^27.0.3",
     "@typescript-eslint/eslint-plugin": "^5.5.0",
     "@typescript-eslint/parser": "^5.5.0",
@@ -30,8 +33,13 @@
     "snarkyjs": "0.12.*"
   },
   "dependencies": {
+    "@anomix/circuits": "^0.1.0",
     "@anomix/merkle-tree": "^0.1.0",
     "@anomix/utils": "^0.1.0",
+    "async-mutex": "^0.4.0",
+    "consola": "^3.2.3",
+    "dexie": "^3.2.4",
+    "isomorphic-fetch": "^3.0.0",
     "level": "^8.0.0"
   }
 }
