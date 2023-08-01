@@ -93,7 +93,7 @@ export interface L2TxSimpleDto {
         /**
          * from encryptedData1
          */
-        outputNote1: EncryptedNote,
+        outputNote1?: EncryptedNote,
         /**
          * from encryptedData2
          */
