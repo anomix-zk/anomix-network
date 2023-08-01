@@ -95,6 +95,8 @@ let DepositRollupProver = Experimental.ZkProgram({
   },
 });
 
-export class DepositRollupProof extends Experimental.ZkProgram.Proof(
+class DepositRollupProof extends Experimental.ZkProgram.Proof(
   DepositRollupProver
 ) {}
+
+export {DepositRollupProver, DepositRollupProof};

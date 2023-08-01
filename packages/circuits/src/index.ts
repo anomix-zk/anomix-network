@@ -11,6 +11,7 @@ export * from './inner_rollup/inner_rollup_prover';
 export * from './inner_rollup/models';
 export * from './block_prover/block_prover';
 export * from './block_prover/models';
+export * from './entry_contract/deposit_rollup_prover'
 export * from './entry_contract/entry_contract';
 export * from './entry_contract/models';
 export * from './rollup_contract/rollup_contract';
