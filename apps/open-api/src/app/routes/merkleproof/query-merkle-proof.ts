@@ -25,7 +25,7 @@ export const queryMerkleProof: FastifyPlugin = async function (
 export const handler: RequestHandler<string[], null> = async function (
     req,
     res
-): Promise<BaseResponse<MerkleProofDto>> {
+): Promise<BaseResponse<MerkleProofDto[]>> {
     const commitmentList = req.body
 
     try {
@@ -33,7 +33,8 @@ export const handler: RequestHandler<string[], null> = async function (
          * TODO  request sequencer for the result.
          */
 
-        return { code: 0, data: {} as MerkleProofDto, msg: '' };
+
+        return { code: 0, data: {} as MerkleProofDto[], msg: '' };
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
@@ -56,9 +57,13 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: 'object',
-                    properties: MerkleProofDtoSchema.properties
+                    type: "array",
+                    items: {
+                        type: (MerkleProofDtoSchema as any).type,
+                        properties: (MerkleProofDtoSchema as any).properties,
+                    }
                 },
+
                 msg: {
                     type: 'string'
                 }
