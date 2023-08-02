@@ -4,7 +4,7 @@ import { FastifyPlugin } from "fastify"
 import { In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { WithdrawInfo } from "@anomix/dao";
-import { WithdrawInfoDtoSchema, BaseResponse, WithdrawNoteStatus } from "@anomix/types";
+import { BaseResponse, WithdrawNoteStatus, WithdrawAssetReqDto, WithdrawAssetReqDtoSchema } from "@anomix/types";
 import { Signature, PublicKey, Field } from "snarkyjs";
 
 /**
@@ -24,7 +24,7 @@ export const withdrawAsset: FastifyPlugin = async function (
     })
 }
 
-export const handler: RequestHandler<{ l1addr: string, noteCommitment: string, signature: any }, null> = async function (
+export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function (
     req,
     res
 ): Promise<BaseResponse<string>> {
@@ -35,6 +35,7 @@ export const handler: RequestHandler<{ l1addr: string, noteCommitment: string, s
     if (rs) {
         throw req.throwError(httpCodes.BAD_REQUEST, "signature verified fail!")
     }
+    // check if exist in db
     const withdrawInfoRepository = getConnection().getRepository(WithdrawInfo)
     try {
         const withdrawInfoList = await withdrawInfoRepository.find({
@@ -71,17 +72,7 @@ const schema = {
     tags: ["L2Tx"],
     body: {
         type: "object",
-        properties: {
-            'l1addr': {
-                type: "string",
-            },
-            'noteCommitment': {
-                type: "string",
-            },
-            'signature': {
-                type: 'string'
-            }
-        },
+        properties: (WithdrawAssetReqDtoSchema as any).properties,
         required: ['l1addr', 'noteCommitment', 'signature']
     },
     response: {
