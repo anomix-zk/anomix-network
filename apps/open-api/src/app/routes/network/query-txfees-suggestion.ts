@@ -32,7 +32,7 @@ export const handler: RequestHandler<null, null> = async function (
     res
 ): Promise<BaseResponse<TxFeeSuggestionDto>> {
     try {
-        // query sequencer
+        // TODO future improve: query sequencer
         //
         //
         return {

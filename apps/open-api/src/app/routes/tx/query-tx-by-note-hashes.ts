@@ -4,6 +4,9 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { BaseResponse, L2TxRespDto } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
+import { $axios } from "@/lib/api"
+import { getConnection, In } from "typeorm"
+import { L2Tx, BlockProverOutputEntity } from "@anomix/dao"
 
 /**
 * 根据alias_nullifier/account_viewing_key/valueNote_commitment/nullifier查询L2Tx
@@ -28,24 +31,38 @@ export const handler: RequestHandler<string[], null> = async function (
 ): Promise<BaseResponse<L2TxRespDto[]>> {
     const notehashes = req.body
 
-    // TODO will improve the code by building a new KV db[nodehash -> L2tx].
-
-    // const txRepository = getConnection().getRepository(L2Tx)
     try {
-        // let txList = await txRepository.find({ where: { output_note_commitment_C: hash } });
-        // if ((txList?.length == 0) || (txList ?? true)) {
-        //     txList = await txRepository.find({ where: { output_note_commitment_D: hash } });
-        // }
-        // if ((txList?.length == 0) || (txList ?? true)) {
-        //     txList = await txRepository.find({ where: { input_note_nullifier_A: hash } });
-        // }
-        // if ((txList?.length == 0) || (txList ?? true)) {
-        //     txList = await txRepository.find({ where: { input_note_nullifier_B: hash } });
-        // }
-        // return (txList ?? []) as L2TxRespDto[];
+        const txHashList = await $axios.post<BaseResponse<string[]>>('/tx/notehashes', notehashes).then(r => {
+            return r.data.data
+        });
+
+        const connection = getConnection();
+        const txRepository = connection.getRepository(L2Tx)
+        // then query confirmed tx collection
+        const ctxList = await txRepository.find({
+            where: {
+                txHash: In(txHashList)
+            }
+        }) ?? [];
+
+        const l2TxRespDtoList = await Promise.all(ctxList.map(async tx => {
+            const blockRepository = connection.getRepository(BlockProverOutputEntity)
+            const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx.blockId } });
+
+            const { updatedAt, createdAt, proof, ...restObj } = tx;
+            const txDto = (restObj as any) as L2TxRespDto;
+
+            txDto.finalizedTs = block!.finalizedAt.getTime();
+            txDto.createdTs = block!.createdAt.getTime();
+
+            txDto.extraData.withdrawNote.createdTs = txDto.createdTs;
+
+            return txDto;
+        }));
+
         return {
             code: 0,
-            data: ([] as any) as L2TxRespDto[],
+            data: l2TxRespDtoList,
             msg: ''
         };
     } catch (err) {

@@ -3,6 +3,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse } from "@anomix/types";
+import { $axios } from "@/lib/api";
 /**
  * check if nullifiers exist
  */
@@ -27,11 +28,11 @@ export const handler: RequestHandler<string[], null> = async function (
     const nullifierList = req.body
 
     try {
-        /**
-         * TODO  request sequencer for the result.
-         */
-
-        return { code: 0, data: {}, msg: '' };
+        const rs = await $axios.post<BaseResponse<Map<string, string>>>('/existence/nullifiers', nullifierList).then(r => {
+            return r.data
+        })
+        // {nullifier0: -1/index, nullifier1: -1/index... }
+        return rs;
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
@@ -54,8 +55,8 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: 'object',
-                    properties: {}
+                    description: 'like this pattern {nullifier0: -1/index, nullifier1: -1/index... }',
+                    type: 'object'
                 },
                 msg: {
                     type: 'string'

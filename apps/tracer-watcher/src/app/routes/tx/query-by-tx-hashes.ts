@@ -35,7 +35,8 @@ export const handler: RequestHandler<string[], null> = async function (
     const txHashList = req.body
 
     try {
-        const txRepository = getConnection().getRepository(L2Tx)
+        const connection = getConnection();
+        const txRepository = connection.getRepository(L2Tx)
         // then query confirmed tx collection
         const ctxList = await txRepository.find({
             where: {
@@ -44,7 +45,7 @@ export const handler: RequestHandler<string[], null> = async function (
         }) ?? [];
 
         const l2TxRespDtoList = await Promise.all(ctxList.map(async tx => {
-            const blockRepository = getConnection().getRepository(BlockProverOutputEntity)
+            const blockRepository = connection.getRepository(BlockProverOutputEntity)
             const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx.blockId } });
 
             const { updatedAt, createdAt, proof, ...restObj } = tx;

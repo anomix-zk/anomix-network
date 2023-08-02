@@ -12,14 +12,14 @@ interface CallbackTrigger {
 }
 
 const callbackTrigger: CallbackTrigger = {
-    responseSuccess: null,
-    responseError: null,
+    responseSuccess: (null as any) as ResponseSuccessCallback,
+    responseError: (null as any) as ResponseErrorCallback
 };
 
 $axios.interceptors.response.use(
     (response: AxiosResponse) => {
         if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
-        return response;
+        return response.data;
     },
 
     async (error: ResponseError) => {

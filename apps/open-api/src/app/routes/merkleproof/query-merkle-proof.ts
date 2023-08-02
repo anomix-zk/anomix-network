@@ -3,6 +3,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { BaseResponse, MerkleProofDto, MerkleProofDtoSchema } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
+import { $axios } from "@/lib/api"
 
 
 /**
@@ -30,11 +31,13 @@ export const handler: RequestHandler<string[], null> = async function (
 
     try {
         /**
-         * TODO  request sequencer for the result.
+         * request sequencer for the result.
          */
+        const rs = await $axios.post<BaseResponse<MerkleProofDto[]>>('/merklewitness', commitmentList).then(r => {
+            return r.data
+        })
 
-
-        return { code: 0, data: {} as MerkleProofDto[], msg: '' };
+        return rs;
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }

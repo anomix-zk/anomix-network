@@ -3,6 +3,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse } from "@anomix/types";
+import { $axios } from "@/lib/api";
 
 /**
  * check if commitments exist
@@ -24,15 +25,15 @@ export const checkCommitmentsExist: FastifyPlugin = async function (
 export const handler: RequestHandler<string[], null> = async function (
     req,
     res
-): Promise<BaseResponse<object>> {
+): Promise<BaseResponse<Map<string, string>>> {
     const commitmentList = req.body
 
     try {
-        /**
-         * TODO  request sequencer for the result.
-         */
-
-        return { code: 0, data: {}, msg: '' };
+        const rs = await $axios.post<BaseResponse<Map<string, string>>>('/existence/commitments', commitmentList).then(r => {
+            return r.data
+        })
+        // {commiment0: -1/index, commiment1: -1/index... }
+        return rs;
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
@@ -55,8 +56,8 @@ const schema = {
                     type: 'number',
                 },
                 data: {
+                    description: 'like this pattern {commiment0: -1/index, commiment1: -1/index... }',
                     type: 'object',
-                    properties: {}
                 },
                 msg: {
                     type: 'string'
