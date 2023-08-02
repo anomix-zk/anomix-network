@@ -1,13 +1,19 @@
 import { BlockProver, DepositRollupProver, AnomixEntryContract, InnerRollupProver, JoinSplitProver, WithdrawAccount, AnomixRollupContract, } from ".";
 
+
+let joinSplitProverVk = await JoinSplitProver.compile();
+console.log('JoinSplitVK=', joinSplitProverVk.verificationKey);
+
+const joinSplitProof = await JoinSplitProver.dummy();
+console.log('joinSplitProof0: ', joinSplitProof);
+console.log('joinSplitProof1: ', JSON.stringify(joinSplitProof));
+
 let depositRollupProverVk = await DepositRollupProver.compile();
 console.log('DepositRollupProverVK=', depositRollupProverVk.verificationKey);
 
 // let anomixEntryContractVk = await AnomixEntryContract.compile();
 // console.log(anomixEntryContractVk.verificationKey);
 
-let joinSplitProverVk = await JoinSplitProver.compile();
-console.log('JoinSplitVK=', joinSplitProverVk.verificationKey);
 
 // let withdrawAccountVk = await WithdrawAccount.compile();
 // console.log(withdrawAccountVk.verificationKey);
