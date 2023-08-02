@@ -1,3 +1,5 @@
+import exp from "constants";
+
 export class Tree {
     static get NULLIFIER_TREE(): string {
         return 'nullifier_tree'
@@ -64,6 +66,9 @@ export class DepositStatus {
 
 export class L2TxStatus {
 
+    /**
+     * when there is another tx in memory pool with the same nullifier1 or nullifier2. Pending txs will be checked and update to 'FAILED' during sequencer rollup.
+     */
     static get FAILED(): number {
         return -1;
     }
@@ -124,3 +129,10 @@ export class L1TxStatus {
         return 2;
     }
 }
+
+export enum SequencerStatus {
+    NotAtRollup,
+    AtRollup
+}
+
+
