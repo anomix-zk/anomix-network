@@ -14,12 +14,14 @@
     "server:dev": "npm run libs:build && npm run serve -w @anomix/open-api",
     "web:dev": "npm run serve -w @anomix/ano-cash-ui",
     "apps:dev": "concurrently \"npm run serve -w @anomix/ano-cash-ui\" \"npm run serve -w @anomix/open-api\"",
+    "seq:dev": "npm run serve -w @anomix/rollup-sequencer",
     "build": "npm run libs:build && npm run build --workspaces --if-present",
     "clean": "rimraf ./_dist && npm run lib:clean --workspaces --if-present && npm run clean --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present && npm run lib:lint --workspaces --if-present"
   },
   "dependencies": {
     "axios": "^0.27.2",
+    "dotenv": "^16.3.1",
     "shelljs": "^0.8.5",
     "typescript-json-schema": "^0.59.0"
   },
