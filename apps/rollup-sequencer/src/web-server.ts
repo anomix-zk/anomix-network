@@ -1,31 +1,10 @@
 import { FastifyCore } from './app'
-import { parentPort, Worker } from "worker_threads";
-import { FLowTask, FlowTaskType } from "./rollup";
-import { WorldState, WorldStateDB } from "./worldstate";
 
-const sequencer = async () => {
+const server = async () => {
     // init leveldb
 
-    // construct WorldState
-    let worldState = new WorldState();// TODO
-
-    // init worker thread A
-    let worker = new Worker('./web-server.js');
-    worker.on('online', () => {
-        //
-    })
-
-    worker.on('exit', (exitCode: number) => {
-        // TODO
-        // create a new worker for http-server
-        //
-        //
-        //
-    })
-
-    worker.on('message', (value: FLowTask) => {
-        worldState.handleFlowTask(value);
-    })
+    const app = new FastifyCore()
+    await app.listen()
 
     // Highlevel Processing Progress:
     // start pipeline: new instance would be created by last one in 10mins when last one ends.
@@ -44,9 +23,8 @@ const sequencer = async () => {
     // * send signal to start 'proof-generator',
     //   * 'proof-generator' server query them for inner merge,
 
-
-
-
 }
 
-sequencer()
+export default server
+
+server()

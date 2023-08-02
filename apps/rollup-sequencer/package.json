@@ -29,7 +29,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "serve": "tsc && tsc-alias",
+    "serve": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/index.js",
     "buildw": "tsc --build tsconfig.json --watch && (concurrently \"tsc --build tsconfig.json -w\" \"tsc-alias -w\")",
     "build": "tsc --build tsconfig.json && tsc-alias",
     "dev": "nodemon src/index.ts",

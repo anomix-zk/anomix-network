@@ -1,5 +1,6 @@
 
-import { BaseSiblingPath, LeafData, LowLeafWitnessData } from "@anomix/merkle-tree";
+import { LeafData, LowLeafWitnessData } from "@anomix/merkle-tree";
+import { BaseSiblingPath } from "@anomix/types";
 import { Field } from "snarkyjs";
 
 export interface WorldStateDB {

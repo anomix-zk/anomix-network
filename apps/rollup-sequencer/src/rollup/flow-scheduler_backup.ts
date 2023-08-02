@@ -4,42 +4,16 @@ import { RollupDB } from "./rollup-db";
 import config from "@/lib/config";
 import { Tree } from "@anomix/types";
 import { LeafData } from "@anomix/merkle-tree";
-import { InnerRollupProof, JoinSplitOutput, JoinSplitProof } from "@anomix/circuits";
+import { JoinSplitOutput, JoinSplitProof } from "@anomix/circuits";
 import { PrivateKey, Mina } from "snarkyjs";
-
-export class FlowTaskType {
-    static get DEPOSIT_JOIN_SPLIT() {
-        return 0;
-    }
-    static get ROLLUP_TX_MERGE() {
-        return 1;
-    }
-    static get ROLLUP_MERGE() {
-        return 2;
-    }
-    static get BLOCK_CREATE() {
-        return 3;
-    }
-    static get ROLLUP_CONTRACT_CALL() {
-        return 4;
-    }
-}
-
-export type FLowTask = {
-    flowId: string,
-    taskType: 0 | 1 | 2 | 3 | 4, // corresponding to FlowTaskType
-    data: any
-}
 
 export class FlowScheduler {
     private processingTxList: JoinSplitProof[]
-    private rollupMergeEntityList: InnerRollupProof[]
     private depositCommitmentSize: number
+    private pendingTxSize: number
     // private depositActionList: JoinSplitDepositInput[]
 
-    constructor(private rollupDB: RollupDB, private worldStateDB: WorldStateDB) {
-
-    }
+    constructor(private rollupDB: RollupDB, private worldStateDB: WorldStateDB) { }
 
     private init() {
         // TODO clear dirty data on both rollupDB & worldStateDB
@@ -55,26 +29,25 @@ export class FlowScheduler {
         const includeUnCommit = true;
 
         // TODO ask if 'Deposit-Processor' could stop
-        let couldStopMarkDepositActions = true;
+        let couldStopDeposit = true;
         //
         //
-        if (couldStopMarkDepositActions) {
+        if (couldStopDeposit) {
             // process deposit actions
             this.processDepositActions();
         }
 
         // query unhandled Non-Deposit tx list from RollupDB
         const txList = await this.rollupDB.queryPendingTxList();
-        if (txList.length == 0 && !couldStopMarkDepositActions) {
+        if (txList.length == 0 && !couldStopDeposit) {
             // TODO end this flow!
             // rm 'flow' from WorldState object
             //
-        } else if (txList.length == 0 && couldStopMarkDepositActions) {
+        } else if (txList.length == 0 && couldStopDeposit) {
             // TODO interrupt this flow!
             //
             //
         }
-        // ================== below: txList.length > 0 ==================
 
         // preinsert Non-Deposit ones & Padding ones, i.e. txList
         // query all related merkle-proof and compose the CommonUserTxWrapper for each L2 tx 
@@ -82,36 +55,79 @@ export class FlowScheduler {
         // TODO set to this.processingTxList
         //
 
-        if (!couldStopMarkDepositActions) {// ask 'deposit-processor' again
+        if (!couldStopDeposit) {// ask 'deposit-processor' again
             // couldStopDeposit = true;
             //
             //
-            if (couldStopMarkDepositActions) {// if answer true
+            if (couldStopDeposit) {// if answer true
                 // process deposit actions
                 this.processDepositActions();
             }
         }
 
-        if (!couldStopMarkDepositActions) {// still cannot stop, ignore the deposit ones at current block.
+        if (!couldStopDeposit) {// still cannot stop
             // calc dummy tx
             let len = txList.length + this.depositCommitmentSize;
-            let pendingTxSize = len % innerRollupTxNum;
+            this.pendingTxSize = len % innerRollupTxNum;
             // fill dummy tx
-            for (let index = 0; index < pendingTxSize; index++) {
+            for (let index = 0; index < this.pendingTxSize; index++) {
                 this.processingTxList.push(config.joinsplitProofDummyTx);
             }
         }
 
-        if (this.processingTxList.length % 2 == 1) {// means couldStopMarkDepositActions == true
-            // the last one need wait for DepositTxList Coming Back to join them
-            //
-            //
+        // send non-deposit ones to proof-generator for 'InnerRollupProver.proveTxBatch()'
+        //
+        //
+
+
+
+        // check if need one Padding tx
+        let paddingTxNum = innerRollupTxNum - txList.length % innerRollupTxNum;
+        while (paddingTxNum == 0) {//Actually Pickles only supports recursively verifying 0, 1 or 2 proofs
+            commonUserTxWrapperList.push({});// TODO commonUserTxWrapper for padding
+            paddingTxNum--;
         }
 
-        // send non-deposit ones [two by two] to proof-generator for 'InnerRollupProver.proveTxBatch()', and reduce the sent ones from processingTxList.
-        // 
+        // exec InnerRollup circuit.
+        let innerRollupCircuitInput = new Array[commonUserTxWrapperList.length / innerRollupTxNum];
+        let start = 0;
+        while (start < commonUserTxWrapperList.length) {
+            let end = start + innerRollupTxNum
+            innerRollupCircuitInput.push(commonUserTxWrapperList.slice(start, end));
+            start += end + 1;
+        }
+        // !!!! Worker Thread start !!!!
+        // innerRollupCircuitInput
+        // exec innerRollup circuit
+        // push results into Queue && persist innerRollup&update L2tx status into DB！
+
+        // !!!! Worker Thread start !!!!
+        // reduce(accumulate) all results one and one
         //
         //
+        // when meet the maximum size of outerRullup then persist the outRollup into DB！then trigger RollupSmartContract's method, construct a tx, and sign, broadcast!
+        let currentInnerRollupReducedNum = 0;// TODO
+        let outerRullupSizeLimit = 10;// TODO
+        if (currentInnerRollupReducedNum == outerRullupSizeLimit) {
+            // trigger RollupSmartContract's method, and construct a tx, and sign, broadcast!
+            let sequencerPrivateKey = PrivateKey.fromBase58(config.sequencerPrivateKey);
+            let feePayer = sequencerPrivateKey.toPublicKey();
+            let tx = await Mina.transaction(feePayer, () => {
+                let contractMethodCircuitInput = {};
+                // invoke RollupSmartContract's method...
+                // 
+                // 
+            });
+            tx.prove();
+            tx.sign([sequencerPrivateKey]);
+
+            // update each tx's status
+            await this.rollupDB.preConfirmTxList(txList);
+
+            // commit new worldstate
+            await this.worldStateDB.commit();
+        }
+
     }
 
     private async preInsertIntoTreeCache(includeUnCommit: boolean, txList: any[]) {
@@ -207,10 +223,8 @@ export class FlowScheduler {
     public whenDepositTxListComeBack(txList: any) {
         // preInsert into tree cache
 
-        // check if it's the successor of an non-deposit one (ie. this.processingTxList.length % 2 == 1, last item of processingTxList ), true: combine them 
-
-        // calc DUMMY tx num and append dummy if need!
-
+        // check if it's the successor of an non-deposit one (ie. this.processingTxList.length % 2 == 1), true: combine them 
+        // calc Padding tx num and append dummy if need
         // combine txs above [two by two] and send to them to proof-generator for 'InnerRollupProver.proveTxBatch()'
 
     }
@@ -220,33 +234,24 @@ export class FlowScheduler {
      * @param rollupList 
      */
     public merge(rollupList: any) {
-        // find out the suitable one in queue: this.rollupMergeEntityList
+        // find out the suitable one in queue
         // send them to proof-generator for 'InnerRollupProver.merge()'
 
         // when if there is only one left, send to proof-generator for 'BlockProver.prove()'
 
     }
 
-    /**
-     * 
-     * @param block 
-     */
     public whenL2BlockComeback(block: any) {
         // commit worldstateDB
         // start TypeOrm.transaction:
         //   insert Block into DB
         //   update related L2Tx
         // send to proof-generator for 'AnomixRollupContract.updateRollupState'
-        //
-        //
-        //
     }
 
     public whenL1TxComeback(l1Tx: any) {
         // insert L1 tx into db
         // sign and broadcast it.
-        //
-        //
     }
 
 }
