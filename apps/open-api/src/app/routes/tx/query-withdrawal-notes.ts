@@ -27,17 +27,19 @@ export const handler: RequestHandler<string[], string> = async function (
     req,
     res
 ): Promise<BaseResponse<WithdrawInfoDto[]>> {
+    const noteCommitmentList = req.body;
     const l1addr = req.params;
-    const noteCommitments = req.body;
 
-    const whereConditions: { ownerPk: string, outputNoteCommitment?: any } = { ownerPk: l1addr };
-    if (noteCommitments?.length == 1) {
-        whereConditions.outputNoteCommitment = noteCommitments[0];
-    } else if (noteCommitments?.length > 1) {
-        whereConditions.outputNoteCommitment = In(noteCommitments);
+    const connection = getConnection();
+
+    const whereConditions: any = { ownerPk: l1addr, assetId: '1' };// currently Mina: 1
+    if (noteCommitmentList?.length == 1) {
+        whereConditions.outputNoteCommitment = noteCommitmentList[0];
+    } else if (noteCommitmentList?.length > 1) {
+        whereConditions.outputNoteCommitment = In(noteCommitmentList);
     }
 
-    const withdrawInfoRepository = getConnection().getRepository(WithdrawInfo)
+    const withdrawInfoRepository = connection.getRepository(WithdrawInfo)
     try {
         const withdrawInfoList = (await withdrawInfoRepository.find({ where: whereConditions })) ?? [];
         const withdrawInfoDtoList = await Promise.all(withdrawInfoList.map(async wInfo => {
@@ -47,7 +49,7 @@ export const handler: RequestHandler<string[], string> = async function (
                 withdrawInfoDto.l1TxBody = '';
             }
 
-            const txRepository = getConnection().getRepository(L2Tx)
+            const txRepository = connection.getRepository(L2Tx)
             // then query confirmed tx collection
             const tx = await txRepository.findOne({
                 where: {
@@ -55,7 +57,7 @@ export const handler: RequestHandler<string[], string> = async function (
                 }
             });
 
-            const blockRepository = getConnection().getRepository(BlockProverOutputEntity)
+            const blockRepository = connection.getRepository(BlockProverOutputEntity)
             const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx!.blockId } });
             withdrawInfoDto.createdTs = block!.createdAt.getTime();
             withdrawInfoDto.finalizedTs = block!.finalizedAt.getTime();

@@ -1,11 +1,50 @@
 // initialize tree with fixed empty commitment from Value_Note.
 
-import { FLowTask, FlowTaskType, RollupFlow } from "@/rollup";
+import { FLowTask, FlowTaskType, RollupDB, RollupFlow } from "@/rollup";
+import { WorldStateDB } from "./worldstate-db";
 
 export * from './worldstate-db'
 
+/**
+ * Defines the  Merkle tree IDs.
+ */
+export enum MerkleTreeId {
+    DEPOSIT_TREE = 0,
+    DATA_TREE,
+    NULLIFIER_TREE,
+    DATA_TREE_ROOTS_TREE,
+    USER_NULLIFIER_TREE
+}
+
+/**
+ *  Defines tree information.
+ */
+export interface TreeInfo {
+    /**
+     * The tree ID.
+     */
+    treeId: MerkleTreeId;
+    /**
+     * The tree root.
+     */
+    root: Buffer;
+    /**
+     * The number of leaves in the tree.
+     */
+    size: bigint;
+
+    /**
+     * The depth of the tree.
+     */
+    depth: number;
+}
+
 export class WorldState {
     private flow: RollupFlow
+
+    constructor(private worldStateDB: WorldStateDB, private rollupDB: RollupDB) {
+
+    }
 
     /**
      * start a new Flow

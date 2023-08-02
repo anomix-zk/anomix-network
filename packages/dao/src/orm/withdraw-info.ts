@@ -1,3 +1,4 @@
+import { ValueNote } from '@anomix/circuits'
 import {
     Column,
     PrimaryGeneratedColumn,
@@ -5,7 +6,20 @@ import {
     CreateDateColumn,
     UpdateDateColumn
 } from 'typeorm'
+import {
+    Field,
+    Mina,
+    PublicKey,
+    fetchAccount,
+    Types,
+    fetchLastBlock,
+    UInt32,
+    UInt64,
+    Reducer,
+    Signature,
+    VerificationKey,
 
+} from 'snarkyjs';
 
 /**
  * record all value note's fields for withdraw
@@ -82,6 +96,12 @@ export class WithdrawInfo {
     l1TxBody: string
 
     /**
+     * record the block height when l1Tx is created, for later checking if L1tx becomes invalid.
+     */
+    @Column()
+    blockIdWhenL1Tx: number
+
+    /**
      * record if it has already been claimed.
      */
     @Column({ default: 0 })
@@ -108,4 +128,32 @@ export class WithdrawInfo {
         default: () => 'CURRENT_TIMESTAMP',
     })
     createdAt: Date
+
+    public valueNote() {
+        return {
+            secret: this.secret,
+            ownerPk: this.ownerPk,
+            accountRequired: this.accountRequired,
+            creatorPk: this.creatorPk,
+            value: this.value,
+            assetId: this.assetId,
+            inputNullifier: this.inputNullifier,
+            noteType: this.noteType
+        }
+
+        // return ValueNote.fromJSON({
+        /*
+        secret: Field(this.secret),
+        ownerPk: PublicKey.fromBase58(this.ownerPk),
+        accountRequired: Field(this.accountRequired),
+        creatorPk: PublicKey.fromBase58(this.creatorPk),
+        value: new UInt64(this.value),
+        assetId: Field(this.assetId),
+        inputNullifier: Field(this.inputNullifier),
+        noteType: Field(this.noteType)
+        */
+
+        //});
+
+    }
 }

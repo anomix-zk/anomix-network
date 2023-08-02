@@ -1,18 +1,43 @@
 import { FastifyCore } from './app'
 import { parentPort, Worker } from "worker_threads";
-import { FLowTask, FlowTaskType } from "./rollup";
-import { WorldState, WorldStateDB } from "./worldstate";
+import { FLowTask, FlowTaskType, RollupDB, IndexDB } from "./rollup";
+import { WorldState, WorldStateDB, } from "./worldstate";
+import config from './lib/config';
+import { AccountUpdate, fetchTransactionStatus, Field, isReady, MerkleMap, Mina, Poseidon, PrivateKey, PublicKey, shutdown, UInt32, UInt64 } from 'snarkyjs';
 
 const sequencer = async () => {
+    // init Mina tool
+    const isLocalBlockChain = false;// TODO get it from config here
+    const Blockchain = isLocalBlockChain ? Mina.LocalBlockchain({ proofsEnabled: true }) : Mina.Network({
+        mina: 'https://proxy.berkeley.minaexplorer.com/graphql',
+        archive: 'https://archive.berkeley.minaexplorer.com/',
+    });
+    Mina.setActiveInstance(Blockchain);
+
     // init leveldb
+    const worldStateDB = new WorldStateDB(config.worldStateDBPath);
+    // check if network initialze
+    if (config.networkInit == 0) {
+        worldStateDB.initTrees();
+    } else {
+        worldStateDB.loadtrees();
+    }
+
+    // init IndexDB
+    const indexDB = new IndexDB(config.indexedDBPath);
+
+    // init mysqlDB
+    const rollupDB = new RollupDB();
+    rollupDB.start();
 
     // construct WorldState
-    let worldState = new WorldState();// TODO
+    const worldState = new WorldState(worldStateDB, rollupDB);
 
     // init worker thread A
     let worker = new Worker('./web-server.js');
     worker.on('online', () => {
-        //
+        console.log('web-server worker is online...');
+
     })
 
     worker.on('exit', (exitCode: number) => {
@@ -43,10 +68,6 @@ const sequencer = async () => {
     // * save each batch to MysqlDB,
     // * send signal to start 'proof-generator',
     //   * 'proof-generator' server query them for inner merge,
-
-
-
-
 }
 
 sequencer()

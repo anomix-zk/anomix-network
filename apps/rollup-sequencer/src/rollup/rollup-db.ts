@@ -30,6 +30,26 @@ export class RollupDB {
                     return tx.toCircuitType();
                 });
             });
+
+            //==============================need the check==============================
+            // TODO need obtain a Distributed Lock here to notify sequencer not to start rollup before deleting the ones with less txfee in memory pool
+            // 
+            // 
+            /*
+            const [maxFeeMpL2Tx, ...sortList] = mergeList.sort((a, b) => {
+                return new Field(a.txFee).greaterThan(new Field(b.txFee)).toBoolean() ? 1 : -1;
+            });
+    
+            if (maxFeeMpL2Tx.txHash != joinSplitProof.publicOutput.hash().toString()) {
+                return { code: 1, data: 'already a higher-txfee one in memory pool', msg: '' }
+            }
+    
+            // delete the ones with less txfee in memory pool
+            memPlL2TxRepository.delete(sortList.map(x => {
+                return x.id
+            }));
+            */
+            //==============================need the check==============================
             return mpTxList;
 
         } catch (err) {

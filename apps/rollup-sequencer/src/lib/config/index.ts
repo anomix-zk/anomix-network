@@ -1,3 +1,7 @@
+import {
+    VerificationKey,
+
+} from 'snarkyjs';
 import { JoinSplitProof } from "@anomix/circuits"
 import * as dotenv from "dotenv"
 dotenv.config({ path: '../../.env' })
@@ -52,7 +56,10 @@ const config = {
             }
         }
     },
-    joinsplitProofDummyTx: ({} as any) as JoinSplitProof,// TODO
+    proofGeneratorHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
+    proofGeneratorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8081,
+    joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx)),// TODO
+    withdrawAccountVK: VerificationKey.fromJSON(<string>process.env.WithdrawAccountVK),
     innerRollup: {
         txCount: <number>Number(<string>process.env.InnerRollupTxCount) || 2,
     },
@@ -60,7 +67,10 @@ const config = {
         innerBatchesCount: <number>Number(<string>process.env.OuterRollupInnerBatchesCount) || 12,
     },
     sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
-
+    networkInit: <number>Number(<string>process.env.NETWORK_INIT) || 1,
+    worldStateDBPath: <string>process.env.LEVELDB_WORLDSTATE_DB_PATH || '/var/leveldb/anomix_world_state_db',
+    indexedDBPath: <string>process.env.LEVELDB_INDEX_DB_PATH || '/var/leveldb/anomix_index_db',
+    withdrawDBPath: <string>process.env.LEVELDB_WITHDRAW_DB_PATH || '/var/leveldb/anomix_withdraw_db',
 }
 
 export default config
