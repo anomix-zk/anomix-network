@@ -385,12 +385,12 @@ export class DexieDatabase implements Database {
   async addAliases(alias: Alias[]): Promise<void> {
     await this.alias.bulkPut(alias);
   }
-  async getAlias(accountPk: string): Promise<Alias | undefined> {
-    return await this.alias.get({ accountPk });
+  async getAliases(accountPk: string): Promise<Alias[]> {
+    return await this.alias.where({ accountPk }).toArray();
   }
-  async getAliasByAliasHash(aliasHash: string): Promise<Alias | undefined> {
+  async getAliasesByAliasHash(aliasHash: string): Promise<Alias[]> {
     const aliases = await this.alias.where({ aliasHash }).toArray();
-    return aliases.sort((a, b) => (a.index < b.index ? 1 : -1))[0];
+    return aliases.sort((a, b) => (a.index < b.index ? 1 : -1));
   }
   async getUserState(accountPk: string): Promise<UserState | undefined> {
     return await this.userState.get(accountPk);
@@ -417,7 +417,7 @@ export class DexieDatabase implements Database {
   private createTables() {
     this.dexie = new Dexie(this.dbName);
     this.dexie.version(this.version).stores({
-      alias: '&aliasHash, accountPk',
+      alias: '&[aliasHash+accountPk+index], aliasHash, accountPk',
       key: '&name',
       sercetKey: '&publicKey',
       note: '&commitment, nullifier, [ownerPk+noteType+nullified], [ownerPk+pending]',

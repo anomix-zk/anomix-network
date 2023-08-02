@@ -5,6 +5,8 @@ import {
   L2TxReqDto,
   L2TxSimpleDto,
   NetworkStatusDto,
+  TxFeeSuggestionDto,
+  WorldStateRespDto,
 } from '@anomix/types';
 import { AnomixNode } from './anomix_node';
 import { consola } from 'consola';
@@ -18,6 +20,10 @@ export class NodeProvider implements AnomixNode {
     private log = consola.withTag('anomix:rollup_provider')
   ) {
     this.log.info(`Using node at ${host}`);
+  }
+
+  getHost(): string {
+    return this.host;
   }
 
   private async makeRequest<T>(
@@ -40,6 +46,8 @@ export class NodeProvider implements AnomixNode {
 
       if (resp.ok) {
         let jsonResp = (await resp.json()) as BaseResponse<T>;
+
+        this.log.debug({ url, jsonResp });
         return jsonResp;
       }
 
@@ -49,9 +57,13 @@ export class NodeProvider implements AnomixNode {
         status: resp.status,
         statusText: resp.statusText,
       });
+      throw new Error(
+        `Failed to make request to ${url}, status: ${resp.status}, statusText: ${resp.statusText}`
+      );
       return undefined;
     } catch (err) {
       this.log.error({ url, err });
+      throw err;
     } finally {
       clearTimeouts();
     }
@@ -155,13 +167,89 @@ export class NodeProvider implements AnomixNode {
     return undefined;
   }
 
-  async getNetworkStatus(): Promise<NetworkStatusDto | undefined> {
+  async getTxFee(): Promise<TxFeeSuggestionDto> {
+    const url = `${this.host}/network/txfees`;
+    this.log.info(`Getting tx fees at ${url}`);
+
+    const res = await this.makeRequest<TxFeeSuggestionDto>(url);
+    if (res) {
+      if (res.code === 0) {
+        return res.data;
+      }
+
+      throw new Error(
+        `Failed to get tx fees, code: ${res.code}, message: ${res.msg}`
+      );
+    }
+
+    throw new Error('Failed to get tx fees');
+  }
+
+  async getWorldState(): Promise<WorldStateRespDto> {
+    const url = `${this.host}/network/worldstate`;
+    this.log.info(`Getting world state at ${url}`);
+
+    const res = await this.makeRequest<WorldStateRespDto>(url);
+    if (res) {
+      if (res.code === 0) {
+        return res.data;
+      }
+
+      throw new Error(
+        'Failed to get world state, code: ${res.code}, message: ${res.msg}'
+      );
+    }
+
+    throw new Error('Failed to get world state');
+  }
+
+  async getNetworkStatus(): Promise<NetworkStatusDto> {
     const url = `${this.host}/network/status`;
     this.log.info(`Getting network status at ${url}`);
 
     const res = await this.makeRequest<NetworkStatusDto>(url);
-    if (res && res.code === 0) {
+    if (res) {
+      if (res.code === 0) {
+        return res.data;
+      }
+
+      throw new Error(
+        'Failed to get network status, code: ${res.code}, message: ${res.msg}'
+      );
+    }
+
+    throw new Error('Failed to get network status');
+  }
+
+  async getAccountPublicKeysByAliasHash(aliasHash: string): Promise<string[]> {
+    const url = `${this.host}/account/acctvk/${aliasHash}`;
+    this.log.info(
+      `Getting account public keys by alias hash at ${url}, aliasHash: ${aliasHash}`
+    );
+
+    const res = await this.makeRequest<string[]>(url);
+    if (res && res.code == 0) {
       return res.data;
+    }
+
+    return [];
+  }
+
+  async getAliasHashByAccountPublicKey(
+    accountPk: string
+  ): Promise<string | undefined> {
+    const url = `${this.host}/account/alias/${accountPk}`;
+    this.log.info(
+      'Getting alias hash by account public key at ${url}, accountPk: ${accountPk}'
+    );
+
+    const res = await this.makeRequest<string>(url);
+    if (res && res.code === 0) {
+      if (res.data === '') {
+        return undefined;
+      } else {
+        return res.data;
+      }
     }
 
     return undefined;

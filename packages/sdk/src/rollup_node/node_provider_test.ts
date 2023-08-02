@@ -8,3 +8,6 @@ consola.info('res: ', res);
 
 const res1 = await node.getBlockHeight();
 consola.info('blockHeight: ', res1);
+
+const txFee = await node.getTxFee();
+consola.info('txFee: ', txFee);
