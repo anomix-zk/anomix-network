@@ -17,8 +17,8 @@ export class Alias {
     public aliasHash: string,
     public accountPk: string,
     public index: number,
-    public signingPk?: string,
-    public noteCommitment?: string
+    public noteCommitment?: string,
+    public signingPk?: string
   ) {}
 }
 
@@ -67,8 +67,8 @@ export interface Database {
 
   addAlias(alias: Alias): Promise<void>;
   addAliases(alias: Alias[]): Promise<void>;
-  getAlias(accountPk: string): Promise<Alias | undefined>;
-  getAliasByAliasHash(aliasHash: string): Promise<Alias | undefined>;
+  getAliases(accountPk: string): Promise<Alias[]>;
+  getAliasesByAliasHash(aliasHash: string): Promise<Alias[]>;
 
   getUserState(accountPk: string): Promise<UserState | undefined>;
   getUserStates(): Promise<UserState[]>;

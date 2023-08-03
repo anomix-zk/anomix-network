@@ -1,10 +1,14 @@
-import { Database } from '../database/database';
-import { Bool, Field, PrivateKey } from 'snarkyjs';
+import { Alias, Database } from '../database/database';
+import { Bool, Field, PrivateKey, PublicKey } from 'snarkyjs';
 import { AnomixNode } from '../rollup_node/anomix_node';
 import { consola } from 'consola';
 import { AssetsInBlockDto } from '@anomix/types';
 import { NoteDecryptor } from '../note_decryptor/NoteDecryptor';
-import { calculateNoteNullifier, ValueNote } from '@anomix/circuits';
+import {
+  AccountNote,
+  calculateNoteNullifier,
+  ValueNote,
+} from '@anomix/circuits';
 import {
   Note,
   ValueNoteJSON,
@@ -81,6 +85,69 @@ export class NoteProcessor {
                 finalizedTs: block.finalizedTs,
               })
             );
+
+            const signingKeys = await this.db.getSigningKeys(accountPk);
+            if (signingKeys.length > 0) {
+              const signingKey1 = signingKeys.find(
+                (sk) =>
+                  new AccountNote({
+                    aliasHash: Field(tx.extraData.aliasHash!),
+                    acctPk: PublicKey.fromBase58(sk.accountPk),
+                    signingPk: PublicKey.fromBase58(sk.signingPk),
+                  })
+                    .commitment()
+                    .toString() === tx.outputNoteCommitment1
+              );
+              const signingKey2 = signingKeys.find(
+                (sk) =>
+                  new AccountNote({
+                    aliasHash: Field(tx.extraData.aliasHash!),
+                    acctPk: PublicKey.fromBase58(sk.accountPk),
+                    signingPk: PublicKey.fromBase58(sk.signingPk),
+                  })
+                    .commitment()
+                    .toString() === tx.outputNoteCommitment2
+              );
+              if (signingKey1) {
+                await this.db.addAlias(
+                  new Alias(
+                    tx.extraData.aliasHash!,
+                    accountPk,
+                    Number(tx.outputNoteCommitmentIdx1),
+                    tx.outputNoteCommitment1,
+                    signingKey1.signingPk
+                  )
+                );
+              }
+              if (signingKey2) {
+                await this.db.addAlias(
+                  new Alias(
+                    tx.extraData.aliasHash!,
+                    accountPk,
+                    Number(tx.outputNoteCommitmentIdx2),
+                    tx.outputNoteCommitment2,
+                    signingKey2.signingPk
+                  )
+                );
+              }
+            } else {
+              await this.db.addAlias(
+                new Alias(
+                  tx.extraData.aliasHash!,
+                  accountPk,
+                  Number(tx.outputNoteCommitmentIdx1),
+                  tx.outputNoteCommitment1
+                )
+              );
+              await this.db.addAlias(
+                new Alias(
+                  tx.extraData.aliasHash!,
+                  accountPk,
+                  Number(tx.outputNoteCommitmentIdx2),
+                  tx.outputNoteCommitment2
+                )
+              );
+            }
           }
         } else if (tx.actionType === ActionType.WITHDRAW) {
           this.log.debug(`Processing withdraw tx: ${tx.txHash}`);

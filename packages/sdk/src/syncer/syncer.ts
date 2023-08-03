@@ -3,7 +3,7 @@ import { PrivateKey } from 'snarkyjs';
 import { Database } from '../database/database';
 import { NoteProcessor } from '../note_processor/note_processor';
 import { AnomixNode } from '../rollup_node/anomix_node';
-import { InterruptableSleep } from './sleep';
+import { InterruptableSleep } from '../utils/sleep';
 
 export class Syncer {
   private runningPromise?: Promise<void>;
@@ -18,6 +18,10 @@ export class Syncer {
     this.log = consola.withTag(
       logSuffix ? `anomix:syncer_${logSuffix}` : 'anomix:syncer'
     );
+  }
+
+  public isRunning(): boolean {
+    return this.running;
   }
 
   public async start(from = 1, take = 1, retryInterval = 1000) {
