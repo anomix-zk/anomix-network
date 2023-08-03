@@ -346,7 +346,15 @@ let JoinSplitProver = Experimental.ZkProgram({
         outputNote1.inputNullifier.assertEquals(nullifier1);
         outputNote2.inputNullifier.assertEquals(nullifier2);
 
-        
+        const message = [
+          outputNote1Commitment,
+          outputNote2Commitment,
+          nullifier1,
+          nullifier2,
+          publicAssetId,
+          ...publicValue.toFields(),
+          ...publicOwner.toFields(),
+        ];
 
         sendInput.signature.verify(signerPk, message).assertTrue('Invalid sig');
 
