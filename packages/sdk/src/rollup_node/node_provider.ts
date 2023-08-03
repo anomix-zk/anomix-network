@@ -4,6 +4,7 @@ import {
   BaseResponse,
   L2TxReqDto,
   L2TxSimpleDto,
+  MerkleProofDto,
   NetworkStatusDto,
   TxFeeSuggestionDto,
   WorldStateRespDto,
@@ -165,6 +166,28 @@ export class NodeProvider implements AnomixNode {
     }
 
     return undefined;
+  }
+
+  async getMerkleWitnessesByCommitments(
+    commitments: string[]
+  ): Promise<MerkleProofDto[]> {
+    const url = `${this.host}/merklewitness`;
+    this.log.info(
+      `Getting merkle witnesses at ${url}, commitments: ${commitments}`
+    );
+
+    const body = JSON.stringify(commitments);
+    const res = await this.makeRequest<MerkleProofDto[]>(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (res && res.code === 0) {
+      return res.data;
+    }
+
+    throw new Error('Failed to get merkle witnesses');
   }
 
   async getTxFee(): Promise<TxFeeSuggestionDto> {

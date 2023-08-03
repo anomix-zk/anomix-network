@@ -3,6 +3,7 @@ import {
   BaseResponse,
   L2TxReqDto,
   L2TxSimpleDto,
+  MerkleProofDto,
   NetworkStatusDto,
   TxFeeSuggestionDto,
   WorldStateRespDto,
@@ -23,4 +24,7 @@ export interface AnomixNode {
   getAliasHashByAccountPublicKey(
     accountPk: string
   ): Promise<string | undefined>;
+  getMerkleWitnessesByCommitments(
+    commitments: string[]
+  ): Promise<MerkleProofDto[]>;
 }

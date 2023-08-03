@@ -53,7 +53,7 @@ export class Note {
   }
 
   public get valueNote() {
-    return ValueNote.fromJSON(this.valueNoteJSON);
+    return ValueNote.fromJSON(this.valueNoteJSON) as ValueNote;
   }
 
   public get pending() {
