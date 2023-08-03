@@ -4,13 +4,17 @@ import {
   NULLIFIER_TREE_HEIGHT,
   ROOT_TREE_HEIGHT,
 } from '../constants';
-import { SiblingPath } from '@anomix/types';
+import { MerkleProofDto, SiblingPath } from '@anomix/types';
 import { Field, Poseidon, Provable, Struct } from 'snarkyjs';
 import { DUMMY_FIELD } from './constants';
 
 export class DepositMerkleWitness extends SiblingPath(DEPOSIT_TREE_HEIGHT) {}
 
-export class DataMerkleWitness extends SiblingPath(DATA_TREE_HEIGHT) {}
+export class DataMerkleWitness extends SiblingPath(DATA_TREE_HEIGHT) {
+  static fromMerkleProofDTO(dto: MerkleProofDto): DataMerkleWitness {
+    return new DataMerkleWitness(dto.paths.map((p) => Field(p)));
+  }
+}
 
 export class NullifierMerkleWitness extends SiblingPath(
   NULLIFIER_TREE_HEIGHT
