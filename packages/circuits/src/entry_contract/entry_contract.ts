@@ -13,6 +13,7 @@ import {
   UInt64,
   VerificationKey,
   Signature,
+  Poseidon,
 } from 'snarkyjs';
 import { DepositRollupProof } from './deposit_rollup_prover';
 import {
@@ -87,8 +88,8 @@ export class AnomixEntryContract extends SmartContract {
       .or(note.accountRequired.equals(AccountRequired.NOTREQUIRED))
       .assertTrue('The accountRequired of note is not REQUIRED or NOTREQUIRED');
     note.inputNullifier.assertEquals(
-      DUMMY_FIELD,
-      'inputNullifier is not DUMMY_FIELD'
+      Poseidon.hash(payer.toFields()),
+      'The inputNullifier of note is not equal to hash of payer address'
     );
     let rollupContractAddress = this.rollupContractAddress.getAndAssertEquals();
     let payerAccUpdate = AccountUpdate.createSigned(payer);
