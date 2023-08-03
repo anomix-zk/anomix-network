@@ -206,9 +206,9 @@ export class AnomixSdk {
 
   public async addAccount(
     accountPrivateKey: PrivateKey,
+    pwd: string,
     signingPrivateKey1?: PrivateKey,
-    signingPrivateKey2?: PrivateKey,
-    pwd: string
+    signingPrivateKey2?: PrivateKey
   ) {
     const accountPk = accountPrivateKey.toPublicKey();
     const accountPk58 = accountPk.toBase58();
@@ -385,7 +385,7 @@ export class AnomixSdk {
         noteCommitment: commitment.toString(),
         publicKey: senderNewKeyPair.publicKey.toBase58(),
         receiverInfo: maskReceiverBySender(
-          PublicKey.fromBase58(note.ownerPk),
+          note.ownerPk,
           accountPkBigint,
           commitment.toBigInt()
         ).map((v) => v.toString()),

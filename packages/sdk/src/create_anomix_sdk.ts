@@ -9,6 +9,7 @@ import { Syncer } from './syncer/syncer';
 
 export type SdkOptions = {
   nodeUrl: string;
+  nodeRequestTimeoutMS?: number;
   l2BlockPollingIntervalMS?: number;
   debug?: boolean;
 };
@@ -17,7 +18,10 @@ export async function createAnomixSdk(
   entryContractAddress: string,
   options: SdkOptions
 ) {
-  const node: AnomixNode = new NodeProvider(options.nodeUrl);
+  const node: AnomixNode = new NodeProvider(
+    options.nodeUrl,
+    options.nodeRequestTimeoutMS ? options.nodeRequestTimeoutMS : 5 * 60 * 1000
+  );
   const log = consola.withTag('anomix:sdk');
   if (options.debug) {
     consola.level = 4;

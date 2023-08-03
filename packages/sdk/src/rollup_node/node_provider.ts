@@ -7,17 +7,17 @@ import {
   MerkleProofDto,
   NetworkStatusDto,
   TxFeeSuggestionDto,
+  WithdrawAssetReqDto,
+  WithdrawInfoDto,
   WorldStateRespDto,
 } from '@anomix/types';
 import { AnomixNode } from './anomix_node';
 import { consola } from 'consola';
 
-// Specify 5min as the default timeout
-const defaultTimeout = 5 * 60 * 1000;
-
 export class NodeProvider implements AnomixNode {
   constructor(
     private host: string,
+    private timeout = 5 * 60 * 1000,
     private log = consola.withTag('anomix:rollup_provider')
   ) {
     this.log.info(`Using node at ${host}`);
@@ -70,6 +70,55 @@ export class NodeProvider implements AnomixNode {
     }
   }
 
+  public async sendWithdrawTx(tx: WithdrawAssetReqDto): Promise<boolean> {
+    const url = `${this.host}/tx/withdraw`;
+    this.log.info(`Sending withdraw tx at ${url}`);
+
+    const body = JSON.stringify(tx);
+    const res = await this.makeRequest<string>(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+    if (res === undefined) {
+      throw new Error('Failed to send withdraw tx');
+    }
+
+    if (res.code === 0) {
+      return true;
+    }
+
+    return false;
+  }
+
+  public async getWithdrawProvedTx(
+    l1addr: string,
+    noteCommitments: string[]
+  ): Promise<WithdrawInfoDto | undefined> {
+    const url = `${this.host}/tx/withdraw/${l1addr}`;
+    this.log.info(
+      `Getting withdraw proved tx at ${url}, l1addr: ${l1addr}, noteCommitments: ${noteCommitments}`
+    );
+
+    const body = JSON.stringify({
+      noteCommitments,
+    });
+    const res = await this.makeRequest<WithdrawInfoDto>(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+    if (res === undefined) {
+      throw new Error('Failed to get withdraw proved tx');
+    }
+
+    if (res.code === 0) {
+      return res.data;
+    }
+
+    return undefined;
+  }
+
   async isReady(): Promise<boolean> {
     const url = `${this.host}/network/isready`;
     this.log.info(`Checking if node is ready at ${url}`);
@@ -82,7 +131,7 @@ export class NodeProvider implements AnomixNode {
     return false;
   }
 
-  async getBlockHeight(): Promise<number> {
+  public async getBlockHeight(): Promise<number> {
     const url = `${this.host}/block/latest-height`;
     this.log.info(`Getting block height at ${url}`);
 
@@ -94,7 +143,10 @@ export class NodeProvider implements AnomixNode {
     return 0;
   }
 
-  async getBlocks(from: number, take: number): Promise<AssetsInBlockDto[]> {
+  public async getBlocks(
+    from: number,
+    take: number
+  ): Promise<AssetsInBlockDto[]> {
     const url = `${this.host}/block/assets`;
     this.log.info(`Getting blocks at ${url}`);
 
@@ -117,7 +169,7 @@ export class NodeProvider implements AnomixNode {
     return [];
   }
 
-  async sendTx(tx: L2TxReqDto): Promise<BaseResponse<string>> {
+  public async sendTx(tx: L2TxReqDto): Promise<BaseResponse<string>> {
     const url = `${this.host}/tx`;
     this.log.info(`Sending tx at ${url}`);
 
@@ -134,7 +186,7 @@ export class NodeProvider implements AnomixNode {
     return res;
   }
 
-  async getPendingTxs(): Promise<L2TxSimpleDto[]> {
+  public async getPendingTxs(): Promise<L2TxSimpleDto[]> {
     const url = `${this.host}/tx/pending-txs`;
     this.log.info(`Getting pending txs at ${url}`);
 
@@ -150,7 +202,9 @@ export class NodeProvider implements AnomixNode {
     return [];
   }
 
-  async getPendingTxByHash(txHash: string): Promise<L2TxSimpleDto | undefined> {
+  public async getPendingTxByHash(
+    txHash: string
+  ): Promise<L2TxSimpleDto | undefined> {
     const url = `${this.host}/tx/pending-txs`;
     this.log.info(`Getting pending txs by hash at ${url}`);
 
@@ -168,7 +222,7 @@ export class NodeProvider implements AnomixNode {
     return undefined;
   }
 
-  async getMerkleWitnessesByCommitments(
+  public async getMerkleWitnessesByCommitments(
     commitments: string[]
   ): Promise<MerkleProofDto[]> {
     const url = `${this.host}/merklewitness`;
@@ -190,7 +244,7 @@ export class NodeProvider implements AnomixNode {
     throw new Error('Failed to get merkle witnesses');
   }
 
-  async getTxFee(): Promise<TxFeeSuggestionDto> {
+  public async getTxFee(): Promise<TxFeeSuggestionDto> {
     const url = `${this.host}/network/txfees`;
     this.log.info(`Getting tx fees at ${url}`);
 
@@ -208,7 +262,7 @@ export class NodeProvider implements AnomixNode {
     throw new Error('Failed to get tx fees');
   }
 
-  async getWorldState(): Promise<WorldStateRespDto> {
+  public async getWorldState(): Promise<WorldStateRespDto> {
     const url = `${this.host}/network/worldstate`;
     this.log.info(`Getting world state at ${url}`);
 
@@ -226,7 +280,7 @@ export class NodeProvider implements AnomixNode {
     throw new Error('Failed to get world state');
   }
 
-  async getNetworkStatus(): Promise<NetworkStatusDto> {
+  public async getNetworkStatus(): Promise<NetworkStatusDto> {
     const url = `${this.host}/network/status`;
     this.log.info(`Getting network status at ${url}`);
 
@@ -244,7 +298,9 @@ export class NodeProvider implements AnomixNode {
     throw new Error('Failed to get network status');
   }
 
-  async getAccountPublicKeysByAliasHash(aliasHash: string): Promise<string[]> {
+  public async getAccountPublicKeysByAliasHash(
+    aliasHash: string
+  ): Promise<string[]> {
     const url = `${this.host}/account/acctvk/${aliasHash}`;
     this.log.info(
       `Getting account public keys by alias hash at ${url}, aliasHash: ${aliasHash}`
@@ -258,7 +314,7 @@ export class NodeProvider implements AnomixNode {
     return [];
   }
 
-  async getAliasHashByAccountPublicKey(
+  public async getAliasHashByAccountPublicKey(
     accountPk: string
   ): Promise<string | undefined> {
     const url = `${this.host}/account/alias/${accountPk}`;
