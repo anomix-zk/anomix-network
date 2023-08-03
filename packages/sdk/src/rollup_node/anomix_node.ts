@@ -3,8 +3,11 @@ import {
   BaseResponse,
   L2TxReqDto,
   L2TxSimpleDto,
+  MerkleProofDto,
   NetworkStatusDto,
   TxFeeSuggestionDto,
+  WithdrawAssetReqDto,
+  WithdrawInfoDto,
   WorldStateRespDto,
 } from '@anomix/types';
 
@@ -23,4 +26,12 @@ export interface AnomixNode {
   getAliasHashByAccountPublicKey(
     accountPk: string
   ): Promise<string | undefined>;
+  getMerkleWitnessesByCommitments(
+    commitments: string[]
+  ): Promise<MerkleProofDto[]>;
+  sendWithdrawTx(tx: WithdrawAssetReqDto): Promise<boolean>;
+  getWithdrawProvedTx(
+    l1addr: string,
+    noteCommitments: string[]
+  ): Promise<WithdrawInfoDto | undefined>;
 }

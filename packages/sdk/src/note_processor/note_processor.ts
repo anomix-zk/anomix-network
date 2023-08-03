@@ -3,7 +3,7 @@ import { Bool, Field, PrivateKey, PublicKey } from 'snarkyjs';
 import { AnomixNode } from '../rollup_node/anomix_node';
 import { consola } from 'consola';
 import { AssetsInBlockDto } from '@anomix/types';
-import { NoteDecryptor } from '../note_decryptor/NoteDecryptor';
+import { NoteDecryptor } from '../note_decryptor/note_decryptor';
 import {
   AccountNote,
   calculateNoteNullifier,
