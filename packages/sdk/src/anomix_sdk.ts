@@ -35,22 +35,25 @@ import {
   Signature,
   UInt64,
 } from 'snarkyjs';
-import { Database } from './database/database';
+import { Database, SigningKey } from './database/database';
 import { KeyStore } from './key_store/key_store';
-import { Note } from './note/note';
 import { AnomixNode } from './rollup_node/anomix_node';
 import { Syncer } from './syncer/syncer';
 import { UserState } from './user_state/user_state';
 import { retryUntil } from './utils/retry';
 
 export class AnomixSdk {
-  private keyStore: KeyStore;
-  private db: Database;
-  private syncer: Syncer;
-  private log: ConsolaInstance;
-  private node: AnomixNode;
-  private entryContractAddress: PublicKey;
   private entryContract: AnomixEntryContract;
+
+  constructor(
+    private keyStore: KeyStore,
+    private db: Database,
+    private syncer: Syncer,
+    private log: ConsolaInstance,
+    private node: AnomixNode,
+    private entryContractAddress: PublicKey,
+    private l2BlockPollingIntervalMS: number
+  ) {}
 
   public async init() {
     this.log.info('Initializing Anomix SDK, compile circuits...');
@@ -201,11 +204,31 @@ export class AnomixSdk {
     return userStates;
   }
 
-  public async addAccount(accountPrivateKey: PrivateKey, pwd: string) {
+  public async addAccount(
+    accountPrivateKey: PrivateKey,
+    signingPrivateKey1?: PrivateKey,
+    signingPrivateKey2?: PrivateKey,
+    pwd: string
+  ) {
     const accountPk = accountPrivateKey.toPublicKey();
     const accountPk58 = accountPk.toBase58();
     await this.db.upsertUserState(new UserState(accountPk58, 0));
     await this.keyStore.addAccount(accountPrivateKey, pwd);
+
+    if (signingPrivateKey1 && signingPrivateKey2) {
+      const signingPubKey1 = signingPrivateKey1.toPublicKey();
+      const signingPubKey2 = signingPrivateKey2.toPublicKey();
+      const signingKeys: SigningKey[] = [
+        {
+          signingPk: signingPubKey1.toBase58(),
+          accountPk: accountPk58,
+        },
+        { signingPk: signingPubKey2.toBase58(), accountPk: accountPk58 },
+      ];
+      await this.db.addSigningKeys(signingKeys);
+      await this.keyStore.addAccount(signingPrivateKey1, pwd);
+      await this.keyStore.addAccount(signingPrivateKey2, pwd);
+    }
 
     this.syncer.addAccount(accountPrivateKey);
     this.log.info(`added account: ${accountPk58}`);
@@ -270,6 +293,7 @@ export class AnomixSdk {
     assetId: Field,
     accountRequired: Field
   ) {
+    this.log.info(`create deposit tx...`);
     const note = new ValueNote({
       secret: Field.random(),
       ownerPk: receiverAddress,
@@ -384,6 +408,7 @@ export class AnomixSdk {
     txFee: UInt64,
     pwd: string
   ) {
+    this.log.info('pick unspent notes...');
     const unspentNotes = await this.pickUnspentNotes(
       accountPk,
       payAmount,
@@ -626,6 +651,7 @@ export class AnomixSdk {
     newSigningPk1: PublicKey,
     newSigningPk2: PublicKey
   ) {
+    this.log.info('pick unspent notes...');
     let newAccountPk = accountPk;
     let signingPk = accountPk;
     let aliasHash = Poseidon.hash(Encoding.Bijective.Fp.fromString(alias));

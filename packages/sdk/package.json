@@ -39,7 +39,6 @@
     "async-mutex": "^0.4.0",
     "consola": "^3.2.3",
     "dexie": "^3.2.4",
-    "isomorphic-fetch": "^3.0.0",
-    "level": "^8.0.0"
+    "isomorphic-fetch": "^3.0.0"
   }
 }
