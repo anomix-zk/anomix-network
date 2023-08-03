@@ -9,6 +9,15 @@ import {
     Reducer,
 } from 'snarkyjs';
 
+export async function activeMinaInstance() {
+    const isLocalBlockChain = false;// TODO get it from config here
+    const Blockchain = isLocalBlockChain ? Mina.LocalBlockchain({ proofsEnabled: true }) : Mina.Network({
+        mina: 'https://proxy.berkeley.minaexplorer.com/graphql',
+        archive: 'https://archive.berkeley.minaexplorer.com/',
+    });
+    Mina.setActiveInstance(Blockchain);
+}
+
 export async function syncActions(targetAddr: PublicKey, isLocalBlockChain?: boolean) {
     if (!isLocalBlockChain) {
         for (let i = 0; i < 5; i++) {// just for 5 iterations for 5 blocks, enough
