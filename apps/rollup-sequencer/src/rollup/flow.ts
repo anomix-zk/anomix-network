@@ -2,22 +2,48 @@ import { WorldStateDB } from "@/worldstate/worldstate-db";
 import { FlowScheduler } from "./flow-scheduler";
 import { RollupDB } from "./rollup-db";
 import { randomUUID } from "crypto";
-import { getLogger } from "@anomix/utils";
+import { IndexDB } from "./index-db";
+import { WorldState } from "@/worldstate";
+import { getConnection } from "typeorm";
+import { SeqStatus } from "@anomix/dao";
+import { SequencerStatus } from "@anomix/types";
+//import { getLogger } from "@anomix/utils";
+
 
 export class RollupFlow {
     flowId: string
 
     flowScheduler: FlowScheduler;
 
-    constructor(rollupDB: RollupDB, worldStateDB: WorldStateDB) {
+    constructor(private worldState: WorldState, private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) {
         this.flowId = randomUUID();
 
-        const logger = getLogger('RollupFlow');
-        logger.info('start a new rollup flow:');
+        // const logger = getLogger('RollupFlow');
+        // logger.info('start a new rollup flow:');
 
         // TODO prepare all for flow-scheduler
 
 
+    }
+
+    async start() {
+        // update db status to SeqStatus.ATROLLUP
+        const connection = getConnection();
+        const seqStatusReposity = connection.getRepository(SeqStatus);
+        const seqStatus = (await seqStatusReposity.findOne({ where: { id: 1 } }))!;
+        seqStatus.status = SequencerStatus.AtRollup;
+
+        seqStatusReposity.save(seqStatus);
+    }
+
+    async end() {
+        // update db status to SeqStatus.NOTATROLLUP
+        const connection = getConnection();
+        const seqStatusReposity = connection.getRepository(SeqStatus);
+
+        const seqStatus = (await seqStatusReposity.findOne({ where: { id: 1 } }))!;
+        seqStatus.status = SequencerStatus.NotAtRollup;
+        seqStatusReposity.save(seqStatus);
     }
 
 }

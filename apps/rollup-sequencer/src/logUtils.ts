@@ -1,4 +1,5 @@
 import pino, { Logger } from 'pino';
+import config from './lib/config';
 
 const logLevelData = { '*': 'info' };
 const logLevels = new Map<string, string>(Object.entries(logLevelData));
@@ -6,9 +7,6 @@ const logLevels = new Map<string, string>(Object.entries(logLevelData));
 function getLogLevel(logger: string): string {
     return logLevels.get(logger) || logLevels.get('*') || 'info';
 }
-
-console.log('__dirname:', __dirname);
-console.log('__filename:', __filename);
 
 // TODO need configure file storage, pattern, etc.
 export function getLogger(name: string): Logger {
@@ -30,7 +28,7 @@ export function getLogger(name: string): Logger {
 
 const logOpt = {
     console: process.env.NODE_ENV !== 'production',
-    file: 'D://Test//test.log', //此处设置log文件输出路径
+    file: config.pinoLogFilePath, //此处设置log文件输出路径
     //logrotator设置按什么归档日志
     logrotator: {
         byDay: true,

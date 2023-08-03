@@ -1,6 +1,6 @@
 // initialize tree with fixed empty commitment from Value_Note.
 
-import { FLowTask, FlowTaskType, RollupDB, RollupFlow } from "@/rollup";
+import { FLowTask, FlowTaskType, IndexDB, RollupDB, RollupFlow } from "@/rollup";
 import { WorldStateDB } from "./worldstate-db";
 
 export * from './worldstate-db'
@@ -42,31 +42,32 @@ export interface TreeInfo {
 export class WorldState {
     private flow: RollupFlow
 
-    constructor(private worldStateDB: WorldStateDB, private rollupDB: RollupDB) {
-
-    }
+    constructor(private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) { }
 
     /**
      * start a new Flow
      */
-    public start() {
-        //
+    public startNewFlow() {
+        this.flow = new RollupFlow(this, this.worldStateDB, this.rollupDB, this.indexDB);
+        this.flow.start();
     }
 
     /**
      * reset
      */
     public reset() {
-        // make this.flow = null
+        this.flow.end();
+
+        this.flow = undefined as any as RollupFlow;
     }
 
     /**
      * handleFlowTask
      */
-    public handleFlowTask(flowTask: FLowTask) {
-        if (flowTask.flowId != this.flow?.flowId) {
+    public handleFlowTask(flowTask: FLowTask<any>) {
+        if (flowTask.flowId != this.flow?.flowId) {// outdated task
             // rid it
-            console.log('RID FlowTask', JSON.stringify(flowTask));
+            console.log('rid FlowTask', JSON.stringify(flowTask));
 
             return;
         }
@@ -80,7 +81,7 @@ export class WorldState {
                 this.flow.flowScheduler.merge(flowTask.data);
                 break;
 
-            case FlowTaskType.BLOCK_CREATE:
+            case FlowTaskType.BLOCK_PROVE:
                 this.flow.flowScheduler.whenL2BlockComeback(flowTask.data);
                 break;
             case FlowTaskType.ROLLUP_CONTRACT_CALL:

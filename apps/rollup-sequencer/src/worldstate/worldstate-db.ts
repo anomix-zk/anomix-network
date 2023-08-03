@@ -33,7 +33,7 @@ export class WorldStateDB {
     /**
      * restart app, should loadtrees
      */
-    async loadtrees() {
+    async loadTrees() {
         let poseidonHasher = new PoseidonHasher();
 
         const depositTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`)
@@ -59,7 +59,7 @@ export class WorldStateDB {
         return Promise.resolve(1n);
     }
     /**
-     * Updates a leaf at a given index in the tree.
+     * Updates a leaf at a given index in the MerkleTreeId.
      * @param leaf - The leaf value to be updated.
      * @param index - The leaf to be updated.
      */
@@ -80,14 +80,14 @@ export class WorldStateDB {
     }
 
     /**
-     * Returns the current root of the tree.
+     * Returns the current root of the MerkleTreeId.
      * @param includeUncommitted - Set to true to include uncommitted updates in the calculated root.
      */
     getRoot(treeId: MerkleTreeId, includeUncommitted: boolean): Field {//
     }
 
     /**
-     * Returns the number of leaves in the tree.
+     * Returns the number of leaves in the MerkleTreeId.
      * @param includeUncommitted - Set to true to include uncommitted updates in the returned value.
      */
     getNumLeaves(treeId: MerkleTreeId, includeUncommitted: boolean): bigint {//
@@ -95,7 +95,7 @@ export class WorldStateDB {
     }
 
     /**
-     * Commit pending updates to the tree.
+     * Commit pending updates to the MerkleTreeId.
      */
     commit(): Promise<void> {//
         return Promise.resolve();
@@ -103,14 +103,14 @@ export class WorldStateDB {
     }
 
     /**
-     * Returns the depth of the tree.
+     * Returns the depth of the MerkleTreeId.
      */
     getDepth(): number {//
         return 1;
     }
 
     /**
-     * Rollback pending update to the tree.
+     * Rollback pending update to the MerkleTreeId.
      */
     rollback(): Promise<void> {//
         return Promise.resolve();

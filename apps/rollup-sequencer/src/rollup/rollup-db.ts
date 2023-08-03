@@ -1,5 +1,6 @@
 import { initORM } from '@/lib/orm'
-import { L2Tx, MemPlL2Tx, L2TxStatus } from "@anomix/dao";
+import { L2Tx, MemPlL2Tx, } from "@anomix/dao";
+import { L2TxStatus } from "@anomix/types";
 import { JoinSplitOutput } from "@anomix/circuits";
 import { getConnection } from 'typeorm';
 import { Field } from "snarkyjs";
@@ -21,7 +22,7 @@ export class RollupDB {
         try {
             // TODO need retry for x times if empty result, then throw error.
             const mpTxList = await mpL2TxRepository.find({
-                where: { status: TxStatus.PENDING },
+                where: { status: L2TxStatus.PENDING },
                 order: { createdAt: 'ASC' },
                 // TODO add more
                 // consider Account/Deposit, txFee

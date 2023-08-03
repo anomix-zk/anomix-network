@@ -1,6 +1,8 @@
 import { BlockProver, DepositRollupProver, AnomixEntryContract, InnerRollupProver, JoinSplitProver, WithdrawAccount, AnomixRollupContract, } from ".";
 
-
+let withdrawAccountVk = await WithdrawAccount.compile();
+console.log(JSON.stringify(withdrawAccountVk.verificationKey));
+/*
 let joinSplitProverVk = await JoinSplitProver.compile();
 console.log('JoinSplitVK=', joinSplitProverVk.verificationKey);
 
@@ -30,3 +32,4 @@ let block_proverVk = await BlockProver.compile();
 console.log('BlockProverVK=', block_proverVk.verificationKey);
 
 
+*/
