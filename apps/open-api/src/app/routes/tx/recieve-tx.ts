@@ -61,26 +61,6 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
             return { code: 1, data: '(AtRollup)double spending: nullifier1 or nullifier2 is used', msg: '' }
         }
 
-        //==============================migrate the check to sequencer==============================
-        // TODO need obtain a Distributed Lock here to notify sequencer not to start rollup before deleting the ones with less txfee in memory pool
-        // 
-        // 
-        /*
-        const [maxFeeMpL2Tx, ...sortList] = mergeList.sort((a, b) => {
-            return new Field(a.txFee).greaterThan(new Field(b.txFee)).toBoolean() ? 1 : -1;
-        });
-
-        if (maxFeeMpL2Tx.txHash != joinSplitProof.publicOutput.hash().toString()) {
-            return { code: 1, data: 'already a higher-txfee one in memory pool', msg: '' }
-        }
-
-        // delete the ones with less txfee in memory pool
-        memPlL2TxRepository.delete(sortList.map(x => {
-            return x.id
-        }));
-        */
-        //==============================migrate the check to sequencer==============================
-
     } catch (error) {
         throw req.throwError(httpCodes.BAD_REQUEST, { data: 'Internal server error' })
     }
