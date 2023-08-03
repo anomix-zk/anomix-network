@@ -4,7 +4,7 @@ import { FastifyPlugin } from "fastify"
 import { In, getConnection, Index } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { BlockProverOutputEntity, WithdrawInfo } from "@anomix/dao";
-import { BaseResponse, WithdrawNoteStatus, WithdrawAssetReqDto, WithdrawAssetReqDtoSchema, ProofTaskDto, ProofTaskType } from "@anomix/types";
+import { BaseResponse, WithdrawNoteStatus, WithdrawAssetReqDto, WithdrawAssetReqDtoSchema, ProofTaskDto, ProofTaskType, ProofTaskDtoSchma, BlockStatus } from "@anomix/types";
 import { Signature, PublicKey, Field, Mina } from "snarkyjs";
 
 /**
@@ -40,19 +40,21 @@ const handler: RequestHandler<ProofTaskDto<{ withdrawInfoId: number }, Mina.Tran
             }
         }))!;
 
-        // query current latest block height
+        // query current latest confirmed block height
         const blockRepository = connection.getRepository(BlockProverOutputEntity);
         // query latest block
-        const blockEntity = (await blockRepository.find({
+        const currentBlockHeight = (await blockRepository.find({
             select: [
                 'id'
             ],
+            where: {
+                status: BlockStatus.CONFIRMED
+            },
             order: {
                 id: 'DESC'
             },
             take: 1
-        }))[0];
-        const currentBlockHeight = blockEntity.id;
+        }))[0].id;
 
         if (withdrawInfo.blockIdWhenL1Tx != currentBlockHeight) {// outdated, should revert status!
             withdrawInfo.status = WithdrawNoteStatus.PENDING;
@@ -85,8 +87,7 @@ const schema = {
     tags: ["Proof"],
     body: {
         type: "object",
-        properties: (WithdrawAssetReqDtoSchema as any).properties,
-        required: ['l1addr', 'noteCommitment', 'signature']
+        properties: (ProofTaskDtoSchma as any).properties,
     },
     response: {
         200: {

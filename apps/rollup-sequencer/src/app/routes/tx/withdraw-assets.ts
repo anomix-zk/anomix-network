@@ -1,23 +1,18 @@
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { In, getConnection } from 'typeorm';
+import { getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { $axios } from "@/lib";
+import { SeqStatus } from "@anomix/dao";
+
 import { checkAccountExists } from "@anomix/utils";
 import { BlockProverOutputEntity, WithdrawInfo } from "@anomix/dao";
-import { WithdrawNoteWitnessData, LowLeafWitnessData, NullifierMerkleWitness, ValueNote } from "@anomix/circuits";
-import { BaseResponse, WithdrawNoteStatus, WithdrawAssetReqDto, WithdrawAssetReqDtoSchema, ProofTaskDto, ProofTaskType } from "@anomix/types";
+import { WithdrawNoteWitnessData, LowLeafWitnessData, NullifierMerkleWitness } from "@anomix/circuits";
+import { BaseResponse, WithdrawNoteStatus, WithdrawAssetReqDto, WithdrawAssetReqDtoSchema, ProofTaskDto, ProofTaskType, BlockStatus } from "@anomix/types";
 import {
     Field,
-    Mina,
     PublicKey,
-    fetchAccount,
-    Types,
-    fetchLastBlock,
-    UInt32,
-    Reducer,
-    Signature,
     VerificationKey,
 
 } from 'snarkyjs';
@@ -40,18 +35,31 @@ export const withdrawAsset: FastifyPlugin = async function (
     })
 }
 
+async function checkPoint() {
+    // query current latest block height
+    const blockRepository = getConnection().getRepository(BlockProverOutputEntity);
+    // query latest block
+    const blockEntity = (await blockRepository.find({
+        select: [
+            'id'
+        ],
+        where: {
+            status: BlockStatus.CONFIRMED
+        },
+        order: {
+            id: 'DESC'
+        },
+        take: 1
+    }))[0];
+
+    return blockEntity!.id;
+}
+
 export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function (
     req,
     res
 ): Promise<BaseResponse<string>> {
-    // check if now is Rollup status
-    if (this.notification.atRollup) {
-        return {
-            code: 1,
-            data: 'failed: rollup begins!',
-            msg: ''
-        };
-    }
+
 
     const { l1addr, noteCommitment, signature } = req.body
     try {
@@ -68,17 +76,7 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
         let tokenId = winfo.assetId;
         const { accountExists, account } = await checkAccountExists(PublicKey.fromBase58(l1addr), Field(tokenId));
 
-
         const notFirst = !accountExists && account.zkapp?.appState[0] == Field(0);
-
-        // check if now is Rollup status
-        if (this.notification.atRollup) {
-            return {
-                code: 1,
-                data: 'failed: rollup begins!',
-                msg: ''
-            };
-        }
 
         if (notFirst) {//if it's NOT the first withdraw
             // loadTree from withdrawDB & obtain merkle witness
@@ -89,19 +87,7 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
             await this.withdrawDB.initTree(PublicKey.fromBase58(l1addr), winfo.assetId);
         }
 
-        // query current latest block height
-        const blockRepository = connection.getRepository(BlockProverOutputEntity);
-        // query latest block
-        const blockEntity = (await blockRepository.find({
-            select: [
-                'id'
-            ],
-            order: {
-                id: 'DESC'
-            },
-            take: 1
-        }))[0];
-        const currentBlockHeight = blockEntity.id;
+        let initialCP = await checkPoint();// return the latest confirmed Block Height!
 
         const withdrawNote = winfo.valueNote();
         const index = winfo.outputNoteCommitmentIdx;
@@ -130,8 +116,7 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
 
         await this.withdrawDB.getSiblingPath(this.withdrawDB.getNumLeaves(true), true);
 
-        const oldNullWitness: NullifierMerkleWitness = {} as an as NullifierMerkleWitness;// TODO
-
+        const oldNullWitness: NullifierMerkleWitness = await this.withdrawDB.getSiblingPath(this.withdrawDB.getNumLeaves(true), true)
 
         // construct proofTaskDto
         const proofTaskDto: ProofTaskDto<{ withdrawInfoId: number }, any> = {
@@ -151,11 +136,8 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
             proofTaskDto.taskType = ProofTaskType.USER_WITHDRAW
         }
 
-        // check if now is Rollup status
-        if (this.notification.atRollup) {
-            // roll back withdrawDB
-            this.withdrawDB.rollback();
-
+        // CHECKPOINT: check if this flow is outdated
+        if (initialCP != await checkPoint()) {
             return {
                 code: 1,
                 data: 'failed: rollup begins!',
@@ -177,7 +159,7 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
 
         // update status to 'PROCESSING' to avoid double computation triggered by user in a short time before the previous proof back.
         winfo!.status = WithdrawNoteStatus.PROCESSING;
-        winfo.blockIdWhenL1Tx = currentBlockHeight;
+        winfo.blockIdWhenL1Tx = initialCP;
         withdrawInfoRepository.save(winfo);
 
         return {
