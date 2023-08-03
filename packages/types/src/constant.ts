@@ -1,6 +1,10 @@
 import exp from "constants";
 
 export class Tree {
+    static get DEPOSIT_TREE(): string {
+        return 'deposit_tree'
+    }
+
     static get NULLIFIER_TREE(): string {
         return 'nullifier_tree'
     }
@@ -131,8 +135,8 @@ export class L1TxStatus {
 }
 
 export enum SequencerStatus {
-    NotAtRollup,
-    AtRollup
+    NotAtRollup = 0,
+    AtRollup = 1
 }
 
 
