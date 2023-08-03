@@ -1,8 +1,8 @@
 
-import { AppendOnlyTree, IndexedTree, LeafData, LowLeafWitnessData, newTree, loadTree, StandardTree, StandardIndexedTree } from "@anomix/merkle-tree";
+import { AppendOnlyTree, IndexedTree, LeafData, newTree, loadTree, StandardTree, StandardIndexedTree } from "@anomix/merkle-tree";
 import { BaseSiblingPath } from "@anomix/types";
 import { PoseidonHasher } from '@anomix/types';
-import { DATA_TREE_HEIGHT, ROOT_TREE_HEIGHT, NULLIFIER_TREE_HEIGHT, DEPOSIT_TREE_HEIGHT } from "@anomix/circuits";
+import { DATA_TREE_HEIGHT, ROOT_TREE_HEIGHT, NULLIFIER_TREE_HEIGHT, DEPOSIT_TREE_HEIGHT, LowLeafWitnessData } from "@anomix/circuits";
 import { Field, Poseidon } from "snarkyjs";
 import levelup, { LevelUp } from 'levelup';
 import leveldown, { LevelDown } from "leveldown";
@@ -13,7 +13,8 @@ let INIT_NULLIFIER_TREE_HEIGHT = NULLIFIER_TREE_HEIGHT;
 
 export class WorldStateDB {
     private readonly db: LevelUp
-    private trees: (AppendOnlyTree | IndexedTree)[] = [];
+    private trees = new Map<MerkleTreeId, (AppendOnlyTree | StandardIndexedTree)>();
+
     constructor(dbPath: string) {
         this.db = levelup(leveldown(dbPath));
     }
@@ -23,11 +24,15 @@ export class WorldStateDB {
      */
     async initTrees() {
         let poseidonHasher = new PoseidonHasher();
-        const depositTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`, DEPOSIT_TREE_HEIGHT)
+        // const depositTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`, DEPOSIT_TREE_HEIGHT)
         const dataTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE]}`, DATA_TREE_HEIGHT)
         const nullifierTree = await newTree(StandardIndexedTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}`, NULLIFIER_TREE_HEIGHT, INIT_NULLIFIER_TREE_HEIGHT)
         const dataTreeRootsTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}`, ROOT_TREE_HEIGHT)
-        this.trees = [depositTree, dataTree, nullifierTree, dataTreeRootsTree]
+
+        // this.trees.set(MerkleTreeId.DEPOSIT_TREE, depositTree);
+        this.trees.set(MerkleTreeId.DATA_TREE, dataTree);
+        this.trees.set(MerkleTreeId.NULLIFIER_TREE, nullifierTree);
+        this.trees.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, dataTreeRootsTree);
     }
 
     /**
@@ -36,11 +41,15 @@ export class WorldStateDB {
     async loadTrees() {
         let poseidonHasher = new PoseidonHasher();
 
-        const depositTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`)
+        // const depositTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`)
         const dataTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE]}`)
         const nullifierTree = await loadTree(StandardIndexedTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}`)
         const dataTreeRootsTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}`)
-        this.trees = [depositTree, dataTree, nullifierTree, dataTreeRootsTree]
+
+        // this.trees.set(MerkleTreeId.DEPOSIT_TREE, depositTree);
+        this.trees.set(MerkleTreeId.DATA_TREE, dataTree);
+        this.trees.set(MerkleTreeId.NULLIFIER_TREE, nullifierTree);
+        this.trees.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, dataTreeRootsTree);
     }
 
     /**
@@ -131,8 +140,45 @@ export class WorldStateDB {
 
     }
 
-    findPreviousValueAndMp(treeId: MerkleTreeId, nullifier1: Field): Promise<LowLeafWitnessData> {//
-        return Promise.resolve({} as any as LowLeafWitnessData)
+    async findPreviousValueAndMp(treeId: MerkleTreeId, nullifier1: Field, includeUncommitted: boolean) {//
+        const { index, alreadyPresent } = await this.findIndexOfPreviousValue(MerkleTreeId.NULLIFIER_TREE, nullifier1, includeUncommitted);
+        if (alreadyPresent) {// actually won't be tree here!
+            throw new Error("nullifier1[${nullifier1}] existed!");
+        }
 
+        const siblingPath = (await this.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(index), includeUncommitted))!;
+
+        const leafData0 = (await this.getLatestLeafDataCopy(MerkleTreeId.NULLIFIER_TREE, index, includeUncommitted))!;
+
+        return LowLeafWitnessData.fromJSON({
+            index: `${index}`,
+            siblingPath,
+            leafData: {
+                value: leafData0.value.toString(),
+                nextIndex: leafData0.nextIndex.toString(),
+                nextValue: leafData0.nextValue.toString()
+            }
+        }) as LowLeafWitnessData;
+    }
+
+
+    async findIndexOfPreviousValue(treeId: MerkleTreeId, nullifier1: Field, includeUncommitted: boolean) {//
+
+        const { index, alreadyPresent } = (this.trees.get(treeId) as StandardIndexedTree).findIndexOfPreviousValue(nullifier1.toBigInt(), includeUncommitted);
+
+        return { index, alreadyPresent }
+    }
+
+    /**
+     * Gets the latest LeafData copy.
+     * @param index - Index of the leaf of which to obtain the LeafData copy.
+     * @param includeUncommitted - If true, the uncommitted changes are included in the search.
+     * @returns A copy of the leaf data at the given index or undefined if the leaf was not found.
+     */
+    public getLatestLeafDataCopy(treeId: MerkleTreeId,
+        index: number,
+        includeUncommitted: boolean
+    ): LeafData | undefined {
+        return (this.trees.get(treeId) as StandardIndexedTree).getLatestLeafDataCopy(index, includeUncommitted);
     }
 }

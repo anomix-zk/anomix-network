@@ -21,8 +21,8 @@ export class RollupFlow {
         // const logger = getLogger('RollupFlow');
         // logger.info('start a new rollup flow:');
 
-        // TODO prepare all for flow-scheduler
-
+        //  prepare all for flow-scheduler
+        new FlowScheduler(this.flowId, this.worldState, this.worldStateDB, this.rollupDB, this.indexDB).start();
 
     }
 
@@ -34,9 +34,13 @@ export class RollupFlow {
         seqStatus.status = SequencerStatus.AtRollup;
 
         seqStatusReposity.save(seqStatus);
+
+        this.flowScheduler.start();
     }
 
     async end() {
+        await this.worldStateDB.rollback();
+
         // update db status to SeqStatus.NOTATROLLUP
         const connection = getConnection();
         const seqStatusReposity = connection.getRepository(SeqStatus);
