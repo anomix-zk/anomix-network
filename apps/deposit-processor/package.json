@@ -1,5 +1,5 @@
 {
-  "name": "@anomix/rollup-sequencer",
+  "name": "@anomix/deposit-processor",
   "version": "0.1.0",
   "type": "module",
   "main": "dist/src/index.js",

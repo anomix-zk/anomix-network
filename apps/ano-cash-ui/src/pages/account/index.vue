@@ -218,7 +218,7 @@
 <script lang="ts" setup>
 const router = useRouter();
 const email = ref("alias");
-const address = ref("0x39ac...Af0F");
+const address = ref("B629al...Af0F");
 const amount = ref("0.00");
 const isHide = useHide();
 const showNoti = ref(false);
