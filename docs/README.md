@@ -2,14 +2,21 @@
 
 # Description
 Anomix Network, formerly called 'Shadow' in zkApp Builders Program 1,  is a zk-zkRollup layer2 solution on Mina, focusing on Privacy&Scalablility. It grows up alongside with the upgrade of SnarkyJS.
+
     Website: https://www.anomix.xyz/
+
     Twitter: https://twitter.com/Anomix_ZK/
+
 Basically, On Anomix Network, you could make your L2 account anonymous and your on-chain operations private(invisible&untraceable). Besides, As a layer2, Anomix Network batches L2 txs to make fee apportioned(much lower cost), and furthermore it’s easy to build private defi/nft/DID, etc.
+
 Within zkIgnite cohort1, We will provide a zkApp, named as Ano-Cash, as the officially first entry of Anomix Network.
 
 NOTE: Thanks to ZKRollup's predecessors such as zkSync, Aztec, etc, and ZK Layer1 such as Mina, IRon Fish, with reference on design documentation of them, this design could be completed.
 
 # Getting started
+
+**TODO we need to improve the doc to newer version corresponding to [circuit](../packages/circuits/)**
+
 ## Summary
 - [Intro](./intro.md)
 
@@ -42,7 +49,7 @@ NOTE: Thanks to ZKRollup's predecessors such as zkSync, Aztec, etc, and ZK Layer
 ## Rollup Circuits
 - [Rollup Circuit](./rollup_circuit.md)
   - [innerRollupZkProgram_design](./rollup_circuit.md#inner-rollup-zkprogram)
-  - [outerRollupZkProgram_design](./rollup_circuit.md#outer-rollup-zkprogram)
+  - [RollupMergeZkProgram_design.md](./rollup_circuit.md#outer-rollup-zkprogram)
 
 ## Contracts
 - [Rollup Contract](./rollup_contract.md)

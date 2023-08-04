@@ -1,8 +1,10 @@
 # Total
-Anomix 中包含3棵merkle trees: 
+Anomix 中包含5棵merkle trees: 
+* **deposit_tree**: for [deposit](./deposit_contract.md), all leaf will migrate to data_tree by proof
 * **data_tree**: dense full binary tree storing `value note commitment`
 * **nullifier_tree**: dense full binary tree storing `value note nullifier`
 * **root_tree**: contains all historical roots from data_tree.
+* **user_account_withdrawal_tree**: for [ user withdraw ](./withdraw_contract.md), for nullify the withdrawed assets 
 
 ## data_tree
 `data_tree` works for existence merkle proof of *value_note* within Anomix. Since, it is a normal full binary tree. 

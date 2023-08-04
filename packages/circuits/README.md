@@ -1,6 +1,6 @@
-# Mina zkApp: PROJECT_NAME
+# Anomix circuit for Account & Fund operations
 
-This template uses TypeScript.
+read the circuit with [doc](../../docs/README.md)
 
 ## How to build
 

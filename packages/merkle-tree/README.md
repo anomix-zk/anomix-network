@@ -1,6 +1,14 @@
-# Mina zkApp: PROJECT_NAME
+# Merkle Tree based on SnarkyJS And LevelDB
 
-This template uses TypeScript.
+The MerkleTree & MerkleMap implementation within SnarkyJS are only in memory (until the time when the doc is published here), which means all data would be lost if the process shutdowns. So we need a Merkle Tree with persistence ability.
+
+Besides, the MerkleMap implementation within SnarkyJS only support Tree height of 256 (because of 'Field'), which means each merkle-witness verfication within circuit cost much! 
+Within this repo, the height of merkle tree for non-existence witness could be customized.
+
+// TODO  
+will add more feature intro here later...
+
+NOTE: This Merkle Tree is carried out with great reference on [Aztec-packages](https://github.com/AztecProtocol/aztec-packages/tree/master/yarn-project/merkle-tree).
 
 ## How to build
 
@@ -15,11 +23,6 @@ npm run test
 npm run testw # watch mode
 ```
 
-## How to run coverage
-
-```sh
-npm run coverage
-```
 
 ## License
 

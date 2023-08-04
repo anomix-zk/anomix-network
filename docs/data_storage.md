@@ -8,10 +8,14 @@ CommonUserTxWrapper table,
 
 InnerRollupEntity table,
 
-OuterRollupEntity table,
+RollupMergeEntity table,
 
+...
+...
+...
 
 ---- levelDB ---- 
+    Deposit_tree
 
     Root_tree,
 
@@ -20,5 +24,6 @@ OuterRollupEntity table,
     Nullifier_Tree,
     
     User_Account_Withdrawal_Tree
+
 
 

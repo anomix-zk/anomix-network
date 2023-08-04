@@ -6,9 +6,9 @@ Tips: As talked within [merkle_tree_storage.md](./merkle_tree_storage.md#switch-
 
 因为要实现动态扩容，所以outerRollupZkProgram必须采取'前面InnerRollupEntity累积的proof 聚合 下一个InnerRollupEntity'的形式。InnerRollupEntity的聚合个数可以动态调整。
 
-每x(x>=1)个InnerRollupEntity合并后，我们将构造出如下OuterRollupEntity：
+每x(x>=1)个InnerRollupEntity合并后，我们将构造出如下RollupMergeEntity：
 ```js
-OuterRollupEntity {
+RollupMergeEntity {
   OuterRollupId: hash of the entity, also the L2 Block ID
 
   `root_tree root0`, //当前 root_tree root
@@ -38,7 +38,7 @@ OuterRollupEntity {
     * root_tree root1;
 
   * STEP:
-    * 基于AggregatedOuterRollupEntity.`root_tree root1`的zeroLeaf's existence merkle proof of root_tree; // 为了插入InnerRollupEntity[x].`resulting data tree root`
+    * 基于AggregatedRollupMergeEntity.`root_tree root1`的zeroLeaf's existence merkle proof of root_tree; // 为了插入InnerRollupEntity[x].`resulting data tree root`
     * InnerRollupEntity[x];// x > 1
 
 * ZkProgram电路(伪代码)如下：
@@ -49,28 +49,28 @@ OuterRollupEntity {
     * 验证InnerRollupEntity[0].proof;
     * 基于当前root_tree root验证`zeroLeaf's existence merkle proof of root_tree`;
     * 将InnerRollupEntity[0].`resulting data tree root`结合`zeroLeaf's existence merkle proof of root_tree`计算得*root_tree root1*;
-    * 组装AggregatedOuterRollupEntity:
-      * AggregatedOuterRollupEntity.`root_tree root0` = 当前root_tree root;
-      * AggregatedOuterRollupEntity.`data tree root0` = 当前data_tree root;
-      * AggregatedOuterRollupEntity.`nullifier tree root0` = 当前nullifier_tree root;
-      * AggregatedOuterRollupEntity.`root_tree root1` = *root_tree root1*;
-      * AggregatedOuterRollupEntity.`data tree root1` = InnerRollupEntity[0].`resulting data tree root`;
-      * AggregatedOuterRollupEntity.`nullifier tree root1` = InnerRollupEntity[0].`resulting nullifier tree root`;
-      * AggregatedOuterRollupEntity.`total_tx_fee` = InnerRollupEntity[0].`total_tx_fee`;
-      * AggregatedOuterRollupEntity.`total_withdraw` = InnerRollupEntity[0].`total_withdraw`;
+    * 组装AggregatedRollupMergeEntity:
+      * AggregatedRollupMergeEntity.`root_tree root0` = 当前root_tree root;
+      * AggregatedRollupMergeEntity.`data tree root0` = 当前data_tree root;
+      * AggregatedRollupMergeEntity.`nullifier tree root0` = 当前nullifier_tree root;
+      * AggregatedRollupMergeEntity.`root_tree root1` = *root_tree root1*;
+      * AggregatedRollupMergeEntity.`data tree root1` = InnerRollupEntity[0].`resulting data tree root`;
+      * AggregatedRollupMergeEntity.`nullifier tree root1` = InnerRollupEntity[0].`resulting nullifier tree root`;
+      * AggregatedRollupMergeEntity.`total_tx_fee` = InnerRollupEntity[0].`total_tx_fee`;
+      * AggregatedRollupMergeEntity.`total_withdraw` = InnerRollupEntity[0].`total_withdraw`;
 
   * STEP:
-    * 验证InnerRollupEntity[x].`root_tree root0` == AggregatedOuterRollupEntity.`root_tree root0`;  
-    * 验证InnerRollupEntity[x].`data_tree root0` == AggregatedOuterRollupEntity.`data tree root1`;
-    * 验证InnerRollupEntity[x].`nullifier_tree root0` == AggregatedOuterRollupEntity.`nullifier tree root1`;
+    * 验证InnerRollupEntity[x].`root_tree root0` == AggregatedRollupMergeEntity.`root_tree root0`;  
+    * 验证InnerRollupEntity[x].`data_tree root0` == AggregatedRollupMergeEntity.`data tree root1`;
+    * 验证InnerRollupEntity[x].`nullifier_tree root0` == AggregatedRollupMergeEntity.`nullifier tree root1`;
     * 验证InnerRollupEntity[x].proof;
-    * 基于AggregatedOuterRollupEntity.`root_tree root1`验证`zeroLeaf's existence merkle proof of root_tree`;
+    * 基于AggregatedRollupMergeEntity.`root_tree root1`验证`zeroLeaf's existence merkle proof of root_tree`;
     * 将InnerRollupEntity[x].`resulting data tree root`结合`zeroLeaf's existence merkle proof of root_tree`计算得*此STEP的新root_tree root*;
-    * 组装AggregatedOuterRollupEntity:
-      * AggregatedOuterRollupEntity.`root_tree root1` = *此STEP的新root_tree root*;
-      * AggregatedOuterRollupEntity.`data tree root1` = InnerRollupEntity[x].`resulting data tree root`;
-      * AggregatedOuterRollupEntity.`nullifier tree root1` = InnerRollupEntity[x].`resulting nullifier tree root`;
-      * AggregatedOuterRollupEntity.`total_tx_fee` += InnerRollupEntity[x].`total_tx_fee`;
-      * AggregatedOuterRollupEntity.`total_withdraw` += InnerRollupEntity[x].`total_withdraw`;
+    * 组装AggregatedRollupMergeEntity:
+      * AggregatedRollupMergeEntity.`root_tree root1` = *此STEP的新root_tree root*;
+      * AggregatedRollupMergeEntity.`data tree root1` = InnerRollupEntity[x].`resulting data tree root`;
+      * AggregatedRollupMergeEntity.`nullifier tree root1` = InnerRollupEntity[x].`resulting nullifier tree root`;
+      * AggregatedRollupMergeEntity.`total_tx_fee` += InnerRollupEntity[x].`total_tx_fee`;
+      * AggregatedRollupMergeEntity.`total_withdraw` += InnerRollupEntity[x].`total_withdraw`;
 
 

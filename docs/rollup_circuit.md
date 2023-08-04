@@ -12,5 +12,5 @@
 ## Inner Rollup zkProgram
 [innerRollupZkProgram_design](./innerRollupZkProgram_design.md)
 
-## Outer Rollup zkProgram
-[outerRollupZkProgram_design](./outerRollupZkProgram_design.md)
+## Rollup Merge zkProgram
+[rollup MergeZkProgram_design](./rollupMergeZkProgram_design.md)
