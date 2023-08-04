@@ -10,35 +10,57 @@
                 <!---->
                 <div class="oauth-box">
                     <div class="one">
-                        <van-button
-                            block
-                            type="primary"
-                            class="indexbtn"
-                            @click="connectLogin"
-                            ><span>Connect Wallet</span></van-button
-                        >
+                        <van-button color="#f7f7f7" block type="primary" class="indexbtn" @click="connectLogin">
+                            <icon style="display:flex; align-items: center;">
+                                <img :src="auroLogo" alt="" style="width: 30px; height: 30px;" />
+                                <span style="color:#1f202a">Connect Wallet</span>
+                            </icon>
+
+                        </van-button>
                     </div>
                     <div class="one">
-                        <van-button
-                            plain
-                            block
-                            type="primary"
-                            @click="accountLogin"
-                            class="indexbtn"
-                            ><span>Login With Key</span></van-button
-                        >
+                        <van-button color="#f7f7f7" block type="primary" @click="accountLogin" class="indexbtn">
+                            <icon style="display:flex; align-items: center;">
+                                <img :src="keyImage" alt="" style="width: 36px; height: 36px;" />
+                                <span style="color:#1f202a">Login With Key</span>
+                            </icon>
+
+
+                        </van-button>
                     </div>
                 </div>
             </div>
+
+            <div class="footer">© Powered By Anomix</div>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { ref } from "vue";
 import loginImage from "@/assets/analysis.svg";
+import auroLogo from "@/assets/auro.png";
+import keyImage from "@/assets/key2.png";
 
 const router = useRouter();
+
+onMounted(async () => {
+
+    if (!window.anomix) {
+        console.log('load anomix sdk');
+        const { createAnomixSdk } = await import('@anomix/sdk');
+
+        const sdk = await createAnomixSdk('B62qmsNRd7ocmpPwpb1enJYWAxTP2pibnyMZGjUiaixV2p9irH4V6Y8', {
+            nodeUrl: 'http://127.0.0.1:8099',
+            nodeRequestTimeoutMS: 5 * 60 * 1000,
+            l2BlockPollingIntervalMS: 2 * 60 * 1000,
+            debug: true
+        });
+
+        window.anomix = sdk;
+        console.log('anomix sdk loaded');
+    }
+
+});
 
 function connectLogin() {
     router.push("/connect");
@@ -54,6 +76,7 @@ function accountLogin() {
         margin-top: 60px px;
         width: 100%;
         height: 160px;
+
         img {
             height: 100%;
         }
@@ -65,6 +88,7 @@ function accountLogin() {
         font-size: 24px;
         line-height: 36px;
     }
+
     .title {
         display: inline-block;
         position: relative;
@@ -74,18 +98,20 @@ function accountLogin() {
         overflow: hidden;
         color: #000;
     }
+
     /* 打印效果 */
     @keyframes typing {
         from {
             width: 0;
         }
+
         to {
             width: 180px;
         }
     }
 
     .oauth-box {
-        margin-top: 40px;
+        margin-top: 60px;
         width: 100%;
     }
 
@@ -97,7 +123,7 @@ function accountLogin() {
         box-shadow: inset 1px 1px 3px var(--up-line);
     }
 
-    .oauth-box .one + .one {
+    .oauth-box .one+.one {
         margin-top: 20px;
     }
 
@@ -107,11 +133,30 @@ function accountLogin() {
         font-size: 16px;
         line-height: 24px;
     }
+
     .indexbtn {
         height: 60px;
         transition: all 0.15s;
         border: none;
         box-shadow: inset 1px 1px 3px var(--up-line);
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: center;
+        align-items: center;
+        align-content: center;
     }
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    line-height: 60px;
+    text-align: center;
+    color: #1f202a;
+    font-size: 16px;
+    font-weight: 400;
 }
 </style>

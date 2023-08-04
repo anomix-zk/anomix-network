@@ -7,28 +7,20 @@
             Connect your wallet
         </h1>
         <div style="margin-top: 30px">
-            <van-button round type="primary" @click="formSubmit"
-                >Connect</van-button
-            >
+            <van-button type="primary" @click="formSubmit">Connect Auro Wallet</van-button>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { PrivateKey } from "snarkyjs";
 import step1 from "@/assets/step.jpg";
 
 const emit = defineEmits(["nextStep"]);
 
 async function formSubmit() {
     try {
-        //emit("nextStep");
-        // if (window.mina) {
-        //   let accounts = await window.mina.requestAccounts();
-        //   alert(accounts);
-        // }
-        let key = PrivateKey.random();
-        alert(key.toBase58());
+        emit("nextStep");
+
     } catch (err) {
         console.log(err);
     }
