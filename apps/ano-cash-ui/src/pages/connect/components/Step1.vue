@@ -16,6 +16,8 @@
 import step1 from "@/assets/step.jpg";
 
 const emit = defineEmits(["nextStep"]);
+const route = useRoute();
+
 
 async function formSubmit() {
     try {
