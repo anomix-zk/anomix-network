@@ -129,7 +129,6 @@ export class AnomixEntryContract extends SmartContract {
     operatorAddress: PublicKey,
     operatorSign: Signature
   ) {
-    verificationKey.toString();
     const rollupContractAddress =
       this.rollupContractAddress.getAndAssertEquals();
 
