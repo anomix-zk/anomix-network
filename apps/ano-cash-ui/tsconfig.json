@@ -1,21 +1,9 @@
 {
-  "extends": "../../tsconfig.web.json",
-  
+  // https://v3.nuxtjs.org/concepts/typescript
+  "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
-    "incremental": false,
-    "declaration": false,
-
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    
-    "types": ["@intlify/vite-plugin-vue-i18n/client"]
-  },
-
-  "include": ["env.d.ts", "src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
-
-  "references": [
-    { "path": "./tsconfig.vite-config.json" }
-  ]
+    "types": [
+      "naive-ui/volar"
+    ]
+  }
 }
