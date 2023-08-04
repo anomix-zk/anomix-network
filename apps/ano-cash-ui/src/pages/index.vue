@@ -1,7 +1,7 @@
 <template>
     <div class="up-app">
         <div id="page-connect" class="page">
-            <div class="header">AnoCash</div>
+            <div class="header">Ano.Cash</div>
             <div class="page-login">
                 <div class="logo">
                     <img :src="loginImage" class="arrow" alt="" />
@@ -37,7 +37,7 @@
 </template>
 
 <script lang="ts" setup>
-import loginImage from "@/assets/analysis.svg";
+import loginImage from "@/assets/anomix.svg";
 import auroLogo from "@/assets/auro.png";
 import keyImage from "@/assets/key2.png";
 
@@ -63,6 +63,18 @@ onMounted(async () => {
 });
 
 function connectLogin() {
+    // if (!window.mina) {
+    //     showDialog({
+    //         message: 'Please install auro wallet browser extension first.',
+    //         theme: 'round-button',
+    //         confirmButtonColor: '#1f202a',
+    //         confirmButtonText: 'OK',
+    //     }).then(() => {
+    //         // on close
+    //     });
+    // } else {
+    //     router.push({ path: "/connect", params: { ok: 'nihao' } });
+    // }
     router.push("/connect");
 }
 function accountLogin() {
