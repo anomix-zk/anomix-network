@@ -6,7 +6,7 @@ import { BaseResponse, ProofTaskDto, ProofTaskType } from "@anomix/types";
 import { DataMerkleWitness, DataRootWitnessData, InnerRollupInput, InnerRollupProof, JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, JoinSplitDepositInput, DepositMerkleWitness, MINA } from "@anomix/circuits";
 import { MerkleTreeId, WorldState } from "@/worldstate";
 import { IndexDB } from "./index-db";
-import { BlockProverOutputEntity, L2Tx, MemPlL2Tx, WithdrawInfo } from "@anomix/dao";
+import { BlockProverOutputEntity, DepositCommitment, L2Tx, MemPlL2Tx, WithdrawInfo } from "@anomix/dao";
 import { Field, PublicKey, Mina, PrivateKey } from 'snarkyjs';
 import { $axios } from "@/lib";
 import { syncAcctInfo } from "@anomix/utils";
@@ -18,8 +18,8 @@ export class FlowScheduler {
     private leftNonDepositTx: JoinSplitProof;
     private pendingRollupMergeEntity: InnerRollupProof
 
-    private depositStartIndexInBlock: Field
-    private depositTreeRootInBlock: Field
+    private depositStartIndexInBatch: Field
+    private depositTreeRootOnchain: Field
 
     private targetDataRoot: Field
     private targetBlockId: number
@@ -32,94 +32,26 @@ export class FlowScheduler {
 
         // fetch from contract
         const entryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
-        const rollupContractAddr = PublicKey.fromBase58(config.rollupContractAddress);
+        // const rollupContractAddr = PublicKey.fromBase58(config.rollupContractAddress);
         await syncAcctInfo(entryContractAddr);
-        await syncAcctInfo(rollupContractAddr);
-        const rollupContract = new AnomixRollupContract(rollupContractAddr);
+        // await syncAcctInfo(rollupContractAddr);
+        // const rollupContract = new AnomixRollupContract(rollupContractAddr);
         const entryContract = new AnomixEntryContract(entryContractAddr);
-        this.depositStartIndexInBlock = rollupContract.state.get().depositStartIndex;
-        this.depositTreeRootInBlock = entryContract.depositState.get().depositRoot;
+        this.depositStartIndexInBatch = entryContract.depositState.get().handledActionsNum;
+        this.depositTreeRootOnchain = entryContract.depositState.get().depositRoot;
     }
 
     async start() {
-        // clear dirty data on both rollupDB & worldStateDB at the beginning
+        // clear dirty data on worldStateDB at the beginning
         this.init();
 
-        const innerRollupTxNum = config.innerRollup.txCount;
+        const batchNum = config.depositRollup.batchNum;
         const includeUnCommit = true;
 
-        // TODO ask if 'Deposit-Processor' could stop
-        let couldStopMarkDepositActions = false;
-        let { code, data } = await axios.post(config.depositEndpoint_couldStopMarkDepositActions, { flowId: this.flowId }).then(r => {
-            return r.data;
-        })
-        if (code == 0) {// could stop!
-            couldStopMarkDepositActions = true;
-            // if deposit-processor just sent a L1Tx, then could return newest root here.
-            this.depositTreeRootInBlock = Field(data) ?? this.depositStartIndexInBlock;
-        }
+        // query db for pending actions
+        await this.processDepositActions();
 
-        if (couldStopMarkDepositActions) {
-            // process deposit actions
-            this.processDepositActions();
-        }
-
-        // query unhandled Non-Deposit tx list from RollupDB
-        const mpTxList = await this.rollupDB.queryPendingTxList();
-        if (mpTxList.length == 0 && !couldStopMarkDepositActions) {
-            this.worldState.reset();//  end this flow!
-            return;
-
-        } else if (mpTxList.length == 0 && couldStopMarkDepositActions) {
-            return;// interrupt this flow! 
-        }
-
-        // ================== below: txList.length > 0 ==================
-
-        const mod = mpTxList.length % innerRollupTxNum;
-        if (mod > 0) {//ie. == 1
-            if (!couldStopMarkDepositActions) {// append dummy tx to the end, ignore the deposit ones at current block.
-                // calc dummy tx
-                let pendingTxSize = innerRollupTxNum - mod;
-                // fill dummy tx
-                for (let index = 0; index < pendingTxSize; index++) {
-                    const dummyTx = config.joinsplitProofDummyTx;
-                    mpTxList.push({
-                        outputNoteCommitment1: dummyTx.publicOutput.outputNoteCommitment1.toString(),
-                        outputNoteCommitment2: dummyTx.publicOutput.outputNoteCommitment2.toString(),
-
-                        nullifier1: dummyTx.publicOutput.nullifier1.toString(),
-                        nullifier2: dummyTx.publicOutput.nullifier2.toString(),
-                        dataRoot: dummyTx.publicOutput.dataRoot.toString(),
-                        proof: JSON.stringify(dummyTx.toJSON())
-                    } as any);
-                }
-            } else {// wait for deposit tx's JoinsplitProof coming back, and append
-                this.leftNonDepositTx = JoinSplitProof.fromJSON(JSON.parse(mpTxList[mpTxList.length - 1].proof));
-            }
-        }
-
-        // pre insert into tree cache
-        let innerRollup_proveTxBatchParamList = await this.preInsertIntoTreeCache(mpTxList);
-
-        // construct proofTaskDto
-        const proofTaskDto: ProofTaskDto<any, any> = {
-            taskType: ProofTaskType.ROLLUP_FLOW,
-            index: {},
-            payload: {
-                flowId: this.flowId,
-                taskType: FlowTaskType.ROLLUP_TX_MERGE,
-                data: innerRollup_proveTxBatchParamList
-            } as FLowTask<any>
-        }
-
-        // send to proof-generator for exec 'InnerRollupProver.proveTxBatch(*)'
-        await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
-            if (r.data.code == 1) {
-                throw new Error(r.data.msg);
-            }
-        });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
-
+        return;
     }
 
     private async preInsertIntoTreeCache(txList: MemPlL2Tx[]) {
@@ -212,7 +144,7 @@ export class FlowScheduler {
                 witness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, tx2DataTreeRootIndex, false)
             };
 
-            let oldDepositStartIndex = this.depositStartIndexInBlock;
+            let oldDepositStartIndex = this.depositStartIndexInBatch;
             if (Field(tx1.actionType).equals(ActionType.DEPOSIT).toBoolean()) {
                 oldDepositStartIndex = Field(tx1.depositIndex);
             } else if (Field(tx2.actionType).equals(ActionType.DEPOSIT).toBoolean()) {
@@ -247,7 +179,7 @@ export class FlowScheduler {
                         tx1RootWitnessData,
                         tx2RootWitnessData,
 
-                        depositRoot: this.depositTreeRootInBlock,
+                        depositRoot: this.depositTreeRootOnchain,
                         oldDepositStartIndex
                     }
                 }
@@ -257,7 +189,7 @@ export class FlowScheduler {
     }
 
     /**
-     * !!mv to deposit_processor!!
+     * mv to deposit_processor!!
      */
     private async processDepositActions() {
         // select 'deposit_commitment' from db order by 'depositNoteIndex' ASC
@@ -265,7 +197,7 @@ export class FlowScheduler {
         // compose JoinSplitDepositInput
         // asyncly send to 'Proof-Generator' to exec 'join_split_prover.deposit()'
 
-        let depositCommitmentList = (await this.rollupDB.queryDepositCommitmentList(this.depositStartIndexInBlock)) ?? [];
+        let depositCommitmentList = (await this.rollupDB.queryDepositCommitmentList(this.depositStartIndexInBatch)) ?? [];
         // the sequence is as deposit-actions
         const joinSplitDepositInputList = await Promise.all(await depositCommitmentList.map(async c => {
             return JoinSplitDepositInput.fromJSON({
@@ -273,7 +205,7 @@ export class FlowScheduler {
                 publicOwner: c.sender,
                 publicAssetId: c.assetId,
                 dataRoot: this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false).toString(),
-                depositRoot: this.depositTreeRootInBlock.toString(),
+                depositRoot: this.depositTreeRootOnchain.toString(),
                 depositNoteCommitment: c.depositNoteCommitment,
                 depositNoteIndex: c.depositNoteIndex,
                 depositWitness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DEPOSIT_TREE, BigInt(c.depositNoteIndex), false)
