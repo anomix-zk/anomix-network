@@ -18,11 +18,10 @@ import Step1 from "./components/Step1.vue";
 import Step2 from "./components/Step2.vue";
 // import Step3 from "./components/Step3.vue";
 
-
 const currentStatus = ref("process");
 const route = useRoute();
 const router = useRouter();
-const {step} = route.query;
+const { step } = route.query;
 const currentTab = ref(Number(step) || 1);
 function nextStep() {
   if (currentTab.value < 3) {
@@ -41,5 +40,5 @@ function finish() {
 }
 </script>
 <style lang="less" scoped>
-.p{}
+.p {}
 </style>

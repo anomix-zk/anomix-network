@@ -7,6 +7,8 @@
     <div style="margin-top: 30px">
       <van-button round type="primary" @click="formSubmit">Connect</van-button>
     </div>
+
+    <div> tips: {{ tips }}</div>
   </div>
 </template>
 
@@ -17,16 +19,24 @@ import {
 import step1 from "@/assets/step.jpg";
 
 const emit = defineEmits(["nextStep"]);
+const tips = ref("");
+
+onMounted(() => {
+  if (window.mina) {
+    console.log('hello');
+    tips.value = "Please install Auro wallet browser extension";
+  }
+});
 
 async function formSubmit() {
   try {
     //emit("nextStep");
-    // if (window.mina) {
-    //   let accounts = await window.mina.requestAccounts();
-    //   alert(accounts);
-    // }
-    let key = PrivateKey.random();
-    alert(key.toBase58());
+    if (window.mina) {
+      let accounts = await window.mina.requestAccounts();
+      console.log('accounts: ', accounts);
+    }
+    // let key = PrivateKey.random();
+    // alert(key.toBase58());
 
   } catch (err) {
     console.log(err);

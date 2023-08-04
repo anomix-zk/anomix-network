@@ -9,14 +9,10 @@
         <!---->
         <div class="oauth-box">
           <div class="one">
-            <van-button plain block type="primary" @click="connectLogin"
-              ><span>Connect Wallet</span></van-button
-            >
+            <van-button plain block type="primary" @click="connectLogin"><span>Connect Wallet</span></van-button>
           </div>
           <div class="one">
-            <van-button plain block type="primary" @click="accountLogin"
-              ><span>Login With Key</span></van-button
-            >
+            <van-button plain block type="primary" @click="accountLogin"><span>Login With Key</span></van-button>
           </div>
         </div>
       </div>
@@ -27,6 +23,24 @@
 <script lang="ts" setup>
 import { ref } from "vue";
 import loginImage from "@/assets/analysis.svg";
+
+
+onMounted(async () => {
+  console.log('sdk init...');
+  if (!window.anomix) {
+    const { createAnomixSdk } = await import('@anomix/sdk');
+    const sdk = await createAnomixSdk('B62qiw2Du6wBjoC8sGX3koe1vT8H8mhqvQ9i8Q2g5RxZ1m95jLYcqsC', {
+      nodeUrl: 'http://127.0.0.1:8099',
+      nodeRequestTimeoutMS: 5 * 60 * 1000,
+      l2BlockPollingIntervalMS: 1 * 60 * 1000,
+      debug: true
+    });
+    window.anomix = sdk;
+  }
+
+
+  console.log('sdk init done');
+});
 
 const router = useRouter();
 
@@ -44,6 +58,7 @@ function accountLogin() {
     margin-top: 60px px;
     width: 100%;
     height: 160px;
+
     img {
       height: 100%;
     }
@@ -55,6 +70,7 @@ function accountLogin() {
     font-size: 24px;
     line-height: 36px;
   }
+
   .title {
     display: inline-block;
     position: relative;
@@ -64,11 +80,13 @@ function accountLogin() {
     overflow: hidden;
     color: #1989fa;
   }
+
   /* 打印效果 */
   @keyframes typing {
     from {
       width: 0;
     }
+
     to {
       width: 150px;
     }
@@ -87,7 +105,7 @@ function accountLogin() {
     box-shadow: inset 1px 1px 3px var(--up-line);
   }
 
-  .oauth-box .one + .one {
+  .oauth-box .one+.one {
     margin-top: 20px;
   }
 
