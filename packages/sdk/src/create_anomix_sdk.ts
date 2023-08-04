@@ -44,7 +44,6 @@ export async function createAnomixSdk(
       : 3 * 60 * 1000
   );
 
-  await sdk.init();
   log.info('Anomix SDK created');
 
   return sdk;

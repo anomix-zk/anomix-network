@@ -53,16 +53,17 @@ export class AnomixSdk {
     private node: AnomixNode,
     private entryContractAddress: PublicKey,
     private l2BlockPollingIntervalMS: number
-  ) {}
+  ) {
+    this.log.info('Initializing Anomix SDK...');
+    this.entryContract = new AnomixEntryContract(this.entryContractAddress);
+  }
 
-  public async init() {
-    this.log.info('Initializing Anomix SDK, compile circuits...');
+  public async compileEntryContract() {
+    this.log.info('Compile EntryContract Circuits...');
     console.time('compile');
     await DepositRollupProver.compile();
     await AnomixEntryContract.compile();
     console.timeEnd('compile');
-
-    this.entryContract = new AnomixEntryContract(this.entryContractAddress);
   }
 
   public async start() {

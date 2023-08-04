@@ -419,7 +419,7 @@ export class DexieDatabase implements Database {
     this.dexie.version(this.version).stores({
       alias: '&[aliasHash+accountPk+index], aliasHash, accountPk',
       key: '&name',
-      sercetKey: '&publicKey',
+      secretKey: '&publicKey',
       note: '&commitment, nullifier, [ownerPk+noteType+nullified], [ownerPk+pending]',
       signingKey: '&[accountPk+signingPk], accountPk',
       userState: '&accountPk',

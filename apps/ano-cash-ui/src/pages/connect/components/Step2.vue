@@ -6,18 +6,10 @@
         <div class="step-logo">
             <van-form @submit="formSubmit">
                 <van-cell-group inset>
-                    <van-field
-                        v-model="alias"
-                        center
-                        clearable
-                        label="Alias:"
-                        placeholder="input"
-                        input-align="right"
-                        label-align="left"
-                        :rules="[
+                    <van-field v-model="alias" center clearable label="Alias:" placeholder="input" input-align="right"
+                        label-align="left" :rules="[
                             { required: true, message: 'please input alias' },
-                        ]"
-                    >
+                        ]">
                         <template #button>
                             <span>@money</span>
                         </template>
@@ -29,31 +21,16 @@
                     </van-button>
                 </div>
             </van-form>
-            <van-dialog
-                v-model:show="show"
-                title="本地口令"
-                confirm-button-text="confirm"
-                cancel-button-text="cancel"
-                @confirm="confirm"
-                @cancel="cancel"
-            >
-                <van-field
-                    type="textarea"
-                    v-model="wordkey"
-                    rows="2"
-                    autosize
-                    autofocus
-                    maxlength="50"
-                    placeholder="请输入口令"
-                    show-word-limit
-                />
+            <van-dialog v-model:show="show" title="本地口令" confirm-button-text="confirm" cancel-button-text="cancel"
+                @confirm="confirm" @cancel="cancel">
+                <van-field type="textarea" v-model="wordkey" rows="2" autosize autofocus maxlength="50" placeholder="请输入口令"
+                    show-word-limit />
             </van-dialog>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, defineEmits } from "vue";
 
 const emit = defineEmits(["finish"]);
 
@@ -82,6 +59,7 @@ function formSubmit(values: any) {
     height: 300px;
     justify-content: center;
 }
+
 h1 {
     margin-top: 20px;
     margin-bottom: 20px;
