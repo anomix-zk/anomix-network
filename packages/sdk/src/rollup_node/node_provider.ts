@@ -37,7 +37,7 @@ export class NodeProvider implements AnomixNode {
       timeouts = [];
     };
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), defaultTimeout);
+    const timer = setTimeout(() => controller.abort(), this.timeout);
     timeouts.push(timer);
     try {
       if (init) {
