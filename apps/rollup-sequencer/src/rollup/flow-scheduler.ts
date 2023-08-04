@@ -90,7 +90,8 @@ export class FlowScheduler {
 
                         nullifier1: dummyTx.publicOutput.nullifier1.toString(),
                         nullifier2: dummyTx.publicOutput.nullifier2.toString(),
-                        dataRoot: dummyTx.publicOutput.dataRoot.toString()
+                        dataRoot: dummyTx.publicOutput.dataRoot.toString(),
+                        proof: JSON.stringify(dummyTx.toJSON())
                     } as any);
                 }
             } else {// wait for deposit tx's JoinsplitProof coming back, and append
@@ -99,7 +100,7 @@ export class FlowScheduler {
         }
 
         // pre insert into tree cache
-        let innerRollupInputList = await this.preInsertIntoTreeCache(mpTxList);
+        let innerRollup_proveTxBatchParamList = await this.preInsertIntoTreeCache(mpTxList);
 
         // construct proofTaskDto
         const proofTaskDto: ProofTaskDto<any, any> = {
@@ -108,7 +109,7 @@ export class FlowScheduler {
             payload: {
                 flowId: this.flowId,
                 taskType: FlowTaskType.ROLLUP_TX_MERGE,
-                data: innerRollupInputList
+                data: innerRollup_proveTxBatchParamList
             } as FLowTask<any>
         }
 
@@ -122,7 +123,7 @@ export class FlowScheduler {
     }
 
     private async preInsertIntoTreeCache(txList: MemPlL2Tx[]) {
-        const innerRollupInputList: InnerRollupInput[] = []
+        const innerRollup_proveTxBatchParamList: { innerRollupInput: InnerRollupInput, joinSplitProof1: string, joinSplitProof2: string }[] = []
 
         for (let i = 0; i < txList.length; i += 2) {
             const tx1 = txList[i];
@@ -218,35 +219,41 @@ export class FlowScheduler {
                 oldDepositStartIndex = Field(tx1.depositIndex);
             }
 
-            innerRollupInputList.push({
-                dataStartIndex,
-                oldDataRoot,
-                tx1OldDataWitness1,
-                tx1OldDataWitness2,
-                tx2OldDataWitness1,
-                tx2OldDataWitness2,
+            innerRollup_proveTxBatchParamList.push(
+                {
+                    joinSplitProof1: tx1.proof,
+                    joinSplitProof2: tx2.proof,
+                    innerRollupInput: {
+                        dataStartIndex,
+                        oldDataRoot,
+                        tx1OldDataWitness1,
+                        tx1OldDataWitness2,
+                        tx2OldDataWitness1,
+                        tx2OldDataWitness2,
 
-                nullStartIndex,
-                oldNullRoot,
-                tx1LowLeafWitness1,
-                tx1LowLeafWitness2,
-                tx2LowLeafWitness1,
-                tx2LowLeafWitness2,
+                        nullStartIndex,
+                        oldNullRoot,
+                        tx1LowLeafWitness1,
+                        tx1LowLeafWitness2,
+                        tx2LowLeafWitness1,
+                        tx2LowLeafWitness2,
 
-                tx1OldNullWitness1,
-                tx1OldNullWitness2,
-                tx2OldNullWitness1,
-                tx2OldNullWitness2,
+                        tx1OldNullWitness1,
+                        tx1OldNullWitness2,
+                        tx2OldNullWitness1,
+                        tx2OldNullWitness2,
 
-                dataRootsRoot,
-                tx1RootWitnessData,
-                tx2RootWitnessData,
+                        dataRootsRoot,
+                        tx1RootWitnessData,
+                        tx2RootWitnessData,
 
-                depositRoot: this.depositTreeRootInBlock,
-                oldDepositStartIndex
-            });
+                        depositRoot: this.depositTreeRootInBlock,
+                        oldDepositStartIndex
+                    }
+                }
+            );
         }
-        return innerRollupInputList;
+        return innerRollup_proveTxBatchParamList;
     }
 
     /**
@@ -314,7 +321,8 @@ export class FlowScheduler {
 
                 nullifier1: jp.publicOutput.nullifier1.toString(),
                 nullifier2: jp.publicOutput.nullifier2.toString(),
-                dataRoot: jp.publicOutput.dataRoot.toString()
+                dataRoot: jp.publicOutput.dataRoot.toString(),
+                proof: JSON.stringify(jp.toJSON())
             } as any as MemPlL2Tx;
         })
 
@@ -408,7 +416,7 @@ export class FlowScheduler {
      * update all related status and send to trigger ROLLUP_CONTRACT
      * @param block 
      */
-    public whenL2BlockComeback(block: any) {
+    async whenL2BlockComeback(block: any) {
         this.worldStateDB.commit();
         this.rollupDB.commit(block);
 
