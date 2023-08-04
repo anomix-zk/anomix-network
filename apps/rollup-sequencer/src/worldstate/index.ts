@@ -47,16 +47,16 @@ export class WorldState {
     /**
      * start a new Flow
      */
-    public startNewFlow() {
+    async startNewFlow() {
         this.flow = new RollupFlow(this, this.worldStateDB, this.rollupDB, this.indexDB);
-        this.flow.start();
+        await this.flow.start();
     }
 
     /**
      * reset
      */
-    public reset() {
-        this.flow.end();
+    async reset() {
+        await this.flow.end();
 
         this.flow = undefined as any as RollupFlow;
     }
@@ -64,7 +64,7 @@ export class WorldState {
     /**
      * handleFlowTask
      */
-    public handleFlowTask(flowTask: FLowTask<any>) {
+    async handleFlowTask(flowTask: FLowTask<any>) {
         if (flowTask.flowId != this.flow?.flowId) {// outdated task
             // rid it
             console.log('rid FlowTask', JSON.stringify(flowTask));
@@ -74,18 +74,18 @@ export class WorldState {
 
         switch (flowTask.taskType) {
             case FlowTaskType.DEPOSIT_JOIN_SPLIT:
-                this.flow.flowScheduler.whenDepositTxListComeBack(flowTask.data);
+                await this.flow.flowScheduler.whenDepositTxListComeBack(flowTask.data);
                 break;
 
             case FlowTaskType.ROLLUP_TX_MERGE | FlowTaskType.ROLLUP_MERGE:
-                this.flow.flowScheduler.merge(flowTask.data);
+                await this.flow.flowScheduler.merge(flowTask.data);
                 break;
 
             case FlowTaskType.BLOCK_PROVE:
-                this.flow.flowScheduler.whenL2BlockComeback(flowTask.data);
+                await this.flow.flowScheduler.whenL2BlockComeback(flowTask.data);
                 break;
             case FlowTaskType.ROLLUP_CONTRACT_CALL:
-                this.flow.flowScheduler.whenL2BlockComeback(flowTask.data);
+                await this.flow.flowScheduler.whenL2BlockComeback(flowTask.data);
                 break;
 
             default: // rid it

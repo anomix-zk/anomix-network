@@ -32,10 +32,13 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
     const { l1addr, noteCommitment, signature } = req.body
 
     // check sig to avoid evil requests.
-    const rs = Signature.fromJSON(signature).verify(PublicKey.fromBase58(l1addr), [Field(noteCommitment)]);
-    if (rs) {
-        throw req.throwError(httpCodes.BAD_REQUEST, "signature verified fail!")
+    if (signature) {// might no need??
+        const rs = Signature.fromJSON(signature).verify(PublicKey.fromBase58(l1addr), [Field(noteCommitment)]);
+        if (rs) {
+            throw req.throwError(httpCodes.BAD_REQUEST, "signature verified fail!")
+        }
     }
+
     // check if exist in db
     const withdrawInfoRepository = getConnection().getRepository(WithdrawInfo)
     try {
@@ -85,7 +88,7 @@ const schema = {
     body: {
         type: "object",
         properties: (WithdrawAssetReqDtoSchema as any).properties,
-        required: ['l1addr', 'noteCommitment', 'signature']
+        required: ['l1addr', 'noteCommitment']
     },
     response: {
         200: {

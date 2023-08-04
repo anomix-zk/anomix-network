@@ -1,15 +1,13 @@
 
-import { AppendOnlyTree, IndexedTree, LeafData, LowLeafWitnessData, newTree, loadTree, StandardTree, StandardIndexedTree } from "@anomix/merkle-tree";
-import { BaseSiblingPath } from "@anomix/types";
+import { LeafData, newTree, loadTree, StandardIndexedTree } from "@anomix/merkle-tree";
 import { PoseidonHasher } from '@anomix/types';
-import { DATA_TREE_HEIGHT, ROOT_TREE_HEIGHT, NULLIFIER_TREE_HEIGHT, DEPOSIT_TREE_HEIGHT } from "@anomix/circuits";
-import { Field, Poseidon, PublicKey } from "snarkyjs";
+import { NULLIFIER_TREE_HEIGHT } from "@anomix/circuits";
+import { Field, PublicKey } from "snarkyjs";
 import levelup, { LevelUp } from 'levelup';
-import leveldown, { LevelDown } from "leveldown";
-import config from "@/lib/config";
+import leveldown from "leveldown";
 import { MerkleTreeId } from "./index";
 
-let INIT_NULLIFIER_TREE_HEIGHT = NULLIFIER_TREE_HEIGHT;
+let INIT_NULLIFIER_TREE_HEIGHT = 16;// fixed at circuit!
 
 interface WithdrawTreeWrapper { l1Addr: string, assetId: string, tree: StandardIndexedTree }
 

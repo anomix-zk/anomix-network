@@ -39,12 +39,17 @@ export class BlockProverOutputEntity {
     @Column()
     depositStartIndex0: string
 
-
     @Column()
     rootTreeRoot1: string
 
     @Column()
     dataTreeRoot1: string
+
+    /**
+     * record each dataTreeRoot's Index on rootTree
+     */
+    @Column()
+    dataTreeRoot1Indx: string
 
     @Column()
     nullifierTreeRoot1: string

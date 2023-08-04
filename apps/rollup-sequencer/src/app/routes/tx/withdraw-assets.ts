@@ -146,7 +146,7 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
         }
 
         // send to proof-generator for circuit exec
-        let rs = await $axios.post<BaseResponse<string>>('/proof/withdraw', proofTaskDto).then(r => {
+        let rs = await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             return r.data;
         });
         if (rs.code == 1) {

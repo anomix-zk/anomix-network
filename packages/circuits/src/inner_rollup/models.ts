@@ -70,9 +70,9 @@ export class InnerRollupInput extends Struct({
   //oldDataWitnesses: Provable.Array(DataMerkleWitness, ROLLUP_TX_BATCH_SIZE),
   tx1OldDataWitness1: DataMerkleWitness,
   tx1OldDataWitness2: DataMerkleWitness,
-
   tx2OldDataWitness1: DataMerkleWitness,
   tx2OldDataWitness2: DataMerkleWitness,
+
   nullStartIndex: Field,
   oldNullRoot: Field,
   //lowLeafWitnesses: Provable.Array(LowLeafWitness, ROLLUP_TX_BATCH_SIZE),

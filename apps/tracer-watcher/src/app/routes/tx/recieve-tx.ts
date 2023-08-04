@@ -63,8 +63,6 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
             // !! in a transaction!!
             await queryRunner.startTransaction();
 
-            queryRunner.startTransaction();
-
             const memPlL2TxRepository = connection.getRepository(MemPlL2Tx);
 
             const mpL2Tx = MemPlL2Tx.fromJoinSplitOutput(joinSplitProof.publicOutput);
