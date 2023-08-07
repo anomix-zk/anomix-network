@@ -256,14 +256,29 @@ let JoinSplitProver = Experimental.ZkProgram({
         //accountPk.assertEquals(inputNote2.ownerPk);
 
         const inputNoteNumIs2 = sendInput.inputNotesNum.equals(2);
-        sendInput.accountRequired.assertEquals(inputNote1.accountRequired);
+
+        const checkInputNote1AccountRequired = Provable.if(
+          isAccountRequired,
+          Bool,
+          Bool(true),
+          inputNote1.accountRequired.equals(AccountRequired.NOTREQUIRED)
+        );
+        checkInputNote1AccountRequired.assertTrue(
+          'Invalid inputNote1 accountRequired'
+        );
+
         const [assetIdMatch, accountRequiredMatch, inputNote2OwnerMatch] =
           Provable.if(
             inputNoteNumIs2,
             Provable.Array(Bool, 3),
             [
               inputNote1.assetId.equals(inputNote2.assetId),
-              inputNote1.accountRequired.equals(inputNote2.accountRequired),
+              Provable.if(
+                isAccountRequired,
+                Bool,
+                inputNote2.accountRequired.equals(DUMMY_FIELD).not(),
+                inputNote2.accountRequired.equals(AccountRequired.NOTREQUIRED)
+              ),
               accountPk.equals(inputNote2.ownerPk),
             ],
             [Bool(true), Bool(true), Bool(true)]
@@ -272,7 +287,7 @@ let JoinSplitProver = Experimental.ZkProgram({
           'The assetId of inputNote1 and inputNote2 does not match'
         );
         accountRequiredMatch.assertTrue(
-          'The accountRequired of inputNote1 and inputNote2 does not match'
+          'The accountRequired of inputNote2 and input accountRequired does not match'
         );
         inputNote2OwnerMatch.assertTrue(
           'The ownerPk of inputNote2 does not match'
