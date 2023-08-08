@@ -16,14 +16,22 @@ export interface L2TxReqDto {
     extraData: {
         outputNote1: EncryptedNote,
         outputNote2?: EncryptedNote,
+
         /**
          * used at Account Registration section
          */
         acctPk?: string,
+
         /**
          * used at Account Registration section
          */
         aliasHash?: string,
+
+        /**
+         * encrypted alias
+         */
+        aliasInfo?: string,
+
         /**
          * used at Withdrawal section
          */

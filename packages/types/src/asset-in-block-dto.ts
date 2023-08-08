@@ -106,6 +106,12 @@ export interface L2TxSimpleDto {
          * used at Account Registration section
          */
         aliasHash?: string,
+
+        /**
+         * encrypted alias
+         */
+        aliasInfo?: string,
+
         /**
          * used at Withdrawal section
          */
