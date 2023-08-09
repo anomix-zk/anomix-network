@@ -29,12 +29,17 @@ type AcctvkParam = { acctvk: string }
 export const handler: RequestHandler<null, AcctvkParam> = async function (
     req,
     res
-): Promise<BaseResponse<string>> {
+): Promise<BaseResponse<{ alias: string, aliasInfo: string }>> {
     const { acctvk: p_acctvk } = req.params
     const accountRepository = getConnection().getRepository(Account)
     try {
         const account = await accountRepository.findOne({ where: { acctViewKey: p_acctvk } });
-        return { code: 0, data: (account?.aliasHash) ?? '', msg: '' }
+        return {
+            code: 0, data: {
+                alias: (account?.aliasHash) ?? '',
+                aliasInfo: (account?.encrptedAlias) ?? ''
+            }, msg: ''
+        }
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
@@ -59,7 +64,15 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: "string"
+                    type: "object",
+                    properties: {
+                        alias: {
+                            type: "string",
+                        },
+                        aliasInfo: {
+                            type: "string",
+                        }
+                    }
                 },
                 msg: {
                     type: 'string'

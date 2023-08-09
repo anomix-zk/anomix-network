@@ -18,6 +18,8 @@ export class Account {
     @Column()
     acctPk: string
 
+    @Column()
+    encrptedAlias: string
 
     /**
      * entity id of corresponding L2 tx, when account registration
