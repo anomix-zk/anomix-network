@@ -65,7 +65,19 @@ export class DepositCommitment {
      * * will be updated, when 'markedL1TxHash' or 'l2TxHash' is confirmed, 
      */
     @Column({ default: DepositStatus.PENDING })
-    depositStatus: number
+    status: number
+
+    /**
+     * the primary key of {@link DepositTreeTrans}
+     */
+    @Column()
+    depositTreeTransId: number
+
+    /**
+     * the primary key of {@link DepositActionEventFetchRecord}
+     */
+    @Column()
+    depositActionEventFetchRecordId: number
 
     /**
      * L1Tx hash when being marked on 'Deposit_Tree', {@link DepositTreeTrans}

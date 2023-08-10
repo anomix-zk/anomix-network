@@ -7,21 +7,12 @@ import {
 } from 'typeorm'
 
 /**
- * 
+ * record each time fetching actions/events 
  */
-@Entity("tb_deposit_tree_trans")
-export class DepositTreeTrans {
+@Entity("tb_deposit_action_event_fetch_record")
+export class DepositActionEventFetchRecord {
     @PrimaryGeneratedColumn("increment")
     id: number
-
-    /**
-     * L1TxHash
-     */
-    @Column()
-    txHash: string
-
-    @Column()
-    status: number
 
     /**
      * current batch's starting actionState
