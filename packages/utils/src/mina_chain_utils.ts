@@ -18,13 +18,19 @@ export async function activeMinaInstance() {
     Mina.setActiveInstance(Blockchain);
 }
 
-export async function syncActions(targetAddr: PublicKey, isLocalBlockChain?: boolean) {
+/**
+ * 
+ * @param targetAddr 
+ * @param startActionHash 
+ * @param isLocalBlockChain 
+ */
+export async function syncActions(targetAddr: PublicKey, startActionHash: Field, isLocalBlockChain?: boolean) {
     if (!isLocalBlockChain) {
         for (let i = 0; i < 5; i++) {// just for 5 iterations for 5 blocks, enough
             let actionsList;
             try {
                 // get the length of actions list, and compare later to confirm the tx is done!
-                actionsList = await Mina.fetchActions(targetAddr, { fromActionState: Reducer.initialActionState });// will throw error if duplicate actions issue.
+                actionsList = await Mina.fetchActions(targetAddr, { fromActionState: startActionHash });// will throw error if duplicate actions issue.
             } catch (error) {// exisitng issue: duplicate actions 
                 console.log(`error: await fetchActions({ publicKey: ${targetAddr.toBase58()} }): `, JSON.stringify(error));
 
