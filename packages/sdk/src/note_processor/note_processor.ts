@@ -15,9 +15,10 @@ import {
   WithdrawInfoDtoToValueNoteJSON,
 } from '../note/note';
 import { UserPaymentTx } from '../user_tx/user_payment_tx';
-import { ActionType } from '../user_tx/constants';
+import { ActionType } from '@anomix/circuits';
 import { UserAccountTx } from '../user_tx/user_account_tx';
 import { UserState } from '../user_state/user_state';
+import { decryptAlias } from '../note_decryptor/alias_util';
 
 export class NoteProcessor {
   private syncedToBlock = 0;
@@ -67,14 +68,34 @@ export class NoteProcessor {
         let valueNoteJSON2: ValueNoteJSON | undefined = undefined;
         let isSenderForTx = false;
 
-        if (tx.actionType === ActionType.ACCOUNT) {
+        if (tx.actionType === ActionType.ACCOUNT.toString()) {
           this.log.debug(`Processing account tx: ${tx.txHash}`);
+
           if (accountPk === tx.extraData.accountPublicKey) {
+            this.log.debug(`Account tx is for this account: ${accountPk}`);
+            let alias: string | undefined = undefined;
+
+            if (tx.extraData.aliasInfo) {
+              alias = await decryptAlias(
+                tx.extraData.aliasInfo,
+                tx.extraData.aliasHash!,
+                this.accountPrivateKey
+              );
+
+              // update user state
+              let userState = await this.db.getUserState(accountPk);
+              if (userState && userState.alias === undefined) {
+                userState.alias = alias;
+                await this.db.upsertUserState(userState);
+              }
+            }
+
             await this.db.upsertUserAccountTx(
               UserAccountTx.from({
                 txHash: tx.txHash,
                 accountPk: accountPk,
                 aliasHash: tx.extraData.aliasHash!,
+                alias,
                 newSigningPk1: undefined,
                 newSigningPk2: undefined,
                 txFee: tx.txFee,
@@ -149,7 +170,7 @@ export class NoteProcessor {
               );
             }
           }
-        } else if (tx.actionType === ActionType.WITHDRAW) {
+        } else if (tx.actionType === ActionType.WITHDRAW.toString()) {
           this.log.debug(`Processing withdraw tx: ${tx.txHash}`);
           const inputNote1 = await this.db.getNoteByNullifier(tx.nullifier1);
           if (inputNote1 && inputNote1.ownerPk === accountPk) {

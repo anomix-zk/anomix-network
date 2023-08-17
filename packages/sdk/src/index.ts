@@ -12,7 +12,6 @@ export * from './rollup_node/anomix_node';
 export * from './rollup_node/node_provider';
 export * from './syncer/syncer';
 export * from './user_state/user_state';
-export * from './user_tx/constants';
 export * from './user_tx/user_account_tx';
 export * from './user_tx/user_payment_tx';
 export * from './user_tx/user_tx';

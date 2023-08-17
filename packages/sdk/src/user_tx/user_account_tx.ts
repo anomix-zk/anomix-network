@@ -3,6 +3,7 @@ export class UserAccountTx {
     public readonly txHash: string,
     public readonly accountPk: string,
     public readonly aliasHash: string,
+    public readonly alias: string | undefined,
     public readonly newSigningPk1: string | undefined,
     public readonly newSigningPk2: string | undefined,
     public readonly txFee: string,
@@ -16,6 +17,7 @@ export class UserAccountTx {
     txHash: string;
     accountPk: string;
     aliasHash: string;
+    alias: string | undefined;
     newSigningPk1: string | undefined;
     newSigningPk2: string | undefined;
     txFee: string;
@@ -28,6 +30,7 @@ export class UserAccountTx {
       value.txHash,
       value.accountPk,
       value.aliasHash,
+      value.alias,
       value.newSigningPk1,
       value.newSigningPk2,
       value.txFee,
