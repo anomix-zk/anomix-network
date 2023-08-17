@@ -1,7 +1,16 @@
-<img src="./docs/pic/anomix_logo.jpg" style="border-radius: 20px">
+<div style="display:flex; flex-direction: column;align-items:center; justify-content: center; margin-bottom:28px">
+  <div style="position:relative;">
+    <img src="./docs/pic/anomix.svg" height="100px" width="100px">
+
+   <div style="position:absolute; bottom:-18px;left:5px; font-size:27px;color:#c712df;font-weight:600">Anomix</div>
+  </div>
+  
+</div>
+
 NOTE: currently under development, cannot used at production env.
 
 # Description
+
 Anomix Network, formerly called 'Shadow' in zkApp Builders Program 1,  is a zk-zkRollup layer2 solution on Mina, focusing on Privacy&Scalablility. It grows up alongside with the upgrade of SnarkyJS.<br>
 
 Basically, On Anomix Network, you could make your L2 account anonymous and your on-chain operations private(invisible&untraceable). Besides, As a layer2, Anomix Network batches L2 txs to make fee apportioned(much lower cost), and furthermore it’s easy to build private defi/nft/DID, etc.<br>
@@ -28,13 +37,13 @@ cd anomix-network
 # 3. Install the project and build packages in libs folder
 npm install
 
-# 4. Dev: Run backend with hot reload 
+# 4. Dev: Run backend with hot reload
 # Note that you need to create the config.yaml file in the server directory beforehand
 # You can copy the config.example.yaml file and rename it to config.yaml
 # Then you can configure database access and other server settings
 npm run server:dev
 
-# 5. Dev: Run frontend with hot reload 
+# 5. Dev: Run frontend with hot reload
 npm run web:dev
 
 ```
@@ -45,7 +54,7 @@ npm run web:dev
 # HTTP / HTTPS server settings
 http:
   # If you change the server port you have to change it also on the front-end
-  port: 3000 
+  port: 3000
 
   # If true it starts the HTTPS server
   # Note that you need to fill in the credentials fields for the SSL certificate
@@ -53,34 +62,34 @@ http:
 
   # If secure option is set to true you must define the paths for the SSL certificate
   credentials:
-    key: 'PATH_TO_KEY_DIR/key.pem'
-    cert: 'PATH_TO_CERT_DIR/cert.pem'
+    key: "PATH_TO_KEY_DIR/key.pem"
+    cert: "PATH_TO_CERT_DIR/cert.pem"
 
-  # Cross-Origin Resource Sharing domain origins 
+  # Cross-Origin Resource Sharing domain origins
   # More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-  cors: 
-    - 'http://localhost:8080'
+  cors:
+    - "http://localhost:8080"
 
 # Database server settings
 # More info: https://typeorm.io
 db:
   # Database type (mysql, mysql etc.)
-  type: 'mysql' 
+  type: "mysql"
 
   # Database server address
-  host: 'localhost' 
+  host: "localhost"
 
   # Database server port
   port: 5432
 
   # Database name
-  database: ''
+  database: ""
 
   # Database username
-  username: ''
+  username: ""
 
   # Database password
-  password: ''
+  password: ""
 
   # Disable this in the production version of the application
   synchronize: true
@@ -88,35 +97,34 @@ db:
 # Keys required for hashing passwords and tokens
 # They should be filled with random, unique strings
 keys:
-  pwdsalt: ''
-  jwt: ''
+  pwdsalt: ""
+  jwt: ""
 ```
 
 ## Volar and Visual Studio Code (Takeover Mode)
 
-* Install [Volar](https://marketplace.visualstudio.com/items?itemName=vue.volar) extension
-* In your project workspace, bring up the command palette with Ctrl + Shift + P (macOS: Cmd + Shift + P).
-* Type built and select "Extensions: Show Built-in Extensions".
-* Type typescript in the extension search box (do not remove @builtin prefix).
-* Click the little gear icon of "TypeScript and JavaScript Language Features", and select "Disable (Workspace)".
-* Reload the workspace. Takeover mode will be enabled when you open a Vue or TS file.
+- Install [Volar](https://marketplace.visualstudio.com/items?itemName=vue.volar) extension
+- In your project workspace, bring up the command palette with Ctrl + Shift + P (macOS: Cmd + Shift + P).
+- Type built and select "Extensions: Show Built-in Extensions".
+- Type typescript in the extension search box (do not remove @builtin prefix).
+- Click the little gear icon of "TypeScript and JavaScript Language Features", and select "Disable (Workspace)".
+- Reload the workspace. Takeover mode will be enabled when you open a Vue or TS file.
 
 More info here: https://vuejs.org/guide/typescript/overview.html#takeover-mode
 
 ## Top-Level Scripts
- 
-* `apps:dev` - run front-end and back-end simultaneously with hot reload
-* `web:dev` - run front-end with hot reload
-* `server:dev` - run back-end with hot reload
-* `libs:build` - build packages in `libs` folder
-* `build` - build all packages
-* `clean` - clean all packages
-* `lint` - lint all packages
+
+- `apps:dev` - run front-end and back-end simultaneously with hot reload
+- `web:dev` - run front-end with hot reload
+- `server:dev` - run back-end with hot reload
+- `libs:build` - build packages in `libs` folder
+- `build` - build all packages
+- `clean` - clean all packages
+- `lint` - lint all packages
 
 ## Visual Studio Code extensions
 
 ```json
-
 {
   "recommendations": [
     "vue.volar",
@@ -128,40 +136,34 @@ More info here: https://vuejs.org/guide/typescript/overview.html#takeover-mode
     "donjayamanne.githistory",
     "aaron-bond.better-comments",
     "visualstudioexptteam.vscodeintellicode",
-    "pkief.material-icon-theme",
+    "pkief.material-icon-theme"
   ]
 }
-
 ```
 
 ### Required
 
-* `vue.volar` - Vue Language Features (Volar)
-* `syler.sass-indented` - Sass syntax highlighting.
-* `dbaeumer.vscode-eslint` - VS Code ESLint extension.
-* `editorconfig.editorconfig` - EditorConfig for VS Code.
+- `vue.volar` - Vue Language Features (Volar)
+- `syler.sass-indented` - Sass syntax highlighting.
+- `dbaeumer.vscode-eslint` - VS Code ESLint extension.
+- `editorconfig.editorconfig` - EditorConfig for VS Code.
 
 ### Optional
 
-* `eamodio.gitlens` - GitLens - Git supercharged.
-* `donjayamanne.githistory` - Git History
-* `visualstudioexptteam.vscodeintellicode` - IntelliCode
-* `pkief.material-icon-theme` - Material Icon Theme in VS Code
-* `aaron-bond.better-comments` - Better Comments
+- `eamodio.gitlens` - GitLens - Git supercharged.
+- `donjayamanne.githistory` - Git History
+- `visualstudioexptteam.vscodeintellicode` - IntelliCode
+- `pkief.material-icon-theme` - Material Icon Theme in VS Code
+- `aaron-bond.better-comments` - Better Comments
 
 ## Visual Studio Code settings
 
 Disables top-level scripts for packages from the npm script panel.
 
 ```json
-
 {
-  "npm.exclude": [
-    "**/apps/**",
-    "**/packages/**",
-  ]
+  "npm.exclude": ["**/apps/**", "**/packages/**"]
 }
-
 ```
 
 ## License
