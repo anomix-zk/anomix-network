@@ -30,6 +30,11 @@ export class TaskType {
     }
 }
 
+export enum TaskStatus {
+    PENDING = 0,
+    DONE
+}
+
 
 /**
  * mainly for L1 tx status trace of DepositContract Maintainance, RollupContract Maintaince, Withdraw Maintainance.
@@ -55,6 +60,9 @@ export class Task {
     @Column()
     txHash: string
 
+    /**
+     * {@link TaskStatus}
+     */
     @Column()
     status: number
 

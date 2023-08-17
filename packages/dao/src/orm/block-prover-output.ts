@@ -9,84 +9,19 @@ import {
 import { L2Tx } from './l2-tx';
 import { BlockStatus } from "@anomix/types";
 
-@Entity('tb_block')
-export class BlockProverOutputEntity {
+@Entity('tb_block_prover_output')
+export class BlockProverOutput {
     /**
      * i.e. blockHeight, should starts from 1
      */
     @PrimaryGeneratedColumn("increment")
     id: number
 
-    /**
-     * the hash of the block
-     */
     @Column()
-    blockHash: string
+    output: string
 
     @Column()
-    rollupSize: number;
-
-
-    @Column()
-    rootTreeRoot0: string
-
-    @Column()
-    dataTreeRoot0: string
-
-    @Column()
-    nullifierTreeRoot0: string
-
-    @Column()
-    depositStartIndex0: string
-
-    @Column()
-    rootTreeRoot1: string
-
-    @Column()
-    dataTreeRoot1: string
-
-    /**
-     * record each dataTreeRoot's Index on rootTree
-     */
-    @Column()
-    dataTreeRoot1Indx: string
-
-    @Column()
-    nullifierTreeRoot1: string
-
-    @Column()
-    depositStartIndex1: string
-
-
-    @Column()
-    depositRoot: string
-
-    @Column()
-    depositCount: string
-
-    /**
-     * json string from: Provable.Array(TxFee, FEE_ASSET_ID_SUPPORT_NUM)
-     */
-    @Column()
-    totalTxFees: string
-
-    @Column()
-    txFeeReceiver: string
-
-    /**
-     * record the L1TxHash when it's broadcast
-     */
-    @Column()
-    l1TxHash: string
-
-    @Column({ default: BlockStatus.PENDING })
-    status: number
-
-    /**
-     * the timestamp when L2Block is finalized at Layer1
-     */
-    @Column()
-    finalizedAt: Date
+    blockId: number
 
     /**
      * just record

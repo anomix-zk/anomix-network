@@ -1,3 +1,4 @@
+import { L1TxStatus } from '@anomix/types'
 import {
     Column,
     CreateDateColumn,
@@ -20,7 +21,10 @@ export class DepositTreeTrans {
     @Column()
     txHash: string
 
-    @Column()
+    /**
+     * {@link L1TxStatus}
+     */
+    @Column({ default: L1TxStatus.PROCESSING })
     status: number
 
     /**

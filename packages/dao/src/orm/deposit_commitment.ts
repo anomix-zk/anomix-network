@@ -79,11 +79,6 @@ export class DepositCommitment {
     @Column()
     depositActionEventFetchRecordId: number
 
-    /**
-     * L1Tx hash when being marked on 'Deposit_Tree', {@link DepositTreeTrans}
-     */
-    @Column()
-    markedL1TxHash: string
 
     @UpdateDateColumn({
         default: () => 'CURRENT_TIMESTAMP',

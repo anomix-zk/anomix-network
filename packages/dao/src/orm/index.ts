@@ -1,4 +1,5 @@
 export * from './account'
+export * from './block'
 export * from './block-prover-output'
 export * from './deposit-tree-trans'
 export * from './deposit_commitment'
@@ -8,3 +9,5 @@ export * from './l2-tx-memorypool'
 export * from './withdraw-info'
 export * from './task'
 export * from './sequencer-status'
+export * from './inner-rollup-batch'
+
