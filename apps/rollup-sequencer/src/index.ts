@@ -1,10 +1,92 @@
-import { FastifyCore } from './app'
-import { parentPort, Worker } from "worker_threads";
-import { FLowTask, FlowTaskType, RollupDB, IndexDB } from "./rollup";
-import { WorldState, WorldStateDB, } from "./worldstate";
+import { Worker } from "worker_threads";
+import { FlowTaskType } from "./rollup";
+import { WorldState, WorldStateDB, RollupDB, IndexDB } from "./worldstate";
 import config from './lib/config';
 import { activeMinaInstance } from "@anomix/utils";
-import { AccountUpdate, fetchTransactionStatus, Field, isReady, MerkleMap, Mina, Poseidon, PrivateKey, PublicKey, shutdown, UInt32, UInt64 } from 'snarkyjs';
+
+class ProofSchedulerWorkers extends Array<{ status: number, worker: Worker }> {
+    private cursor: number
+
+    constructor(num: number) {
+        super(num);
+
+        // start proof-scheduler in worker thread
+        while (num > 0) {
+            this.bootProofSchedulerThread();
+            num--;
+        }
+    }
+
+    bootProofSchedulerThread() {
+        // init worker thread
+        const worker = new Worker('./prover.js');
+        worker.on('online', () => {
+            console.log('proof-scheduler worker is online...');
+        })
+
+        worker.on('exit', (exitCode: number) => {
+            this.rid(worker);
+
+            // create a new worker for ProofScheduler
+            this.bootProofSchedulerThread();
+        })
+
+        this.push({ status: 0, worker });
+    }
+
+    rid(worker: Worker) {
+        const index = this.findIndex((t, i) => {
+            return t.worker == worker;
+        });
+
+        this.splice(index, 1);
+    }
+
+    exec(task: any) {
+        const freeWorkers = this.filter(t => {
+            return t.status == 0;
+        });
+
+        if (freeWorkers.length == 0) {// if no free workers, then distribute task as order
+            const i = (this.cursor++) % config.proofSchedulerWorkerNum;
+            this[i].status = 1;
+            this[i].worker.postMessage(task);
+            return;
+        }
+
+        freeWorkers[0].status = 1;
+        freeWorkers[0].worker.postMessage(task);
+    }
+}
+
+
+// init Mina tool
+await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
+
+// init leveldb
+const worldStateDB = new WorldStateDB(config.worldStateDBPath);
+// check if network initialze
+if (config.networkInit == 0) {
+    worldStateDB.initTrees();
+} else {
+    worldStateDB.loadTrees();
+}
+
+// init IndexDB
+const indexDB = new IndexDB(config.indexedDBPath);// for cache
+
+// init mysqlDB
+const rollupDB = new RollupDB();
+rollupDB.start();
+
+// construct WorldState
+const worldState = new WorldState(worldStateDB, rollupDB, indexDB);
+
+// start proof-scheduler workers
+let proofSchedulerWorkers = new ProofSchedulerWorkers(config.proofSchedulerWorkerNum);
+
+// start web server in worker thread 
+bootWebServerThread(worldState);
 
 function bootWebServerThread(worldState: WorldState) {
     // init worker thread A
@@ -18,53 +100,13 @@ function bootWebServerThread(worldState: WorldState) {
         bootWebServerThread(worldState);
     })
 
-    worker.on('message', (value: FLowTask<any>) => {
-        worldState.handleFlowTask(value);
+    worker.on('message', (value: any) => {
+        if (value.taskType == FlowTaskType.SEQUENCE) {
+            worldState.startNewFlow();
+            return;
+        }
+        // dispatch to 'proof-scheduler' worker
+        proofSchedulerWorkers.exec(value);
     })
 }
 
-const sequencer = async () => {
-    // init Mina tool
-    await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
-
-    // init leveldb
-    const worldStateDB = new WorldStateDB(config.worldStateDBPath);
-    // check if network initialze
-    if (config.networkInit == 0) {
-        worldStateDB.initTrees();
-    } else {
-        worldStateDB.loadTrees();
-    }
-
-    // init IndexDB
-    const indexDB = new IndexDB(config.indexedDBPath);// for cache
-
-    // init mysqlDB
-    const rollupDB = new RollupDB();
-    rollupDB.start();
-
-    // construct WorldState
-    const worldState = new WorldState(worldStateDB, rollupDB, indexDB);
-
-    // start web server in worker thread
-    bootWebServerThread(worldState);
-
-    // Highlevel Processing Progress:
-    // start pipeline: new instance would be created by last one in 10mins when last one ends.
-    // read pipelineTxCount = InnerRollupTxCount * OuterRollupInnerBatchesCount
-    // Query mysqlDB: 
-    // if pendingTxs is equal/greater than pipelineTxCount,
-    // * if there are pending tx on 'deposit', then should rank first,
-    // * if there are pending tx on 'account', then should rank second,
-    // * filter the x TXes whose tx_fee ranks x.
-    // else 
-    // * query all pendingTxes and compose PaddingTxes to fill.
-
-    // Begin maintain WorldState:
-    // * compose CommonUserTxWrapper for each tx within each batch,
-    // * save each batch to MysqlDB,
-    // * send signal to start 'proof-generator',
-    //   * 'proof-generator' server query them for inner merge,
-}
-
-sequencer();

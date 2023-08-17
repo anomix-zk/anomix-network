@@ -4,23 +4,20 @@ import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { $axios } from "@/lib";
-import { SeqStatus } from "@anomix/dao";
-
 import { checkAccountExists } from "@anomix/utils";
-import { BlockProverOutputEntity, WithdrawInfo } from "@anomix/dao";
+import { Block, WithdrawInfo } from "@anomix/dao";
 import { WithdrawNoteWitnessData, LowLeafWitnessData, NullifierMerkleWitness } from "@anomix/circuits";
-import { BaseResponse, WithdrawNoteStatus, WithdrawAssetReqDto, WithdrawAssetReqDtoSchema, ProofTaskDto, ProofTaskType, BlockStatus } from "@anomix/types";
+import { MerkleTreeId, BaseResponse, WithdrawNoteStatus, WithdrawAssetReqDto, WithdrawAssetReqDtoSchema, ProofTaskDto, ProofTaskType, BlockStatus } from "@anomix/types";
 import {
     Field,
     PublicKey,
-    VerificationKey,
-
+    VerificationKey
 } from 'snarkyjs';
 import config from "@/lib/config";
-import { MerkleTreeId } from "@/worldstate";
+
 /**
-* 提现场景中，用户提供noteCommitment, 服务器执行合约并协助提现
-*/
+ * within WITHDRAWAL scene, server helps trigger the WithdrawContract with the noteCommitment from client.
+ */
 export const withdrawAsset: FastifyPlugin = async function (
     instance,
     options,
@@ -35,9 +32,12 @@ export const withdrawAsset: FastifyPlugin = async function (
     })
 }
 
+/**
+ * during the entire WITHDRAWAL flow, need ganruantee being under the same data_tree root.
+ */
 async function checkPoint() {
     // query current latest block height
-    const blockRepository = getConnection().getRepository(BlockProverOutputEntity);
+    const blockRepository = getConnection().getRepository(Block);
     // query latest block
     const blockEntity = (await blockRepository.find({
         select: [
@@ -59,15 +59,14 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
     req,
     res
 ): Promise<BaseResponse<string>> {
-
-
-    const { l1addr, noteCommitment, signature } = req.body
+    const { l1addr, noteCommitment } = req.body
     try {
         const connection = getConnection();
         const withdrawInfoRepository = connection.getRepository(WithdrawInfo);
         const winfo = (await withdrawInfoRepository.findOne({
             where: {
-                outputNoteCommitment: noteCommitment, ownerPk: l1addr,
+                outputNoteCommitment: noteCommitment,
+                ownerPk: l1addr,
                 status: WithdrawNoteStatus.PENDING
             }
         }))!
@@ -91,7 +90,7 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
 
         const withdrawNote = winfo.valueNote();
         const index = winfo.outputNoteCommitmentIdx;
-        const dataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE,
+        const dataMerkleWitness = await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE,
             BigInt(winfo.outputNoteCommitmentIdx), false);
 
         const withdrawNoteWitnessData: WithdrawNoteWitnessData =
@@ -113,8 +112,6 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
             siblingPath: await this.withdrawDB.getSiblingPath(BigInt(preIdx), true),
             index: Field(preIdx).toString()
         });
-
-        await this.withdrawDB.getSiblingPath(this.withdrawDB.getNumLeaves(true), true);
 
         const oldNullWitness: NullifierMerkleWitness = await this.withdrawDB.getSiblingPath(this.withdrawDB.getNumLeaves(true), true)
 
@@ -184,7 +181,7 @@ const schema = {
     body: {
         type: "object",
         properties: (WithdrawAssetReqDtoSchema as any).properties,
-        required: ['l1addr', 'noteCommitment', 'signature']
+        required: ['l1addr', 'noteCommitment']
     },
     response: {
         200: {

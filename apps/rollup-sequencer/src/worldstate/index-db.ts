@@ -5,10 +5,10 @@ import leveldown from "leveldown";
 /**
  * cache KV for acceleration:
  * * L2TX:{noteHash} -> l2tx
- * * DataTree:{comitment} -> leafIndex
- * * NullifierTree:{nullifier} -> leafIndex
- * * UserNullifierTree:{address}:{commitment} -> leafIndex
- * * 
+ * * DATA_TREE:{comitment} -> leafIndex
+ * * DATA_TREE_ROOTS_TREE:{data_tree_root} -> leafIndex
+ * * NULLIFIER_TREE:{nullifier} -> leafIndex
+ * * USER_NULLIFIER_TREE:{L1Address}:{commitment} -> leafIndex
  */
 export class IndexDB {
     private readonly indexDB: LevelUp
@@ -37,7 +37,7 @@ export class IndexDB {
         this.indexDB.batch(ops as any)
     }
 
-    async queryAllExistingUserWithdrawNote(l1addr: string, assetId: string){
+    async queryAllExistingUserWithdrawNote(l1addr: string, assetId: string) {
         return {}
     }
 

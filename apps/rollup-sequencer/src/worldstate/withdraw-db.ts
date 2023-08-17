@@ -1,11 +1,10 @@
 
 import { LeafData, newTree, loadTree, StandardIndexedTree } from "@anomix/merkle-tree";
-import { PoseidonHasher } from '@anomix/types';
+import { PoseidonHasher, MerkleTreeId } from '@anomix/types';
 import { NULLIFIER_TREE_HEIGHT } from "@anomix/circuits";
 import { Field, PublicKey } from "snarkyjs";
 import levelup, { LevelUp } from 'levelup';
 import leveldown from "leveldown";
-import { MerkleTreeId } from "./index";
 
 let INIT_NULLIFIER_TREE_HEIGHT = 16;// fixed at circuit!
 

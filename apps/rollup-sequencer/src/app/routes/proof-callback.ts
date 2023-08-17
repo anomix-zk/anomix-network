@@ -1,11 +1,11 @@
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { In, getConnection, Index } from 'typeorm';
+import { getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
-import { BlockProverOutputEntity, WithdrawInfo } from "@anomix/dao";
-import { BaseResponse, WithdrawNoteStatus, WithdrawAssetReqDto, WithdrawAssetReqDtoSchema, ProofTaskDto, ProofTaskType, ProofTaskDtoSchma } from "@anomix/types";
-import { Signature, PublicKey, Field, Mina } from "snarkyjs";
+import { Block, WithdrawInfo } from "@anomix/dao";
+import { BaseResponse, WithdrawNoteStatus, ProofTaskDto, ProofTaskType, ProofTaskDtoSchma } from "@anomix/types";
+import { PublicKey } from "snarkyjs";
 import { parentPort } from "worker_threads";
 
 /**
@@ -47,7 +47,7 @@ const handler: RequestHandler<ProofTaskDto<any, any>, null> = async function (
             }))!;
 
             // query current latest block height
-            const blockRepository = connection.getRepository(BlockProverOutputEntity);
+            const blockRepository = connection.getRepository(Block);
             // query latest block
             const blockEntity = (await blockRepository.find({
                 select: [

@@ -26,9 +26,9 @@ export const handler: RequestHandler<string[], null> = async function (
     res
 ): Promise<BaseResponse<number>> {
     try {
-        // TODO check if WorldState has an onging Flow 
-        //
-        //
+        if (this.worldState.ongingFlow) {
+            return { code: 0, data: SequencerStatus.AtRollup, msg: '' };
+        }
 
         return { code: 0, data: SequencerStatus.NotAtRollup, msg: '' };
     } catch (err) {

@@ -1,29 +1,19 @@
-import { WorldStateDB } from "@/worldstate/worldstate-db";
+import { WorldStateDB, RollupDB, IndexDB, WorldState } from "@/worldstate";
 import { FlowScheduler } from "./flow-scheduler";
-import { RollupDB } from "./rollup-db";
-import { randomUUID } from "crypto";
-import { IndexDB } from "./index-db";
-import { WorldState } from "@/worldstate";
 import { getConnection } from "typeorm";
 import { SeqStatus } from "@anomix/dao";
 import { SequencerStatus } from "@anomix/types";
 //import { getLogger } from "@anomix/utils";
 
-
-export class RollupFlow {
-    flowId: string
-
+export class SequenceFlow {
     flowScheduler: FlowScheduler;
 
     constructor(private worldState: WorldState, private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) {
-        this.flowId = randomUUID();
-
         // const logger = getLogger('RollupFlow');
         // logger.info('start a new rollup flow:');
 
         //  prepare all for flow-scheduler
-        new FlowScheduler(this.flowId, this.worldState, this.worldStateDB, this.rollupDB, this.indexDB).start();
-
+        this.flowScheduler = new FlowScheduler(this.worldState, this.worldStateDB, this.rollupDB, this.indexDB);
     }
 
     async start() {

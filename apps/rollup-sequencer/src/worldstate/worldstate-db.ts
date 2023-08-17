@@ -1,13 +1,12 @@
 
 import { AppendOnlyTree, IndexedTree, LeafData, newTree, loadTree, StandardTree, StandardIndexedTree } from "@anomix/merkle-tree";
-import { BaseSiblingPath } from "@anomix/types";
+import { BaseSiblingPath, MerkleTreeId } from "@anomix/types";
 import { PoseidonHasher } from '@anomix/types';
 import { DATA_TREE_HEIGHT, ROOT_TREE_HEIGHT, NULLIFIER_TREE_HEIGHT, DEPOSIT_TREE_HEIGHT, LowLeafWitnessData } from "@anomix/circuits";
 import { Field, Poseidon } from "snarkyjs";
 import levelup, { LevelUp } from 'levelup';
 import leveldown, { LevelDown } from "leveldown";
 import config from "@/lib/config";
-import { MerkleTreeId } from "./index";
 
 let INIT_NULLIFIER_TREE_HEIGHT = NULLIFIER_TREE_HEIGHT;
 
@@ -56,24 +55,16 @@ export class WorldStateDB {
      * Appends a set of leaf values to the tree and return leafIdxList
      * @param leaves - The set of leaves to be appended.
      */
-    appendLeaves(treeId: MerkleTreeId, leaves: Field[], includeUnCommit: boolean): Promise<bigint[]> {
-        //
-        return Promise.resolve([1n]);
+    async appendLeaves(treeId: MerkleTreeId, leaves: Field[]) {
+        this.trees.get(treeId)!.appendLeaves(leaves);
     }
+
     /**
      * Appends a leaf value to the tree and return leafIdx
      * @param leaf - The leaves to be appended.
      */
-    appendLeaf(treeId: MerkleTreeId, leaf: Field, includeUnCommit: boolean): Promise<bigint> {//
-        return Promise.resolve(1n);
-    }
-    /**
-     * Updates a leaf at a given index in the MerkleTreeId.
-     * @param leaf - The leaf value to be updated.
-     * @param index - The leaf to be updated.
-     */
-    updateLeaf(treeId: MerkleTreeId, leaf: any, index: bigint): Promise<void> {//
-        return Promise.resolve();
+    async appendLeaf(treeId: MerkleTreeId, leaf: Field) {
+        return await this.appendLeaves(treeId, [leaf])[0];
     }
 
     /**
@@ -81,49 +72,52 @@ export class WorldStateDB {
      * @param index - The index of the leaf for which a sibling path is required.
      * @param includeUncommitted - Set to true to include uncommitted updates in the sibling path.
      */
-    getSiblingPath(treeId: MerkleTreeId,
+    async getSiblingPath(treeId: MerkleTreeId,
         index: bigint,
         includeUncommitted: boolean
-    ): Promise<BaseSiblingPath> {//
-        return Promise.resolve({} as any as BaseSiblingPath)
+    ) {//
+        return this.trees.get(treeId)!.getSiblingPath(index, includeUncommitted);
     }
 
     /**
      * Returns the current root of the MerkleTreeId.
      * @param includeUncommitted - Set to true to include uncommitted updates in the calculated root.
      */
-    getRoot(treeId: MerkleTreeId, includeUncommitted: boolean): Field {//
+    getRoot(treeId: MerkleTreeId, includeUncommitted: boolean): Field {
+        return this.trees.get(treeId)!.getRoot(includeUncommitted);
     }
 
     /**
      * Returns the number of leaves in the MerkleTreeId.
      * @param includeUncommitted - Set to true to include uncommitted updates in the returned value.
      */
-    getNumLeaves(treeId: MerkleTreeId, includeUncommitted: boolean): bigint {//
-        return 1n;
+    getNumLeaves(treeId: MerkleTreeId, includeUncommitted: boolean): bigint {
+        return this.trees.get(treeId)!.getNumLeaves(includeUncommitted);
     }
 
     /**
      * Commit pending updates to the MerkleTreeId.
      */
-    commit(): Promise<void> {//
-        return Promise.resolve();
-
+    async commit() {//
+        this.trees.get(MerkleTreeId.DATA_TREE)!.commit();
+        this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.commit();
+        this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.commit();
     }
 
     /**
      * Returns the depth of the MerkleTreeId.
      */
-    getDepth(): number {//
-        return 1;
+    getDepth(treeId: MerkleTreeId,): number {
+        return this.trees.get(treeId)!.getDepth();
     }
 
     /**
      * Rollback pending update to the MerkleTreeId.
      */
-    rollback(): Promise<void> {//
-        return Promise.resolve();
-
+    async rollback() {//
+        this.trees.get(MerkleTreeId.DATA_TREE)!.rollback();
+        this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.rollback();
+        this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.rollback();
     }
 
     /**
@@ -135,9 +129,7 @@ export class WorldStateDB {
         index: bigint,
         includeUncommitted: boolean
     ): Promise<Field | undefined> {//
-        return Promise.resolve(new Field(1));
-
-
+        return this.trees.get(treeId)!.getLeafValue(index, includeUncommitted);
     }
 
     async findPreviousValueAndMp(treeId: MerkleTreeId, nullifier1: Field, includeUncommitted: boolean) {//
@@ -163,9 +155,7 @@ export class WorldStateDB {
 
 
     async findIndexOfPreviousValue(treeId: MerkleTreeId, nullifier1: Field, includeUncommitted: boolean) {//
-
         const { index, alreadyPresent } = (this.trees.get(treeId) as StandardIndexedTree).findIndexOfPreviousValue(nullifier1.toBigInt(), includeUncommitted);
-
         return { index, alreadyPresent }
     }
 

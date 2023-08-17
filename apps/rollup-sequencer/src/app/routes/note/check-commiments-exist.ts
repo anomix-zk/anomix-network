@@ -2,7 +2,7 @@
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
-import { BaseResponse } from "@anomix/types";
+import { BaseResponse, MerkleTreeId } from "@anomix/types";
 
 /**
  * check if commitments exist
@@ -28,11 +28,11 @@ const handler: RequestHandler<string[], null> = async function (
     const commitmentList = req.body
 
     try {
-        /**
-         * TODO  request sequencer for the result.
-         */
+        const rs = await Promise.all(commitmentList.map(async c => {
+            return Object.fromEntries([[c, await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${c}`)]])
+        }))
 
-        return { code: 0, data: {}, msg: '' };
+        return { code: 0, data: rs, msg: '' };
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }

@@ -1,7 +1,7 @@
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { BaseResponse, MerkleProofDto, MerkleProofDtoSchema } from '@anomix/types'
+import { BaseResponse, MerkleProofDto, MerkleProofDtoSchema, MerkleTreeId } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 
 
@@ -25,15 +25,23 @@ export const queryMerkleProof: FastifyPlugin = async function (
 export const handler: RequestHandler<string[], null> = async function (
     req,
     res
-): Promise<BaseResponse<MerkleProofDto>> {
+): Promise<BaseResponse<MerkleProofDto[]>> {
     const commitmentList = req.body
 
     try {
-        /**
-         * TODO  request sequencer for the result.
-         */
+        const merkleProofDtoList = await Promise.all(commitmentList.map(async c => {
+            // DATA_TREE:{comitment} -> leafIndex
+            let leafIndex = await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${c}`);
 
-        return { code: 0, data: {} as MerkleProofDto, msg: '' };
+            const siblingPath = await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, BigInt(leafIndex), false);
+            return {
+                leafIndex,
+                commitment: c,
+                paths: siblingPath.path.map(p => { return p.toString(); })
+            } as MerkleProofDto;
+        }));
+
+        return { code: 0, data: merkleProofDtoList, msg: '' };
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }

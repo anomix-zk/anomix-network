@@ -1,0 +1,62 @@
+import { parentPort } from "worker_threads";
+import { FLowTask, FlowTaskType } from "./rollup";
+import { WorldStateDB, RollupDB, IndexDB } from "./worldstate";
+import config from "@/lib/config";
+import { activeMinaInstance } from "@anomix/utils";
+import { ProofScheduler } from "./rollup/proof-scheduler";
+import { ProofTaskDto, RollupTaskDto, RollupTaskType } from '@anomix/types';
+
+// init Mina tool
+await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
+
+// init leveldb
+const worldStateDB = new WorldStateDB(config.worldStateDBPath);
+worldStateDB.loadTrees();// just need load!
+
+// init RollupDB
+const rollupDB = new RollupDB();
+
+// init IndexDB
+const indexDB = new IndexDB(config.indexedDBPath);
+
+const proofScheduler = new ProofScheduler(worldStateDB, rollupDB, indexDB);
+
+parentPort!.on('message', async dto => {
+    if (dto.taskType >= RollupTaskType.ROLLUP_PROCESS) {// TODO MUST improve it！！
+        const rollupTask = dto as RollupTaskDto<any, any>;
+
+        switch (rollupTask.taskType) {
+            case RollupTaskType.ROLLUP_PROCESS:
+                await proofScheduler.startBatchMerge(rollupTask.payload);
+                break;
+
+            case RollupTaskType.ROLLUP_CONTRACT_CALL:
+                await proofScheduler.callRollupContract(rollupTask.payload);
+                break;
+
+            default: // rid it
+                console.log('rid RollupTask', JSON.stringify(rollupTask));
+                break;
+        }
+
+        return;
+    }
+
+    // then proof result from 'proof-generators'
+    const proofTaskDto = dto as ProofTaskDto<any, any>;
+    const flowTask = (proofTaskDto.payload) as FLowTask<any>;
+    switch (flowTask.taskType) {
+        case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
+            await proofScheduler.whenMergedResultComeBack(flowTask.data);
+            break;
+        case FlowTaskType.BLOCK_PROVE:
+            await proofScheduler.whenL2BlockComeback(flowTask.data);
+            break;
+        case FlowTaskType.ROLLUP_CONTRACT_CALL:
+            await proofScheduler.whenL1TxComeback(flowTask.data);
+            break;
+        default: // rid it
+            console.log('rid FlowTask', JSON.stringify(flowTask));
+            break;
+    }
+});

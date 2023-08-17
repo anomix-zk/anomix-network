@@ -1,7 +1,8 @@
-import { IndexDB } from "@/rollup"
-import { WorldStateDB } from "@/worldstate"
-import { WithdrawDB } from "@/worldstate/withdraw-db"
+import { IndexDB } from "@/worldstate"
+import { ProofScheduler } from "@/rollup/proof-scheduler"
+import { WorldState } from "@/worldstate"
 import { FastifyReply } from "fastify"
+import { WithdrawDB } from "@/worldstate/withdraw-db"
 
 
 declare module 'fastify' {
@@ -9,9 +10,9 @@ declare module 'fastify' {
     interface FastifyInstance {
         authGuard(request: FastifyRequest, reply: FastifyReply): void
         adminGuard(request: FastifyRequest, reply: FastifyReply): void
-        worldStateDB: WorldStateDB,
+        worldState: WorldState,
         withdrawDB: WithdrawDB,
-        indexDB: IndexDB,
+        proofScheduler: ProofScheduler,
         notification: { atRollup: boolean }
     }
 
