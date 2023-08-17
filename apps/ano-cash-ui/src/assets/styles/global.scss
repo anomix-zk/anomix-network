@@ -1,5 +1,5 @@
 :root {
-  --up-primary: #8864ff;
+  --up-primary: #4098fc;
   --up-secondary: #ad94ff;
   --up-third: #acf080;
   --up-background: #fff;
@@ -17,12 +17,6 @@
   --up-text: #c1c1c1;
   --up-line: #e5e5e5;
   --up-mask: rgba(0, 0, 0, 0.7);
-  --el-color-primary: var(--up-primary) !important;
-  --el-color-primary-light-3: var(--up-secondary) !important;
-  --el-color-primary-light-5: var(--up-secondary) !important;
-  --el-color-success: var(--up-green) !important;
-  --el-color-error: var(--up-red) !important;
-  --el-color-warning: var(--up-orange) !important;
   position: relative;
   --up-tag-bg: rgba(0, 0, 0, 0.03);
   --up-card-bg: #f9f9f9;
@@ -55,6 +49,8 @@ html.dark {
   --up-header-bg: #1a1920;
   --up-header-border: #46454a;
 }
+
+
 
 *,
 :after,
@@ -140,73 +136,69 @@ h6 {
 
 
 .up-app {
-  min-height: calc(100vh - 100px);
-  background: transparent;
+  min-height: 100vh;
+  background: var(--up-app-background);
   display: flex;
   align-items: center;
   justify-content: center;
+
   .page {
     width: 100%;
     max-width: 480px;
     min-height: 100vh;
     padding: 24px;
-    text-align: center;
-    background-color: #fff;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    //text-align: center;
+    background-color: var(--up-background);
+    position: relative
   }
+
   .main-container {
     position: relative;
     padding-top: 70px;
   }
 }
+
+.header-bg-img {
+  background-color: var(--up-background);
+  background-image: url(@/assets/bg.svg);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position-x: center;
+}
+
 @media screen and (min-width: 480px) {
-  .up-app > .page {
-    min-height: 800px;
-    border-radius: 28px;
-    padding-left: 40px;
-    padding-right: 40px;
+  .up-app {
+      padding-top:60px;
+      padding-bottom: 60px
+  }
+
+  .up-app>.page {
+      min-height: 800px;
+      border-radius: 28px;
+      padding-left: 40px;
+      padding-right: 40px
   }
 
   html.dark .up-app {
-    background: var(--up-app-background);
+      background: var(--up-app-background)
   }
 }
 
-@media (orientation: landscape) and (max-width: 980px) {
+@media(orientation: landscape)and (max-width:980px) {
   .up-app {
-    padding-top: 0;
-    padding-bottom: 0;
+      padding-top:0;
+      padding-bottom: 0
   }
 
   .up-app > .page {
-    max-width: 100%;
-    border-radius: 0;
-    min-height: 100vh;
+      max-width: 100%;
+      border-radius: 0;
+      min-height: 100vh
   }
 }
-.title {
-    display: inline-block;
-    position: relative;
-    color: #1989fa;
-    &::after {
-      content: attr(data-text);
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: 10;
-      color: #2cb5e8;
-      -webkit-mask: linear-gradient(to bottom, transparent, #000);
-      white-space: nowrap;
-    }
-  }
+
 .header {
-  margin-top: 28px;
   font-size: 24px;
   font-weight: bolder;
   line-height: 36px;
-  position:absolute;
-  top: 24px;
 }

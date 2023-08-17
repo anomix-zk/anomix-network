@@ -1,5 +1,6 @@
 import {
   AccountOperationType,
+  AccountRequired,
   ActionType,
   AnomixEntryContract,
   AssetId,
@@ -37,6 +38,7 @@ import {
 } from 'snarkyjs';
 import { Database, SigningKey } from './database/database';
 import { KeyStore } from './key_store/key_store';
+import { Note } from './note/note';
 import { AnomixNode } from './rollup_node/anomix_node';
 import { Syncer } from './syncer/syncer';
 import { UserState } from './user_state/user_state';
@@ -60,10 +62,17 @@ export class AnomixSdk {
 
   public async compileEntryContract() {
     this.log.info('Compile EntryContract Circuits...');
-    console.time('compile');
+    console.time('compile entry contract');
     await DepositRollupProver.compile();
     await AnomixEntryContract.compile();
-    console.timeEnd('compile');
+    console.timeEnd('compile entry contract');
+  }
+
+  public async compilePrivateCircuit() {
+    this.log.info('Compile Private Circuit...');
+    console.time('compile private circuit');
+    await JoinSplitProver.compile();
+    console.timeEnd('compile private circuit');
   }
 
   public async start() {
@@ -208,12 +217,18 @@ export class AnomixSdk {
   public async addAccount(
     accountPrivateKey: PrivateKey,
     pwd: string,
+    alias?: string,
     signingPrivateKey1?: PrivateKey,
     signingPrivateKey2?: PrivateKey
   ) {
     const accountPk = accountPrivateKey.toPublicKey();
     const accountPk58 = accountPk.toBase58();
-    await this.db.upsertUserState(new UserState(accountPk58, 0));
+
+    const userState = await this.db.getUserState(accountPk58);
+    if (userState) {
+      throw new Error('Account already exists');
+    }
+    await this.db.upsertUserState(new UserState(accountPk58, 0, alias));
     await this.keyStore.addAccount(accountPrivateKey, pwd);
 
     if (signingPrivateKey1 && signingPrivateKey2) {
@@ -248,8 +263,6 @@ export class AnomixSdk {
   }
 
   public async getBalance(accountPk: string, assetId: string) {
-    await this.awaitAccountSynced(accountPk, 15 * 60 * 1000);
-
     const unspentNotes = await this.db.getNotes(
       accountPk,
       NoteType.NORMAL.toString()
@@ -331,13 +344,20 @@ export class AnomixSdk {
       NoteType.NORMAL.toString()
     );
 
-    const filterNotes = unspentNotes
-      .filter(
-        (n) =>
-          n.assetId === assetId.toString() &&
-          n.ownerAccountRequired === accountRequired.toString()
-      )
-      .sort((a, b) => Number(BigInt(b.value) - BigInt(a.value)));
+    let filterNotes: Note[] = [];
+    if (accountRequired.equals(AccountRequired.REQUIRED).toBoolean()) {
+      filterNotes = unspentNotes
+        .filter((n) => n.assetId === assetId.toString())
+        .sort((a, b) => Number(BigInt(b.value) - BigInt(a.value)));
+    } else {
+      filterNotes = unspentNotes
+        .filter(
+          (n) =>
+            n.assetId === assetId.toString() &&
+            n.ownerAccountRequired === AccountRequired.NOTREQUIRED.toString()
+        )
+        .sort((a, b) => Number(BigInt(b.value) - BigInt(a.value)));
+    }
 
     if (filterNotes.length == 0) {
       throw new Error('No unspent note that meets the requirement');

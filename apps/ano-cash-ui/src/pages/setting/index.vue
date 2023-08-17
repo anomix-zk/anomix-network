@@ -10,39 +10,15 @@
         <div class="right"><!----></div>
       </div>
       <div style="margin-top: 30px">
-        <van-field
-          v-model="lan"
-          is-link
-          readonly
-          label="Language"
-          placeholder="select language"
-          @click="showPicker = true"
-        />
+        <van-field v-model="lan" is-link readonly label="Language" placeholder="select language"
+          @click="showPicker = true" />
       </div>
-      <van-popup
-        v-model:show="showPicker"
-        round
-        position="bottom"
-        style="position: absolute"
-      >
-        <van-picker
-          :columns="columns"
-          confirm-button-text="confirm"
-          cancel-button-text="cancel"
-          @cancel="showPicker = false"
-          @confirm="onConfirm"
-        />
+      <van-popup v-model:show="showPicker" round position="bottom" style="position: absolute">
+        <van-picker :columns="columns" confirm-button-text="confirm" cancel-button-text="cancel"
+          @cancel="showPicker = false" @confirm="onConfirm" />
       </van-popup>
 
-      <van-button
-        style="margin-top: 60px"
-        size="large"
-        block
-        plain
-        type="primary"
-        @click="logout"
-        >Log out</van-button
-      >
+      <van-button style="margin-top: 60px" size="large" block plain type="primary" @click="logout">Log out</van-button>
     </div>
   </div>
 </template>
@@ -66,46 +42,48 @@ const logout = () => {
 };
 const toBack = () => history.back();
 </script>
-<style lang="less" scoped>
+<style lang="scss" scoped>
 .start {
   justify-content: start;
 }
+
 .up-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .up-header {
   justify-content: space-between;
 }
 
 .up-header,
-.up-header > .left {
+.up-header>.left {
   display: flex;
   align-items: center;
 }
 
-.up-header > .left > .iconpark {
+.up-header>.left>.iconpark {
   cursor: pointer;
 }
 
-.up-header > .left > .icon-back {
+.up-header>.left>.icon-back {
   font-size: 24px;
 }
 
-.up-header > .left > .title {
+.up-header>.left>.title {
   margin-left: 12px;
   font-size: 20px;
   font-weight: 600;
   line-height: 28px;
 }
 
-.up-header > .right {
+.up-header>.right {
   display: flex;
   align-items: center;
 }
 
-.up-header > .right > .icon-more {
+.up-header>.right>.icon-more {
   cursor: pointer;
   font-size: 24px;
 }

@@ -1,7 +1,7 @@
 import Dexie from 'dexie';
 import { Note } from '../note/note';
 import { UserState } from '../user_state/user_state';
-import { ActionType } from '../user_tx/constants';
+import { ActionType } from '@anomix/circuits';
 import { UserAccountTx } from '../user_tx/user_account_tx';
 import { UserPaymentTx } from '../user_tx/user_payment_tx';
 import { UserTx } from '../user_tx/user_tx';
@@ -154,6 +154,7 @@ class DexieAccountTx implements DexieUserTx {
     public migrated: boolean,
     public createdTs: number,
     public finalizedTs: number,
+    public alias?: string,
     public newSigningPk1?: string,
     public newSigningPk2?: string
   ) {}
@@ -164,6 +165,7 @@ function fromDexieAccountTx(tx: DexieAccountTx): UserAccountTx {
     tx.txHash,
     tx.accountPk,
     tx.aliasHash,
+    tx.alias,
     tx.newSigningPk1,
     tx.newSigningPk2,
     tx.txFee,
@@ -178,20 +180,21 @@ function toDexieAccountTx(tx: UserAccountTx): DexieAccountTx {
   return new DexieAccountTx(
     tx.txHash,
     tx.accountPk,
-    ActionType.ACCOUNT,
+    ActionType.ACCOUNT.toString(),
     tx.aliasHash,
     tx.txFee,
     tx.txFeeAssetId,
     tx.migrated,
     tx.createdTs,
     tx.finalizedTs,
+    tx.alias,
     tx.newSigningPk1,
     tx.newSigningPk2
   );
 }
 
 function fromDexieUserTx(tx: DexieUserTx): UserTx {
-  if (tx.actionType === ActionType.ACCOUNT) {
+  if (tx.actionType === ActionType.ACCOUNT.toString()) {
     return fromDexieAccountTx(tx as DexieAccountTx);
   } else {
     return fromDexiePaymentTx(tx as DexiePaymentTx);
@@ -311,9 +314,11 @@ export class DexieDatabase implements Database {
       accountPk,
     });
     return tx &&
-      [ActionType.DEPOSIT, ActionType.WITHDRAW, ActionType.SEND].includes(
-        tx.actionType
-      )
+      [
+        ActionType.DEPOSIT.toString(),
+        ActionType.WITHDRAW.toString(),
+        ActionType.SEND.toString(),
+      ].includes(tx.actionType)
       ? fromDexiePaymentTx(tx as DexiePaymentTx)
       : undefined;
   }
@@ -321,9 +326,11 @@ export class DexieDatabase implements Database {
     const txs = (
       await this.userTx.where({ accountPk }).reverse().sortBy('createdTs')
     ).filter((p) =>
-      [ActionType.DEPOSIT, ActionType.WITHDRAW, ActionType.SEND].includes(
-        p.actionType
-      )
+      [
+        ActionType.DEPOSIT.toString(),
+        ActionType.WITHDRAW.toString(),
+        ActionType.SEND.toString(),
+      ].includes(p.actionType)
     ) as DexiePaymentTx[];
 
     return sortTxs(txs).map(fromDexiePaymentTx);
@@ -334,13 +341,13 @@ export class DexieDatabase implements Database {
   async getUserAccountTx(txHash: string): Promise<UserAccountTx | undefined> {
     const tx = await this.userTx.get({
       txHash,
-      actionType: ActionType.ACCOUNT,
+      actionType: ActionType.ACCOUNT.toString(),
     });
     return tx ? fromDexieAccountTx(tx as DexieAccountTx) : undefined;
   }
   async getUserAccountTxs(accountPk: string): Promise<UserAccountTx[]> {
     const txs = (await this.userTx
-      .where({ accountPk, actionType: ActionType.ACCOUNT })
+      .where({ accountPk, actionType: ActionType.ACCOUNT.toString() })
       .reverse()
       .sortBy('createdTs')) as DexieAccountTx[];
     return sortTxs(txs).map(fromDexieAccountTx);

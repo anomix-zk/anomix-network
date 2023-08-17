@@ -1,34 +1,49 @@
 <template>
     <div class="up-app">
-        <div id="page-connect" class="page">
+        <div class="page">
             <div class="header">Ano.Cash</div>
-            <div class="page-login">
+            <div class="login">
                 <div class="logo">
                     <img :src="loginImage" class="arrow" alt="" />
                 </div>
                 <h1 class="title">Login AnoCash</h1>
                 <!---->
                 <div class="oauth-box">
-                    <div class="one">
-                        <van-button color="#f7f7f7" block type="primary" class="indexbtn" @click="connectLogin">
-                            <icon style="display:flex; align-items: center;">
+                    <div class="auth-item">
+                        <n-button color="#f4f4f4" block type="primary" class="auth-btn" @click="connectLogin">
+                            <div style="display:flex; align-items: center;">
                                 <img :src="auroLogo" alt="" style="width: 30px; height: 30px;" />
                                 <span style="color:#1f202a">Connect Wallet</span>
-                            </icon>
-
-                        </van-button>
+                            </div>
+                        </n-button>
                     </div>
-                    <div class="one">
-                        <van-button color="#f7f7f7" block type="primary" @click="accountLogin" class="indexbtn">
-                            <icon style="display:flex; align-items: center;">
+                    <div class="auth-item">
+                        <n-button color="#f4f4f4" block type="primary" @click="accountLogin" class="auth-btn">
+                            <div style="display:flex; align-items: center;">
                                 <img :src="keyImage" alt="" style="width: 36px; height: 36px;" />
                                 <span style="color:#1f202a">Login With Key</span>
-                            </icon>
-
-
-                        </van-button>
+                            </div>
+                        </n-button>
                     </div>
                 </div>
+
+                <div class="or-box">
+                    <div class="line"></div>
+                    <span>OR CLAIM WITHDRAWABLE ASSETS</span>
+                    <div class="line"></div>
+                </div>
+
+                <div class="oauth-box" style="margin-top: 30px;">
+                    <div class="auth-item">
+                        <n-button color="#f4f4f4" block type="primary" @click="toClaimable" class="auth-btn">
+                            <div style="display:flex; align-items: center;">
+                                <img :src="claimImage" alt="" style="width: 35px; height: 35px;" />
+                                <span style="color:#1f202a">Claim Assets</span>
+                            </div>
+                        </n-button>
+                    </div>
+                </div>
+
             </div>
 
             <div class="footer">© Powered By Anomix</div>
@@ -40,27 +55,39 @@
 import loginImage from "@/assets/anomix.svg";
 import auroLogo from "@/assets/auro.png";
 import keyImage from "@/assets/key2.png";
+import claimImage from "@/assets/claim.svg";
 
 const router = useRouter();
 
+const existAccount = ref(false);
+
+
 onMounted(async () => {
+    const { getSupportStatus } = useClientUtils();
+    const support = await getSupportStatus();
+    console.log('support', support);
 
-    if (!window.anomix) {
-        console.log('load anomix sdk');
-        const { createAnomixSdk } = await import('@anomix/sdk');
 
-        const sdk = await createAnomixSdk('B62qmsNRd7ocmpPwpb1enJYWAxTP2pibnyMZGjUiaixV2p9irH4V6Y8', {
-            nodeUrl: 'http://127.0.0.1:8099',
-            nodeRequestTimeoutMS: 5 * 60 * 1000,
-            l2BlockPollingIntervalMS: 2 * 60 * 1000,
-            debug: true
-        });
+    // if (!window.anomix) {
+    //     console.log('load anomix sdk');
+    //     const { createAnomixSdk } = await import('@anomix/sdk');
 
-        window.anomix = sdk;
-        console.log('anomix sdk loaded');
-    }
+    //     const sdk = await createAnomixSdk('B62qmsNRd7ocmpPwpb1enJYWAxTP2pibnyMZGjUiaixV2p9irH4V6Y8', {
+    //         nodeUrl: 'http://127.0.0.1:8099',
+    //         nodeRequestTimeoutMS: 5 * 60 * 1000,
+    //         l2BlockPollingIntervalMS: 2 * 60 * 1000,
+    //         debug: true
+    //     });
+
+    //     window.anomix = sdk;
+    //     console.log('anomix sdk loaded');
+    // }
 
 });
+
+const toClaimable = () => {
+    router.push("/claim/claimable");
+}
 
 function connectLogin() {
     // if (!window.mina) {
@@ -75,19 +102,28 @@ function connectLogin() {
     // } else {
     //     router.push({ path: "/connect", params: { ok: 'nihao' } });
     // }
-    router.push("/connect");
+    //router.push("/connect");
+    router.push({ path: "/connect", query: { ok: 'nihao' } });
 }
 function accountLogin() {
     router.push("/login");
 }
 </script>
-<style lang="less" scoped>
-.page-login {
+<style lang="scss" scoped>
+.login {
+    //text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
     .logo {
-        display: block;
-        margin-top: 60px px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 40px;
         width: 100%;
-        height: 160px;
+        height: 140px;
 
         img {
             height: 100%;
@@ -109,6 +145,8 @@ function accountLogin() {
         animation: typing 2.5s ease-in;
         overflow: hidden;
         color: #000;
+
+        margin-bottom: 30px;
     }
 
     /* 打印效果 */
@@ -123,40 +161,63 @@ function accountLogin() {
     }
 
     .oauth-box {
-        margin-top: 60px;
-        width: 100%;
-    }
-
-    .oauth-box .one {
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: inset 1px 1px 3px var(--up-line);
-    }
-
-    .oauth-box .one+.one {
         margin-top: 20px;
+        width: 100%;
+
+        .auth-item {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 60px;
+            border-radius: 12px;
+
+            background-color: var(--up-bg-checked);
+            transition: all .15s;
+            box-shadow: inset 1px 1px 3px var(--up-line);
+
+            span {
+                margin-left: 10px;
+                font-weight: 600;
+                font-size: 16px;
+                line-height: 24px;
+            }
+
+            .auth-btn {
+                display: flex;
+                flex-wrap: nowrap;
+                justify-content: center;
+                align-items: center;
+                align-content: center;
+                height: 100%;
+                border-radius: 12px;
+            }
+        }
+
+        .auth-item+.auth-item {
+            margin-top: 20px;
+        }
     }
 
-    .oauth-box .one span {
-        margin-left: 10px;
-        font-weight: 600;
-        font-size: 16px;
-        line-height: 24px;
-    }
-
-    .indexbtn {
-        height: 60px;
-        transition: all 0.15s;
-        border: none;
-        box-shadow: inset 1px 1px 3px var(--up-line);
+    .or-box {
+        margin-top: 40px;
         display: flex;
-        flex-wrap: nowrap;
         justify-content: center;
         align-items: center;
-        align-content: center;
+
+        .line {
+            width: 60px;
+            height: 1px;
+            background-color: var(--up-text-third);
+        }
+
+        span {
+            margin: 0 10px;
+            font-size: 12px;
+            font-weight: 400;
+        }
     }
+
 }
 
 .footer {
@@ -164,10 +225,10 @@ function accountLogin() {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 60px;
-    line-height: 60px;
+    //height: 20px;
+    line-height: 50px;
     text-align: center;
-    color: #1f202a;
+    color: gray;
     font-size: 16px;
     font-weight: 400;
 }

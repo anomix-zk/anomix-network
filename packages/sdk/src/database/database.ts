@@ -17,6 +17,7 @@ export class Alias {
     public aliasHash: string,
     public accountPk: string,
     public index: number,
+    public alias: string,
     public noteCommitment?: string,
     public signingPk?: string
   ) {}
