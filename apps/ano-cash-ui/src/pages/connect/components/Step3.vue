@@ -1,54 +1,81 @@
 <template>
-  <div class="step-content">
-    <div class="step-logo">
-      <van-form @submit="formSubmit">
-        <van-cell-group inset>
-          <van-field v-model="amount" center clearable label="AMOUNT:" placeholder="input" input-align="left"
-            label-align="left" type="number" :rules="[{ required: true, message: 'please input amount' }]">
-            <template #button>
-              <van-button plain size="small" type="primary" @click="getMaxAmount">Max</van-button>
-            </template>
-          </van-field>
+    <div class="step-content">
+        <div class="h1" style="margin-bottom: 40px;">Set Your Alias</div>
 
-          <van-field v-model="fee" center clearable label="FEE:" placeholder="input" input-align="left" label-align="left"
-            type="number" :rules="[{ required: true, message: 'please input fee' }]" />
-        </van-cell-group>
-        <div style="margin-top: 30px">
-          <van-button round type="primary" native-type="submit">
-            Shield
-          </van-button>
+        <div class="form-item">
+            <!-- <div class="item-label">Alias</div> -->
+            <n-input class="item" type="text" size="large" placeholder="Alias">
+                <template #suffix>
+                    <van-icon v-show="!isUsed" name="passed" color="green" size="20" />
+                    <van-icon v-show="isUsed" name="close" color="red" size="20" />
+                </template>
+            </n-input>
         </div>
-      </van-form>
+
+        <n-button type="info" class="form-btn" @click="finish">
+            Register Account
+        </n-button>
     </div>
-  </div>
 </template>
 
 <script lang="ts" setup>
 
-const amount = ref("");
-const fee = ref("");
+const router = useRouter();
+const alias = ref("");
+const isUsed = ref(false);
 
-const emit = defineEmits(["finish"]);
-function getMaxAmount() {
-  amount.value = "100";
-}
-function formSubmit() {
-  console.log(amount.value, fee.value);
-  emit("finish");
-}
+const finish = () => {
+    router.replace("/account");
+};
+
 </script>
-<style scoped>
+<style lang="less" scoped>
 .step-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 300px;
-  justify-content: center;
-}
+    display: flex;
+    flex-direction: column;
+    margin-top: 10px;
+    width: 100%;
+    text-align: center;
 
-.maxbtn {
-  position: absolute;
-  top: 0;
-  right: 0;
+    .form-btn {
+        margin-top: 40px;
+        width: 100%;
+        height: 52px;
+        border-radius: 12px;
+    }
+
+    .form-item {
+        text-align: left;
+
+        .item-label {
+            font-size: 16px;
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 510;
+            line-height: 26px;
+        }
+
+
+        .item {
+            margin-top: 10px;
+        }
+
+
+    }
+
+    .h1 {
+        font-size: 30px;
+        font-weight: 500;
+        line-height: 46px;
+    }
+
+    .h2 {
+        margin-top: 4px;
+        font-size: 16px;
+        line-height: 20px;
+        font-weight: 600;
+    }
 }
 </style>

@@ -3,19 +3,34 @@ import Components from "unplugin-vue-components/vite";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
 export default defineNuxtConfig({
     devtools: { enabled: false },
+    typescript: {
+        strict: true,
+    },
     srcDir: "src/",
+
+    build: {
+        transpile:
+            process.env.NODE_ENV === "production"
+                ? [
+                      "naive-ui",
+                      "vueuc",
+                      "@css-render/vue3-ssr",
+                      "@juggle/resize-observer",
+                  ]
+                : ["@juggle/resize-observer"],
+    },
     // build: {
-    //   transpile:
-    //     process.env.NODE_ENV === "production"
-    //       ? [
-    //           "naive-ui",
-    //           "vueuc",
-    //           "@css-render/vue3-ssr",
-    //           "@juggle/resize-observer",
-    //           "date-fns",
-    //           "@css-render/plugin-bem",
-    //         ]
-    //       : ["@juggle/resize-observer"],
+    //     transpile:
+    //         process.env.NODE_ENV === "production"
+    //             ? [
+    //                   "naive-ui",
+    //                   "vueuc",
+    //                   "@css-render/vue3-ssr",
+    //                   "@juggle/resize-observer",
+    //                   "date-fns",
+    //                   "@css-render/plugin-bem",
+    //               ]
+    //             : ["@juggle/resize-observer"],
     // },
     modules: ["@vant/nuxt"],
     vite: {
@@ -43,7 +58,7 @@ export default defineNuxtConfig({
             }),
         ],
     },
-    css: ["@/assets/styles/global.less"],
+    css: ["@/assets/styles/global.scss"],
 
     routeRules: {
         // Set custom headers matching paths

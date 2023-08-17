@@ -1,274 +1,287 @@
 <template>
     <div class="up-app">
-        <div id="page-index" class="header-bg-img page start-account">
-            <van-notice-bar
-                class="noti"
-                left-icon="volume-o"
-                v-if="showNoti"
-                mode="link"
-                scrollable
-                @click="toMessage"
-                >messagemessagemessagemessagemessagemessagemessagemessagemessagemessagemessagemessagemessagemessagemessagemessage</van-notice-bar
-            >
-            <div
-                class="main-container"
-                style="margin-left: 30px; margin-right: 30px"
-            >
-                <div class="up-home-page-header">
+        <div class="header-bg-img page home">
+
+            <div class="main-container" style="margin-left: 30px; margin-right: 30px">
+                <div class="ano-home-page-header">
                     <div class="header-content">
                         <div class="user">
-                            <div class="left"></div>
+                            <div class="left" />
                             <div class="right">
-                                <div class="email">{{ email }}</div>
+                                <div class="alias">{{ alias }}.ano</div>
                                 <div class="address">
-                                    <span>{{ address }}</span>
+                                    <span>{{ accountPk58 }}</span>
+                                    <van-icon style="margin-left: 5px;" :name="copyIcon" size="20px" @click="copyAddress" />
                                 </div>
                             </div>
                         </div>
                         <div class="setting-icons">
-                            <van-icon
-                                name="setting-o"
-                                class="dot"
-                                @click="teSetting"
-                            />
-                            <van-icon
-                                name="comment-o"
-                                dot
-                                class="dot"
-                                @click="showNotiy"
-                            />
+                            <van-icon name="comment-o" dot class="dot" @click="showNotiy" />
+                            <!-- <van-icon name="setting-o" class="dot" @click="toSetting" /> -->
                         </div>
                     </div>
-                    <!----><!---->
+
                 </div>
 
-                <div class="lump-sum-box">
-                    <div class="title">Account</div>
-                    <div class="lump-sum">
-                        <div class="worth" style="">
-                            <span>${{ hideInfo(amount) }}</span>
-                            <span class="eye" @click="toHide">
-                                <van-icon v-if="isHide" name="closed-eye" />
+                <div class="ano-sum-box">
+                    <div class="title">Asset Value</div>
+                    <div class="ano-sum">
+                        <div class="worth">
+                            <span v-show="!appState.isHideInfo">
+                                <template v-if="totalAmount">
+                                    ${{ totalAmount }}
+                                </template>
+                                <template v-else>
+                                    ---
+                                </template>
+                            </span>
+                            <span v-show="appState.isHideInfo">$*****</span>
+                            <span class="eye" @click="switchInfoHideStatus">
+                                <van-icon v-if="appState.isHideInfo" name="closed-eye" />
                                 <van-icon v-else name="eye-o" />
                             </span>
                         </div>
                     </div>
+
+                    <n-tag v-if="accountCreationPending" type="warning" round strong>
+                        Account Creation Pending
+                    </n-tag>
                 </div>
-                <div class="shortcut">
-                    <div class="btn-box" @click="toWithdraw">
+
+                <div class="operation">
+                    <div class="btn-box" @click="toDeposit">
                         <div class="btn">
-                            <van-icon
-                                name="cash-on-deliver"
-                                color="#1989fa"
-                                size="30"
-                            />
+                            <van-icon :name="depositIcon" color="#4098fc" size="30" />
                         </div>
                         <div>Deposit</div>
                     </div>
-                    <div class="btn-box" @click="toReceive">
-                        <div class="btn">
-                            <van-icon
-                                size="40"
-                                color="#1989fa"
-                                name="cash-back-record"
-                            />
+                    <div class="btn-box" @click="toSend">
+                        <div class="btn" style="box-shadow: inset 1px 1px 4px 0 var(--up-line);">
+                            <van-icon size="40" color="#4098fc" :name="transferIcon" />
                         </div>
                         <div>Send</div>
                     </div>
-                    <div class="btn-box" @click="toBuy">
+                    <div class="btn-box" @click="toWithdraw">
                         <div class="btn">
-                            <van-icon name="cart-o" color="#1989fa" size="30" />
+                            <van-icon :name="withdrawIcon" color="#4098fc" size="30" />
                         </div>
-                        <div>Buy</div>
+                        <div>Withdraw</div>
                     </div>
                 </div>
-                <div class="coin-box"></div>
-                <van-tabs v-model:active="boxactive">
-                    <van-tab title="Coin List">
-                        <div
-                            v-if="coinlist.length"
-                            v-for="item in coinlist"
-                            :key="item.id"
-                            class="coin"
-                        >
-                            <div class="top">
-                                <div class="up-token index">
-                                    <div class="token-box">
-                                        <n-icon size="40">
-                                            <svg
-                                                preserveAspectRatio="xMidYMid meet"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="1em"
-                                                height="1em"
-                                                fill="none"
-                                                viewBox="0 0 41 40"
-                                            >
-                                                <!--?lit$42823047$-->
-                                                <g>
-                                                    <circle
-                                                        fill="#26A17B"
-                                                        r="20"
-                                                        cy="20"
-                                                        cx="20.997"
-                                                    ></circle>
-                                                    <path
-                                                        fill="#fff"
-                                                        d="M23.452 14.284v2.957c5.492.254 9.618 1.343 9.618 2.647 0 1.303-4.126 2.392-9.618 2.645v9.48h-4.89v-9.478c-5.5-.254-9.637-1.342-9.637-2.647 0-1.305 4.136-2.395 9.636-2.648v-2.956h-6.767v-4.51H30.22v4.51h-6.768Zm0 7.442v.003c4.85-.215 8.47-1.059 8.47-2.071 0-1.01-3.62-1.857-8.47-2.073v3.304c-.14.012-.897.075-2.406.075a37.4 37.4 0 0 1-2.485-.076v-3.305c-4.86.217-8.487 1.063-8.487 2.075 0 1.012 3.627 1.858 8.487 2.072v-.004a52.39 52.39 0 0 0 2.464.053c1.581 0 2.29-.043 2.427-.053Z"
-                                                        clip-rule="evenodd"
-                                                        fill-rule="evenodd"
-                                                        data-follow-fill="#fff"
-                                                    ></path>
-                                                </g>
-                                            </svg>
-                                        </n-icon>
+
+
+                <div class="ano-tab">
+
+                    <n-tabs default-value="tokens" size="large" justify-content="space-evenly" :tab-style="tabStyle">
+                        <n-tab-pane name="tokens" tab="Tokens">
+                            <div v-if="tokenList.length" v-for="item in tokenList" :key="item.tokenId" class="token">
+                                <div class="token-left">
+                                    <div class="token-icon">
+                                        <van-icon :name="minaIcon" size="40" />
                                     </div>
-                                    <div class="index">
-                                        <div class="index-title">
-                                            {{ item.title }}
+                                    <div class="token-info">
+                                        <div class="token-name">
+                                            {{ item.tokenName }}
                                         </div>
-                                        <div class="index-subtitle">
-                                            {{ item.subtitle }}
+                                        <div class="token-network">
+                                            {{ item.tokenNetwork }}
                                         </div>
-                                        <!---->
                                     </div>
                                 </div>
-                                <div class="balance">
-                                    <div style="">
-                                        {{ hideInfo(item.count) }}
+
+                                <div class="token-right">
+                                    <div v-show="!appState.isHideInfo" class="balance">
+                                        {{ convertToMinaUnit(item.balance) }}
                                     </div>
+                                    <div v-show="appState.isHideInfo" class="balance">
+                                        *****
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <n-empty v-else description="None tokens yet" />
+                        </n-tab-pane>
+
+                        <n-tab-pane name="history" tab="History">
+
+                            <div v-if="txList.length" v-for="item in txList" :key="item.txHash" class="tx"
+                                @click="toClaimPage(item.actionType)">
+                                <div class="tx-left">
+                                    <div class="action-icon">
+                                        <van-icon v-if="item.isSender" :name="transferOut" size="40" />
+                                        <van-icon v-else :name="transferIn" size="40" />
+                                    </div>
+
+                                    <div class="tx-info">
+                                        <div class="tx-address">
+                                            <span v-if="item.isSender">{{ item.receiver }}</span>
+                                            <span v-else>{{ item.sender }}</span>
+
+                                            <div v-if="item.actionType === '3'" class="tx-label">claim</div>
+                                        </div>
+                                        <div class="tx-time">
+                                            <n-time :time="item.createdTs" format="yyyy-MM-dd HH:mm" />
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="tx-right">
+                                    <div class="balance">
+                                        <template v-if="item.actionType === '1' || item.actionType === '3'">
+                                            <template v-if="item.isSender">-</template>{{
+                                                convertToMinaUnit(item.publicValue) }} MINA
+                                        </template>
+                                        <template v-else>
+                                            <template v-if="item.isSender">-</template>{{
+                                                convertToMinaUnit(item.privateValue) }} MINA
+                                        </template>
+
+                                    </div>
+
+                                    <div class="amount">
+                                        <template v-if="item.actionType === '1' || item.actionType === '3'">
+                                            ${{ calculateUsdAmount('MINA', convertToMinaUnit(item.publicValue)) }}
+                                        </template>
+                                        <template v-else>
+                                            ${{ calculateUsdAmount('MINA', convertToMinaUnit(item.privateValue)) }}
+                                        </template>
+                                    </div>
+
                                 </div>
                             </div>
-                            <!---->
-                        </div>
-                        <van-empty
-                            v-else
-                            image="search"
-                            description="None coin  yet"
-                        />
-                    </van-tab>
-                    <van-tab title="Transaction History">
-                        <div
-                            v-if="historylist.length"
-                            v-for="item in historylist"
-                            :key="item.id"
-                            class="coin"
-                        >
-                            <div class="top">
-                                <div class="up-token index">
-                                    <div class="token-box">
-                                        <n-icon size="40">
-                                            <svg
-                                                preserveAspectRatio="xMidYMid meet"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="1em"
-                                                height="1em"
-                                                fill="none"
-                                                viewBox="0 0 41 40"
-                                            >
-                                                <!--?lit$42823047$-->
-                                                <g>
-                                                    <circle
-                                                        fill="#26A17B"
-                                                        r="20"
-                                                        cy="20"
-                                                        cx="20.997"
-                                                    ></circle>
-                                                    <path
-                                                        fill="#fff"
-                                                        d="M23.452 14.284v2.957c5.492.254 9.618 1.343 9.618 2.647 0 1.303-4.126 2.392-9.618 2.645v9.48h-4.89v-9.478c-5.5-.254-9.637-1.342-9.637-2.647 0-1.305 4.136-2.395 9.636-2.648v-2.956h-6.767v-4.51H30.22v4.51h-6.768Zm0 7.442v.003c4.85-.215 8.47-1.059 8.47-2.071 0-1.01-3.62-1.857-8.47-2.073v3.304c-.14.012-.897.075-2.406.075a37.4 37.4 0 0 1-2.485-.076v-3.305c-4.86.217-8.487 1.063-8.487 2.075 0 1.012 3.627 1.858 8.487 2.072v-.004a52.39 52.39 0 0 0 2.464.053c1.581 0 2.29-.043 2.427-.053Z"
-                                                        clip-rule="evenodd"
-                                                        fill-rule="evenodd"
-                                                        data-follow-fill="#fff"
-                                                    ></path>
-                                                </g>
-                                            </svg>
-                                        </n-icon>
-                                    </div>
-                                    <div class="index">
-                                        <div class="index-title">
-                                            {{ item.title }}
-                                        </div>
-                                        <div class="index-subtitle">
-                                            {{ item.subtitle }}
-                                        </div>
-                                        <!---->
-                                    </div>
-                                </div>
-                                <div class="balance">
-                                    <div style="">
-                                        {{ hideInfo(item.count) }}
-                                    </div>
-                                    <div class="time">{{ item.time }}</div>
-                                </div>
-                            </div>
-                            <!---->
-                        </div>
-                        <van-empty
-                            v-else
-                            image="search"
-                            description="None history yet"
-                        />
-                    </van-tab>
-                </van-tabs>
+
+                            <n-empty v-else description="None history yet" />
+                        </n-tab-pane>
+
+                    </n-tabs>
+
+
+                </div>
+
+
+
+
             </div>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
+import { useMessage } from 'naive-ui';
+
+import minaIcon from "@/assets/mina.svg";
+import transferIn from '@/assets/transfer-in.svg';
+import transferOut from '@/assets/transfer-out.svg';
+import depositIcon from '@/assets/deposit.svg';
+import withdrawIcon from '@/assets/withdraw.svg';
+import transferIcon from '@/assets/round_transfer.svg';
+import copyIcon from '@/assets/copy.svg';
+
+const { appState, switchInfoHideStatus } = useStatus();
+const { convertToMinaUnit, calculateUsdAmount, omitAddress } = useUtils();
 const router = useRouter();
-const email = ref("alias");
-const address = ref("B629al...Af0F");
-const amount = ref("0.00");
-const isHide = useHide();
-const showNoti = ref(false);
+const message = useMessage();
 
-const boxactive = ref(0);
-const coinlist = [
-    { id: 1, title: "USD", subtitle: "USD Coin", count: 100 },
-    { id: 2, title: "USD", subtitle: "USD Coin", count: 100 },
-    { id: 3, title: "USD", subtitle: "USD Coin", count: 100 },
-];
-const historylist = [
-    {
-        id: 1,
-        title: "USD",
-        subtitle: "USD Coin",
-        count: -100,
-        time: "2023.10.10 10:10:10",
-    },
-    {
-        id: 2,
-        title: "USD",
-        subtitle: "USD Coin",
-        count: 100,
-        time: "2023.10.10 10:10:10",
-    },
-];
+let copyFunc: (text: string) => void;
 
-const toHide = () => {
-    let val = isHide.value;
-    isHide.value = !val;
+onMounted(() => {
+    const { copyText } = useClientUtils();
+    copyFunc = copyText;
+});
+
+const copyAddress = () => {
+    copyFunc(appState.value.accountPk58);
+    message.success(
+        "Copy address successfully",
+        {
+            closable: true
+        }
+    );
 };
-const hideInfo = (infos) => {
-    infos = infos.toString();
-    if (isHide.value) {
-        return infos.replace(/\S/g, "*");
-    } else {
-        return infos;
+
+const toClaimPage = (actionType: string) => {
+    if (actionType === '3') {
+        router.push('/claim/claim');
     }
+
+};
+const alias = ref("Alice");
+const accountPk58 = computed(() => omitAddress(appState.value.accountPk58));
+const accountCreationPending = ref(true);
+
+const showNoti = ref(false);
+const MINA = 1000_000_000n;
+
+const tabStyle = {
+    'font-size': '20px',
+    'font-weight': '500',
 };
 
-const toBuy = () => {
-    router.push("/form/buy");
+const tokenList = computed(() => {
+    return [
+        { tokenId: 1, tokenName: "MINA", tokenNetwork: "Anomix", balance: appState.value.totalBalance },
+    ];
+});
+
+const totalAmount = computed(() => {
+    return calculateUsdAmount(tokenList.value[0].tokenName, convertToMinaUnit(appState.value.totalBalance));
+});
+
+
+const txList = [
+    {
+        txHash: '1',
+        actionType: '1', // deposit
+        publicValue: 23n * MINA + '',
+        privateValue: '0',
+        txFee: MINA + '',
+        sender: 'B629al...Af0FXu',
+        receiver: 'B629al...Af0FXu',
+        isSender: false,
+        createdTs: Date.now(),
+
+    },
+    {
+        txHash: '2',
+        actionType: '2', // send
+        publicValue: '0',
+        privateValue: 121n * MINA + '',
+        txFee: MINA + '',
+        sender: 'B629al...Af0FXu',
+        receiver: 'B629al...Af0FXu',
+        isSender: true,
+        createdTs: Date.now(),
+
+    },
+    {
+        txHash: '3',
+        actionType: '3', // send
+        publicValue: 15n * MINA + '',
+        privateValue: '0',
+        txFee: MINA + '',
+        sender: 'B629al...Af0FXu',
+        receiver: 'B629al...Af0FXu',
+        isSender: true,
+        createdTs: Date.now(),
+
+    }
+];
+
+const toDeposit = () => {
+    router.push("/operation/deposit");
 };
+
+const toSend = () => {
+    router.push("/operation/send");
+};
+
 const toWithdraw = () => {
-    router.push("/form/withdraw");
+    router.push("/operation/withdraw");
 };
-const toReceive = () => {
-    router.push("/form/receive");
-};
-const teSetting = () => {
+
+const toSetting = () => {
     router.push("/setting");
 };
 const showNotiy = () => {
@@ -279,30 +292,29 @@ const toMessage = () => {
 };
 </script>
 
-<style lang="less" scoped>
-.start-account {
+<style lang="scss" scoped>
+.home {
     justify-content: flex-start;
     padding-left: 0;
     padding-right: 0;
     overflow: hidden;
 }
+
 .dot {
     font-weight: bold;
-    font-size: 20px;
-    margin-left: 10px;
-}
-.noti {
-    top: -24px;
+    font-size: 23px;
+    margin-left: 20px;
 }
 
-.up-home-page-header {
+.ano-home-page-header {
     position: absolute;
     top: -24px;
     left: -24px;
     right: -24px;
-    padding: 24px 24px 0;
+    padding: 24px 24px 0 24px;
     border-top-left-radius: 28px;
     border-top-right-radius: 28px;
+
     .header-content {
         display: flex;
         justify-content: space-between;
@@ -310,10 +322,12 @@ const toMessage = () => {
         height: 50px;
         margin-bottom: 20px;
     }
+
     .user {
         text-align: left;
         display: flex;
     }
+
     .left {
         border-radius: 50%;
         width: 40px;
@@ -324,11 +338,13 @@ const toMessage = () => {
         background-image: url(@/assets/avatar.svg);
         background-size: cover;
     }
-    .email {
+
+    .alias {
         font-size: 16px;
         font-weight: 600;
         line-height: 16px;
     }
+
     .address {
         display: flex;
         align-items: center;
@@ -338,70 +354,43 @@ const toMessage = () => {
         line-height: 14px;
         font-weight: 400;
         color: var(--up-text-third);
+
         .icon-copy {
             margin-left: 6px;
         }
     }
+
     .setting-icons {
         display: flex;
         justify-content: flex-start;
         align-items: center;
     }
-    .setting {
-        cursor: pointer;
-        width: 40px;
-        height: 40px;
-        background: var(--up-bg);
-        box-shadow: inset 1px 1px 3px 0 var(--up-line);
-        border-radius: 50%;
-        -webkit-backdrop-filter: blur(8px);
-        backdrop-filter: blur(8px);
-        color: var(--up-text-primary);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 24px;
-    }
-    .setting:first-child {
-        margin-right: 8px;
-    }
-    .cover {
-        position: absolute;
-        top: 90px;
-        left: 0;
-        width: 100%;
-        z-index: 99;
-        background: rgba(0, 0, 0, 0.7);
-    }
-    .chain-select-container {
-        position: absolute;
-        top: 90px;
-        left: 0;
-        width: 100%;
-        z-index: 100;
-        height: 580px;
-        border-radius: 0 0 20px 20px;
-        overflow-y: scroll;
-    }
-    .chain-options {
-        position: absolute;
-        top: 0;
-        width: 100%;
-        border-bottom: 1px solid #46454a;
-        border-radius: 0 0 20px 20px;
-        background-color: var(--up-header-bg);
+
+}
+
+@media screen and (min-width: 480px) {
+    .ano-home-page-header {
+        left: -40px;
+        right: -40px;
+        padding: 24px 40px 0 40px;
     }
 }
 
-.lump-sum-box {
-    padding-top: 20px;
+
+.ano-sum-box {
+    padding-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
     .title {
         font-size: 16px;
         font-weight: 400;
         color: var(--up-text-secondary);
         line-height: 16px;
     }
-    .lump-sum {
+
+    .ano-sum {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -411,286 +400,232 @@ const toMessage = () => {
         font-family: Futura, PingFang SC, Source Sans, Microsoft Yahei,
             sans-serif;
         font-weight: 700;
+
         .worth {
             position: relative;
+
+            .eye {
+                //margin-left: 5px;
+                font-size: 24px;
+
+                position: absolute;
+                right: -44px;
+                top: -10px;
+                bottom: 0;
+                cursor: pointer;
+                padding: 10px;
+                //font-size: 18px;
+                color: var(--up-text-third);
+            }
         }
-        .iconpark {
-            position: absolute;
-            right: -44px;
-            top: 0;
-            bottom: 0;
-            cursor: pointer;
-            padding: 10px;
-            font-size: 18px;
-            color: var(--up-text-third);
-        }
+
     }
-    .ap-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        .ap-icon {
-            width: 24px;
-            height: 24px;
-        }
-        .ap-balance {
-            font-size: 14px;
-            font-weight: 500;
-            margin: 0 8px;
-        }
-        .question-icon {
-            width: 14px;
-            height: 14px;
-        }
-    }
-    .gain {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        font-weight: 600;
-        color: #acf080;
-        line-height: 16px;
-        .iconpark {
-            font-size: 20px;
-            margin-right: 6px;
-        }
-    }
-    .eye {
-        margin-left: 5px;
-        font-size: 24px;
-    }
+
 }
 
-.shortcut {
-    margin-top: 40px;
+.operation {
+    margin-top: 30px;
     display: flex;
     justify-content: center;
     align-items: center;
+
     .btn-box {
         cursor: pointer;
         font-size: 16px;
         font-weight: 400;
         color: var(--up-text-secondary);
         line-height: 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        .btn {
+            width: 68px;
+            height: 68px;
+            // box-shadow: inset 1px 1px 3px 0 #4098fc;
+            // background: #fff;
+
+            background: var(--up-bg);
+            box-shadow: inset 1px 1px 3px 0 var(--up-line);
+            border-radius: 30px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            // background: linear-gradient(320deg, #8864ff, #9a7cff);
+            // box-shadow: inset 1px 1px 4px 0 hsla(0, 0%, 100%, .5);
+        }
     }
 }
 
-#page-index .shortcut .btn-box + .btn-box {
+.operation .btn-box+.btn-box {
     margin-left: 40px;
 }
 
-#page-index .shortcut .btn-box .btn {
-    width: 68px;
-    height: 68px;
-    box-shadow: inset 1px 1px 3px 0 var(--up-line);
-    background: #fff;
-    border-radius: 30px;
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#page-index .shortcut .btn-box .btn .iconpark {
-    font-size: 30px;
-}
-
-.coin-box {
-    margin-top: 30px;
-    position: relative;
-    .coin {
-        cursor: pointer;
-        padding: 20px;
-        background: var(--up-bg);
-        border-radius: 12px;
-        -webkit-backdrop-filter: blur(8px);
-        backdrop-filter: blur(8px);
-    }
-}
-
-.coin {
-    margin-top: 20px;
-}
-
-.coin .top {
-    display: flex;
-    align-items: center;
-}
-
-.coin .top.active {
-    background: rgba(0, 0, 0, 0.03);
-}
-
-.coin .top .balance {
-    margin-left: auto;
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 16px;
-    text-align: right;
-}
-
-.coin .top .balance .time {
-    font-size: 14px;
-    font-weight: 400;
-    color: var(--up-text-third);
-    line-height: 14px;
-}
-
-.coin .bottom {
-    margin-top: 20px;
-}
-.up-token {
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.up-token .token-box {
-    position: relative;
-    height: 40px;
-    width: 40px;
-}
-
-.up-token .token-box .box-icon {
-    width: 100%;
-    height: 100%;
-    display: inline-block;
-    border-radius: 50%;
-    overflow: hidden;
-}
-
-.up-token .token-box .box-token {
-    font-size: 40px;
-}
-
-.up-token .token-box .box-chain {
-    border-radius: 50%;
-    position: absolute;
-    right: -6px;
-    bottom: 0;
-    font-size: 20px;
-    border: 1px solid #fff;
-    background: #fff;
-}
-
-.up-token .name {
-    margin-left: 18px;
-    color: var(--up-text-primary);
-    font-weight: 500;
-    font-size: 16px;
-    line-height: 24px;
-}
-
-.up-token .overage {
-    margin-left: 20px;
-}
-
-.up-token .overage .token-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--up-text-primary);
-    line-height: 16px;
-}
-
-.up-token .overage .token-overage {
-    margin-top: 6px;
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--up-text-third);
-    line-height: 12px;
-}
-
-.up-token.index .index {
-    text-align: left;
-    margin-left: 18px;
-}
-
-.up-token.index .index .index-title {
-    font-size: 16px;
-    font-weight: 600;
-    line-height: 24px;
-}
-
-.up-token.index .index .index-subtitle {
-    margin-top: 2px;
-    font-size: 14px;
-    font-weight: 400;
-    color: var(--up-text-third);
-    line-height: 20px;
-}
-
-.el-tabs__header {
-    padding: 0;
-    position: relative;
-    margin: 0 0 15px;
-    display: flex;
-    font-size: 18px;
-}
-
-.el-tabs__item {
-    padding: 0 20px;
-    height: var(--el-tabs-header-height);
-    box-sizing: border-box;
-    line-height: var(--el-tabs-header-height);
-    display: inline-block;
-    list-style: none;
-    font-size: var(--el-font-size-base);
-    font-weight: 500;
-    color: var(--el-text-color-primary);
+.ano-tab {
+    margin-top: 45px;
     position: relative;
 }
 
-.el-tabs__item:focus,
-.el-tabs__item:focus:active {
-    outline: 0;
-}
 
-.el-tabs__item:focus-visible {
-    box-shadow: 0 0 2px 2px var(--el-color-primary) inset;
-    border-radius: 3px;
-}
-
-.el-tabs__item .is-icon-close {
-    border-radius: 50%;
-    text-align: center;
-    transition: all var(--el-transition-duration)
-        var(--el-transition-function-ease-in-out-bezier);
-    margin-left: 5px;
-}
-
-.el-tabs__item .is-icon-close:before {
-    transform: scale(0.9);
-    display: inline-block;
-}
-
-.el-tabs__item .is-icon-close:hover {
-    background-color: var(--el-text-color-placeholder);
-    color: #fff;
-}
-
-.el-tabs__item .is-icon-close svg {
-    margin-top: 1px;
-}
-
-.el-tabs__item.is-active,
-.el-tabs__item:hover {
-    color: var(--el-color-primary);
-}
-
-.el-tabs__item:hover {
+.tx {
+    margin-bottom: 10px;
     cursor: pointer;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 20px;
+    padding-right: 20px;
+    background: var(--up-bg);
+    border-radius: 12px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: space-between;
+
+    .tx-left {
+        display: flex;
+        align-items: center;
+
+        .action-icon {
+            position: relative;
+            height: 40px;
+            width: 40px;
+        }
+
+        .tx-info {
+            margin-left: 18px;
+            align-items: flex-start;
+
+            .tx-address {
+                font-size: 16px;
+                font-weight: 600;
+                line-height: 24px;
+                text-align: left;
+                display: flex;
+                justify-content: space-between;
+
+                .tx-label {
+                    margin-left: 10px;
+                    font-size: 12px;
+                    font-weight: 400;
+                    color: #fff;
+                    background-color: #4098fc;
+                    padding-left: 5px;
+                    padding-right: 5px;
+                    border-radius: 5px;
+                }
+            }
+
+            .tx-time {
+                margin-top: 2px;
+                font-size: 14px;
+                font-weight: 400;
+                color: var(--up-text-third);
+                line-height: 20px;
+                text-align: left;
+            }
+        }
+
+    }
+
+    .tx-right {
+        display: flex;
+        flex-direction: column;
+
+        .balance {
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 16px;
+            text-align: right;
+            line-height: 24px;
+        }
+
+        .amount {
+            margin-top: 2px;
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--up-text-third);
+            text-align: right;
+            line-height: 20px;
+        }
+
+
+    }
+
 }
 
-.el-tabs__item.is-disabled {
-    color: var(--el-disabled-text-color);
-    cursor: not-allowed;
+
+.token {
+    margin-bottom: 10px;
+    cursor: pointer;
+    padding: 20px;
+    background: var(--up-bg);
+    border-radius: 12px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: space-between;
+
+    .token-left {
+        display: flex;
+        align-items: center;
+
+        .token-icon {
+            position: relative;
+            height: 40px;
+            width: 40px;
+        }
+
+        .token-info {
+            margin-left: 18px;
+            align-items: flex-start;
+
+            .token-name {
+                font-size: 16px;
+                font-weight: 600;
+                line-height: 24px;
+                text-align: left;
+            }
+
+            .token-network {
+                margin-top: 2px;
+                font-size: 14px;
+                font-weight: 400;
+                color: var(--up-text-third);
+                line-height: 20px;
+                text-align: left;
+            }
+        }
+
+    }
+
+    .token-right {
+        display: flex;
+        flex-direction: column;
+
+
+        .balance {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 16px;
+            text-align: right;
+            line-height: 24px;
+        }
+
+        .amount {
+            margin-top: 2px;
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--up-text-third);
+            text-align: right;
+            line-height: 20px;
+        }
+
+    }
+
 }
 
-.el-tabs__content {
-    overflow: hidden;
-    position: relative;
-}
 
 @media screen and (min-width: 480px) {
     .up-home-page-header {
@@ -699,12 +634,5 @@ const toMessage = () => {
         padding: 24px 40px 0;
     }
 
-    .cover {
-        border-radius: 28px;
-    }
-}
-
-.up-home-page-header-bg {
-    background-color: var(--up-header-bg);
 }
 </style>

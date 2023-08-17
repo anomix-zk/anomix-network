@@ -1,0 +1,9 @@
+<svg width="500" height="500"> 
+   <defs> 
+      <filter id="Gaussian_Blur">
+            //fegaussianblur- 高斯模糊,stdDeviation - 设置模糊程度 
+            <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
+      </filter>
+   </defs
+   <rect x="0" y="0" width="400" height="400" filter="url(#Gaussian_Blur)">
+ </svg>
