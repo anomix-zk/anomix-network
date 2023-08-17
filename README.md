@@ -1,10 +1,8 @@
-<div style="display:flex; flex-direction: column;align-items:center; justify-content: center; margin-bottom:28px">
-  <div style="position:relative;">
-    <img src="./docs/pic/anomix.svg" height="100px" width="100px">
+<div align="center">
+  <img align='center' src="./docs/pic/anomix.svg" height="100px" width="100px">
 
-   <div style="position:absolute; bottom:-18px;left:5px; font-size:27px;color:#c712df;font-weight:600">Anomix</div>
-  </div>
-  
+## Anomix
+
 </div>
 
 NOTE: currently under development, cannot used at production env.
