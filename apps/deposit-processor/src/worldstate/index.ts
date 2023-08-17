@@ -1,48 +1,23 @@
 // initialize tree with fixed empty commitment from Value_Note.
 
-import { FLowTask, FlowTaskType, IndexDB, RollupDB, RollupFlow } from "@/rollup";
+import { IndexDB, RollupDB, RollupFlow } from "@/rollup";
 import { WorldStateDB } from "./worldstate-db";
+import { AnomixEntryContract, JoinSplitDepositInput } from "@anomix/circuits";
+import { AccountUpdate, Field, PublicKey, Mina, PrivateKey, UInt32, Reducer } from 'snarkyjs';
+import config from "@/lib/config";
+import { syncAcctInfo } from "@anomix/utils";
+import { BaseResponse, FlowTask, FlowTaskType, ProofTaskDto, ProofTaskType, RollupTaskDto, RollupTaskType, MerkleTreeId } from "@anomix/types";
+import { $axios } from "@/lib";
+import { getConnection } from "typeorm";
+import { L2Tx } from "@anomix/dao";
+import axios from "axios";
 
 export * from './worldstate-db'
-
-/**
- * Defines the  Merkle tree IDs.
- */
-export enum MerkleTreeId {
-    DEPOSIT_TREE = 0,
-    DATA_TREE,
-    NULLIFIER_TREE,
-    DATA_TREE_ROOTS_TREE,
-    USER_NULLIFIER_TREE
-}
-
-/**
- *  Defines tree information.
- */
-export interface TreeInfo {
-    /**
-     * The tree ID.
-     */
-    treeId: MerkleTreeId;
-    /**
-     * The tree root.
-     */
-    root: Buffer;
-    /**
-     * The number of leaves in the tree.
-     */
-    size: bigint;
-
-    /**
-     * The depth of the tree.
-     */
-    depth: number;
-}
-
 export class WorldState {
     private flow: RollupFlow
+    depositTreeRootOnchain: any;
 
-    constructor(private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) { }
+    constructor(public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) { }
 
     get ongingFlow() {
         return this.flow;
@@ -66,37 +41,100 @@ export class WorldState {
     }
 
     /**
-     * handleFlowTask
+     * process proof result from 'proof-generators'
+     * @param proofTaskDto 
      */
-    async handleFlowTask(flowTask: FLowTask<any>) {
-        if (flowTask.flowId != this.flow?.flowId) {// outdated task
-            // rid it
-            console.log('rid FlowTask', JSON.stringify(flowTask));
+    async processProofResult(proofTaskDto: ProofTaskDto<any, any>) {
+        const { taskType, index, payload } = proofTaskDto;
 
-            return;
-        }
+        if (taskType == ProofTaskType.DEPOSIT_JOIN_SPLIT) {
+            await this.whenDepositL2TxListComeBack(payload);
 
-        switch (flowTask.taskType) {
-            case FlowTaskType.DEPOSIT_JOIN_SPLIT:
-                await this.flow.flowScheduler.whenDepositTxListComeBack(flowTask.data);
-                break;
+        } else {// Rollup flow
+            const { flowId, taskType, data } = payload as FlowTask<any>;
+            if (!(this.ongingFlow?.flowId == flowId)) {// check if not valid
+                throw new Error("error flowId!");
+            }
 
-            case FlowTaskType.ROLLUP_TX_MERGE | FlowTaskType.ROLLUP_MERGE:
-                await this.flow.flowScheduler.merge(flowTask.data);
-                break;
-
-            case FlowTaskType.BLOCK_PROVE:
-                await this.flow.flowScheduler.whenL2BlockComeback(flowTask.data);
-                break;
-            case FlowTaskType.ROLLUP_CONTRACT_CALL:
-                await this.flow.flowScheduler.whenL2BlockComeback(flowTask.data);
-                break;
-
-            default: // rid it
-                console.log('RID FlowTask', JSON.stringify(flowTask));
-                break;
+            if (taskType == FlowTaskType.DEPOSIT_BATCH_MERGE) {
+                await this.ongingFlow.flowScheduler.whenMergedResultComeBack(data);
+            } else if (taskType == FlowTaskType.DEPOSIT_UPDATESTATE) {
+                await this.ongingFlow.flowScheduler.whenRollupL1TxComeBack(data);
+            }
         }
     }
 
+    /**
+     * since the leveldb can only support one process, so this processing is moved from 'sequencer' to here. 
+     */
+    async processDepositActions(blockId: number) {
+        // select 'outputNoteCommitment1' from depositL2Tx order by 'depositIndex' ASC
+        // compute JoinSplitDepositInput.depositWitness
+        // compose JoinSplitDepositInput
+        // asyncly send to 'Proof-Generator' to exec 'join_split_prover.deposit()'
+        const connection = getConnection();
+        const l2txRepo = connection.getRepository(L2Tx);
+        const depositL2TxList = await l2txRepo.find({ where: { blockId }, order: { depositIndex: 'ASC' } }) ?? [];
+        if (depositL2TxList.length == 0) {
+            return;
+        }
 
+        const txIdJoinSplitDepositInputList = await Promise.all(await depositL2TxList.map(async tx => {
+            return {
+                txId: tx.id,
+                data: JoinSplitDepositInput.fromJSON({
+                    publicValue: tx.publicValue,
+                    publicOwner: tx.publicOwner,
+                    publicAssetId: tx.publicAssetId,
+                    dataRoot: tx.dataRoot,
+                    depositRoot: tx.depositRoot,
+                    depositNoteCommitment: tx.outputNoteCommitment1,
+                    depositNoteIndex: tx.depositIndex,
+                    depositWitness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DEPOSIT_TREE, BigInt(tx.depositIndex), false)
+                })
+            };
+        }))
+
+        // send to proof-generator for 'JoinSplitProver.deposit(*)'
+        await $axios.post<BaseResponse<string>>('/proof-gen',
+            {
+                taskType: ProofTaskType.DEPOSIT_JOIN_SPLIT,
+                index: undefined,
+                payload: { blockId, data: txIdJoinSplitDepositInputList }
+            } as ProofTaskDto<any, any>);
+    }
+
+    /**
+     * when depositTxList(ie. JoinSplitProof list) comes back, need to go on further 
+     */
+    private async whenDepositL2TxListComeBack(payload: { blockId: number, data: { txId: number, data: any }[] }) {
+        // verify proof ??
+        //
+        const blockId = payload.blockId;
+
+        // save it into db accordingly
+        const connection = getConnection();
+        const queryRunner = connection.createQueryRunner();
+        queryRunner.startTransaction();
+
+        const l2txRepo = await connection.getRepository(L2Tx);
+        payload.data.forEach(async d => {
+            await l2txRepo.update({ id: d.txId }, { proof: d.data });
+        })
+
+        queryRunner.commitTransaction();
+
+        // construct rollupTaskDto
+        const rollupTaskDto: RollupTaskDto<any, any> = {
+            taskType: RollupTaskType.DEPOSIT_PROCESS,
+            index: undefined,
+            payload: { blockId }
+        }
+        // notify coordinator
+        await axios.post<BaseResponse<string>>(config.coordinator_notify_url, rollupTaskDto).then(r => {
+            if (r.data.code == 1) {
+                throw new Error(r.data.msg);
+            }
+        });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
+    }
 }

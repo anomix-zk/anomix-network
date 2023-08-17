@@ -43,7 +43,7 @@ const config = {
             title: "Anomix Network - rollup-sequencer api documentation",
             version: "0.1.0"
         },
-        host: <string>process.env.SWAGGER_HOST ? (<string>process.env.SWAGGER_HOST).concat(':').concat(<string>process.env.ROLLUP_SEQUENCER_PORT) : 'localhost:'.concat(<string>process.env.ROLLUP_SEQUENCER_PORT),
+        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost:').concat(<string>process.env.DEPOSIT_PROCESSOR_PORT),
         schemes: ["http"],
         consumes: ["application/json"],
         produces: ["application/json"],
@@ -60,12 +60,12 @@ const config = {
     depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT) || 8082,
     proofGeneratorHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
     proofGeneratorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8081,
-    joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx)),// TODO
-    withdrawAccountVK: VerificationKey.fromJSON(<string>process.env.WithdrawAccountVK),
 
     depositRollup: {
         batchNum: <number>Number(<string>process.env.DEPOSIT_ROLLUP_BATCH_NUM) || 8,
     },
+
+    joinsplitProofDummyTx: JoinSplitProof.fromJSON(<any>process.env.JoinsplitProofDummyTx),// TODO
 
     sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
     networkInit: <number>Number(<string>process.env.NETWORK_INIT) || 1,
@@ -84,6 +84,7 @@ const config = {
     rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
 
     depositEndpoint_couldStopMarkDepositActions: `http://${<string>process.env.DEPOSIT_PROCESSOR_HOST}:${<number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT)}/stop-mark`,
+    coordinator_notify_url: `http://${<string>process.env.COORDINATOR_HOST}:${<number>Number(<string>process.env.COORDINATOR_PORT)}/notify`
 }
 
 export default config

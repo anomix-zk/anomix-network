@@ -2,9 +2,8 @@
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
-import { BaseResponse, SequencerStatus } from "@anomix/types";
+import { BaseResponse, MerkleTreeId } from "@anomix/types";
 import { type } from "os";
-import { MerkleTreeId } from "@/worldstate";
 
 /**
  * check if could stop deposit rollup
@@ -29,15 +28,14 @@ export const handler: RequestHandler<string[], null> = async function (
 ): Promise<BaseResponse<any>> {
     try {
         // TODO check if WorldState has an onging Flow 
-        if (this.WorldState.ongingFlow) {
+        if (this.worldState.ongingFlow) {
             return {
                 code: 1, data: undefined, msg: ''
             };
         }
-
         return {
             code: 0, data: {
-                latestDepositTreeRoot: this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, true)
+                latestDepositTreeRoot: this.worldState.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, true)
             }, msg: ''
         };
     } catch (err) {

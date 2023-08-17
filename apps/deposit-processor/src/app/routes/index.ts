@@ -1,7 +1,7 @@
 import { FastifyPlugin } from "fastify"
 import { health } from '../plugins'
-import { merkleProofEndpoint } from "./merkleproof";
 import { proofCallback } from "./proof-callback";
+import { jointSplitActions } from "./action-to-join-split";
 
 export const routes: FastifyPlugin = async function (
     instance,
@@ -9,6 +9,6 @@ export const routes: FastifyPlugin = async function (
     done
 ): Promise<void> {
     instance.register(health)
-    instance.register(merkleProofEndpoint)
+    instance.register(jointSplitActions);
     instance.register(proofCallback)
 }

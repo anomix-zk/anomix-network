@@ -2,368 +2,137 @@
 import { WorldStateDB } from "@/worldstate/worldstate-db";
 import { RollupDB } from "./rollup-db";
 import config from "@/lib/config";
-import { BaseResponse, ProofTaskDto, ProofTaskType } from "@anomix/types";
-import { DataMerkleWitness, DataRootWitnessData, InnerRollupInput, InnerRollupProof, JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, JoinSplitDepositInput, DepositMerkleWitness, MINA } from "@anomix/circuits";
-import { MerkleTreeId, WorldState } from "@/worldstate";
+import { BaseResponse, DepositStatus, L2TxStatus, ProofTaskDto, ProofTaskType, RollupTaskDto, MerkleTreeId, RollupTaskType } from "@anomix/types";
+import { DataMerkleWitness, DataRootWitnessData, DEPOSIT_ACTION_BATCH_SIZE, InnerRollupInput, InnerRollupProof, JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, JoinSplitDepositInput, DepositMerkleWitness, MINA, DepositActionBatch, DepositRollupState, DepositRollupProof } from "@anomix/circuits";
+import { WorldState } from "@/worldstate";
 import { IndexDB } from "./index-db";
-import { BlockProverOutputEntity, DepositCommitment, L2Tx, MemPlL2Tx, WithdrawInfo } from "@anomix/dao";
-import { Field, PublicKey, Mina, PrivateKey } from 'snarkyjs';
+import { Account, BlockProverOutput, DepositActionEventFetchRecord, DepositCommitment, DepositTreeTrans, L2Tx, MemPlL2Tx, Task, TaskStatus, TaskType, WithdrawInfo } from "@anomix/dao";
 import { $axios } from "@/lib";
 import { syncAcctInfo } from "@anomix/utils";
+import { FlowTask, FlowTaskType } from "@anomix/types";
+import { getConnection, In } from "typeorm";
+import { AccountUpdate, Field, PublicKey, Mina, PrivateKey, UInt32, Reducer } from 'snarkyjs';
+import { assert } from "console";
 import axios from "axios";
-import { FLowTask, FlowTaskType } from "./constant";
-import { getConnection } from "typeorm";
 
+/**
+ * deposit_processor rollup flow at 'deposit_tree'
+ */
 export class FlowScheduler {
-    private leftNonDepositTx: JoinSplitProof;
-    private pendingRollupMergeEntity: InnerRollupProof
+    private nonDummyDepositCommitmentList: DepositCommitment[]
 
     private depositStartIndexInBatch: Field
     private depositTreeRootOnchain: Field
+    private currentActionsHash: Field
 
-    private targetDataRoot: Field
-    private targetBlockId: number
+    private targetHandledActionsNum: Field
+    private targetDepositRoot: Field
+    private targetActionsHash: Field
+
+    private depositTreeTrans: DepositTreeTrans
 
     constructor(private flowId: string, private worldState: WorldState, private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) { }
 
     private async init() {
-        // TODO clear dirty data on both rollupDB & worldStateDB
+
+        // clear dirty data on both rollupDB & worldStateDB
         this.worldStateDB.rollback();
 
         // fetch from contract
         const entryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
-        // const rollupContractAddr = PublicKey.fromBase58(config.rollupContractAddress);
         await syncAcctInfo(entryContractAddr);
-        // await syncAcctInfo(rollupContractAddr);
-        // const rollupContract = new AnomixRollupContract(rollupContractAddr);
         const entryContract = new AnomixEntryContract(entryContractAddr);
         this.depositStartIndexInBatch = entryContract.depositState.get().handledActionsNum;
         this.depositTreeRootOnchain = entryContract.depositState.get().depositRoot;
+        this.currentActionsHash = entryContract.depositState.get().currentActionsHash;
+
+        assert(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false) == this.depositStartIndexInBatch.toBigInt());
+        assert(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false).equals(this.depositTreeRootOnchain).toBoolean());
     }
 
     async start() {
         // clear dirty data on worldStateDB at the beginning
         this.init();
-
-        const batchNum = config.depositRollup.batchNum;
+        /*
+        // fetch all pending actions from db, if no,  end the flow.
+        // check if need dummy_actions,
+        // preinsert into tree cache,
+        // send to proof-generator and interrupt the flow.
+        // when actions come back, send to proof-generator for deposit_contract.
+        // when L1tx come back, sign it and broadcast it.
+        */
         const includeUnCommit = true;
 
-        // query db for pending actions
-        await this.processDepositActions();
+        const connection = getConnection();
+        const depositCommitmentRepo = connection.getRepository(DepositCommitment);
 
-        return;
-    }
-
-    private async preInsertIntoTreeCache(txList: MemPlL2Tx[]) {
-        const innerRollup_proveTxBatchParamList: { innerRollupInput: InnerRollupInput, joinSplitProof1: string, joinSplitProof2: string }[] = []
-
-        for (let i = 0; i < txList.length; i += 2) {
-            const tx1 = txList[i];
-            const tx2 = txList[i + 1];
-
-            const dataStartIndex: Field = Field(this.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE, true));
-            const oldDataRoot: Field = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, true);
-            const nullStartIndex: Field = Field(this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true));
-            const oldNullRoot: Field = this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true);
-            const dataRootsRoot: Field = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE_ROOTS_TREE, false);
-
-
-            // ================ tx1 commitment parts ============
-            let dataTreeCursor = this.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE, true);
-            const tx1OldDataWitness1: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
-            tx1.outputNoteCommitmentIdx1 = dataTreeCursor.toString();
-            this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx1.outputNoteCommitment1), true);
-            dataTreeCursor += 1n;
-
-            const tx1OldDataWitness2: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
-            tx1.outputNoteCommitmentIdx2 = dataTreeCursor.toString();
-            if (Field(tx1.outputNoteCommitment2).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
-                this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx1.outputNoteCommitment2), true);
-                dataTreeCursor += 1n;
-            }
-
-            // ================ tx2 commitment parts ============
-            const tx2OldDataWitness1: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
-            tx2.outputNoteCommitmentIdx1 = dataTreeCursor.toString();
-            this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx2.outputNoteCommitment1), true);
-            dataTreeCursor += 1n;
-
-            const tx2OldDataWitness2: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
-            tx2.outputNoteCommitmentIdx2 = dataTreeCursor.toString();
-            if (Field(tx2.outputNoteCommitment2).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
-                this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx2.outputNoteCommitment2), true);
-                dataTreeCursor += 1n;
-            }
-
-            // ================ tx1 nullifier parts ============
-            let nullifierTreeCursor = this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true);
-
-            const tx1LowLeafWitness1: LowLeafWitnessData = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier1), true);
-            const tx1OldNullWitness1: NullifierMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
-            if (Field(tx1.nullifier1).equals(DUMMY_FIELD).not().toBoolean()) {// if DEPOSIT, then ignore it!
-                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier1), true)
-                tx1.nullifierIdx1 = nullifierTreeCursor.toString();
-                nullifierTreeCursor += 1n;
-            }
-
-            const tx1LowLeafWitness2: LowLeafWitnessData = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier2), true);
-            const tx1OldNullWitness2: NullifierMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
-            if (Field(tx1.nullifier2).equals(DUMMY_FIELD).not().toBoolean()) {// if DEPOSIT, then ignore it!
-                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier2), true)
-                tx1.nullifierIdx2 = nullifierTreeCursor.toString();
-                nullifierTreeCursor += 1n;
-            }
-
-            // ================ tx2 nullifier parts ============
-            const tx2LowLeafWitness1: LowLeafWitnessData = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier1), true);
-            const tx2OldNullWitness1: NullifierMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
-            if (Field(tx2.nullifier1).equals(DUMMY_FIELD).not().toBoolean()) {// if DEPOSIT, then ignore it!
-                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier1), true)
-                tx2.nullifierIdx1 = nullifierTreeCursor.toString();
-                nullifierTreeCursor += 1n;
-            }
-
-            const tx2LowLeafWitness2: LowLeafWitnessData = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier2), true);
-            const tx2OldNullWitness2: NullifierMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
-            if (Field(tx2.nullifier2).equals(DUMMY_FIELD).not().toBoolean()) {// if DEPOSIT, then ignore it!
-                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier2), true)
-                tx2.nullifierIdx2 = nullifierTreeCursor.toString();
-                nullifierTreeCursor += 1n;
-            }
-
-
-            // ================ root tree parts ============
-            const tx1DataTreeRootIndex = await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx1.dataRoot}`);//TODO
-            const tx1RootWitnessData: DataRootWitnessData = {
-                dataRootIndex: Field(tx1DataTreeRootIndex),
-                witness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, tx1DataTreeRootIndex, false)
-            };
-            const tx2DataTreeRootIndex = await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx2.dataRoot}`);//TODO
-            const tx2RootWitnessData: DataRootWitnessData = {
-                dataRootIndex: Field(tx2DataTreeRootIndex),
-                witness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, tx2DataTreeRootIndex, false)
-            };
-
-            let oldDepositStartIndex = this.depositStartIndexInBatch;
-            if (Field(tx1.actionType).equals(ActionType.DEPOSIT).toBoolean()) {
-                oldDepositStartIndex = Field(tx1.depositIndex);
-            } else if (Field(tx2.actionType).equals(ActionType.DEPOSIT).toBoolean()) {
-                oldDepositStartIndex = Field(tx1.depositIndex);
-            }
-
-            innerRollup_proveTxBatchParamList.push(
-                {
-                    joinSplitProof1: tx1.proof,
-                    joinSplitProof2: tx2.proof,
-                    innerRollupInput: {
-                        dataStartIndex,
-                        oldDataRoot,
-                        tx1OldDataWitness1,
-                        tx1OldDataWitness2,
-                        tx2OldDataWitness1,
-                        tx2OldDataWitness2,
-
-                        nullStartIndex,
-                        oldNullRoot,
-                        tx1LowLeafWitness1,
-                        tx1LowLeafWitness2,
-                        tx2LowLeafWitness1,
-                        tx2LowLeafWitness2,
-
-                        tx1OldNullWitness1,
-                        tx1OldNullWitness2,
-                        tx2OldNullWitness1,
-                        tx2OldNullWitness2,
-
-                        dataRootsRoot,
-                        tx1RootWitnessData,
-                        tx2RootWitnessData,
-
-                        depositRoot: this.depositTreeRootOnchain,
-                        oldDepositStartIndex
-                    }
-                }
-            );
-        }
-        return innerRollup_proveTxBatchParamList;
-    }
-
-    /**
-     * mv to deposit_processor!!
-     */
-    private async processDepositActions() {
-        // select 'deposit_commitment' from db order by 'depositNoteIndex' ASC
-        // compute JoinSplitDepositInput.depositWitness
-        // compose JoinSplitDepositInput
-        // asyncly send to 'Proof-Generator' to exec 'join_split_prover.deposit()'
-
-        let depositCommitmentList = (await this.rollupDB.queryDepositCommitmentList(this.depositStartIndexInBatch)) ?? [];
-        // the sequence is as deposit-actions
-        const joinSplitDepositInputList = await Promise.all(await depositCommitmentList.map(async c => {
-            return JoinSplitDepositInput.fromJSON({
-                publicValue: c.depositValue,
-                publicOwner: c.sender,
-                publicAssetId: c.assetId,
-                dataRoot: this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false).toString(),
-                depositRoot: this.depositTreeRootOnchain.toString(),
-                depositNoteCommitment: c.depositNoteCommitment,
-                depositNoteIndex: c.depositNoteIndex,
-                depositWitness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DEPOSIT_TREE, BigInt(c.depositNoteIndex), false)
-            });
-        }))
-
-        // send to proof-generator for 'JoinSplitProver.deposit(*)'
-        await $axios.post<BaseResponse<string>>('/proof-gen',
-            {
-                taskType: ProofTaskType.ROLLUP_FLOW,
-                index: {},
-                payload: {
-                    flowId: this.flowId,
-                    taskType: FlowTaskType.DEPOSIT_JOIN_SPLIT,
-                    data: joinSplitDepositInputList
-                } as FLowTask<any>
-            } as ProofTaskDto<any, any>);
-
-    }
-
-    /**
-     * when depositTxList(ie. JoinSplitProof list) comes back, need to go on further 
-     */
-    async whenDepositTxListComeBack(depositTxList: any[]) {
-        let tmpList: JoinSplitProof[] = [];
-        depositTxList = depositTxList.map(j => { return JoinSplitProof.fromJSON(j) })
-        if (this.leftNonDepositTx) {// add 'leftNonDepositTx' at first one 
-            tmpList = [this.leftNonDepositTx, ...depositTxList];
-        } else {
-            tmpList = depositTxList;
-        }
-
-        // calc dummy tx
-        let pendingTxSize = config.innerRollup.txCount - tmpList.length % config.innerRollup.txCount;
-        // fill dummy tx
-        for (let index = 0; index < pendingTxSize; index++) {
-            const dummyTx = config.joinsplitProofDummyTx;
-            tmpList.push(dummyTx);
-        }
-
-        let mpTxList = tmpList.map(jp => {
-            return {
-                outputNoteCommitment1: jp.publicOutput.outputNoteCommitment1.toString(),
-                outputNoteCommitment2: jp.publicOutput.outputNoteCommitment2.toString(),
-
-                nullifier1: jp.publicOutput.nullifier1.toString(),
-                nullifier2: jp.publicOutput.nullifier2.toString(),
-                dataRoot: jp.publicOutput.dataRoot.toString(),
-                proof: JSON.stringify(jp.toJSON())
-            } as any as MemPlL2Tx;
-        })
-
-        // construct proofTaskDto
-        const proofTaskDto: ProofTaskDto<any, any> = {
-            taskType: ProofTaskType.ROLLUP_FLOW,
-            index: {},
-            payload: {
-                flowId: this.flowId,
-                taskType: FlowTaskType.ROLLUP_TX_MERGE,
-                data: await this.preInsertIntoTreeCache(mpTxList)
-            } as FLowTask<any>
-        }
-        // send to proof-generator for exec 'InnerRollupProver.proveTxBatch(*)'
-        await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
-            if (r.data.code == 1) {
-                throw new Error(r.data.msg);
-            }
-        });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
-
-        await this.rollupDB.updateDepositState(depositTxList);
-    }
-
-    /**
-     * when a mergedEntity(ie. InnerRollupProof) comes back, merge further util only one mergedEntity left, then create L2Block.
-     * @param innerRollupProofList 
-     */
-    async merge(innerRollupProof: any) {
-        // match the order and send them to proof-generator for 'InnerRollupProver.merge()'
-        // when if there is only one left, send to proof-generator for 'BlockProver.prove()'
-
-        const irp = InnerRollupProof.fromJSON(innerRollupProof);
-        if (this.pendingRollupMergeEntity) {
-            let proofPairs: InnerRollupProof[] = []
-            if (this.pendingRollupMergeEntity.publicOutput.newDataRoot.equals(irp.publicOutput.oldDataRoot).toBoolean()) {
-                proofPairs = [this.pendingRollupMergeEntity, irp]
-            } else {
-                proofPairs = [irp, this.pendingRollupMergeEntity]
-            }
-
-            // construct proofTaskDto
-            const proofTaskDto: ProofTaskDto<any, any> = {
-                taskType: ProofTaskType.ROLLUP_FLOW,
-                index: {},
-                payload: {
-                    flowId: this.flowId,
-                    taskType: FlowTaskType.ROLLUP_MERGE,
-                    data: proofPairs
-                } as FLowTask<any>
-            }
-            // send to proof-generator for exec 'InnerRollupProver.proveTxBatch(*)'
-            await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
-                if (r.data.code == 1) {
-                    throw new Error(r.data.msg);
-                }
-            });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
-
-            this.pendingRollupMergeEntity = null as any;
-
+        const depositCommitmentList = await depositCommitmentRepo.find({ where: { status: DepositStatus.PENDING }, order: { id: 'ASC' } }) ?? [];
+        if (depositCommitmentList.length == 0) {
             return;
         }
 
-        const oldDataRoot = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false);
-        // if the last merged result, then send to proof-generator to exec BlockProver
-        if (oldDataRoot.equals(irp.publicOutput.oldDataRoot)
-            .and(irp.publicOutput.newDataRoot.equals(this.targetDataRoot)).toBoolean()) {
+        // keep it in memory
+        this.nonDummyDepositCommitmentList = [...depositCommitmentList];
 
-            // construct proofTaskDto
-            const proofTaskDto: ProofTaskDto<any, any> = {
-                taskType: ProofTaskType.ROLLUP_FLOW,
-                index: {},
-                payload: {
-                    flowId: this.flowId,
-                    taskType: FlowTaskType.BLOCK_PROVE,
-                    data: irp
-                } as FLowTask<any>
-            }
-            // send to proof-generator to exec BlockProver
-            await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
-                if (r.data.code == 1) {
-                    throw new Error(r.data.msg);
-                }
-            });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
-
+        const DUMMY_ACTION = DUMMY_FIELD;
+        let dummyActionSize = DEPOSIT_ACTION_BATCH_SIZE - depositCommitmentList.length % DEPOSIT_ACTION_BATCH_SIZE;
+        while (dummyActionSize > 0) {
+            depositCommitmentList.push(({ depositNoteCommitment: DUMMY_ACTION } as any) as DepositCommitment)
+            dummyActionSize--;
         }
 
-        this.pendingRollupMergeEntity = irp;
-    }
+        const batchParamList: { depositRollupState: DepositRollupState, depositActionBatch: DepositActionBatch }[] = [];
+        let depositRootX = this.depositTreeRootOnchain;
+        let handledActionsNumX = this.depositStartIndexInBatch;
+        let currentActionsHashX = this.currentActionsHash;
+        const batchCnt = depositCommitmentList.length / DEPOSIT_ACTION_BATCH_SIZE;
+        for (let i = 0; i < batchCnt; i++) {
+            let param = {
+                depositRollupState: {
+                    depositRoot: depositRootX,
+                    handledActionsNum: handledActionsNumX,
+                    currentActionsHash: currentActionsHashX
+                } as any as DepositRollupState,
+                depositActionBatch: {
+                    actions: [],
+                    merkleWitnesses: []
+                } as any as DepositActionBatch
+            };
 
-    /**
-     * update all related status and send to trigger ROLLUP_CONTRACT
-     * @param block 
-     */
-    async whenL2BlockComeback(block: any) {
-        this.worldStateDB.commit();
-        this.rollupDB.commit(block);
+            batchParamList.push(param);
 
-        // send to proof-generator for 'AnomixRollupContract.updateRollupState'
-        // construct proofTaskDto
-        const proofTaskDto: ProofTaskDto<any, any> = {
+            for (let j = i * DEPOSIT_ACTION_BATCH_SIZE; j < (i + 1) * DEPOSIT_ACTION_BATCH_SIZE; j++) {
+                const dc = depositCommitmentList[j];
+                const targetAction = Field(dc.depositNoteCommitment);
+
+                const leafIndex = this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, includeUnCommit);
+                const merkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DEPOSIT_TREE, leafIndex, includeUnCommit);
+                this.worldStateDB.appendLeaf(MerkleTreeId.DEPOSIT_TREE, targetAction);
+
+                currentActionsHashX = AccountUpdate.Actions.updateSequenceState(currentActionsHashX, AccountUpdate.Actions.hash([targetAction.toFields()]));
+
+                param.depositActionBatch.actions.push(targetAction);
+                param.depositActionBatch.merkleWitnesses.push(merkleWitness);
+            }
+
+            depositRootX = this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, includeUnCommit);
+            handledActionsNumX = Field(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, includeUnCommit));
+        }
+
+        this.targetActionsHash = currentActionsHashX;
+        this.targetDepositRoot = depositRootX;
+        this.targetHandledActionsNum = handledActionsNumX;
+
+        // send to proof-generator for exec 'InnerRollupProver.proveTxBatch(*)'
+        const proofTaskDto = {
             taskType: ProofTaskType.ROLLUP_FLOW,
-            index: {},
+            index: undefined,
             payload: {
                 flowId: this.flowId,
-                taskType: FlowTaskType.ROLLUP_CONTRACT_CALL,
-                data: block
-            } as FLowTask<any>
-        }
-        // send to proof-generator to exec BlockProver
+                taskType: FlowTaskType.DEPOSIT_BATCH_MERGE,
+                data: batchParamList
+            }
+        } as ProofTaskDto<any, FlowTask<any>>;
         await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {
                 throw new Error(r.data.msg);
@@ -371,12 +140,103 @@ export class FlowScheduler {
         });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
     }
 
-    async whenL1TxComeback(tx: any) {
+    /**
+     * update all related status and send to trigger 'AnomixEntryContract.updateDepositState'.
+     * @param result 
+     */
+    async whenMergedResultComeBack(result: any) {
+        // to 'DepositRollupProof'
+        const drProof = DepositRollupProof.fromJSON(result);
+
+        assert(drProof.publicOutput.source.currentActionsHash.equals(this.currentActionsHash));
+        assert(drProof.publicOutput.source.depositRoot.equals(this.depositTreeRootOnchain));
+        assert(drProof.publicOutput.source.handledActionsNum.equals(this.depositStartIndexInBatch));
+
+        assert(drProof.publicOutput.target.currentActionsHash.equals(this.targetActionsHash));
+        assert(drProof.publicOutput.target.depositRoot.equals(this.targetDepositRoot));
+        assert(drProof.publicOutput.target.handledActionsNum.equals(this.targetHandledActionsNum));
+
+        const connection = getConnection();
+        const queryRunner = connection.createQueryRunner();
+        await queryRunner.startTransaction();
+
+        const vDepositTxList: MemPlL2Tx[] = [];
+        const recordIds = new Set();
+        this.nonDummyDepositCommitmentList.forEach(dc => {// DepositTreeTrans
+            dc.status = DepositStatus.MARKED;
+
+            // pre-construct depositTx
+            vDepositTxList.push({
+                actionType: ActionType.DEPOSIT.toString(),
+                nullifier1: DUMMY_FIELD.toString(),
+                nullifier2: DUMMY_FIELD.toString(),
+                outputNoteCommitment1: dc.depositNoteCommitment,
+                outputNoteCommitment2: DUMMY_FIELD.toString(),
+                publicValue: dc.depositValue,
+                publicOwner: dc.sender,
+                publicAssetId: dc.assetId,
+                depositIndex: dc.depositNoteIndex,
+                txFee: '0',
+                txFeeAssetId: dc.assetId,
+                encryptedData1: dc.encryptedNote,
+                status: L2TxStatus.PENDING
+            } as MemPlL2Tx);
+
+            recordIds.add(dc.depositActionEventFetchRecordId);// TODO need test it if work?
+        });
+
+        // insert depositTx into memorypool
+        const memPlL2TxRepo = connection.getRepository(MemPlL2Tx);
+        await memPlL2TxRepo.save(vDepositTxList);
+
+        // update nonDummyDepositCommitmentList
+        const dcRepo = connection.getRepository(DepositCommitment);
+        await dcRepo.save(this.nonDummyDepositCommitmentList);
+
+        const depositActionEventFetchRecordRepo = connection.getRepository(DepositActionEventFetchRecord);
+        const fetchRecordList = await depositActionEventFetchRecordRepo.find({ where: { id: In([...recordIds]) }, order: { id: 'ASC' } })!;
+        const startBlock = fetchRecordList[0].startBlock;
+        const endBlock = fetchRecordList[fetchRecordList.length - 1].endBlock;
+
+        const depositTreeTrans = new DepositTreeTrans();
+        depositTreeTrans.startActionHash = this.currentActionsHash.toString();
+        depositTreeTrans.startActionIndex = this.depositStartIndexInBatch.toString();
+        depositTreeTrans.nextActionHash = this.targetActionsHash.toString();
+        depositTreeTrans.nextActionIndex = this.targetHandledActionsNum.toString();
+        depositTreeTrans.startBlock = startBlock;
+        depositTreeTrans.endBlock = endBlock;
+        const depositTreeTransRepo = connection.getRepository(DepositTreeTrans);
+        this.depositTreeTrans = await depositTreeTransRepo.save(depositTreeTrans);// record it in memory for later usage
+
+        // send to proof-generator for 'AnomixEntryContract.updateDepositState'
+        const proofTaskDto = {
+            taskType: ProofTaskType.ROLLUP_FLOW,
+            index: undefined,
+            payload: {
+                flowId: this.flowId,
+                taskType: FlowTaskType.DEPOSIT_UPDATESTATE,
+                data: result
+            }
+        } as ProofTaskDto<any, FlowTask<any>>;
+
+        await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
+            if (r.data.code == 1) {
+                throw new Error(r.data.msg);
+            }
+        });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
+
+        await queryRunner.commitTransaction();
+
+        await this.worldStateDB.commit();// TODO extreme case: if this fail, then should restore manually
+    }
+
+    async whenRollupL1TxComeBack(tx: any) {
         // sign and broadcast it.
         const l1Tx = Mina.Transaction.fromJSON(tx);
-        await l1Tx.sign([PrivateKey.fromBase58(config.sequencerPrivateKey)]).send().then(txHash => {// TODO what if it fails currently!
+        await l1Tx.sign([PrivateKey.fromBase58(config.sequencerPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
             // insert L1 tx into db, underlying also save to task for 'Tracer-Watcher'
-            this.rollupDB.saveL1Tx(this.targetBlockId, txHash.hash());
+            this.depositTreeTrans.txHash = txHash.hash()!;
+            await this.rollupDB.updateTreeTransAndAddWatchTask(this.depositTreeTrans);
         }).catch(reason => {
             // TODO log it
             console.log(tx, ' failed!', 'reason: ', JSON.stringify(reason));
