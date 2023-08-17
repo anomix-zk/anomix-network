@@ -11,10 +11,13 @@
   ],
   "scripts": {
     "libs:build": "npm run lib:build -w @anomix/types && npm run lib:build -w @anomix/merkle-tree && npm run lib:build -w @anomix/utils && npm run lib:build -w @anomix/circuits && npm run lib:build -w @anomix/dao && npm run lib:build -w @anomix/sdk",
-    "server:dev": "npm run libs:build && npm run serve -w @anomix/open-api",
+    "depositProcessor:dev": "npm run serve -w @anomix/deposit-processor",
+    "rollupSequencer:dev": "npm run serve -w @anomix/rollup-sequencer",
+    "proofGenerators:dev": "npm run serve -w @anomix/proof-generators",
+    "coordinator:dev": "npm run serve -w @anomix/coordinator",
+    "openApi:dev": "npm run serve -w @anomix/open-api",
     "web:dev": "npm run serve -w @anomix/ano-cash-ui",
-    "apps:dev": "concurrently \"npm run serve -w @anomix/ano-cash-ui\" \"npm run serve -w @anomix/open-api\"",
-    "seq:dev": "npm run serve -w @anomix/rollup-sequencer",
+    "server:dev": "npm run depositProcessor:dev && npm run rollupSequencer:dev && npm run proofGenerators:dev && npm run coordinator:dev",
     "build": "npm run libs:build && npm run build --workspaces --if-present",
     "clean": "rimraf ./_dist && npm run lib:clean --workspaces --if-present && npm run clean --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present && npm run lib:lint --workspaces --if-present"
