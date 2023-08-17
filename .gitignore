@@ -73,3 +73,5 @@ settings.json
 
 
 *-schema.json
+l2-tx-req-dto-schema.json
+asset-in-block-dto-schema.json
