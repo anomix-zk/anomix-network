@@ -9,7 +9,7 @@ import {
 
 const IV_LENGTH = 12;
 const ALGORITHM = "AES-GCM";
-const PBKDF2_ITERATIONS = 100;
+const PBKDF2_ITERATIONS = 1000;
 
 /*
   Get some key material to use as input to the deriveKey method.
@@ -29,12 +29,16 @@ export async function getKeyMaterial(password: string): Promise<CryptoKey> {
   Given some key material and some random salt
   derive an AES-GCM key using PBKDF2.
 */
-export async function getKey(keyMaterial: CryptoKey, salt: ArrayBuffer) {
+export async function getKey(
+    keyMaterial: CryptoKey,
+    salt: ArrayBuffer,
+    keyIterations: number = PBKDF2_ITERATIONS
+) {
     return await subtle.deriveKey(
         {
             name: "PBKDF2",
             salt: salt,
-            iterations: PBKDF2_ITERATIONS,
+            iterations: keyIterations,
             hash: "SHA-256",
         },
         keyMaterial,
@@ -47,13 +51,14 @@ export async function getKey(keyMaterial: CryptoKey, salt: ArrayBuffer) {
 export async function encrypt(
     plainText: string,
     utf8KeySalt: string,
-    secret: string
+    secret: string,
+    secretKeyIterations: number = PBKDF2_ITERATIONS
 ) {
     const plainTextArray = stringToUtf8Array(plainText);
     const iv = getRandomValues(new Uint8Array(IV_LENGTH));
     const keySaltArray = stringToUtf8Array(utf8KeySalt);
     const keyMaterial = await getKeyMaterial(secret);
-    const key = await getKey(keyMaterial, keySaltArray);
+    const key = await getKey(keyMaterial, keySaltArray, secretKeyIterations);
     const cipher = await subtle.encrypt(
         { name: ALGORITHM, iv },
         key,
@@ -68,14 +73,15 @@ export async function encrypt(
 export async function decrypt(
     cipherText: string,
     utf8KeySalt: string,
-    secret: string
+    secret: string,
+    secretKeyIterations: number = PBKDF2_ITERATIONS
 ) {
     const data = base64StringToUint8Array(cipherText);
     const iv = data.slice(0, IV_LENGTH);
     const cipher = data.slice(IV_LENGTH, data.length);
     const keySaltArray = stringToUtf8Array(utf8KeySalt);
     const keyMaterial = await getKeyMaterial(secret);
-    const key = await getKey(keyMaterial, keySaltArray);
+    const key = await getKey(keyMaterial, keySaltArray, secretKeyIterations);
     const result = await subtle.decrypt(
         {
             name: ALGORITHM,
