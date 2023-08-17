@@ -1,8 +1,6 @@
 <div align="center">
   <img align='center' src="./docs/pic/anomix.svg" height="100px" width="100px">
-
-## Anomix
-
+<font size=6>Anomix</font>
 </div>
 
 NOTE: currently under development, cannot used at production env.
