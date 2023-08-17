@@ -1,43 +1,27 @@
 import exp from "constants";
 
-export class Tree {
-    static get DEPOSIT_TREE(): string {
-        return 'deposit_tree'
-    }
-
-    static get NULLIFIER_TREE(): string {
-        return 'nullifier_tree'
-    }
-
-    static get DATA_TREE(): string {
-        return 'data_tree'
-    }
-
-    static get ROOT_TREE(): string {
-        return 'root_tree'
-    }
-
-    static get USER_NULLIFIER_TREE(): string {
-        return 'user_nullifier_tree'
-    }
-}
-
-
 export class BlockStatus {
     /**
-     * before L1Tx is confirmed
+     * before BlockProver.prove(*)
      */
     static get PENDING(): number {
         return 1;
     }
+
     /**
-     * when L1Tx is confirmed
+     * after BlockProver.prove(*) && before L1Tx is confirmed
      */
-    static get CONFIRMED(): number {
+    static get PROVED(): number {
         return 2;
     }
-}
 
+    /**
+     * after L1Tx is confirmed
+     */
+    static get CONFIRMED(): number {
+        return 3;
+    }
+}
 
 export class DepositStatus {
     /**
@@ -65,8 +49,6 @@ export class DepositStatus {
         return 3;
     }
 }
-
-
 
 export class L2TxStatus {
 
@@ -139,4 +121,33 @@ export enum SequencerStatus {
     AtRollup = 1
 }
 
+export enum FlowTaskType {
+    SEQUENCE = 0,
+    ROLLUP_TX_BATCH,
+    ROLLUP_MERGE,
+    ROLLUP_TX_BATCH_MERGE,
+    BLOCK_PROVE,
+    ROLLUP_CONTRACT_CALL,
 
+    DEPOSIT_BATCH,
+    DEPOSIT_MERGE,
+    DEPOSIT_BATCH_MERGE,
+    DEPOSIT_UPDATESTATE
+}
+
+export type FlowTask<T> = {
+    flowId: string,
+    taskType: FlowTaskType,
+    data: T
+}
+
+/**
+ * Defines the  Merkle tree IDs.
+ */
+export enum MerkleTreeId {
+    DEPOSIT_TREE = 0,
+    DATA_TREE,
+    NULLIFIER_TREE,
+    DATA_TREE_ROOTS_TREE,
+    USER_NULLIFIER_TREE
+}

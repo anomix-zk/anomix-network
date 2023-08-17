@@ -1,11 +1,13 @@
-
 export enum ProofTaskType {
+    DEPOSIT_JOIN_SPLIT = 0,
+
+    /**
+     * include deposit_rollup && l2_tx_rollup
+     */
+    ROLLUP_FLOW,
+
     USER_FIRST_WITHDRAW,
     USER_WITHDRAW,
-    ROLLUP_FLOW,
-    DEPOSIT_BATCH,
-    DEPOSIT_MERGE,
-    DEPOSIT_UPDATESTATE
 }
 
 export interface ProofTaskDto<S, T> {

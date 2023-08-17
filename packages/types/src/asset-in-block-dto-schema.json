@@ -50,6 +50,10 @@
                                 "description": "used at Account Registration section",
                                 "type": "string"
                             },
+                            "aliasInfo": {
+                                "description": "encrypted alias",
+                                "type": "string"
+                            },
                             "outputNote1": {
                                 "description": "from encryptedData1",
                                 "properties": {
