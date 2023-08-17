@@ -51,6 +51,7 @@ const schema = {
     response: {
         200: {
             type: 'object',
+            description: '{commiment0: -1/index, commiment1: -1/index... }',
             properties: {
                 code: {
                     type: 'number',

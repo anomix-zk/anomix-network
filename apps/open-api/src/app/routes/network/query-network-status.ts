@@ -3,7 +3,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse, BlockStatus, LatestBlockDto, NetworkStatusDto, NetworkStatusDtoSchema } from "@anomix/types";
-import { BlockProverOutputEntity } from "@anomix/dao";
+import { Block } from "@anomix/dao";
 import { Connection, In, getConnection } from 'typeorm';
 
 /**
@@ -30,7 +30,7 @@ export const handler: RequestHandler<null, null> = async function (
     try {
         const connection = getConnection();
 
-        const blockRepository = connection.getRepository(BlockProverOutputEntity);
+        const blockRepository = connection.getRepository(Block);
         // query latest block
         const blockEntity = (await blockRepository.find({
             select: [

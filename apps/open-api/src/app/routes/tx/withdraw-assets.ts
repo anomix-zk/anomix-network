@@ -29,28 +29,18 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
     req,
     res
 ): Promise<BaseResponse<string>> {
-    const { l1addr, noteCommitment, signature } = req.body
+    const { l1addr, noteCommitment } = req.body
 
-    // check sig to avoid evil requests.
-    if (signature) {// might no need??
-        const rs = Signature.fromJSON(signature).verify(PublicKey.fromBase58(l1addr), [Field(noteCommitment)]);
-        if (rs) {
-            throw req.throwError(httpCodes.BAD_REQUEST, "signature verified fail!")
-        }
-    }
-
-    // check if exist in db
     const withdrawInfoRepository = getConnection().getRepository(WithdrawInfo)
     try {
-        const withdrawInfo = await withdrawInfoRepository.findOne({
+        const previousWithdrawInfoList = await withdrawInfoRepository.find({
             where: {
                 ownerPk: l1addr,
                 assetId: '1',// default Mina
-                outputNoteCommitment: noteCommitment,
-                status: WithdrawNoteStatus.PENDING
             }
-        });
-        if (!withdrawInfo) {
+        }) ?? [];
+
+        if (previousWithdrawInfoList.length == 0) {
             return {
                 code: 1,
                 data: '',
@@ -58,24 +48,31 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
             };
         }
 
-        const previousWithdrawInfo = await withdrawInfoRepository.findOne({
-            where: {
-                ownerPk: l1addr,
-                assetId: withdrawInfo.assetId,// need same tokenId
-                outputNoteCommitment: noteCommitment,
-                status: WithdrawNoteStatus.PROCESSING
-            }
-        });
-        if (!previousWithdrawInfo) {
+        const processingOne = previousWithdrawInfoList.filter(wi => {
+            return wi.status == WithdrawNoteStatus.PROCESSING;
+        })[0];
+        // due to need update USER_NULLIFIER_TREE root at user's tokenAccount<L1Addr, AssetID>, withdrawal should be in sequence.
+        if (processingOne.outputNoteCommitment == noteCommitment) {
             return {
                 code: 1,
                 data: '',
-                msg: `Please wait for last withdraw of <${l1addr}, assetId:${withdrawInfo.assetId}> to be done!`
+                msg: `Please wait for last withdraw of <${l1addr}, assetId:${processingOne!.assetId}, assetNote: ${noteCommitment}> to be done!`
+            };
+        }
+
+        const targetOne = previousWithdrawInfoList.filter(wi => {
+            return wi.outputNoteCommitment == noteCommitment;
+        })[0];
+        if (!(targetOne?.status == WithdrawNoteStatus.PENDING)) {
+            return {
+                code: 1,
+                data: '',
+                msg: 'no PENDING withdraw info found!'
             };
         }
 
         //send to 'Sequencer' for further handle.
-        return await $axios.post<BaseResponse<string>>('/tx/withdraw', { l1addr, noteCommitment, signature }).then(r => r.data);
+        return await $axios.post<BaseResponse<string>>('/tx/withdraw', { l1addr, noteCommitment }).then(r => r.data);
 
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")

@@ -31,7 +31,6 @@ export const handler: RequestHandler<string[], null> = async function (
         const rs = await $axios.post<BaseResponse<Map<string, string>>>('/existence/nullifiers', nullifierList).then(r => {
             return r.data
         })
-        // {nullifier0: -1/index, nullifier1: -1/index... }
         return rs;
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
@@ -50,6 +49,7 @@ const schema = {
     response: {
         200: {
             type: 'object',
+            description: '{nullifier0: -1/index, nullifier1: -1/index... }',
             properties: {
                 code: {
                     type: 'number',

@@ -2,7 +2,7 @@
 * 供client根据TxId查询L2 tx的状态、数据
 */
 // GET /tx/id/:id
-import { BlockProverOutputEntity, L2Tx, MemPlL2Tx } from '@anomix/dao'
+import { Block, L2Tx, MemPlL2Tx } from '@anomix/dao'
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { In, getConnection } from 'typeorm';
@@ -44,7 +44,7 @@ export const handler: RequestHandler<string[], null> = async function (
         }) ?? [];
 
         const l2TxRespDtoList = await Promise.all(ctxList.map(async tx => {
-            const blockRepository = getConnection().getRepository(BlockProverOutputEntity)
+            const blockRepository = getConnection().getRepository(Block)
             const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx.blockId } });
 
             const { updatedAt, createdAt, proof, ...restObj } = tx;

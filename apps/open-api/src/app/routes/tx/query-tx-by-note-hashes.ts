@@ -6,7 +6,7 @@ import { BaseResponse, L2TxRespDto } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 import { $axios } from "@/lib/api"
 import { getConnection, In } from "typeorm"
-import { L2Tx, BlockProverOutputEntity } from "@anomix/dao"
+import { L2Tx, Block } from "@anomix/dao"
 
 /**
 * 根据alias_nullifier/account_viewing_key/valueNote_commitment/nullifier查询L2Tx
@@ -46,7 +46,7 @@ export const handler: RequestHandler<string[], null> = async function (
         }) ?? [];
 
         const l2TxRespDtoList = await Promise.all(ctxList.map(async tx => {
-            const blockRepository = connection.getRepository(BlockProverOutputEntity)
+            const blockRepository = connection.getRepository(Block)
             const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx.blockId } });
 
             const { updatedAt, createdAt, proof, ...restObj } = tx;

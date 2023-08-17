@@ -30,9 +30,7 @@ export const handler: RequestHandler<string[], null> = async function (
     const commitmentList = req.body
 
     try {
-        /**
-         * request sequencer for the result.
-         */
+        // request sequencer for the result.
         const rs = await $axios.post<BaseResponse<MerkleProofDto[]>>('/merklewitness', commitmentList).then(r => {
             return r.data
         })

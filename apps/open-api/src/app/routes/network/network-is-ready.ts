@@ -3,6 +3,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse } from "@anomix/types";
+import { $axios } from "@/lib/api";
 
 /**
  * check if the sequencer is ready
@@ -26,11 +27,14 @@ export const handler: RequestHandler<string[], null> = async function (
     res
 ): Promise<BaseResponse<boolean>> {
     try {
-        /**
-         * TODO  request sequencer for the result.
-         */
+        const rs = await $axios.get<string>('/health').then(r => {
+            return r.data
+        })
 
-        return { code: 0, data: true, msg: '' };
+        if (rs == 'alive') {
+            return { code: 0, data: true, msg: '' };
+        }
+        return { code: 1, data: false, msg: '' };
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }

@@ -2,7 +2,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { Connection, In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
-import { Account, BlockProverOutputEntity, L2Tx, WithdrawInfo } from "@anomix/dao";
+import { Account, Block, L2Tx, WithdrawInfo } from "@anomix/dao";
 import { BaseResponse, EncryptedNote, AssetInBlockReqDto, AssetInBlockReqDtoSchema, AssetsInBlockDto, AssetsInBlockDtoSchema, L2TxSimpleDto, WithdrawNoteStatus, WithdrawInfoDto } from '@anomix/types'
 
 export const queryAssetsInBlocks: FastifyPlugin = async function (
@@ -87,7 +87,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
             });
         });
 
-        const blockEntities = await connection.getRepository(BlockProverOutputEntity).find({
+        const blockEntities = await connection.getRepository(Block).find({
             select: [
                 'id',
                 'blockHash',
