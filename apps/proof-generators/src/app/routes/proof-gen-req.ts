@@ -26,22 +26,14 @@ const handler: RequestHandler<ProofTaskDto<any, any>, null> = async function (
 ): Promise<BaseResponse<string>> {
     const { taskType, index, payload } = req.body
 
-    if (taskType == ProofTaskType.ROLLUP_FLOW || ProofTaskType.USER_FIRST_WITHDRAW || ProofTaskType.USER_WITHDRAW) {
-
+    if (taskType == ProofTaskType.DEPOSIT_JOIN_SPLIT || ProofTaskType.ROLLUP_FLOW || ProofTaskType.USER_FIRST_WITHDRAW || ProofTaskType.USER_WITHDRAW) {
         parentPort?.postMessage(payload);
-
-    } else {// error
-        return {
-            code: 1,
-            data: '',
-            msg: 'in queue'
-        };
     }
 
     return {
         code: 0,
         data: '',
-        msg: 'in queue'
+        msg: ''
     };
 }
 

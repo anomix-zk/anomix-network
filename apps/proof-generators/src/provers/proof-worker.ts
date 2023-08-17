@@ -1,10 +1,9 @@
-import { FlowTaskType } from '@/constant';
 import { Field, PublicKey, Proof, Mina, Signature, VerificationKey } from 'snarkyjs';
 import config from "../lib/config";
 
 import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, AnomixRollupContract, WithdrawAccount, AnomixEntryContract, InnerRollupInput, JoinSplitProof, InnerRollupOutput, InnerRollupProof, BlockProveInput, JoinSplitDepositInput, RollupProof, LowLeafWitnessData, NullifierMerkleWitness, WithdrawNoteWitnessData, DepositActionBatch, DepositRollupState, DepositRollupProof } from "@anomix/circuits";
 import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
-import { ProofTaskType } from '@anomix/types';
+import { ProofTaskType, FlowTaskType } from '@anomix/types';
 
 export { initWorker };
 
@@ -14,7 +13,7 @@ function processMsgFromMaster() {
         console.log(`[WORKER ${process.pid}] running ${message.type}`);
 
         switch (message.type) {
-            case `${ProofTaskType[ProofTaskType.DEPOSIT_BATCH]}`:
+            case `${FlowTaskType[FlowTaskType.DEPOSIT_BATCH]}`:
                 execCircuit(message, async () => {
                     let params = message.payload as {
                         depositRollupState: DepositRollupState,
@@ -23,9 +22,7 @@ function processMsgFromMaster() {
                     return await DepositRollupProver.commitActionBatch(params.depositRollupState, params.depositActionBatch)
                 });
                 break;
-
-
-            case `${ProofTaskType[ProofTaskType.DEPOSIT_MERGE]}`:
+            case `${FlowTaskType[FlowTaskType.DEPOSIT_MERGE]}`:
                 execCircuit(message, async () => {
                     let params = message.payload as {
                         DepositRollupProof1: DepositRollupProof,
@@ -34,8 +31,31 @@ function processMsgFromMaster() {
                     return await DepositRollupProver.merge(params.DepositRollupProof1, params.DepositRollupProof2)
                 });
                 break;
+            case `${FlowTaskType[FlowTaskType.DEPOSIT_UPDATESTATE]}`:
+                execCircuit(message, async () => {
+                    const params = message.payload as {
+                        feePayer: PublicKey,
+                        depositRollupProof: DepositRollupProof
+                    }
+                    const addr = PublicKey.fromBase58(config.entryContractAddress);
+                    await syncAcctInfo(addr);// fetch account.
+                    const entryContract = new AnomixEntryContract(addr);
+                    let tx = await Mina.transaction(params.feePayer, () => {
+                        entryContract.updateDepositState(params.depositRollupProof);
+                    });
+                    return tx;
+                });
+                break;
 
-            case `${FlowTaskType[FlowTaskType.ROLLUP_TX_MERGE]}`:
+
+
+            case `${ProofTaskType[ProofTaskType.DEPOSIT_JOIN_SPLIT]}`:
+                execCircuit(message, async () => {
+                    let params = message.payload as JoinSplitDepositInput
+                    return await JoinSplitProver.deposit(params)
+                });
+                break;
+            case `${FlowTaskType[FlowTaskType.ROLLUP_TX_BATCH]}`:
                 execCircuit(message, async () => {
                     const params = message.payload as {
                         innerRollupInput: InnerRollupInput,
@@ -45,7 +65,6 @@ function processMsgFromMaster() {
                     return await InnerRollupProver.proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
                 });
                 break;
-
             case `${FlowTaskType[FlowTaskType.ROLLUP_MERGE]}`:
                 execCircuit(message, async () => {
                     let params = message.payload as {
@@ -55,7 +74,6 @@ function processMsgFromMaster() {
                     return await InnerRollupProver.merge(params.innerRollupProof1, params.innerRollupProof2);
                 });
                 break;
-
             case `${FlowTaskType[FlowTaskType.BLOCK_PROVE]}`:
                 execCircuit(message, async () => {
                     let params = message.payload as {
@@ -65,15 +83,6 @@ function processMsgFromMaster() {
                     return await BlockProver.prove(params.innerRollupProof1, params.innerRollupProof2);
                 });
                 break;
-
-
-            case `${FlowTaskType[FlowTaskType.DEPOSIT_JOIN_SPLIT]}`:
-                execCircuit(message, async () => {
-                    let params = message.payload as JoinSplitDepositInput
-                    return await JoinSplitProver.deposit(params)
-                });
-                break;
-
             case `${FlowTaskType[FlowTaskType.ROLLUP_CONTRACT_CALL]}`:
                 execCircuit(message, async () => {
                     let params = message.payload as {
@@ -88,10 +97,11 @@ function processMsgFromMaster() {
                     let tx = await Mina.transaction(params.feePayer, () => {
                         rollupContract.updateRollupState(params.innerRollupProof1, params.innerRollupProof2)
                     });
-
                     return tx;
                 });
                 break;
+
+
 
             case `${ProofTaskType[ProofTaskType.USER_FIRST_WITHDRAW]}`:
                 execCircuit(message, async () => {
@@ -113,7 +123,6 @@ function processMsgFromMaster() {
                     return tx;
                 });
                 break;
-
             case `${ProofTaskType[ProofTaskType.USER_WITHDRAW]}`:
                 execCircuit(message, async () => {
                     const params = message.payload as {
@@ -135,23 +144,7 @@ function processMsgFromMaster() {
                 });
                 break;
 
-            case `${ProofTaskType[ProofTaskType.DEPOSIT_UPDATESTATE]}`:
-                execCircuit(message, async () => {
-                    const params = message.payload as {
-                        feePayer: PublicKey,
-                        depositRollupProof: DepositRollupProof
-                    }
 
-                    const addr = PublicKey.fromBase58(config.entryContractAddress);
-                    await syncAcctInfo(addr);// fetch account.
-                    const entryContract = new AnomixEntryContract(addr);
-                    let tx = await Mina.transaction(params.feePayer, () => {
-                        entryContract.updateDepositState(params.depositRollupProof);
-                    });
-
-                    return tx;
-                });
-                break;
 
             default:
                 throw Error(`Unknown message ${message}`);

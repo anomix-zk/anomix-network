@@ -1,15 +1,13 @@
 import { Worker as HttpWorker } from "worker_threads";
-import { FLowTask, FlowTaskType } from "./constant";
 import { activeMinaInstance } from "@anomix/utils";
-import { ProofTaskDto, ProofTaskType } from "@anomix/types";
+import { ProofTaskDto, ProofTaskType, FlowTask, FlowTaskType } from "@anomix/types";
 import config from "./lib/config";
 import { innerRollupBatchAndMerge } from "./provers/inner-rollup-handler";
 import { depositRollupBatchAndMerge } from "./provers/deposit-rollup-handler";
 import { ProofPayload } from "./constant";
-
 import { createSubProcesses, SubProcessCordinator } from "./create-sub-processes";
-import { InnerRollupInput } from "@anomix/circuits";
 import axios from "axios";
+import { JoinSplitDepositInput } from "@anomix/circuits";
 
 function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
     // init worker thread A
@@ -25,12 +23,12 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
 
     httpWorker.on('message', (proofTaskDto: ProofTaskDto<any, any>) => {
         const sendResultDepositCallback = async (p: any) => {
-            (proofTaskDto.payload as FLowTask<any>).data = p;
+            proofTaskDto.payload = p;
             axios.post(`http://${config.depositProcessorHost}:${config.depositProcessorPort}/proof-result`, proofTaskDto);
         }
 
         const sendResultSeqCallback = async (p: any) => {
-            (proofTaskDto.payload as FLowTask<any>).data = p;
+            (proofTaskDto.payload as FlowTask<any>).data = p;
             axios.post(`http://${config.sequencerProcessorHost}:${config.sequencerProcessorPort}/proof-result`, proofTaskDto);
         }
 
@@ -38,10 +36,10 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
         switch (proofTaskDto.taskType) {
             case ProofTaskType.ROLLUP_FLOW:
                 {
-                    const flowTask = proofTaskDto.payload as FLowTask<any>;
+                    const flowTask = proofTaskDto.payload as FlowTask<any>;
 
                     switch (flowTask.taskType) {
-                        case FlowTaskType.ROLLUP_TX_MERGE:
+                        case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
                             {
                                 let payloads = (flowTask.data as (any[])).map(d => {
                                     return {
@@ -53,7 +51,7 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                             }
 
                             break;
-
+                        /* 
                         case FlowTaskType.ROLLUP_MERGE:
                             {
                                 let payloads = (flowTask.data as (any[])).map(d => {
@@ -65,8 +63,8 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                                 subProcessCordinator.innerRollup_merge(payloads[0], payloads[1], sendResultSeqCallback);
                             }
 
-                            break;
-
+                            break; 
+                        */
 
                         case FlowTaskType.BLOCK_PROVE:
                             {
@@ -80,22 +78,6 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
 
                             break;
 
-
-                        case FlowTaskType.DEPOSIT_JOIN_SPLIT:
-                            {
-                                let payloads = (flowTask.data as (any[])).map(d => {
-                                    return {
-                                        isProof: false,
-                                        payload: d
-                                    } as ProofPayload<any>;
-                                });
-                                payloads.forEach(p => {// TODO need fix!
-                                    subProcessCordinator.jointSplit_deposit(p, sendResultSeqCallback);
-                                })
-                            }
-                            break;
-
-
                         case FlowTaskType.ROLLUP_CONTRACT_CALL:
                             {
                                 let payload = {
@@ -107,8 +89,50 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                             }
 
                             break;
+
+
+                        case FlowTaskType.DEPOSIT_BATCH_MERGE:
+                            {
+                                let payloads = (flowTask.data as (any[])).map(d => {
+                                    return {
+                                        isProof: false,
+                                        payload: d
+                                    } as ProofPayload<any>;
+                                });
+                                depositRollupBatchAndMerge(subProcessCordinator, payloads, sendResultDepositCallback);
+                            }
+
+                            break;
+
+                        /*
+                        case ProofTaskType.DEPOSIT_MERGE:
+                            {
+                                let payloads = (proofTaskDto.payload as (any[])).map(d => {
+                                    return {
+                                        isProof: false,
+                                        payload: d
+                                    } as ProofPayload<any>;
+                                });
+                                subProcessCordinator.depositRollup_merge(payloads[0], payloads[1], sendResultDepositCallback);
+                            }
+
+                            break;
+                        */
+
+                        case FlowTaskType.DEPOSIT_UPDATESTATE:
+                            {
+                                let payload = {
+                                    isProof: false,
+                                    payload: flowTask.data
+                                } as ProofPayload<any>;
+
+                                subProcessCordinator.depositContract_updateDepositState(payload, sendResultDepositCallback)
+                            }
+                            break;
+
                         default:
                             break;
+
                     }
                 }
 
@@ -136,43 +160,17 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                 }
                 break;
 
-
-            case ProofTaskType.DEPOSIT_BATCH:
-                {
-                    let payloads = (proofTaskDto.payload as (any[])).map(d => {
-                        return {
-                            isProof: false,
-                            payload: d
-                        } as ProofPayload<any>;
-                    });
-                    depositRollupBatchAndMerge(subProcessCordinator, payloads, sendResultDepositCallback);
-                }
-
-                break;
-
-            case ProofTaskType.DEPOSIT_MERGE:
-                {
-                    let payloads = (proofTaskDto.payload as (any[])).map(d => {
-                        return {
-                            isProof: false,
-                            payload: d
-                        } as ProofPayload<any>;
-                    });
-                    subProcessCordinator.depositRollup_merge(payloads[0], payloads[1], sendResultDepositCallback);
-                }
-
-                break;
-
-            case ProofTaskType.DEPOSIT_UPDATESTATE:
+            case ProofTaskType.DEPOSIT_JOIN_SPLIT:
                 {
                     let payload = {
                         isProof: false,
-                        payload: proofTaskDto.payload
+                        payload: proofTaskDto.payload as { blockId: number, data: { txId: number, data: JoinSplitDepositInput }[] }
                     } as ProofPayload<any>;
 
-                    subProcessCordinator.depositContract_updateDepositState(payload, sendResultDepositCallback)
+                    subProcessCordinator.jointSplit_deposit(payload, sendResultDepositCallback);
                 }
                 break;
+
             default:
                 break;
         }

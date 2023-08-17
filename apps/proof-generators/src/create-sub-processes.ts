@@ -2,38 +2,39 @@ import os from 'os';
 import cluster, { Worker } from 'cluster';
 import { Field, PublicKey, Proof, Mina, Signature, VerificationKey } from 'snarkyjs';
 
-import { FlowTaskType, ProofPayload } from './constant';
+import { ProofPayload } from './constant';
 import {
     BlockProveInput, DepositActionBatch, DepositRollupProof, DepositRollupState, InnerRollupInput, InnerRollupProof,
     JoinSplitDepositInput, JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, RollupProof, WithdrawNoteWitnessData
 } from "@anomix/circuits";
-import { ProofTaskDto, ProofTaskType } from '@anomix/types';
+import { ProofTaskDto, ProofTaskType, FlowTaskType } from '@anomix/types';
 import { $axios } from './lib';
 import axios from 'axios';
 import config from './lib/config';
+import { send } from 'process';
 
 export type SubProcessCordinator = {
     workers: { worker: Worker; status: WorkerStatus }[],
 
-    innerRollup_proveTxBatch: (proofPayload: ProofPayload<any>, sendCallBack?: (x: ProofTaskDto<any, any>) => void) => Promise<ProofPayload<any>>,
+    innerRollup_proveTxBatch: (proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) => Promise<ProofPayload<any>>,
 
-    innerRollup_merge: (proofPayload1: ProofPayload<any>, proofPayload2: ProofPayload<any>, sendCallBack?: (x: ProofTaskDto<any, any>) => void) => Promise<ProofPayload<any>>,
+    innerRollup_merge: (proofPayload1: ProofPayload<any>, proofPayload2: ProofPayload<any>, sendCallBack?: (x: any) => void) => Promise<ProofPayload<any>>,
 
-    depositRollup_commitActionBatch: (proofPayload: ProofPayload<any>, sendCallBack?: (x: ProofTaskDto<any, any>) => void) => Promise<ProofPayload<any>>,
+    depositRollup_commitActionBatch: (proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) => Promise<ProofPayload<any>>,
 
-    depositRollup_merge: (x: ProofPayload<any>, y: ProofPayload<any>, sendCallBack?: (x: ProofTaskDto<any, any>) => void) => Promise<ProofPayload<any>>,
+    depositRollup_merge: (x: ProofPayload<any>, y: ProofPayload<any>, sendCallBack?: (x: any) => void) => Promise<ProofPayload<any>>,
 
-    jointSplit_deposit: (proofPayload: ProofPayload<any>, sendCallBack?: (x: ProofTaskDto<any, any>) => void) => Promise<ProofPayload<any>>,
+    jointSplit_deposit: (proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) => Promise<ProofPayload<any>>,
 
-    blockProve: (proofPayload: ProofPayload<any>, sendCallBack?: (x: ProofTaskDto<any, any>) => void) => Promise<ProofPayload<any>>,
+    blockProve: (proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) => Promise<ProofPayload<any>>,
 
-    depositContract_updateDepositState: (proofPayload: ProofPayload<any>, sendCallBack?: (x: ProofTaskDto<any, any>) => void) => Promise<ProofPayload<any>>,
+    depositContract_updateDepositState: (proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) => Promise<ProofPayload<any>>,
 
-    rollupContract_firstWithdraw: (proofPayload: ProofPayload<any>, sendCallBack?: (x: ProofTaskDto<any, any>) => void) => Promise<ProofPayload<any>>,
+    rollupContract_firstWithdraw: (proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) => Promise<ProofPayload<any>>,
 
-    rollupContract_withdraw: (proofPayload: ProofPayload<any>, sendCallBack?: (x: ProofTaskDto<any, any>) => void) => Promise<ProofPayload<any>>,
+    rollupContract_withdraw: (proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) => Promise<ProofPayload<any>>,
 
-    rollupContract_updateRollupState: (proofPayload: ProofPayload<any>, sendCallBack?: (x: ProofTaskDto<any, any>) => void) => Promise<ProofPayload<any>>
+    rollupContract_updateRollupState: (proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) => Promise<ProofPayload<any>>
 };
 
 export const createSubProcesses = async (n: number) => {
@@ -63,25 +64,73 @@ export const createSubProcesses = async (n: number) => {
     });
     await waitForWorkers(workers);
 
-    /* FLOW
-        -DEPOSIT_JOIN_SPLIT,
-        -ROLLUP_TX_MERGE,
-        -ROLLUP_MERGE,
-        -BLOCK_PROVE,
-        ROLLUP_CONTRACT_CALL
-    */
-
     return {
         workers,
-        innerRollup_proveTxBatch: async (proofPayload: ProofPayload<any>) => {
+
+        jointSplit_deposit: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {
             return await new Promise(
                 (
                     resolve: (payload: ProofPayload<any>) => any,
                     reject: (err: any) => any | any
                 ) => {
+                    const data = (proofPayload.payload as { blockId: number, data: { txId: number, data: JoinSplitDepositInput }[] }).data;
+                    let sum = 0;
+                    data.forEach(d => {
+                        const msg1 = {
+                            type: `${ProofTaskType[ProofTaskType.DEPOSIT_JOIN_SPLIT]}`,
+                            payload: d.data,// ie. JoinSplitDepositInput
+                        };
+                        let worker: { worker: Worker, status: string } | undefined = undefined;
+                        do {
+                            worker = workers.find((w) => w.status == 'IsReady');
+                        } while (worker === undefined);
 
+                        workers.find(
+                            (w) => w.worker.process.pid == worker!.worker.process.pid
+                        )!.status = 'Busy';
+
+                        // send for exec circuit
+                        worker?.worker!.send(msg1);
+
+                        worker?.worker!.on('message', (message: any) => {
+                            workers.find(
+                                (w) => w.worker.process.pid == worker!.worker.process.pid
+                            )!.status = 'IsReady';
+
+                            try {
+                                d.data = message.payload as any;
+                                sum++;
+                                console.log(`jointSplit_deposit: sum: ${sum}`);
+
+                                if (sum + 1 == data.length) {
+                                    // send back to sequencer
+                                    if (sendCallBack) {
+                                        sendCallBack(proofPayload.payload)
+                                    }
+                                    resolve({
+                                        isProof: true,
+                                        payload: data,
+                                    });
+                                }
+                            } catch (error) {
+                                reject(error);
+                            }
+                        });
+
+                    });
+
+                }
+            );
+        },
+
+        innerRollup_proveTxBatch: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {
+            return await new Promise(
+                (
+                    resolve: (payload: ProofPayload<any>) => any,
+                    reject: (err: any) => any | any
+                ) => {
                     const msg = {
-                        type: `${FlowTaskType[FlowTaskType.ROLLUP_TX_MERGE]}`,
+                        type: `${FlowTaskType[FlowTaskType.ROLLUP_TX_BATCH]}`,
                         payload: proofPayload.payload as {
                             innerRollupInput: InnerRollupInput,
                             joinSplitProof1: JoinSplitProof,
@@ -93,11 +142,11 @@ export const createSubProcesses = async (n: number) => {
                         return InnerRollupProof.fromJSON(proofJson);
                     }
 
-                    reqProofGen(workers, msg, fromJsonFn, resolve, reject);
+                    reqProofGen(workers, msg, fromJsonFn, resolve, reject, sendCallBack);
                 }
             );
         },
-        innerRollup_merge: async (x: ProofPayload<any>, y: ProofPayload<any>) => {
+        innerRollup_merge: async (x: ProofPayload<any>, y: ProofPayload<any>, sendCallBack?: any) => {
             return await new Promise(
                 (
                     resolve: (payload: ProofPayload<any>) => any,
@@ -105,7 +154,7 @@ export const createSubProcesses = async (n: number) => {
                 ) => {
 
                     const msg = {
-                        type: `${FlowTaskType[FlowTaskType.ROLLUP_TX_MERGE]}`,
+                        type: `${FlowTaskType[FlowTaskType.ROLLUP_MERGE]}`,
                         payload: { innerRollupProof1: x.payload, innerRollupProof2: y.payload } as {
                             innerRollupProof1: InnerRollupProof,
                             innerRollupProof2: InnerRollupProof
@@ -116,77 +165,11 @@ export const createSubProcesses = async (n: number) => {
                         return InnerRollupProof.fromJSON(proofJson);
                     }
 
-                    reqProofGen(workers, msg, fromJsonFn, resolve, reject);
+                    reqProofGen(workers, msg, fromJsonFn, resolve, reject, sendCallBack);
                 }
             );
         },
-        depositRollup_commitActionBatch: async (proofPayload: ProofPayload<any>) => {// TODO!
-            return await new Promise(
-                (
-                    resolve: (payload: ProofPayload<any>) => any,
-                    reject: (err: any) => any | any
-                ) => {
-
-                    const msg = {
-                        type: `${ProofTaskType[ProofTaskType.DEPOSIT_BATCH]}`,
-                        payload: { depositActionBatch: proofPayload.payload.depositActionBatch, depositRollupState: proofPayload.payload.depositRollupState } as {
-                            depositRollupState: DepositRollupState,
-                            depositActionBatch: DepositActionBatch
-                        }
-                    };
-
-                    const fromJsonFn = (proofJson: any) => {
-                        return DepositRollupProof.fromJSON(proofJson);
-                    }
-
-                    reqProofGen(workers, msg, fromJsonFn, resolve, reject);
-                }
-            );
-        },
-        depositRollup_merge: async (x: ProofPayload<any>, y: ProofPayload<any>) => {
-            return await new Promise(
-                (
-                    resolve: (payload: ProofPayload<any>) => any,
-                    reject: (err: any) => any | any
-                ) => {
-
-                    const msg = {
-                        type: `${ProofTaskType[ProofTaskType.DEPOSIT_MERGE]}`,
-                        payload: { DepositRollupProof1: x.payload, DepositRollupProof2: y.payload } as {
-                            DepositRollupProof1: DepositRollupProof,
-                            DepositRollupProof2: DepositRollupProof
-                        },
-                    };
-
-                    const fromJsonFn = (proofJson: any) => {
-                        return DepositRollupProof.fromJSON(proofJson);
-                    }
-
-                    reqProofGen(workers, msg, fromJsonFn, resolve, reject);
-                }
-            );
-        },
-        jointSplit_deposit: async (proofPayload: ProofPayload<any>) => {
-            return await new Promise(
-                (
-                    resolve: (payload: ProofPayload<any>) => any,
-                    reject: (err: any) => any | any
-                ) => {
-
-                    const msg = {
-                        type: `${FlowTaskType[FlowTaskType.DEPOSIT_JOIN_SPLIT]}`,
-                        payload: proofPayload.payload as JoinSplitDepositInput,
-                    };
-
-                    const fromJsonFn = (proofJson: any) => {
-                        return DepositRollupProof.fromJSON(proofJson);
-                    }
-
-                    reqProofGen(workers, msg, fromJsonFn, resolve, reject);
-                }
-            );
-        },
-        blockProve: async (proofPayload: ProofPayload<any>) => {
+        blockProve: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {
             return await new Promise(
                 (
                     resolve: (payload: ProofPayload<any>) => any,
@@ -205,11 +188,11 @@ export const createSubProcesses = async (n: number) => {
                         return DepositRollupProof.fromJSON(proofJson);
                     }
 
-                    reqProofGen(workers, msg, fromJsonFn, resolve, reject);
+                    reqProofGen(workers, msg, fromJsonFn, resolve, reject, sendCallBack);
                 }
             );
         },
-        depositContract_updateDepositState: async (proofPayload: ProofPayload<any>) => {
+        rollupContract_updateRollupState: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {
             return await new Promise(
                 (
                     resolve: (payload: ProofPayload<any>) => any,
@@ -217,7 +200,82 @@ export const createSubProcesses = async (n: number) => {
                 ) => {
 
                     const msg = {
-                        type: `${ProofTaskType[ProofTaskType.DEPOSIT_UPDATESTATE]}`,
+                        type: `${ProofTaskType[ProofTaskType.USER_FIRST_WITHDRAW]}`,
+                        payload: {
+                            feePayer: proofPayload.payload.feePayer,
+                            innerRollupProof1: proofPayload.payload.innerRollupProof1,
+                            innerRollupProof2: proofPayload.payload.innerRollupProof2
+                        } as {
+                            feePayer: PublicKey,
+                            innerRollupProof1: RollupProof,
+                            innerRollupProof2: Signature
+                        }
+                    };
+
+                    const fromJsonFn = (proofJson: any) => {
+                        return proofJson;
+                    }
+
+                    reqProofGen(workers, msg, fromJsonFn, resolve, reject, sendCallBack);
+                }
+            );
+        },
+
+        depositRollup_commitActionBatch: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {// TODO!
+            return await new Promise(
+                (
+                    resolve: (payload: ProofPayload<any>) => any,
+                    reject: (err: any) => any | any
+                ) => {
+
+                    const msg = {
+                        type: `${FlowTaskType[FlowTaskType.DEPOSIT_BATCH]}`,
+                        payload: { depositActionBatch: proofPayload.payload.depositActionBatch, depositRollupState: proofPayload.payload.depositRollupState } as {
+                            depositRollupState: DepositRollupState,
+                            depositActionBatch: DepositActionBatch
+                        }
+                    };
+
+                    const fromJsonFn = (proofJson: any) => {
+                        return DepositRollupProof.fromJSON(proofJson);
+                    }
+
+                    reqProofGen(workers, msg, fromJsonFn, resolve, reject, sendCallBack);
+                }
+            );
+        },
+        depositRollup_merge: async (x: ProofPayload<any>, y: ProofPayload<any>, sendCallBack?: any) => {
+            return await new Promise(
+                (
+                    resolve: (payload: ProofPayload<any>) => any,
+                    reject: (err: any) => any | any
+                ) => {
+
+                    const msg = {
+                        type: `${FlowTaskType[FlowTaskType.DEPOSIT_MERGE]}`,
+                        payload: { DepositRollupProof1: x.payload, DepositRollupProof2: y.payload } as {
+                            DepositRollupProof1: DepositRollupProof,
+                            DepositRollupProof2: DepositRollupProof
+                        },
+                    };
+
+                    const fromJsonFn = (proofJson: any) => {
+                        return DepositRollupProof.fromJSON(proofJson);
+                    }
+
+                    reqProofGen(workers, msg, fromJsonFn, resolve, reject, sendCallBack);
+                }
+            );
+        },
+        depositContract_updateDepositState: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {
+            return await new Promise(
+                (
+                    resolve: (payload: ProofPayload<any>) => any,
+                    reject: (err: any) => any | any
+                ) => {
+
+                    const msg = {
+                        type: `${FlowTaskType[FlowTaskType.DEPOSIT_UPDATESTATE]}`,
                         payload: {
                             feePayer: proofPayload.payload.feePayer,
                             depositRollupProof: proofPayload.payload.depositRollupProof
@@ -231,12 +289,12 @@ export const createSubProcesses = async (n: number) => {
                         return proofJson;
                     }
 
-                    reqProofGen(workers, msg, fromJsonFn, resolve, reject);
+                    reqProofGen(workers, msg, fromJsonFn, resolve, reject, sendCallBack);
                 }
             );
         },
 
-        rollupContract_firstWithdraw: async (proofPayload: ProofPayload<any>) => {
+        rollupContract_firstWithdraw: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {
             return await new Promise(
                 (
                     resolve: (payload: ProofPayload<any>) => any,
@@ -262,13 +320,12 @@ export const createSubProcesses = async (n: number) => {
                         return proofJson;
                     }
 
-                    reqProofGen(workers, msg, fromJsonFn, resolve, reject);
+                    reqProofGen(workers, msg, fromJsonFn, resolve, reject, sendCallBack);
 
                 }
             );
         },
-
-        rollupContract_withdraw: async (proofPayload: ProofPayload<any>) => {
+        rollupContract_withdraw: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {
             return await new Promise(
                 (
                     resolve: (payload: ProofPayload<any>) => any,
@@ -293,39 +350,11 @@ export const createSubProcesses = async (n: number) => {
                         return proofJson;
                     }
 
-                    reqProofGen(workers, msg, fromJsonFn, resolve, reject);
+                    reqProofGen(workers, msg, fromJsonFn, resolve, reject, sendCallBack);
                 }
             );
         },
 
-        rollupContract_updateRollupState: async (proofPayload: ProofPayload<any>) => {
-            return await new Promise(
-                (
-                    resolve: (payload: ProofPayload<any>) => any,
-                    reject: (err: any) => any | any
-                ) => {
-
-                    const msg = {
-                        type: `${ProofTaskType[ProofTaskType.USER_FIRST_WITHDRAW]}`,
-                        payload: {
-                            feePayer: proofPayload.payload.feePayer,
-                            innerRollupProof1: proofPayload.payload.innerRollupProof1,
-                            innerRollupProof2: proofPayload.payload.innerRollupProof2
-                        } as {
-                            feePayer: PublicKey,
-                            innerRollupProof1: RollupProof,
-                            innerRollupProof2: Signature
-                        }
-                    };
-
-                    const fromJsonFn = (proofJson: any) => {
-                        return proofJson;
-                    }
-
-                    reqProofGen(workers, msg, fromJsonFn, resolve, reject);
-                }
-            );
-        },
     } as SubProcessCordinator;
 };
 
@@ -351,11 +380,7 @@ const waitForWorkers = async (
 };
 
 function reqProofGen(workers: { worker: Worker; status: WorkerStatus; }[], msg: { type: string; payload: any; }, fromJsonFn, resolve, reject: (err: any) => any | any, sendCallBack?: any) {
-    let worker: {
-        worker: Worker;
-        status: string;
-    } |
-        undefined = undefined;
+    let worker: { worker: Worker, status: string } | undefined = undefined;
     do {
         worker = workers.find((w) => w.status == 'IsReady');
     } while (worker === undefined);
