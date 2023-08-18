@@ -359,7 +359,7 @@ export class FlowScheduler {
                 tx1RootWitnessData,
                 tx2RootWitnessData,
 
-                depositRoot: this.depositTreeRootInBlock,
+                depositRoot: this.depositTreeRootInBlock, // if existing depositL2Tx, this will be changed to the latest depositTreeRoot, when rollup-proof gen.
                 oldDepositStartIndex
             })
 
