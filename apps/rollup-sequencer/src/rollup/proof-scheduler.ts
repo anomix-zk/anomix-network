@@ -1,12 +1,11 @@
 
 import { WorldStateDB, RollupDB, IndexDB } from "@/worldstate";
 import config from "@/lib/config";
-import { BaseResponse, BlockStatus, RollupTaskDto, RollupTaskType, ProofTaskDto, ProofTaskType } from "@anomix/types";
-import { InnerRollupProof } from "@anomix/circuits";
-import { BlockProverOutput, Block, InnerRollupBatch, Task, TaskStatus, TaskType } from "@anomix/dao";
+import { BaseResponse, BlockStatus, RollupTaskDto, RollupTaskType, ProofTaskDto, ProofTaskType, FlowTaskType } from "@anomix/types";
+import { ActionType, InnerRollupProof } from "@anomix/circuits";
+import { BlockProverOutput, Block, InnerRollupBatch, Task, TaskStatus, TaskType, L2Tx } from "@anomix/dao";
 import { Mina, PrivateKey } from 'snarkyjs';
-import { $axios } from "@/lib";
-import { FlowTaskType } from "./constant";
+import { $axiosProofGenerator, $axiosDepositProcessor, $axiosCoordinator } from "@/lib";
 import { getConnection } from "typeorm";
 import axios from "axios";
 
@@ -15,17 +14,41 @@ export class ProofScheduler {
     constructor(private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) { }
 
     async startBatchMerge(blockId: number) {
-        // TODO need stop 'deposit-processor'
-        // or move this to 'Coordinator'?!!!
-        //
+        let latestDepositTreeRoot: string = undefined as any as string;
+        const connection = getConnection();
+
+        await connection.getRepository(L2Tx)
+            .find({ where: { blockId } })
+            .then(async txList => {
+                const hasDeposit = txList!.some(tx => {
+                    return tx.actionType == ActionType.DEPOSIT.toString();
+                });
+                if (hasDeposit) {
+                    // MUST stop 'deposit-processor', need WAIT until timeout!! will return the latest DepositTreeRoot if deposit_processor just sent out a deposit_batch L1tx.
+                    await $axiosDepositProcessor.post<BaseResponse<string>>('/rollup/stop-mark').then(r => {
+                        if (r.data.code == 1) {
+                            throw new Error(`could not obtain latest DEPOSIT_TREE root: ${r.data.msg}`);
+                        }
+                        latestDepositTreeRoot = r.data.data;
+                    });
+                }
+
+            });
 
         // query related InnerRollupBatch regarding 'blockId'
-        const innerRollupBatchRepo = getConnection().getRepository(InnerRollupBatch);
+        const innerRollupBatchRepo = connection.getRepository(InnerRollupBatch);
         const innerRollupBatch = await innerRollupBatchRepo.findOne({ where: { blockId } });
         if (!innerRollupBatch) {
             throw new Error(`cannot find innerRollupBatch by blockId:${blockId}`);
         }
         const innerRollupBatchParamList = JSON.parse(innerRollupBatch.inputParam);
+
+        if (latestDepositTreeRoot) {// ie. has depositL2tx, then need change to latestDepositTreeRoot
+            // change to latest deposit tree root
+            innerRollupBatchParamList.forEach(param => {
+                param.depositRoot = latestDepositTreeRoot
+            })
+        }
 
         // send to proof-generator, construct proofTaskDto
         const proofTaskDto: ProofTaskDto<any, any> = {
@@ -39,11 +62,11 @@ export class ProofScheduler {
         }
 
         // send to proof-generator for exec 'InnerRollupProver.proveTxBatch(*) && merge(*)'
-        await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
+        await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {
                 throw new Error(r.data.msg);
             }
-        });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
+        });// TODO future: could improve when fail by 'timeout' after retry
     }
 
     /**
@@ -65,11 +88,11 @@ export class ProofScheduler {
             }
         }
         // send to proof-generator to exec BlockProver
-        await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
+        await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {
                 throw new Error(r.data.msg);
             }
-        });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
+        });// TODO future: could improve when fail by 'timeout' after retry
     }
 
     /**
@@ -105,11 +128,16 @@ export class ProofScheduler {
         const rollupTaskDto = {} as RollupTaskDto<any, any>;
         rollupTaskDto.taskType = RollupTaskType.ROLLUP_PROCESS;
         rollupTaskDto.payload = { blockId }
-        await axios.post<BaseResponse<string>>(config.coordinator_notify_url, rollupTaskDto).then(r => {
+
+        $axiosCoordinator.post<BaseResponse<any>>('/rollup/proof-notify', rollupTaskDto).then(async r => {
             if (r.data.code == 1) {
                 throw new Error(r.data.msg);
+            } else if (r.data.data?.taskType == RollupTaskType.ROLLUP_CONTRACT_CALL) {
+                //  if this block aligns with AnomixRollupContract's onchain states, coordinator would further command triggerring 'callRollupContract'
+                await this.callRollupContract(blockId);
             }
-        });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
+        });// TODO future: could improve when fail by 'timeout' after retry
+
     }
 
     async callRollupContract(blockId: number) {
@@ -132,11 +160,11 @@ export class ProofScheduler {
             }
         }
         // send to proof-generator to trigger ROLLUP_CONTRACT
-        await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
+        await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {
                 throw new Error(r.data.msg);
             }
-        });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
+        });// TODO future: could improve when fail by 'timeout' after retry
     }
 
     async whenL1TxComeback(data: { blockId: number, tx: any }) {

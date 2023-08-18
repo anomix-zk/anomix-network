@@ -3,7 +3,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
-import { $axios } from "@/lib";
+import { $axiosProofGenerator } from "@/lib";
 import { checkAccountExists } from "@anomix/utils";
 import { Block, WithdrawInfo } from "@anomix/dao";
 import { WithdrawNoteWitnessData, LowLeafWitnessData, NullifierMerkleWitness } from "@anomix/circuits";
@@ -143,7 +143,7 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
         }
 
         // send to proof-generator for circuit exec
-        let rs = await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
+        let rs = await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             return r.data;
         });
         if (rs.code == 1) {
