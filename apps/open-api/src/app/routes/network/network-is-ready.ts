@@ -3,7 +3,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse } from "@anomix/types";
-import { $axios } from "@/lib/api";
+import { $axiosSeq } from "@/lib/api";
 
 /**
  * check if the sequencer is ready
@@ -27,7 +27,7 @@ export const handler: RequestHandler<string[], null> = async function (
     res
 ): Promise<BaseResponse<boolean>> {
     try {
-        const rs = await $axios.get<string>('/health').then(r => {
+        const rs = await $axiosSeq.get<string>('/health').then(r => {
             return r.data
         })
 

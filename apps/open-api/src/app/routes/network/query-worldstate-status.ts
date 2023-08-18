@@ -5,7 +5,7 @@ import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
 import { WorldStateRespDto, WorldStateRespDtoSchema, BaseResponse, L2TxStatus } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
-import { $axios } from '@/lib/api';
+import { $axiosSeq } from '@/lib/api';
 
 /**
  * query all trees' roots
@@ -33,7 +33,7 @@ export const handler: RequestHandler<null, null> = async function (
 ): Promise<BaseResponse<WorldStateRespDto>> {
     try {
         // query sequencer
-        const rs = await $axios.get<BaseResponse<WorldStateRespDto>>('/network/worldstate').then(r => { return r.data });
+        const rs = await $axiosSeq.get<BaseResponse<WorldStateRespDto>>('/network/worldstate').then(r => { return r.data });
         return rs;
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")

@@ -6,7 +6,7 @@ import { RequestHandler } from '@/lib/types'
 import { WithdrawInfo } from "@anomix/dao";
 import { BaseResponse, WithdrawNoteStatus, WithdrawAssetReqDto, WithdrawAssetReqDtoSchema } from "@anomix/types";
 import { Signature, PublicKey, Field } from "snarkyjs";
-import { $axios } from "@/lib/api";
+import { $axiosSeq } from "@/lib/api";
 
 /**
 * 提现场景中，用户提供noteCommitment, 服务器执行合约并协助提现
@@ -72,7 +72,7 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
         }
 
         //send to 'Sequencer' for further handle.
-        return await $axios.post<BaseResponse<string>>('/tx/withdraw', { l1addr, noteCommitment }).then(r => r.data);
+        return await $axiosSeq.post<BaseResponse<string>>('/tx/withdraw', { l1addr, noteCommitment }).then(r => r.data);
 
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
