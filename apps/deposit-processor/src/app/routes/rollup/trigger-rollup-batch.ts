@@ -2,7 +2,7 @@
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
-import { BaseResponse, SequencerStatus } from "@anomix/types";
+import { BaseResponse } from "@anomix/types";
 
 /**
  * trigger deposit rollup
@@ -21,7 +21,7 @@ export const triggerRollupBatch: FastifyPlugin = async function (
     })
 }
 
-export const handler: RequestHandler<string[], null> = async function (
+export const handler: RequestHandler<null, null> = async function (
     req,
     res
 ): Promise<BaseResponse<boolean>> {
