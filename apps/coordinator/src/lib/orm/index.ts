@@ -1,7 +1,5 @@
 import config from '../config';
-import { Account, L2Tx, MemPlL2Tx, BlockProverOutputEntity, DepositCommitment, DepositTreeTrans, WithdrawInfo, Task } from '@anomix/dao'
-import "reflect-metadata"
-
+import * as entities from '@anomix/dao'
 import { createConnection } from 'typeorm'
 import { MysqlConnectionOptions } from "typeorm/driver/mysql/MysqlConnectionOptions";
 
@@ -10,7 +8,7 @@ export const initORM = async (connectionOverrides?: Partial<MysqlConnectionOptio
     try {
         const connection = await createConnection(<MysqlConnectionOptions>{
             ...config.typeORM,
-            entities: [Account, L2Tx, MemPlL2Tx, BlockProverOutputEntity, DepositCommitment, DepositTreeTrans, WithdrawInfo, Task],
+            entities,
             ...connectionOverrides,
         });
 
