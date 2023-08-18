@@ -78,19 +78,25 @@ export interface L2TxRespDto {
         /**
          * from encryptedData2
          */
-        outputNote2: EncryptedNote,
+        outputNote2?: EncryptedNote,
         /**
          * used at Account Registration section
          */
-        accountPublicKey: string,
+        acctPk?: string,
         /**
          * used at Account Registration section
          */
-        aliasHash: string,
+        aliasHash?: string,
+
+        /**
+         * encrypted alias
+         */
+        aliasInfo?: string,
+
         /**
          * used at Withdrawal section
          */
-        withdrawNote: WithdrawInfoDto
+        withdrawNote?: WithdrawInfoDto
     }
 
     status: number
