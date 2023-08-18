@@ -83,8 +83,8 @@ const config = {
     entryContractAddress: <string>process.env.ENTRY_CONTRACT_ADDRESS || 'B62785kfljj8784990kj0kj90kjjiekljk',
     rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
 
-    depositEndpoint_couldStopMarkDepositActions: `http://${<string>process.env.DEPOSIT_PROCESSOR_HOST}:${<number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT)}/stop-mark`,
-    coordinator_notify_url: `http://${<string>process.env.COORDINATOR_HOST}:${<number>Number(<string>process.env.COORDINATOR_PORT)}/notify`
+    coordinatorHost: <string>process.env.COORDINATOR_HOST || '127.0.0.1',
+    coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT) || 8083,
 }
 
 export default config

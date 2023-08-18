@@ -7,7 +7,7 @@ import { AccountUpdate, Field, PublicKey, Mina, PrivateKey, UInt32, Reducer } fr
 import config from "@/lib/config";
 import { syncAcctInfo } from "@anomix/utils";
 import { BaseResponse, FlowTask, FlowTaskType, ProofTaskDto, ProofTaskType, RollupTaskDto, RollupTaskType, MerkleTreeId } from "@anomix/types";
-import { $axios } from "@/lib";
+import { $axiosCoordinator, $axiosProofGenerator } from "@/lib";
 import { getConnection } from "typeorm";
 import { L2Tx } from "@anomix/dao";
 import axios from "axios";
@@ -96,7 +96,7 @@ export class WorldState {
         }))
 
         // send to proof-generator for 'JoinSplitProver.deposit(*)'
-        await $axios.post<BaseResponse<string>>('/proof-gen',
+        await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen',
             {
                 taskType: ProofTaskType.DEPOSIT_JOIN_SPLIT,
                 index: undefined,
@@ -131,10 +131,10 @@ export class WorldState {
             payload: { blockId }
         }
         // notify coordinator
-        await axios.post<BaseResponse<string>>(config.coordinator_notify_url, rollupTaskDto).then(r => {
+        await $axiosCoordinator.post<BaseResponse<string>>('/rollup/proof-notify', rollupTaskDto).then(r => {
             if (r.data.code == 1) {
                 throw new Error(r.data.msg);
             }
-        });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
+        });// TODO future: could improve when fail by 'timeout' after retry
     }
 }
