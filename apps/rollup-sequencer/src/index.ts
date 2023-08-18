@@ -1,5 +1,5 @@
 import { Worker } from "worker_threads";
-import { FlowTaskType } from "./rollup";
+import { FlowTaskType, RollupTaskType } from "@anomix/types";
 import { WorldState, WorldStateDB, RollupDB, IndexDB } from "./worldstate";
 import config from './lib/config';
 import { activeMinaInstance } from "@anomix/utils";
@@ -101,7 +101,10 @@ function bootWebServerThread(worldState: WorldState) {
     })
 
     worker.on('message', (value: any) => {
-        if (value.taskType == FlowTaskType.SEQUENCE) {
+        if (value.taskType == RollupTaskType.SEQUENCE) {// trigger seq
+            // if (worldState.ongingFlow) {// single thread for 'seq', no need check!
+            //     return;
+            // }
             worldState.startNewFlow();
             return;
         }
