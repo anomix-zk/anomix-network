@@ -2,7 +2,7 @@
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
-import { BaseResponse, SequencerStatus } from "@anomix/types";
+import { BaseResponse, RollupTaskDto, RollupTaskDtoSchma, SequencerStatus } from "@anomix/types";
 import { type } from "os";
 
 /**
@@ -14,7 +14,7 @@ export const jointSplitActions: FastifyPlugin = async function (
     done
 ): Promise<void> {
     instance.route({
-        method: "GET",
+        method: "POST",
         url: "/rollup/joint-split-deposit",
         //preHandler: [instance.authGuard],
         schema,
@@ -22,11 +22,11 @@ export const jointSplitActions: FastifyPlugin = async function (
     })
 }
 
-export const handler: RequestHandler<null, { blockId: number }> = async function (
+export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async function (
     req,
     res
 ): Promise<BaseResponse<boolean>> {
-    const { blockId } = req.params;
+    const { blockId } = req.body.payload;
     try {
         /**
          * collect all 'Pending' actions(within depositTx list) and exec 'JoinSplitProver.deposit'
@@ -42,10 +42,9 @@ export const handler: RequestHandler<null, { blockId: number }> = async function
 const schema = {
     description: 'trigger joint-split-deposit',
     tags: ['L2Tx'],
-    param: {
-        blockId: {
-            type: 'number'
-        }
+    body: {
+        type: (RollupTaskDtoSchma as any).type,
+        properties: (RollupTaskDtoSchma as any).properties,
     },
     response: {
         200: {
