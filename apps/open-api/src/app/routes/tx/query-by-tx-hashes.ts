@@ -2,7 +2,7 @@
 * 供client根据TxId查询L2 tx的状态、数据
 */
 // GET /tx/id/:id
-import { Block, L2Tx, MemPlL2Tx } from '@anomix/dao'
+import { Account, Block, L2Tx, MemPlL2Tx, WithdrawInfo } from '@anomix/dao'
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { In, getConnection } from 'typeorm';
@@ -34,9 +34,9 @@ export const handler: RequestHandler<string[], null> = async function (
     res
 ): Promise<BaseResponse<L2TxRespDto[]>> {
     const txHashList = req.body
-
+    const connection = getConnection();
     try {
-        const txRepository = getConnection().getRepository(L2Tx)
+        const txRepository = connection.getRepository(L2Tx)
         // then query confirmed tx collection
         const ctxList = await txRepository.find({
             where: {
@@ -45,7 +45,7 @@ export const handler: RequestHandler<string[], null> = async function (
         }) ?? [];
 
         const l2TxRespDtoList = await Promise.all(ctxList.map(async tx => {
-            const blockRepository = getConnection().getRepository(Block)
+            const blockRepository = connection.getRepository(Block)
             const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx.blockId } });
 
             const { updatedAt, createdAt, proof, encryptedData1, encryptedData2, ...restObj } = tx;
@@ -61,17 +61,21 @@ export const handler: RequestHandler<string[], null> = async function (
             }
 
             if (tx.actionType == ActionType.WITHDRAW.toString()) {// if Withdrawal
-                txDto.extraData.withdrawNote = {} as any as WithdrawInfoDto;
                 // query WithdrawInfoDto
-                //
-                /
+                const withdrawNoteRepo = connection.getRepository(WithdrawInfo);
+                const { createdAt, updatedAt, finalizedAt, blockIdWhenL1Tx, ...restPro } = (await withdrawNoteRepo.findOne({ where: { l2TxId: txDto.id } }))!;
+                txDto.extraData.withdrawNote = restPro as any as WithdrawInfoDto;
+                txDto.extraData.withdrawNote.createdTs = txDto.createdTs;// !!!
 
-                txDto.extraData.withdrawNote!.createdTs = txDto.createdTs;// !!!
             } else if (tx.actionType == ActionType.ACCOUNT.toString()) {// if Account
-                // query account
-                // 
-                //
-
+                // query Account
+                const accountRepo = connection.getRepository(Account);
+                const account = await accountRepo.findOne({ where: { l2TxId: txDto.id } });
+                if (account) {
+                    txDto.extraData.acctPk = account.acctPk;
+                    txDto.extraData.aliasHash = account.aliasHash;
+                    txDto.extraData.aliasInfo = account.encrptedAlias;
+                }
             }
 
             return txDto;

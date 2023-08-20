@@ -2,11 +2,11 @@
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { BaseResponse, L2TxRespDto, WithdrawInfoDto } from '@anomix/types'
+import { BaseResponse, L2TxRespDto, L2TxRespDtoSchema, WithdrawInfoDto } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 import { $axiosSeq } from "@/lib/api"
 import { getConnection, In } from "typeorm"
-import { L2Tx, Block } from "@anomix/dao"
+import { L2Tx, Block, WithdrawInfo, Account } from "@anomix/dao"
 import { ActionType } from "@anomix/circuits"
 
 /**
@@ -46,14 +46,12 @@ export const handler: RequestHandler<string[], null> = async function (
             }
         }) ?? [];
 
-
         const l2TxRespDtoList = await Promise.all(ctxList.map(async tx => {
-            const blockRepository = getConnection().getRepository(Block)
+            const blockRepository = connection.getRepository(Block)
             const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx.blockId } });
 
             const { updatedAt, createdAt, proof, encryptedData1, encryptedData2, ...restObj } = tx;
             const txDto = (restObj as any) as L2TxRespDto;
-
             txDto.finalizedTs = block!.finalizedAt.getTime();
             txDto.createdTs = block!.createdAt.getTime();
 
@@ -64,17 +62,21 @@ export const handler: RequestHandler<string[], null> = async function (
             }
 
             if (tx.actionType == ActionType.WITHDRAW.toString()) {// if Withdrawal
-                txDto.extraData.withdrawNote = {} as any as WithdrawInfoDto;
-                // TODO query WithdrawInfoDto
-                //
-                /
+                // query WithdrawInfoDto
+                const withdrawNoteRepo = connection.getRepository(WithdrawInfo);
+                const { createdAt, updatedAt, finalizedAt, blockIdWhenL1Tx, ...restPro } = (await withdrawNoteRepo.findOne({ where: { l2TxId: txDto.id } }))!;
+                txDto.extraData.withdrawNote = restPro as any as WithdrawInfoDto;
+                txDto.extraData.withdrawNote.createdTs = txDto.createdTs;// !!!
 
-                txDto.extraData.withdrawNote!.createdTs = txDto.createdTs;// !!!
             } else if (tx.actionType == ActionType.ACCOUNT.toString()) {// if Account
-                // TODO query Account
-                // 
-                //
-
+                // query Account
+                const accountRepo = connection.getRepository(Account);
+                const account = await accountRepo.findOne({ where: { l2TxId: txDto.id } });
+                if (account) {
+                    txDto.extraData.acctPk = account.acctPk;
+                    txDto.extraData.aliasHash = account.aliasHash;
+                    txDto.extraData.aliasInfo = account.encrptedAlias;
+                }
             }
 
             return txDto;
@@ -107,18 +109,8 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: "array",
-                    items: {
-                        type: "object",
-                        properties: {
-                            note: {
-                                type: "string"
-                            },
-                            txHash: {
-                                type: "string"
-                            },
-                        }
-                    }
+                    type: L2TxRespDtoSchema.type,
+                    properties: L2TxRespDtoSchema.properties
                 },
                 msg: {
                     type: 'string'
