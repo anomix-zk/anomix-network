@@ -20,7 +20,7 @@ export const checkAliasAlignWithViewKey: FastifyPlugin = async function (
     })
 }
 
-type ReqBody = { aliasHash: string, acctViewKey: string };
+type ReqBody = { aliasHash: string, acctViewKey: string, includePending: boolean };
 
 export const handler: RequestHandler<ReqBody, null> = async function (
     req,
@@ -33,10 +33,25 @@ export const handler: RequestHandler<ReqBody, null> = async function (
     try {
         let code = 1;
         let data = false;
+        let msg = '';
+
         const account = await accountRepository.findOne({ where: { aliasHash } });
-        if (account?.acctPk == acctViewKey) {
-            code = 0;
-            data = true;
+
+        if (account) {
+            if (account.acctPk == acctViewKey) {
+                const mpL2TxRepo = connection.getRepository(MemPlL2Tx);
+                const status = (await mpL2TxRepo.findOne(account.l2TxId))!.status;
+                if (status == L2TxStatus.FAILED) {
+                    code = 1;// not registered!
+                    data = false;
+                } else {
+                    code = 0;
+                    data = true;
+                    if (status == L2TxStatus.PENDING) {
+                        msg = 'pending';
+                    }
+                }
+            }
         }
 
         return {
