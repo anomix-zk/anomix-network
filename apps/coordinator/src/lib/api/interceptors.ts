@@ -1,6 +1,6 @@
 import type { AxiosResponse } from 'axios';
 import { timeout } from '@anomix/utils';
-import { $axiosProofGenerator, $axiosCoordinator } from './client';
+import { $axiosSeq, $axiosDeposit } from './client';
 import type { ResponseError } from './response-error';
 
 type ResponseSuccessCallback = (response: AxiosResponse) => void;
@@ -16,7 +16,7 @@ const callbackTrigger: CallbackTrigger = {
     responseError: (null as any) as ResponseErrorCallback
 };
 
-$axiosProofGenerator.interceptors.response.use(
+$axiosSeq.interceptors.response.use(
     (response: AxiosResponse) => {
         if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
         return response.data;
@@ -31,12 +31,12 @@ $axiosProofGenerator.interceptors.response.use(
             error.isNetworkError = true;
             if (callbackTrigger.responseError) callbackTrigger.responseError(error);
             await timeout(5000);
-            return await $axiosProofGenerator.request(error.config);
+            return await $axiosSeq.request(error.config);
         }
     }
 );
 
-$axiosCoordinator.interceptors.response.use(
+$axiosDeposit.interceptors.response.use(
     (response: AxiosResponse) => {
         if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
         return response.data;
@@ -51,10 +51,11 @@ $axiosCoordinator.interceptors.response.use(
             error.isNetworkError = true;
             if (callbackTrigger.responseError) callbackTrigger.responseError(error);
             await timeout(5000);
-            return await $axiosCoordinator.request(error.config);
+            return await $axiosDeposit.request(error.config);
         }
     }
 );
+
 export function onResponseSuccess(callback: ResponseSuccessCallback): void {
     callbackTrigger.responseSuccess = callback;
 }

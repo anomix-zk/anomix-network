@@ -6,7 +6,8 @@ export const $axiosSeq = axios.create({
     withCredentials: true,
 });
 
-export const $axiosCoordinator = axios.create({
-    baseURL: `${config.coordinatorHost}:${config.coordinatorPort}`,
+export const $axiosDeposit = axios.create({
+    baseURL: `${config.depositProcessorHost}:${config.depositProcessorPort}`,
     withCredentials: true,
 });
+

@@ -3,7 +3,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse } from "@anomix/types";
-import { $axios } from "@/lib/api";
+import { $axiosSeq } from "@/lib/api";
 /**
  * check if nullifiers exist
  */
@@ -28,7 +28,7 @@ export const handler: RequestHandler<string[], null> = async function (
     const nullifierList = req.body
 
     try {
-        const rs = await $axios.post<BaseResponse<Map<string, string>>>('/existence/nullifiers', nullifierList).then(r => {
+        const rs = await $axiosSeq.post<BaseResponse<Map<string, string>>>('/existence/nullifiers', nullifierList).then(r => {
             return r.data
         })
         return rs;

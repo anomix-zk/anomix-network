@@ -1,5 +1,3 @@
-import exp from "constants";
-
 export class BlockStatus {
     /**
      * before BlockProver.prove(*)
@@ -122,8 +120,7 @@ export enum SequencerStatus {
 }
 
 export enum FlowTaskType {
-    SEQUENCE = 0,
-    ROLLUP_TX_BATCH,
+    ROLLUP_TX_BATCH = 0,
     ROLLUP_MERGE,
     ROLLUP_TX_BATCH_MERGE,
     BLOCK_PROVE,

@@ -7,7 +7,7 @@ import { DataMerkleWitness, DataRootWitnessData, DEPOSIT_ACTION_BATCH_SIZE, Inne
 import { WorldState } from "@/worldstate";
 import { IndexDB } from "./index-db";
 import { Account, BlockProverOutput, DepositActionEventFetchRecord, DepositCommitment, DepositTreeTrans, L2Tx, MemPlL2Tx, Task, TaskStatus, TaskType, WithdrawInfo } from "@anomix/dao";
-import { $axios } from "@/lib";
+import { $axiosProofGenerator } from "@/lib";
 import { syncAcctInfo } from "@anomix/utils";
 import { FlowTask, FlowTaskType } from "@anomix/types";
 import { getConnection, In } from "typeorm";
@@ -133,11 +133,11 @@ export class FlowScheduler {
                 data: batchParamList
             }
         } as ProofTaskDto<any, FlowTask<any>>;
-        await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
+        await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {
                 throw new Error(r.data.msg);
             }
-        });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
+        });// TODO future: could improve when fail by 'timeout' after retry
     }
 
     /**
@@ -219,11 +219,11 @@ export class FlowScheduler {
             }
         } as ProofTaskDto<any, FlowTask<any>>;
 
-        await $axios.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
+        await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {
                 throw new Error(r.data.msg);
             }
-        });// TODO future: could improve when fail by 'timeout' after retry, like save the 'innerRollupInputList' into DB
+        });// TODO future: could improve when fail by 'timeout' after retry
 
         await queryRunner.commitTransaction();
 

@@ -4,7 +4,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { BaseResponse, L2TxRespDto } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
-import { $axios } from "@/lib/api"
+import { $axiosProofGenerator } from "@/lib/api"
 import { getConnection, In } from "typeorm"
 import { L2Tx, Block } from "@anomix/dao"
 
@@ -32,34 +32,10 @@ export const handler: RequestHandler<string[], null> = async function (
     const notehashes = req.body
 
     try {
-        const txHashList = await $axios.post<BaseResponse<string[]>>('/tx/notehashes', notehashes).then(r => {
-            return r.data.data
-        });
-
-        const connection = getConnection();
-        const txRepository = connection.getRepository(L2Tx)
-        // then query confirmed tx collection
-        const ctxList = await txRepository.find({
-            where: {
-                txHash: In(txHashList)
-            }
-        }) ?? [];
-
-        const l2TxRespDtoList = await Promise.all(ctxList.map(async tx => {
-            const blockRepository = connection.getRepository(Block)
-            const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx.blockId } });
-
-            const { updatedAt, createdAt, proof, ...restObj } = tx;
-            const txDto = (restObj as any) as L2TxRespDto;
-
-            txDto.finalizedTs = block!.finalizedAt.getTime();
-            txDto.createdTs = block!.createdAt.getTime();
-
-            txDto.extraData.withdrawNote.createdTs = txDto.createdTs;
-
-            return txDto;
-        }));
-
+        let l2TxRespDtoList: L2TxRespDto[] = []
+        // TODO
+        //
+        //
         return {
             code: 0,
             data: l2TxRespDtoList,

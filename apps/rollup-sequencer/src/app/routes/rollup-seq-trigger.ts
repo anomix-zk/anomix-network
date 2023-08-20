@@ -1,21 +1,21 @@
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { RequestHandler } from '@/lib/types'
-import { BaseResponse, RollupTaskDto, RollupTaskDtoSchma, SequencerStatus } from "@anomix/types";
-import { type } from "os";
+import { RequestHandler, } from '@/lib/types'
+import { BaseResponse, RollupTaskDto, RollupTaskDtoSchma } from "@anomix/types";
+import { parentPort } from "worker_threads";
 
 /**
- * each action to joint-split-deposit to l2Tx
+ * recieve rollup seq triggering command from coordinator
  */
-export const jointSplitActions: FastifyPlugin = async function (
+export const rollupSeqTrigger: FastifyPlugin = async function (
     instance,
     options,
     done
 ): Promise<void> {
     instance.route({
         method: "POST",
-        url: "/rollup/joint-split-deposit",
+        url: "/rollup/seq-trigger",
         //preHandler: [instance.authGuard],
         schema,
         handler
@@ -26,12 +26,9 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
     req,
     res
 ): Promise<BaseResponse<boolean>> {
-    const { blockId } = req.body.payload;
     try {
-        /**
-         * collect all 'Pending' actions(within depositTx list) and exec 'JoinSplitProver.deposit'
-         */
-        await this.worldState.processDepositActions(blockId);
+        // forward it to main thread, and will further forward it to Rollup threads.
+        parentPort?.postMessage(req.body)
 
         return { code: 0, data: true, msg: '' };
     } catch (err) {
@@ -40,8 +37,8 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
 }
 
 const schema = {
-    description: 'trigger joint-split-deposit',
-    tags: ['L2Tx'],
+    description: 'recieve seq triggering command from coordinator',
+    tags: ['ROLLUP'],
     body: {
         type: (RollupTaskDtoSchma as any).type,
         properties: (RollupTaskDtoSchma as any).properties,
@@ -63,3 +60,4 @@ const schema = {
         }
     }
 }
+

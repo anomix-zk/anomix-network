@@ -1,5 +1,6 @@
 export enum RollupTaskType {
-    DEPOSIT_PROCESS = 10,
+    SEQUENCE = 20,
+    DEPOSIT_PROCESS,
     DEPOSIT_CONTRACT_CALL,
 
     ROLLUP_PROCESS,

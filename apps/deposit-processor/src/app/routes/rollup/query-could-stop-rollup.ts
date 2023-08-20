@@ -15,7 +15,7 @@ export const queryCouldStopRollup: FastifyPlugin = async function (
 ): Promise<void> {
     instance.route({
         method: "POST",
-        url: "network/stop-mark",
+        url: "/rollup/stop-mark",
         //preHandler: [instance.authGuard],
         schema,
         handler
@@ -27,16 +27,20 @@ export const handler: RequestHandler<string[], null> = async function (
     res
 ): Promise<BaseResponse<any>> {
     try {
-        // TODO check if WorldState has an onging Flow 
+        /* single thread for both http-server and deposit_rollup, so no need to check if WorldState has an onging Flow  
+        // check if WorldState has an onging Flow     
         if (this.worldState.ongingFlow) {
             return {
                 code: 1, data: undefined, msg: ''
             };
-        }
+        } 
+        */
+
+        // if deposit_processor just send out a deposit-rollup L1tx that is not yet confirmed at Mina Chain, then return the latest DEPOSIT_TREE root !!
+        // later if the seq-rollup L1Tx of the L2Block with this root is confirmed before this deposit-rollup L1tx (even though this case is rare), then the seq-rollup L1Tx fails!!
+        const latestDepositTreeRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, true);
         return {
-            code: 0, data: {
-                latestDepositTreeRoot: this.worldState.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, true)
-            }, msg: ''
+            code: 0, data: latestDepositTreeRoot, msg: ''
         };
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")

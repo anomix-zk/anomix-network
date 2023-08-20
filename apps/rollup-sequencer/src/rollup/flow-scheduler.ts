@@ -332,7 +332,7 @@ export class FlowScheduler {
             if (Field(tx1.actionType).equals(ActionType.DEPOSIT).toBoolean()) {
                 oldDepositStartIndex = Field(tx1.depositIndex);
             } else if (Field(tx2.actionType).equals(ActionType.DEPOSIT).toBoolean()) {
-                oldDepositStartIndex = Field(tx1.depositIndex);
+                oldDepositStartIndex = Field(tx2.depositIndex);
             }
 
             const innerRollupInputStr = JSON.stringify({
@@ -359,7 +359,7 @@ export class FlowScheduler {
                 tx1RootWitnessData,
                 tx2RootWitnessData,
 
-                depositRoot: this.depositTreeRootInBlock,
+                depositRoot: this.depositTreeRootInBlock, // if existing depositL2Tx, this will be changed to the latest depositTreeRoot, when rollup-proof gen.
                 oldDepositStartIndex
             })
 

@@ -3,7 +3,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { BaseResponse, MerkleProofDto, MerkleProofDtoSchema } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
-import { $axios } from "@/lib/api"
+import { $axiosSeq } from "@/lib/api"
 
 
 /**
@@ -31,7 +31,7 @@ export const handler: RequestHandler<string[], null> = async function (
 
     try {
         // request sequencer for the result.
-        const rs = await $axios.post<BaseResponse<MerkleProofDto[]>>('/merklewitness', commitmentList).then(r => {
+        const rs = await $axiosSeq.post<BaseResponse<MerkleProofDto[]>>('/merklewitness', commitmentList).then(r => {
             return r.data
         })
 

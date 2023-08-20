@@ -7,7 +7,8 @@ import { RequestHandler } from '@/lib/types';
 import { ActionType, JoinSplitProof, ValueNote } from "@anomix/circuits";
 import config from "@/lib/config";
 import { verify, Field } from "snarkyjs";
-import { $axios } from '@/lib/api';
+import { $axiosCoordinator, $axiosSeq } from '@/lib/api';
+
 /**
 * 供client发送L2 tx
 *  ① 如果是withdraw, 则返回url
@@ -35,10 +36,14 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
         return { code: 1, data: 'proof verify failed!', msg: '' }
     }
 
+    if (Number(joinSplitProof.publicOutput.txFee) < config.floorMpTxFee) {
+        return { code: 1, data: 'txFee not enough!', msg: '' }
+    }
+
     // check if nullifier1&2 is not on nullifier_tree
     const nullifier1 = joinSplitProof.publicOutput.nullifier1.toString();
     const nullifier2 = joinSplitProof.publicOutput.nullifier2.toString();
-    const rs = await $axios.post<BaseResponse<Map<string, string>>>('/existence/nullifiers', [nullifier1, nullifier2]).then(r => {
+    const rs = await $axiosSeq.post<BaseResponse<Map<string, string>>>('/existence/nullifiers', [nullifier1, nullifier2]).then(r => {
         return r.data.data
     })
     if (rs.get(nullifier1) != '-1' || rs.get(nullifier2) != '-1') {
@@ -138,6 +143,11 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
                 }
             }
             await queryRunner.commitTransaction();
+
+            // if there is a high-fee l2tx, then notify coordinator to trigger seq
+            if (Number(mpL2Tx.txFee) >= config.minMpTxFeeToGenBlock) {
+                $axiosCoordinator.get('/tx/high-fee-exist');
+            }
 
             return { code: 0, data: joinSplitProof.publicOutput.hash().toString(), msg: '' };
         } catch (err) {
