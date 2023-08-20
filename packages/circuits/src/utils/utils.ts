@@ -1,4 +1,4 @@
-import { BaseSiblingPath } from '@anomix/types';
+import { BaseSiblingPath, EncryptedNote } from '@anomix/types';
 import {
   calculateShareSecret,
   derivePublicKeyBigInt,
@@ -46,25 +46,25 @@ export function calculateNoteNullifier(
 
 export async function encryptValueNoteToFieldData(
   note: ValueNote,
-  senderPrivateKey: PrivateKey
+  noteEncryptPrivateKey: PrivateKey
 ): Promise<EncryptedNoteFieldData> {
   const jsonStr = JSON.stringify(ValueNote.toJSON(note));
   const noteCommitment = note.commitment();
-  const privateKeyBigInt = senderPrivateKey.toBigInt();
+  const privateKeyBigInt = noteEncryptPrivateKey.toBigInt();
   const noteCommitmentBigInt = noteCommitment.toBigInt();
   const publicKey = genNewKeyPairForNote(
     privateKeyBigInt,
     noteCommitmentBigInt
   ).publicKey;
   const senderPubKeyBigInt = derivePublicKeyBigInt(
-    senderPrivateKey.toPublicKey()
+    noteEncryptPrivateKey.toPublicKey()
   );
   const receiverInfo = maskReceiverBySender(
     note.ownerPk,
     senderPubKeyBigInt,
     noteCommitment.toBigInt()
   );
-  const shareSecret = calculateShareSecret(senderPrivateKey, note.ownerPk);
+  const shareSecret = calculateShareSecret(noteEncryptPrivateKey, note.ownerPk);
   const cipherText = await encrypt(
     jsonStr,
     noteCommitment.toString(),
@@ -83,4 +83,12 @@ export async function encryptValueNoteToFieldData(
   );
 
   return new EncryptedNoteFieldData({ data });
+}
+
+export function getEncryptedNoteFromFieldData(
+  data: EncryptedNoteFieldData
+): Promise<EncryptedNote> {
+  const fs = EncryptedNoteFieldData.toFields(data);
+  const encryptedNoteJsonStr = Encoding.Bijective.Fp.toString(fs);
+  return JSON.parse(encryptedNoteJsonStr);
 }

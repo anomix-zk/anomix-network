@@ -16,12 +16,7 @@ import {
   Poseidon,
 } from 'snarkyjs';
 import { DepositRollupProof } from './deposit_rollup_prover';
-import {
-  AccountRequired,
-  AssetId,
-  DUMMY_FIELD,
-  NoteType,
-} from '../models/constants';
+import { AccountRequired, AssetId, NoteType } from '../models/constants';
 import {
   DepositEvent,
   DepositRollupState,
