@@ -33,15 +33,14 @@ export const handler: RequestHandler<null, null> = async function (
 ): Promise<BaseResponse<TxFeeSuggestionDto>> {
     try {
         // TODO future improve: query sequencer
-        //
-        //
+        // 当检查当前内存池如果满了，返回内存池手续费最贵那笔交易的价格+0.01. 配置300笔为内存池满。
+        /
         return {
             code: 0,
             data: {
                 assetId: 0,
-                faster: config.txFeeFloor,
-                normal: config.txFeeFloor,
-                floor: config.txFeeFloor
+                faster: config.minMpTxFeeToGenBlock,
+                normal: config.txFeeFloor
             },
             msg: ''
         };

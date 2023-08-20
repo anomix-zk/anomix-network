@@ -2,11 +2,12 @@
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { BaseResponse, L2TxRespDto } from '@anomix/types'
+import { BaseResponse, L2TxRespDto, WithdrawInfoDto } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
-import { $axios } from "@/lib/api"
+import { $axiosSeq } from "@/lib/api"
 import { getConnection, In } from "typeorm"
 import { L2Tx, Block } from "@anomix/dao"
+import { ActionType } from "@anomix/circuits"
 
 /**
 * 根据alias_nullifier/account_viewing_key/valueNote_commitment/nullifier查询L2Tx
@@ -32,7 +33,7 @@ export const handler: RequestHandler<string[], null> = async function (
     const notehashes = req.body
 
     try {
-        const txHashList = await $axios.post<BaseResponse<string[]>>('/tx/notehashes', notehashes).then(r => {
+        const txHashList = await $axiosSeq.post<BaseResponse<string[]>>('/tx/notehashes', notehashes).then(r => {
             return r.data.data
         });
 
@@ -45,17 +46,36 @@ export const handler: RequestHandler<string[], null> = async function (
             }
         }) ?? [];
 
+
         const l2TxRespDtoList = await Promise.all(ctxList.map(async tx => {
-            const blockRepository = connection.getRepository(Block)
+            const blockRepository = getConnection().getRepository(Block)
             const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx.blockId } });
 
-            const { updatedAt, createdAt, proof, ...restObj } = tx;
+            const { updatedAt, createdAt, proof, encryptedData1, encryptedData2, ...restObj } = tx;
             const txDto = (restObj as any) as L2TxRespDto;
 
             txDto.finalizedTs = block!.finalizedAt.getTime();
             txDto.createdTs = block!.createdAt.getTime();
 
-            txDto.extraData.withdrawNote.createdTs = txDto.createdTs;
+            txDto.extraData = {} as any;
+            txDto.extraData.outputNote1 = JSON.parse(encryptedData1);
+            if (encryptedData2) {
+                txDto.extraData.outputNote2 = JSON.parse(encryptedData2);
+            }
+
+            if (tx.actionType == ActionType.WITHDRAW.toString()) {// if Withdrawal
+                txDto.extraData.withdrawNote = {} as any as WithdrawInfoDto;
+                // TODO query WithdrawInfoDto
+                //
+                /
+
+                txDto.extraData.withdrawNote!.createdTs = txDto.createdTs;// !!!
+            } else if (tx.actionType == ActionType.ACCOUNT.toString()) {// if Account
+                // TODO query Account
+                // 
+                //
+
+            }
 
             return txDto;
         }));

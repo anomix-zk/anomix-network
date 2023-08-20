@@ -7,12 +7,16 @@
 import { FastifyPlugin } from "fastify"
 import { queryAcctViewKeyByAlias } from "./query-acct-view-key-by-alias";
 import { queryAliasByAcctViewKey } from "./query-alias-by-acct-view-key";
+import { checkAcctViewKeyRegistered } from "./check-acct-view-key-registered";
+import { checkAliasRegister } from "./check-alias-registered";
 
 export const accountEndpoint: FastifyPlugin = async (
     instance,
     options,
     done
 ): Promise<void> => {
+    instance.register(checkAcctViewKeyRegistered);
+    instance.register(checkAliasRegister);
     instance.register(queryAcctViewKeyByAlias);
     instance.register(queryAliasByAcctViewKey);
 }
