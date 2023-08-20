@@ -34,13 +34,25 @@ export const handler: RequestHandler<null, null> = async function (
     try {
         // TODO future improve: query sequencer
         // 当检查当前内存池如果满了，返回内存池手续费最贵那笔交易的价格+0.01. 配置300笔为内存池满。
-        /
+        const connection = getConnection();
+        const mpL2TxRepo = connection.getRepository(MemPlL2Tx);
+        const cnt = await mpL2TxRepo.count();
+
+        let normalFee = config.txFeeFloor;
+        if (cnt >= config.maxMpTxCnt) {
+            const mpL2TxList = await mpL2TxRepo.find({ where: { status: L2TxStatus.PENDING }, select: ['txFee'] }) ?? [];
+            const maxTxFee = (mpL2TxList.sort((a, b) => { return Number(a.txFee) - Number(b.txFee) })[0]?.txFee);
+            if (maxTxFee) {
+                normalFee = Number(maxTxFee) + 1;
+            }
+        }
+
         return {
             code: 0,
             data: {
                 assetId: 0,
                 faster: config.minMpTxFeeToGenBlock,
-                normal: config.txFeeFloor
+                normal: normalFee
             },
             msg: ''
         };
