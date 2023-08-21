@@ -13,7 +13,7 @@ export const checkAliasRegister: FastifyPlugin = async function (
     done
 ): Promise<void> {
     instance.route({
-        method: "GET",
+        method: "POST",
         url: "/account/check-alias-registered",
         //preHandler: [instance.authGuard],
         schema,

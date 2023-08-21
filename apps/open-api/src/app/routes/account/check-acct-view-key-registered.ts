@@ -16,7 +16,7 @@ export const checkAcctViewKeyRegistered: FastifyPlugin = async function (
     done
 ): Promise<void> {
     instance.route({
-        method: "GET",
+        method: "POST",
         url: "/account/check-acct-view-key-registered",
         //preHandler: [instance.authGuard],
         schema,
