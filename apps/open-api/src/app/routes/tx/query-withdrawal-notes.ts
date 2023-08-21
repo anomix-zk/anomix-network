@@ -26,7 +26,7 @@ export const queryWithdrawalNotes: FastifyPlugin = async function (
 export const handler: RequestHandler<string[], string> = async function (
     req,
     res
-): Promise<BaseResponse<WithdrawInfoDto[]>> {
+): Promise<BaseResponse<WithdrawInfoDto[] | undefined>> {
     const noteCommitmentList = req.body;
     const l1addr = req.params;
 
@@ -47,13 +47,18 @@ export const handler: RequestHandler<string[], string> = async function (
         */
 
         // select the ones whose corresponding L2Block is confirmed on Layer1!
-        const withdrawInfoList = (await withdrawInfoRepository.createQueryBuilder('wi')
+        const queryBuilder = withdrawInfoRepository.createQueryBuilder('wi')
             .innerJoin(L2Tx, 'tx', 'tx.id = wi.l2TxId')
             .innerJoinAndSelect(Block, 'block', 'block.id = tx.blockId')
             .where(`block.status = ${BlockStatus.CONFIRMED}`)
             .andWhere(`wi.ownerPk = ${l1addr}`)
-            .andWhere(`wi.assetId = ${1}`)
-            .andWhere(`wi.outputNoteCommitment in ${noteCommitmentList.join(',')}`).getMany()) ?? [];
+            .andWhere(`wi.assetId = ${1}`);
+
+        if (noteCommitmentList?.length > 0) {
+            queryBuilder.andWhere(`wi.outputNoteCommitment in ${noteCommitmentList.join(',')}`);
+        }
+
+        const withdrawInfoList = (await queryBuilder.getMany()) ?? [];
 
         const withdrawInfoDtoList = await Promise.all(withdrawInfoList.map(async wInfo => {
             const { createdAt, updatedAt, ...restObj } = wInfo;
