@@ -12,7 +12,7 @@ export const checkAliasAlignWithViewKey: FastifyPlugin = async function (
     done
 ): Promise<void> {
     instance.route({
-        method: "GET",
+        method: "POST",
         url: "/account/check-alias-align-with-acct-view-key",
         //preHandler: [instance.authGuard],
         schema,
@@ -68,13 +68,16 @@ export const handler: RequestHandler<ReqBody, null> = async function (
 }
 
 const schema = {
-    description: 'check if alias has been registered',
+    description: 'check if alias has been registered with acct-viewing-key',
     tags: ["Account"],
     body: {
         type: "object",
         properties: {
             aliashash: {
                 type: "string",
+            },
+            acctViewKey: {
+                type: "string"
             },
             includePending: {
                 type: "boolean"
