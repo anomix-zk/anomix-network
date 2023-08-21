@@ -80,7 +80,7 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
 }
 
 const schema = {
-    description: 'query withdrawal notes by L1addr',
+    description: 'submit withdrawal notes by L1addr',
     tags: ["L2Tx"],
     body: {
         type: "object",
