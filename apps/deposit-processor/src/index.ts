@@ -14,15 +14,25 @@ function bootFetchActionEventsThread() {
     // init worker thread A
     let worker = new Worker(`${__dirname}/fetch-actions-events.js`);// TODO
     worker.on('online', () => {
-        console.log('web-server worker is online...');
+        console.log('fetch-actions-events worker is online...');
     })
 
     worker.on('exit', (exitCode: number) => {
-        // create a new worker for http-server
         bootFetchActionEventsThread();
     })
 }
 
+function bootRollupProofWatcherThread() {
+    // init worker thread B
+    let worker = new Worker(`${__dirname}/deposit-rollup-proof-watcher.js`);// TODO
+    worker.on('online', () => {
+        console.log('deposit-rollup-proof-watcher worker is online...');
+    })
+
+    worker.on('exit', (exitCode: number) => {
+        bootRollupProofWatcherThread();
+    })
+}
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
@@ -47,6 +57,9 @@ const worldState = new WorldState(worldStateDB, rollupDB, indexDB);
 
 // start fetching...
 bootFetchActionEventsThread();
+
+// start watch...
+bootRollupProofWatcherThread();
 
 // start server!
 const app = new FastifyCore()

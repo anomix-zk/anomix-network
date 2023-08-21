@@ -14,7 +14,7 @@ export const queryCouldStopRollup: FastifyPlugin = async function (
     done
 ): Promise<void> {
     instance.route({
-        method: "POST",
+        method: "GET",
         url: "/rollup/stop-mark",
         //preHandler: [instance.authGuard],
         schema,
@@ -22,7 +22,7 @@ export const queryCouldStopRollup: FastifyPlugin = async function (
     })
 }
 
-export const handler: RequestHandler<string[], null> = async function (
+export const handler: RequestHandler<null, null> = async function (
     req,
     res
 ): Promise<BaseResponse<any>> {
@@ -49,10 +49,7 @@ export const handler: RequestHandler<string[], null> = async function (
 
 const schema = {
     description: 'check if could stop deposit rollup',
-    tags: ['Network'],
-    body: {
-        flowId: { type: 'string' }
-    },
+    tags: ['Rollup'],
     response: {
         200: {
             type: 'object',

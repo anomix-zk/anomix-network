@@ -1,4 +1,4 @@
-import { L1TxStatus } from '@anomix/types'
+import { DepositTreeTransStatus } from '@anomix/types'
 import {
     Column,
     CreateDateColumn,
@@ -24,7 +24,7 @@ export class DepositTreeTrans {
     /**
      * {@link L1TxStatus}
      */
-    @Column({ default: L1TxStatus.PROCESSING })
+    @Column({ default: DepositTreeTransStatus.PROCESSING })
     status: number
 
     /**

@@ -11,10 +11,12 @@ import { $axiosCoordinator, $axiosProofGenerator } from "@/lib";
 import { getConnection } from "typeorm";
 import { L2Tx } from "@anomix/dao";
 import axios from "axios";
+import { ProofScheduler } from "@/rollup/proof-scheduler";
 
 export * from './worldstate-db'
 export class WorldState {
-    private flow: RollupFlow
+    private flow: RollupFlow;
+    private proofScheduler: ProofScheduler;
     depositTreeRootOnchain: any;
 
     constructor(public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) { }
@@ -50,16 +52,13 @@ export class WorldState {
         if (taskType == ProofTaskType.DEPOSIT_JOIN_SPLIT) {
             await this.whenDepositL2TxListComeBack(payload);
 
-        } else {// Rollup flow
+        } else {// deposit rollup proof flow
             const { flowId, taskType, data } = payload as FlowTask<any>;
-            if (!(this.ongingFlow?.flowId == flowId)) {// check if not valid
-                throw new Error("error flowId!");
-            }
 
             if (taskType == FlowTaskType.DEPOSIT_BATCH_MERGE) {
-                await this.ongingFlow.flowScheduler.whenMergedResultComeBack(data);
+                await this.proofScheduler.whenMergedResultComeBack(data);
             } else if (taskType == FlowTaskType.DEPOSIT_UPDATESTATE) {
-                await this.ongingFlow.flowScheduler.whenRollupL1TxComeBack(data);
+                await this.proofScheduler.whenRollupL1TxComeBack(data);
             }
         }
     }
@@ -126,7 +125,7 @@ export class WorldState {
 
         // construct rollupTaskDto
         const rollupTaskDto: RollupTaskDto<any, any> = {
-            taskType: RollupTaskType.DEPOSIT_PROCESS,
+            taskType: RollupTaskType.DEPOSIT_JOINSPLIT,
             index: undefined,
             payload: { blockId }
         }

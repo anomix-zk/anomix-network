@@ -2,14 +2,14 @@
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
-import { BaseResponse, RollupTaskDto, RollupTaskDtoSchma, RollupTaskType } from "@anomix/types";
+import { BaseResponse, RollupTaskDto, RollupTaskDtoSchma, RollupTaskType, SequencerStatus } from "@anomix/types";
 import { $axiosDeposit, $axiosSeq } from "@/lib/api";
 import { Field, PublicKey } from 'snarkyjs';
-import { AnomixRollupContract } from "@anomix/circuits";
+import { AnomixEntryContract, AnomixRollupContract } from "@anomix/circuits";
 import { syncAcctInfo } from "@anomix/utils";
 import config from "@/lib/config";
 import { getConnection } from "typeorm";
-import { Block } from "@anomix/dao";
+import { Block, DepositTreeTrans, SeqStatus } from "@anomix/dao";
 
 /**
  * * when join-split_deposit done, notify coordinator;
@@ -35,30 +35,51 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
 ): Promise<BaseResponse<any>> {
     try {
         const dto = req.body;
-        const blockId = req.body.payload as number;
+        const targetId = dto.payload as number;
 
         let respondData: any = undefined;
 
-        if (dto.taskType == RollupTaskType.DEPOSIT_PROCESS) {// when join-split_deposit done, coordinator trigger ROLLUP_PROCESSOR to start rolluping; 
-
+        if (dto.taskType == RollupTaskType.DEPOSIT_JOINSPLIT) {// when join-split_deposit done, coordinator trigger ROLLUP_PROCESSOR to start rolluping; 
             // trigger ROLLUP_PROCESSOR to start rolluping; 
             dto.taskType = RollupTaskType.ROLLUP_PROCESS;
             await $axiosSeq.post<BaseResponse<string>>('/rollup/proof-trigger', dto);
 
-        } else if (dto.taskType == RollupTaskType.ROLLUP_PROCESS) {// when L2Block_proved done, coordinator trigger ROLLUP_PROCESSOR to invoke AnomixRollupContract; 
+        } else if (dto.taskType == RollupTaskType.DEPOSIT_BATCH_MERGE) {// when DEPOSIT_BATCH_MERGE done, then need check if bother seq-rollup-proof
+            // check if bother seq-rollup-proof 
+            const connection = getConnection();
+            const seqStatusReposity = connection.getRepository(SeqStatus);
+            const seqStatus = (await seqStatusReposity.findOne({ where: { id: 1 } }))!;
+            if (seqStatus.status == SequencerStatus.NotAtRollup) {
+                const entryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
+                await syncAcctInfo(entryContractAddr);
+                const entryContract = new AnomixEntryContract(entryContractAddr);
+                // check if align with AnomixEntryContract's onchain states
+                await getConnection().getRepository(DepositTreeTrans)
+                    .findOne({ where: { id: targetId } })
+                    .then(async dt => {
+                        if (dt!.startActionHash == entryContract.depositState.get().currentActionsHash.toString()) { // check here
+                            dto.taskType = RollupTaskType.DEPOSIT_CONTRACT_CALL;
+                            respondData = dto;
+                        }
+                    });
+            }
+        }
+        /* mv to sequencer side
+        else if (dto.taskType == RollupTaskType.ROLLUP_PROCESS) {// when L2Block_proved done, coordinator trigger ROLLUP_PROCESSOR to invoke AnomixRollupContract; 
             const rollupContractAddr = PublicKey.fromBase58(config.rollupContractAddress);
             await syncAcctInfo(rollupContractAddr);
             const rollupContract = new AnomixRollupContract(rollupContractAddr);
             // check if align with AnomixRollupContract's onchain states, then it must be the lowese PENDING L2Block.
             await getConnection().getRepository(Block)
-                .findOne({ where: { id: blockId } })
+                .findOne({ where: { id: targetId } })
                 .then(async block => {
                     if (block?.dataTreeRoot0 == rollupContract.state.get().dataRoot.toString()) { // check here
                         dto.taskType = RollupTaskType.ROLLUP_CONTRACT_CALL;
                         respondData = dto;
                     }
-                })
+                });
         }
+        */
 
         return { code: 0, data: respondData, msg: '' };
     } catch (err) {
@@ -67,7 +88,7 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
 }
 
 const schema = {
-    description: 'when (join-split_deposit is done || L2Block_prove is done), notify coordinator',
+    description: 'when (join-split_deposit is done), notify coordinator',
     tags: ['ROLLUP'],
     body: {
         type: (RollupTaskDtoSchma as any).type,

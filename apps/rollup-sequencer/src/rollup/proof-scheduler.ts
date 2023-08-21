@@ -2,12 +2,12 @@
 import { WorldStateDB, RollupDB, IndexDB } from "@/worldstate";
 import config from "@/lib/config";
 import { BaseResponse, BlockStatus, RollupTaskDto, RollupTaskType, ProofTaskDto, ProofTaskType, FlowTaskType } from "@anomix/types";
-import { ActionType, InnerRollupProof } from "@anomix/circuits";
+import { ActionType, AnomixRollupContract, InnerRollupProof } from "@anomix/circuits";
 import { BlockProverOutput, Block, InnerRollupBatch, Task, TaskStatus, TaskType, L2Tx } from "@anomix/dao";
-import { Mina, PrivateKey } from 'snarkyjs';
+import { Mina, PrivateKey, PublicKey, Field } from 'snarkyjs';
 import { $axiosProofGenerator, $axiosDepositProcessor, $axiosCoordinator } from "@/lib";
 import { getConnection } from "typeorm";
-import axios from "axios";
+import { syncAcctInfo } from "@anomix/utils";
 
 export class ProofScheduler {
 
@@ -124,6 +124,15 @@ export class ProofScheduler {
 
         queryRunner.commitTransaction();
 
+        // check if align with AnomixRollupContract's onchain states, then it must be the lowese PENDING L2Block.
+        const rollupContractAddr = PublicKey.fromBase58(config.rollupContractAddress);
+        await syncAcctInfo(rollupContractAddr);
+        const rollupContract = new AnomixRollupContract(rollupContractAddr);
+        if (block?.dataTreeRoot0 == rollupContract.state.get().dataRoot.toString()) { // check here
+            this.callRollupContract(blockId, blockProvedResult);
+        }
+
+        /*
         // notify Coordinator
         const rollupTaskDto = {} as RollupTaskDto<any, any>;
         rollupTaskDto.taskType = RollupTaskType.ROLLUP_PROCESS;
@@ -137,16 +146,18 @@ export class ProofScheduler {
                 await this.callRollupContract(blockId);
             }
         });// TODO future: could improve when fail by 'timeout' after retry
-
+        */
     }
 
-    async callRollupContract(blockId: number) {
+    async callRollupContract(blockId: number, blockProvedResultStr?: any) {
         // load BlockProvedResult regarding 'blockId' from db
         const connection = getConnection();
         const blockProverOutputRepo = connection.getRepository(BlockProverOutput);
 
-        const blockProvedResult = (await blockProverOutputRepo.findOne({ where: { blockId } }))!;
-        const blockProvedResultStr = JSON.parse(blockProvedResult.output);
+        if (!blockProvedResultStr) {
+            const blockProvedResult = (await blockProverOutputRepo.findOne({ where: { blockId } }))!;
+            blockProvedResultStr = blockProvedResult.output;
+        }
 
         // send to proof-generator for 'AnomixRollupContract.updateRollupState'
         // construct proofTaskDto

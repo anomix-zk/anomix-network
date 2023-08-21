@@ -8,7 +8,7 @@ import { type } from "os";
 /**
  * each action to joint-split-deposit to l2Tx
  */
-export const jointSplitActions: FastifyPlugin = async function (
+export const actionToJoinSplitDeposit: FastifyPlugin = async function (
     instance,
     options,
     done
