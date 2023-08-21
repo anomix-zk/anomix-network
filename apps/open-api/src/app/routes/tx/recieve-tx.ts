@@ -33,11 +33,11 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
     const joinSplitProof = JoinSplitProof.fromJSON(l2TxReqDto.proof);
     const ok = await verify(joinSplitProof, config.joinSplitVK);
     if (!ok) {
-        return { code: 1, data: 'proof verify failed!', msg: '' }
+        return { code: 1, data: undefined, msg: 'proof verify failed!' }
     }
 
     if (Number(joinSplitProof.publicOutput.txFee) < config.floorMpTxFee) {
-        return { code: 1, data: 'txFee not enough!', msg: '' }
+        return { code: 1, data: undefined, msg: 'txFee not enough!' }
     }
 
     // check if nullifier1&2 is not on nullifier_tree
@@ -47,7 +47,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
         return r.data.data
     })
     if (rs.get(nullifier1) != '-1' || rs.get(nullifier2) != '-1') {
-        return { code: 1, data: 'double spending: nullifier1 or nullifier2 is used', msg: '' }
+        return { code: 1, data: undefined, msg: 'double spending: nullifier1 or nullifier2 is used' }
     }
 
     /*
