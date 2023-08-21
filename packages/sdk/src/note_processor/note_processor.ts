@@ -19,13 +19,15 @@ import { ActionType } from '@anomix/circuits';
 import { UserAccountTx } from '../user_tx/user_account_tx';
 import { UserState } from '../user_state/user_state';
 import { decryptAlias } from '../note_decryptor/alias_util';
+import { KeyStore } from '../key_store/key_store';
 
 export class NoteProcessor {
   private syncedToBlock = 0;
 
   constructor(
-    public readonly accountPrivateKey: PrivateKey,
+    public readonly accountPublicKey: PublicKey,
     private db: Database,
+    private keyStore: KeyStore,
     private node: AnomixNode,
     private log = consola.withTag('anomix:note_processor')
   ) {}
@@ -35,14 +37,27 @@ export class NoteProcessor {
     return this.syncedToBlock === remoteBlocHeight;
   }
 
+  public get status() {
+    return {
+      syncedToBlock: this.syncedToBlock,
+    };
+  }
+
   public async process(l2Blocks: AssetsInBlockDto[]): Promise<void> {
     if (l2Blocks.length === 0) {
       return;
     }
     this.log.info(`Processing ${l2Blocks.length} blocks...`);
 
-    const accountPk = this.accountPrivateKey.toPublicKey().toBase58();
+    const accountPk = this.accountPublicKey.toBase58();
     this.log.info(`Account public key: ${accountPk}`);
+
+    const accountPrivateKey = await this.keyStore.getAccountPrivateKey(
+      this.accountPublicKey
+    );
+    if (!accountPrivateKey) {
+      throw new Error(`Account private key not found for ${accountPk}`);
+    }
 
     const noteDecryptor = new NoteDecryptor();
 
@@ -67,6 +82,7 @@ export class NoteProcessor {
         let valueNoteJSON1: ValueNoteJSON | undefined = undefined;
         let valueNoteJSON2: ValueNoteJSON | undefined = undefined;
         let isSenderForTx = false;
+        let isTxRelated = false;
 
         if (tx.actionType === ActionType.ACCOUNT.toString()) {
           this.log.debug(`Processing account tx: ${tx.txHash}`);
@@ -79,7 +95,7 @@ export class NoteProcessor {
               alias = await decryptAlias(
                 tx.extraData.aliasInfo,
                 tx.extraData.aliasHash!,
-                this.accountPrivateKey
+                accountPrivateKey
               );
 
               // update user state
@@ -88,6 +104,11 @@ export class NoteProcessor {
                 userState.alias = alias;
                 await this.db.upsertUserState(userState);
               }
+            }
+
+            if (!alias) {
+              let userState = await this.db.getUserState(accountPk);
+              alias = userState!.alias;
             }
 
             await this.db.upsertUserAccountTx(
@@ -130,50 +151,56 @@ export class NoteProcessor {
                     .toString() === tx.outputNoteCommitment2
               );
               if (signingKey1) {
-                await this.db.addAlias(
+                await this.db.upsertAlias(
                   new Alias(
                     tx.extraData.aliasHash!,
                     accountPk,
                     Number(tx.outputNoteCommitmentIdx1),
+                    alias,
                     tx.outputNoteCommitment1,
                     signingKey1.signingPk
                   )
                 );
               }
               if (signingKey2) {
-                await this.db.addAlias(
+                await this.db.upsertAlias(
                   new Alias(
                     tx.extraData.aliasHash!,
                     accountPk,
                     Number(tx.outputNoteCommitmentIdx2),
+                    alias,
                     tx.outputNoteCommitment2,
                     signingKey2.signingPk
                   )
                 );
               }
             } else {
-              await this.db.addAlias(
+              await this.db.upsertAliases([
                 new Alias(
                   tx.extraData.aliasHash!,
                   accountPk,
                   Number(tx.outputNoteCommitmentIdx1),
+                  alias,
                   tx.outputNoteCommitment1
-                )
-              );
-              await this.db.addAlias(
+                ),
                 new Alias(
                   tx.extraData.aliasHash!,
                   accountPk,
                   Number(tx.outputNoteCommitmentIdx2),
+                  alias,
                   tx.outputNoteCommitment2
-                )
-              );
+                ),
+              ]);
             }
           }
         } else if (tx.actionType === ActionType.WITHDRAW.toString()) {
           this.log.debug(`Processing withdraw tx: ${tx.txHash}`);
-          const inputNote1 = await this.db.getNoteByNullifier(tx.nullifier1);
-          if (inputNote1 && inputNote1.ownerPk === accountPk) {
+
+          const decryptedResult1 = await noteDecryptor.decryptNotes(
+            outputNote1!,
+            accountPrivateKey
+          );
+          if (decryptedResult1) {
             const withdrawNote = WithdrawInfoDtoToValueNoteJSON(
               tx.extraData.withdrawNote!
             );
@@ -181,10 +208,10 @@ export class NoteProcessor {
             const commitment = valueNote.commitment();
             const nullifier = calculateNoteNullifier(
               commitment,
-              this.accountPrivateKey,
+              accountPrivateKey,
               Bool(true)
             ).toString();
-            await this.db.addNote(
+            await this.db.upsertNote(
               Note.from({
                 valueNoteJSON: withdrawNote,
                 commitment: commitment.toString(),
@@ -224,18 +251,19 @@ export class NoteProcessor {
 
           const decryptedResult1 = await noteDecryptor.decryptNotes(
             outputNote1!,
-            this.accountPrivateKey
+            accountPrivateKey
           );
           if (decryptedResult1) {
             valueNoteJSON1 = decryptedResult1.valueNoteJSON;
             isSenderForTx = decryptedResult1.isSender;
-            if (!decryptedResult1.isSender) {
+            isTxRelated = true;
+            if (valueNoteJSON1.ownerPk === accountPk) {
               const outputNote1Nullifier = calculateNoteNullifier(
                 Field(outputNote1!.noteCommitment),
-                this.accountPrivateKey,
+                accountPrivateKey,
                 Bool(true)
               );
-              await this.db.addNote(
+              await this.db.upsertNote(
                 Note.from({
                   valueNoteJSON: decryptedResult1.valueNoteJSON,
                   commitment: outputNote1!.noteCommitment,
@@ -245,37 +273,37 @@ export class NoteProcessor {
                 })
               );
             }
+          }
 
-            if (outputNote2) {
-              const decryptedResult2 = await noteDecryptor.decryptNotes(
-                outputNote2,
-                this.accountPrivateKey
-              );
-              if (decryptedResult2) {
-                valueNoteJSON2 = decryptedResult2.valueNoteJSON;
-                if (!decryptedResult2.isSender) {
-                  const outputNote2Nullifier = calculateNoteNullifier(
-                    Field(outputNote2.noteCommitment),
-                    this.accountPrivateKey,
-                    Bool(true)
-                  );
-                  await this.db.addNote(
-                    Note.from({
-                      valueNoteJSON: decryptedResult2.valueNoteJSON,
-                      commitment: outputNote2.noteCommitment,
-                      nullifier: outputNote2Nullifier.toString(),
-                      nullified: false,
-                      index: Number(tx.outputNoteCommitmentIdx2),
-                    })
-                  );
-                }
+          if (outputNote2) {
+            const decryptedResult2 = await noteDecryptor.decryptNotes(
+              outputNote2,
+              accountPrivateKey
+            );
+            if (decryptedResult2) {
+              isTxRelated = true;
+              valueNoteJSON2 = decryptedResult2.valueNoteJSON;
+              if (valueNoteJSON2.ownerPk === accountPk) {
+                const outputNote2Nullifier = calculateNoteNullifier(
+                  Field(outputNote2.noteCommitment),
+                  accountPrivateKey,
+                  Bool(true)
+                );
+                await this.db.upsertNote(
+                  Note.from({
+                    valueNoteJSON: decryptedResult2.valueNoteJSON,
+                    commitment: outputNote2.noteCommitment,
+                    nullifier: outputNote2Nullifier.toString(),
+                    nullified: false,
+                    index: Number(tx.outputNoteCommitmentIdx2),
+                  })
+                );
               }
             }
+          }
 
+          if (isTxRelated) {
             let privateValueTotal = BigInt(valueNoteJSON1!.value);
-            if (valueNoteJSON2) {
-              privateValueTotal += BigInt(valueNoteJSON2.value);
-            }
 
             await this.db.upsertUserPaymentTx(
               UserPaymentTx.from({

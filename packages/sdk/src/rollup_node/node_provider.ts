@@ -30,7 +30,7 @@ export class NodeProvider implements AnomixNode {
   private async makeRequest<T>(
     url: string,
     init?: RequestInit
-  ): Promise<BaseResponse<T> | undefined> {
+  ): Promise<BaseResponse<T>> {
     let timeouts: NodeJS.Timeout[] = [];
     const clearTimeouts = () => {
       timeouts.forEach((t) => clearTimeout(t));
@@ -61,7 +61,6 @@ export class NodeProvider implements AnomixNode {
       throw new Error(
         `Failed to make request to ${url}, status: ${resp.status}, statusText: ${resp.statusText}`
       );
-      return undefined;
     } catch (err) {
       this.log.error({ url, err });
       throw err;
@@ -80,21 +79,17 @@ export class NodeProvider implements AnomixNode {
       headers: { 'Content-Type': 'application/json' },
       body,
     });
-    if (res === undefined) {
-      throw new Error('Failed to send withdraw tx');
-    }
-
     if (res.code === 0) {
       return true;
     }
 
-    return false;
+    throw new Error(res.msg);
   }
 
   public async getWithdrawProvedTx(
     l1addr: string,
     noteCommitments: string[]
-  ): Promise<WithdrawInfoDto | undefined> {
+  ): Promise<WithdrawInfoDto[]> {
     const url = `${this.host}/tx/withdraw/${l1addr}`;
     this.log.info(
       `Getting withdraw proved tx at ${url}, l1addr: ${l1addr}, noteCommitments: ${noteCommitments}`
@@ -103,20 +98,17 @@ export class NodeProvider implements AnomixNode {
     const body = JSON.stringify({
       noteCommitments,
     });
-    const res = await this.makeRequest<WithdrawInfoDto>(url, {
+    const res = await this.makeRequest<WithdrawInfoDto[]>(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,
     });
-    if (res === undefined) {
-      throw new Error('Failed to get withdraw proved tx');
-    }
 
     if (res.code === 0) {
       return res.data;
     }
 
-    return undefined;
+    throw new Error(res.msg);
   }
 
   async isReady(): Promise<boolean> {
@@ -124,11 +116,11 @@ export class NodeProvider implements AnomixNode {
     this.log.info(`Checking if node is ready at ${url}`);
 
     const res = await this.makeRequest<boolean>(url);
-    if (res && res.code === 0) {
+    if (res.code === 0) {
       return res.data;
     }
 
-    return false;
+    throw new Error(res.msg);
   }
 
   public async getBlockHeight(): Promise<number> {
@@ -136,11 +128,11 @@ export class NodeProvider implements AnomixNode {
     this.log.info(`Getting block height at ${url}`);
 
     const res = await this.makeRequest<number>(url);
-    if (res && res.code === 0) {
+    if (res.code === 0) {
       return res.data;
     }
 
-    return 0;
+    throw new Error(res.msg);
   }
 
   public async getBlocks(
@@ -162,14 +154,14 @@ export class NodeProvider implements AnomixNode {
       headers: { 'Content-Type': 'application/json' },
       body,
     });
-    if (res && res.code === 0) {
+    if (res.code === 0) {
       return res.data;
     }
 
-    return [];
+    throw new Error(res.msg);
   }
 
-  public async sendTx(tx: L2TxReqDto): Promise<BaseResponse<string>> {
+  public async sendTx(tx: L2TxReqDto): Promise<string> {
     const url = `${this.host}/tx`;
     this.log.info(`Sending tx at ${url}`);
 
@@ -179,11 +171,11 @@ export class NodeProvider implements AnomixNode {
       headers: { 'Content-Type': 'application/json' },
       body,
     });
-    if (res === undefined) {
-      throw new Error('Failed to send tx');
+    if (res.code === 0) {
+      return res.data;
     }
 
-    return res;
+    throw new Error(res.msg);
   }
 
   public async getPendingTxs(): Promise<L2TxSimpleDto[]> {
@@ -195,11 +187,11 @@ export class NodeProvider implements AnomixNode {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    if (res && res.code === 0) {
+    if (res.code === 0) {
       return res.data;
     }
 
-    return [];
+    throw new Error(res.msg);
   }
 
   public async getPendingTxByHash(
@@ -215,11 +207,11 @@ export class NodeProvider implements AnomixNode {
       body,
     });
 
-    if (res && res.code === 0) {
+    if (res.code === 0) {
       return res.data;
     }
 
-    return undefined;
+    throw new Error(res.msg);
   }
 
   public async getMerkleWitnessesByCommitments(
@@ -237,11 +229,11 @@ export class NodeProvider implements AnomixNode {
       body,
     });
 
-    if (res && res.code === 0) {
+    if (res.code === 0) {
       return res.data;
     }
 
-    throw new Error('Failed to get merkle witnesses');
+    throw new Error(res.msg);
   }
 
   public async getTxFee(): Promise<TxFeeSuggestionDto> {
@@ -249,17 +241,11 @@ export class NodeProvider implements AnomixNode {
     this.log.info(`Getting tx fees at ${url}`);
 
     const res = await this.makeRequest<TxFeeSuggestionDto>(url);
-    if (res) {
-      if (res.code === 0) {
-        return res.data;
-      }
-
-      throw new Error(
-        `Failed to get tx fees, code: ${res.code}, message: ${res.msg}`
-      );
+    if (res.code === 0) {
+      return res.data;
     }
 
-    throw new Error('Failed to get tx fees');
+    throw new Error(res.msg);
   }
 
   public async getWorldState(): Promise<WorldStateRespDto> {
@@ -267,17 +253,11 @@ export class NodeProvider implements AnomixNode {
     this.log.info(`Getting world state at ${url}`);
 
     const res = await this.makeRequest<WorldStateRespDto>(url);
-    if (res) {
-      if (res.code === 0) {
-        return res.data;
-      }
-
-      throw new Error(
-        'Failed to get world state, code: ${res.code}, message: ${res.msg}'
-      );
+    if (res.code === 0) {
+      return res.data;
     }
 
-    throw new Error('Failed to get world state');
+    throw new Error(res.msg);
   }
 
   public async getNetworkStatus(): Promise<NetworkStatusDto> {
@@ -285,17 +265,11 @@ export class NodeProvider implements AnomixNode {
     this.log.info(`Getting network status at ${url}`);
 
     const res = await this.makeRequest<NetworkStatusDto>(url);
-    if (res) {
-      if (res.code === 0) {
-        return res.data;
-      }
-
-      throw new Error(
-        'Failed to get network status, code: ${res.code}, message: ${res.msg}'
-      );
+    if (res.code === 0) {
+      return res.data;
     }
 
-    throw new Error('Failed to get network status');
+    throw new Error(res.msg);
   }
 
   public async getAccountPublicKeysByAliasHash(
@@ -307,11 +281,11 @@ export class NodeProvider implements AnomixNode {
     );
 
     const res = await this.makeRequest<string[]>(url);
-    if (res && res.code == 0) {
+    if (res.code == 0) {
       return res.data;
     }
 
-    return [];
+    throw new Error(res.msg);
   }
 
   public async getAliasHashByAccountPublicKey(
@@ -323,7 +297,7 @@ export class NodeProvider implements AnomixNode {
     );
 
     const res = await this.makeRequest<string>(url);
-    if (res && res.code === 0) {
+    if (res.code === 0) {
       if (res.data === '') {
         return undefined;
       } else {
@@ -331,6 +305,86 @@ export class NodeProvider implements AnomixNode {
       }
     }
 
-    return undefined;
+    throw new Error(res.msg);
+  }
+
+  public async isAliasRegistered(
+    aliasHash: string,
+    includePending: boolean
+  ): Promise<boolean> {
+    const url = `${this.host}/account/check-alias=registered`;
+    this.log.info(
+      `Checking if alias is registered at ${url}, aliasHash: ${aliasHash}, includePending: ${includePending}`
+    );
+
+    const body = JSON.stringify({
+      aliashash: aliasHash,
+      includePending,
+    });
+    const res = await this.makeRequest<boolean>(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (res.code === 0) {
+      return res.data;
+    }
+
+    throw new Error(res.msg);
+  }
+
+  public async isAccountRegistered(
+    accountPk: string,
+    includePending: boolean
+  ): Promise<boolean> {
+    const url = `${this.host}/account/check-acct-view-key-registered`;
+    this.log.info(
+      `Checking if account is registered at ${url}, accountPk: ${accountPk}, includePending: ${includePending}`
+    );
+
+    const body = JSON.stringify({
+      acctViewKey: accountPk,
+      includePending,
+    });
+    const res = await this.makeRequest<boolean>(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (res.code === 0) {
+      return res.data;
+    }
+
+    throw new Error(res.msg);
+  }
+
+  public async isAliasRegisteredToAccount(
+    aliasHash: string,
+    accountPk: string,
+    includePending: boolean
+  ): Promise<boolean> {
+    const url = `${this.host}/account/check-alias-align-with-acct-view-key`;
+    this.log.info(
+      `Checking if alias is registered to account at ${url}, aliasHash: ${aliasHash}, accountPk: ${accountPk}, includePending: ${includePending}`
+    );
+
+    const body = JSON.stringify({
+      aliashash: aliasHash,
+      acctViewKey: accountPk,
+      includePending,
+    });
+    const res = await this.makeRequest<boolean>(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (res.code === 0) {
+      return res.data;
+    }
+
+    throw new Error(res.msg);
   }
 }

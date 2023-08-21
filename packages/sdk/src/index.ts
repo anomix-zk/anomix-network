@@ -3,7 +3,7 @@ export * from './database/database';
 export * from './database/dexie_database';
 export * from './database/get_db';
 export * from './database/sort_txs';
-export * from './key_store/key_store_instance';
+export * from './key_store/password_key_store';
 export * from './key_store/key_store';
 export * from './note/note';
 export * from './note_decryptor/note_decryptor';

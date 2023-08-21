@@ -227,7 +227,7 @@ export class DexieDatabase implements Database {
     this.createTables();
   }
 
-  async addKey(name: string, value: string): Promise<void> {
+  async upsertKey(name: string, value: string): Promise<void> {
     await this.key.put({ name, value });
   }
   async getKey(name: string): Promise<string | undefined> {
@@ -247,7 +247,7 @@ export class DexieDatabase implements Database {
     await this.key.where({ name }).delete();
   }
 
-  async addSecretKey(publicKey: string, privateKey: string): Promise<void> {
+  async upsertSecretKey(publicKey: string, privateKey: string): Promise<void> {
     await this.secretKey.put({ publicKey, privateKey });
   }
   async getSecretKey(publicKey: string): Promise<string | undefined> {
@@ -270,10 +270,10 @@ export class DexieDatabase implements Database {
     await this.key.where({ publicKey }).delete();
   }
 
-  async addNote(note: Note): Promise<void> {
+  async upsertNote(note: Note): Promise<void> {
     await this.note.put(toDexieNote(note));
   }
-  async addNotes(notes: Note[]): Promise<void> {
+  async upsertNotes(notes: Note[]): Promise<void> {
     await this.note.bulkPut(notes.map(toDexieNote));
   }
   async getNote(commitment: string): Promise<Note | undefined> {
@@ -355,6 +355,7 @@ export class DexieDatabase implements Database {
   async getUserTxs(accountPk: string): Promise<UserTx[]> {
     const txs = await this.userTx
       .where({ accountPk })
+      .filter((x) => x.createdTs > 0)
       .reverse()
       .sortBy('createdTs');
     return sortTxs(txs).map(fromDexieUserTx);
@@ -372,10 +373,10 @@ export class DexieDatabase implements Database {
   async removeUserTx(accountPk: string, txHash: string): Promise<void> {
     await this.userTx.where({ txHash, accountPk }).delete();
   }
-  async addSigningKey(signingKey: SigningKey): Promise<void> {
+  async upsertSigningKey(signingKey: SigningKey): Promise<void> {
     await this.signingKey.put(signingKey);
   }
-  async addSigningKeys(signingKeys: SigningKey[]): Promise<void> {
+  async upsertSigningKeys(signingKeys: SigningKey[]): Promise<void> {
     await this.signingKey.bulkPut(signingKeys);
   }
 
@@ -386,10 +387,10 @@ export class DexieDatabase implements Database {
   async removeSigningKeys(accountPk: string): Promise<void> {
     await this.signingKey.where({ accountPk }).delete();
   }
-  async addAlias(alias: Alias): Promise<void> {
+  async upsertAlias(alias: Alias): Promise<void> {
     await this.alias.put(alias);
   }
-  async addAliases(alias: Alias[]): Promise<void> {
+  async upsertAliases(alias: Alias[]): Promise<void> {
     await this.alias.bulkPut(alias);
   }
   async getAliases(accountPk: string): Promise<Alias[]> {

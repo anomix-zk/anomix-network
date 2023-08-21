@@ -1,6 +1,7 @@
 import { consola, ConsolaInstance } from 'consola';
-import { PrivateKey } from 'snarkyjs';
+import { PublicKey } from 'snarkyjs';
 import { Database } from '../database/database';
+import { KeyStore } from '../key_store/key_store';
 import { NoteProcessor } from '../note_processor/note_processor';
 import { AnomixNode } from '../rollup_node/anomix_node';
 import { InterruptableSleep } from '../utils/sleep';
@@ -13,8 +14,14 @@ export class Syncer {
   private initialSyncBlockHeight = 0;
   private synchedToBlock = 0;
   private log: ConsolaInstance;
+  private noteProcessorsToCatchUp: NoteProcessor[] = [];
 
-  constructor(private node: AnomixNode, private db: Database, logSuffix = '') {
+  constructor(
+    private node: AnomixNode,
+    private db: Database,
+    private keyStore: KeyStore,
+    logSuffix = ''
+  ) {
     this.log = consola.withTag(
       logSuffix ? `anomix:syncer_${logSuffix}` : 'anomix:syncer'
     );
@@ -24,15 +31,28 @@ export class Syncer {
     return this.running;
   }
 
-  public async start(from = 1, take = 1, retryInterval = 1000) {
+  public async start(from = 1, limit = 1, retryInterval = 1000) {
     if (this.running) return;
     this.running = true;
+
+    if (from < this.synchedToBlock + 1) {
+      throw new Error(
+        `From block ${from} is smaller than the currently synched block ${this.synchedToBlock}`
+      );
+    }
+    this.synchedToBlock = from - 1;
 
     await this.initialSync();
 
     const run = async () => {
       while (this.running) {
-        from = await this.work(from, take, retryInterval);
+        if (this.noteProcessorsToCatchUp.length > 0) {
+          // There is a note processor that needs to catch up. We hijack the main loop to catch up the note processor.
+          await this.workNoteProcessorCatchUp(limit, retryInterval);
+        } else {
+          // No note processor needs to catch up. We continue with the normal flow.
+          await this.work(limit, retryInterval);
+        }
       }
     };
 
@@ -46,17 +66,15 @@ export class Syncer {
     this.synchedToBlock = this.initialSyncBlockHeight;
   }
 
-  protected async work(
-    from = 1,
-    take = 1,
-    retryInterval = 1000
-  ): Promise<number> {
+  protected async work(limit = 1, retryInterval = 1000): Promise<void> {
+    const from = this.synchedToBlock + 1;
+    this.log.info(`Syncing from block ${from}`);
+
     try {
-      this.log.info(`Syncing from block ${from}`);
-      const blocks = await this.node.getBlocks(from, take);
+      const blocks = await this.node.getBlocks(from, limit);
       if (!blocks.length) {
         await this.interruptableSleep.sleep(retryInterval);
-        return from;
+        return;
       }
 
       const latestBlock = blocks[blocks.length - 1];
@@ -64,13 +82,54 @@ export class Syncer {
         await noteProcessor.process(blocks);
       }
 
-      from += blocks.length;
       this.synchedToBlock = latestBlock.blockHeight;
-      return from;
     } catch (err) {
       this.log.error(err);
       await this.interruptableSleep.sleep(retryInterval);
-      return from;
+    }
+  }
+
+  protected async workNoteProcessorCatchUp(
+    limit = 1,
+    retryInterval = 1000
+  ): Promise<void> {
+    const noteProcessor = this.noteProcessorsToCatchUp[0];
+    if (noteProcessor.status.syncedToBlock === this.synchedToBlock) {
+      // Note processor already synched, nothing to do
+      this.noteProcessorsToCatchUp.shift();
+      this.noteProcessors.push(noteProcessor);
+      return;
+    }
+
+    const from = noteProcessor.status.syncedToBlock + 1;
+    // Ensuring that the note processor does not sync further than the main sync.
+    limit = Math.min(limit, this.synchedToBlock - from + 1);
+    this.log.info(
+      `Syncing from block ${from} for note processor ${noteProcessor.accountPublicKey.toBase58()},limit: ${limit}`
+    );
+
+    if (limit < 1) {
+      throw new Error(`Unexpected limit ${limit} for note processor catch up`);
+    }
+
+    try {
+      const blocks = await this.node.getBlocks(from, limit);
+      if (!blocks.length) {
+        // This should never happen because this function should only be called when the note processor is lagging
+        // behind main sync.
+        throw new Error('No blocks in processor catch up mode');
+      }
+
+      await noteProcessor.process(blocks);
+
+      if (noteProcessor.status.syncedToBlock === this.synchedToBlock) {
+        // Note processor caught up, move it to `noteProcessors` from `noteProcessorsToCatchUp`.
+        this.noteProcessorsToCatchUp.shift();
+        this.noteProcessors.push(noteProcessor);
+      }
+    } catch (err) {
+      this.log.error(err);
+      await this.interruptableSleep.sleep(retryInterval);
     }
   }
 
@@ -81,15 +140,15 @@ export class Syncer {
     this.log.info('Stopped');
   }
 
-  public addAccount(accountPrivateKey: PrivateKey) {
+  public addAccount(accountPublicKey: PublicKey) {
     const processor = this.noteProcessors.find((x) =>
-      x.accountPrivateKey.equals(accountPrivateKey)
+      x.accountPublicKey.equals(accountPublicKey)
     );
     if (processor) {
       return;
     }
-    this.noteProcessors.push(
-      new NoteProcessor(accountPrivateKey, this.db, this.node)
+    this.noteProcessorsToCatchUp.push(
+      new NoteProcessor(accountPublicKey, this.db, this.keyStore, this.node)
     );
   }
 
@@ -100,7 +159,7 @@ export class Syncer {
     }
 
     const processor = this.noteProcessors.find(
-      (x) => x.accountPrivateKey.toPublicKey().toBase58() === accountPk
+      (x) => x.accountPublicKey.toBase58() === accountPk
     );
     if (!processor) {
       return false;
@@ -111,5 +170,17 @@ export class Syncer {
   public async isSynced() {
     const latest = await this.node.getBlockHeight();
     return latest <= this.synchedToBlock;
+  }
+
+  public getSyncStatus() {
+    return {
+      blocks: this.synchedToBlock,
+      notes: Object.fromEntries(
+        this.noteProcessors.map((n) => [
+          n.accountPublicKey.toBase58(),
+          n.status.syncedToBlock,
+        ])
+      ),
+    };
   }
 }
