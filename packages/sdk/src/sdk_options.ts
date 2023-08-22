@@ -3,4 +3,5 @@ export type SdkOptions = {
   nodeRequestTimeoutMS?: number;
   l2BlockPollingIntervalMS?: number;
   debug?: boolean;
+  broadcastChannelName?: string;
 };

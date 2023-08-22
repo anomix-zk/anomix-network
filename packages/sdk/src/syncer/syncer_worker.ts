@@ -9,7 +9,7 @@ import { PublicKey } from 'snarkyjs';
 import { parentPort } from 'worker_threads';
 import { isNode } from 'detect-node';
 import { expose } from 'comlink';
-import nodeEndpoint from 'comlink/dist/umd/node-adapter';
+import nodeEndpoint from 'comlink/dist/esm/node-adapter';
 
 let currSyncer: Syncer;
 let sdkOptions: SdkOptions;

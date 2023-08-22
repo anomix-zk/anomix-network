@@ -1,4 +1,5 @@
 import { L2TxReqDto } from '@anomix/types';
+import { SdkEventType } from '../constants';
 import { Note } from '../note/note';
 import { UserTx } from '../user_tx/user_tx';
 
@@ -12,3 +13,4 @@ export interface Tx {
     alias?: string;
   };
 }
+

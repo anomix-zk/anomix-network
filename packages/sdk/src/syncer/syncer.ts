@@ -5,6 +5,9 @@ import { KeyStore } from '../key_store/key_store';
 import { NoteProcessor } from '../note_processor/note_processor';
 import { AnomixNode } from '../rollup_node/anomix_node';
 import { InterruptableSleep } from '../utils/sleep';
+import { isNode } from 'detect-node';
+import { SdkEventType, SDK_BROADCAST_CHANNNEL_NAME } from '../constants';
+import { SdkEvent } from '../types/types';
 
 export class Syncer {
   private runningPromise?: Promise<void>;
@@ -15,6 +18,7 @@ export class Syncer {
   private synchedToBlock = 0;
   private log: ConsolaInstance;
   private noteProcessorsToCatchUp: NoteProcessor[] = [];
+  private broadcastChannel: BroadcastChannel | undefined;
 
   constructor(
     private node: AnomixNode,
@@ -25,6 +29,9 @@ export class Syncer {
     this.log = consola.withTag(
       logSuffix ? `anomix:syncer_${logSuffix}` : 'anomix:syncer'
     );
+    if (!isNode) {
+      this.broadcastChannel = new BroadcastChannel(SDK_BROADCAST_CHANNNEL_NAME);
+    }
   }
 
   public isRunning(): boolean {
@@ -80,9 +87,21 @@ export class Syncer {
       const latestBlock = blocks[blocks.length - 1];
       for (const noteProcessor of this.noteProcessors) {
         await noteProcessor.process(blocks);
+
+        this.broadcastChannel?.postMessage({
+          eventType: SdkEventType.UPDATED_ACCOUNT_STATE,
+          data: {
+            accountPk: noteProcessor.accountPublicKey.toBase58(),
+            synchedToBlock: noteProcessor.status.syncedToBlock,
+          },
+        });
       }
 
       this.synchedToBlock = latestBlock.blockHeight;
+      this.broadcastChannel?.postMessage({
+        eventType: SdkEventType.UPDATED_SYNCER_STATE,
+        data: this.getSyncStatus(),
+      } as SdkEvent<ReturnType<typeof this.getSyncStatus>>);
     } catch (err) {
       this.log.error(err);
       await this.interruptableSleep.sleep(retryInterval);
@@ -121,6 +140,14 @@ export class Syncer {
       }
 
       await noteProcessor.process(blocks);
+
+      this.broadcastChannel?.postMessage({
+        eventType: SdkEventType.UPDATED_ACCOUNT_STATE,
+        data: {
+          accountPk: noteProcessor.accountPublicKey.toBase58(),
+          synchedToBlock: noteProcessor.status.syncedToBlock,
+        },
+      });
 
       if (noteProcessor.status.syncedToBlock === this.synchedToBlock) {
         // Note processor caught up, move it to `noteProcessors` from `noteProcessorsToCatchUp`.
@@ -174,13 +201,11 @@ export class Syncer {
 
   public getSyncStatus() {
     return {
-      blocks: this.synchedToBlock,
-      notes: Object.fromEntries(
-        this.noteProcessors.map((n) => [
-          n.accountPublicKey.toBase58(),
-          n.status.syncedToBlock,
-        ])
-      ),
+      SyncerSynchedToBlock: this.synchedToBlock,
+      accountStatusList: this.noteProcessors.map((n) => {
+        accountPk: n.accountPublicKey.toBase58();
+        synchedToBlock: n.status.syncedToBlock;
+      }),
     };
   }
 }
