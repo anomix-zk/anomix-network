@@ -65,8 +65,9 @@ export class WorldState {
 
     /**
      * since the leveldb can only support one process, so this processing is moved from 'sequencer' to here. 
+     * * TODO but I think it would be reasonable to mv it to 'sequencer' and http-get all 
      */
-    async processDepositActions(blockId: number) {
+    async execActionDepositJoinSplit(blockId: number) {
         // select 'outputNoteCommitment1' from depositL2Tx order by 'depositIndex' ASC
         // compute JoinSplitDepositInput.depositWitness
         // compose JoinSplitDepositInput
