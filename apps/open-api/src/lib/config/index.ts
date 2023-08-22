@@ -38,7 +38,7 @@ const config = {
             title: "Anomix Network - openAPI api documentation",
             version: "0.1.0"
         },
-        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost:').concat(<string>process.env.OPENAPI_PORT),
+        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost').concat(':').concat(<string>process.env.OPENAPI_PORT),
         schemes: ["http"],
         consumes: ["application/json"],
         produces: ["application/json"],

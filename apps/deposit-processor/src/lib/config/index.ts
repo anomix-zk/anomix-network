@@ -43,7 +43,7 @@ const config = {
             title: "Anomix Network - rollup-sequencer api documentation",
             version: "0.1.0"
         },
-        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost:').concat(<string>process.env.DEPOSIT_PROCESSOR_PORT),
+        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost').concat(':').concat(<string>process.env.DEPOSIT_PROCESSOR_PORT),
         schemes: ["http"],
         consumes: ["application/json"],
         produces: ["application/json"],
