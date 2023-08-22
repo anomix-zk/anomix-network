@@ -17,7 +17,7 @@ export class Alias {
     public aliasHash: string,
     public accountPk: string,
     public index: number,
-    public alias: string,
+    public alias?: string,
     public noteCommitment?: string,
     public signingPk?: string
   ) {}
@@ -27,17 +27,17 @@ export interface Database {
   close(): Promise<void>;
   clear(): Promise<void>;
 
-  addSecretKey(publicKey: string, privateKey: string): Promise<void>;
+  upsertSecretKey(publicKey: string, privateKey: string): Promise<void>;
   getSecretKey(publicKey: string): Promise<string | undefined>;
   getSecretKeys(): Promise<KeyPair[]>;
   deleteSecretKey(publicKey: string): Promise<void>;
 
-  addKey(name: string, value: string): Promise<void>;
+  upsertKey(name: string, value: string): Promise<void>;
   getKey(name: string): Promise<string | undefined>;
   deleteKey(name: string): Promise<void>;
 
-  addNote(note: Note): Promise<void>;
-  addNotes(notes: Note[]): Promise<void>;
+  upsertNote(note: Note): Promise<void>;
+  upsertNotes(notes: Note[]): Promise<void>;
   getNote(commitment: string): Promise<Note | undefined>;
   getNoteByNullifier(nullifier: string): Promise<Note | undefined>;
   nullifyNote(nullifier: string): Promise<void>;
@@ -61,13 +61,13 @@ export interface Database {
   getPendingUserTxs(accountPk: string): Promise<UserTx[]>;
   removeUserTx(accountPk: string, txHash: string): Promise<void>;
 
-  addSigningKey(signingKey: SigningKey): Promise<void>;
-  addSigningKeys(signingKeys: SigningKey[]): Promise<void>;
+  upsertSigningKey(signingKey: SigningKey): Promise<void>;
+  upsertSigningKeys(signingKeys: SigningKey[]): Promise<void>;
   getSigningKeys(accountPk: string): Promise<SigningKey[]>;
   removeSigningKeys(accountPk: string): Promise<void>;
 
-  addAlias(alias: Alias): Promise<void>;
-  addAliases(alias: Alias[]): Promise<void>;
+  upsertAlias(alias: Alias): Promise<void>;
+  upsertAliases(alias: Alias[]): Promise<void>;
   getAliases(accountPk: string): Promise<Alias[]>;
   getAliasesByAliasHash(aliasHash: string): Promise<Alias[]>;
 

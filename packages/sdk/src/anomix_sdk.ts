@@ -15,7 +15,12 @@ import {
   NoteType,
   ValueNote,
 } from '@anomix/circuits';
-import { EncryptedNote, L2TxReqDto, PoseidonHasher } from '@anomix/types';
+import {
+  EncryptedNote,
+  L2TxReqDto,
+  L2TxSimpleDto,
+  WithdrawAssetReqDto,
+} from '@anomix/types';
 import {
   calculateShareSecret,
   derivePublicKeyBigInt,
@@ -24,7 +29,7 @@ import {
   genNewKeyPairForNote,
   maskReceiverBySender,
 } from '@anomix/utils';
-import { ConsolaInstance } from 'consola';
+import consola, { ConsolaInstance } from 'consola';
 import {
   Bool,
   Encoding,
@@ -33,30 +38,64 @@ import {
   Poseidon,
   PrivateKey,
   PublicKey,
+  Scalar,
   Signature,
   UInt64,
 } from 'snarkyjs';
 import { Database, SigningKey } from './database/database';
 import { KeyStore } from './key_store/key_store';
+import { PasswordKeyStore } from './key_store/password_key_store';
+import { MinaSignerProvider, ProviderSignature } from './mina_provider';
 import { Note } from './note/note';
 import { AnomixNode } from './rollup_node/anomix_node';
+import { NodeProvider } from './rollup_node/node_provider';
+import { SdkOptions } from './sdk_options';
 import { Syncer } from './syncer/syncer';
 import { UserState } from './user_state/user_state';
+import { convertProviderSignatureToSignature } from './utils/convert';
 import { retryUntil } from './utils/retry';
+import { NotePicker } from './note_picker/note_picker';
+import { UserPaymentTx } from './user_tx/user_payment_tx';
+import { Tx } from './types/types';
+import { UserAccountTx } from './user_tx/user_account_tx';
+
+import type { SyncerWrapper } from './syncer/syncer_worker';
+import { Worker as NodeWorker } from 'worker_threads';
+import { isNode } from 'detect-node';
+import { Remote, wrap } from 'comlink';
+import nodeEndpoint from 'comlink/dist/umd/node-adapter';
 
 export class AnomixSdk {
   private entryContract: AnomixEntryContract;
+  private keyStore: KeyStore;
+  private syncer: Syncer;
+  private log: ConsolaInstance;
+  private node: AnomixNode;
+  private useSyncerWorker: boolean = true;
+  private syncerWorker: Worker | NodeWorker;
+  private remoteSyncer: Remote<SyncerWrapper>;
+  private isEntryContractCompiled: boolean = false;
+  private isPrivateCircuitCompiled: boolean = false;
 
   constructor(
-    private keyStore: KeyStore,
     private db: Database,
-    private syncer: Syncer,
-    private log: ConsolaInstance,
-    private node: AnomixNode,
     private entryContractAddress: PublicKey,
-    private l2BlockPollingIntervalMS: number
+    private options: SdkOptions
   ) {
     this.log.info('Initializing Anomix SDK...');
+    this.node = new NodeProvider(
+      options.nodeUrl,
+      options.nodeRequestTimeoutMS
+        ? options.nodeRequestTimeoutMS
+        : 3 * 60 * 1000
+    );
+    this.log = consola.withTag('anomix:sdk');
+    if (options.debug) {
+      consola.level = 4;
+    }
+
+    this.keyStore = new PasswordKeyStore(db);
+    this.syncer = new Syncer(this.node, db, this.keyStore);
     this.entryContract = new AnomixEntryContract(this.entryContractAddress);
   }
 
@@ -65,6 +104,7 @@ export class AnomixSdk {
     console.time('compile entry contract');
     await DepositRollupProver.compile();
     await AnomixEntryContract.compile();
+    this.isEntryContractCompiled = true;
     console.timeEnd('compile entry contract');
   }
 
@@ -72,59 +112,100 @@ export class AnomixSdk {
     this.log.info('Compile Private Circuit...');
     console.time('compile private circuit');
     await JoinSplitProver.compile();
+    this.isPrivateCircuitCompiled = true;
     console.timeEnd('compile private circuit');
   }
 
-  public async start() {
-    await this.syncer.start(1, 1, 5000);
+  public async start(useSyncerWorker = true) {
+    this.useSyncerWorker = useSyncerWorker;
+    if (this.useSyncerWorker) {
+      if (isNode) {
+        // throw new Error('Syncer worker is not supported in nodejs environment');
+        this.syncerWorker = new NodeWorker('./syncer/syncer_worker.js');
+        this.remoteSyncer = wrap<SyncerWrapper>(
+          nodeEndpoint(this.syncerWorker)
+        );
+      } else {
+        this.syncerWorker = new Worker(
+          new URL('./syncer/syncer_worker.js', import.meta.url),
+          {
+            type: 'module',
+          }
+        );
+        this.remoteSyncer = wrap<SyncerWrapper>(this.syncerWorker);
+      }
+
+      await this.remoteSyncer.create(this.options);
+      await this.remoteSyncer.start();
+    } else {
+      await this.syncer.start(
+        1,
+        1,
+        this.options.l2BlockPollingIntervalMS
+          ? this.options.l2BlockPollingIntervalMS
+          : 1000
+      );
+    }
+
     const host = this.node.getHost();
     this.log.info(`Started, using node at ${host}`);
   }
 
   public async stop() {
-    await this.syncer.stop();
+    if (this.useSyncerWorker) {
+      await this.remoteSyncer.stop();
+      await this.syncerWorker.terminate();
+    } else {
+      await this.syncer.stop();
+    }
+
     this.log.info('Stopped');
   }
 
-  public async isSynced() {
-    return await this.syncer.isSynced();
-  }
-
-  public async awaitSynced(timeout?: number) {
-    this.checkState(true);
-
-    await retryUntil(() => this.isSynced(), 'data synced', timeout);
-  }
-
-  private checkState(assertRunning: boolean) {
-    const isRunning = this.syncer.isRunning();
-    if (isRunning !== assertRunning) {
+  private async checkRunningState() {
+    let isRunning = false;
+    if (this.useSyncerWorker) {
+      isRunning = await this.remoteSyncer.isRunning();
+    } else {
+      isRunning = this.syncer.isRunning();
+    }
+    if (!isRunning) {
       throw new Error(
-        `sdk syncer state:  isRunning:${isRunning} !==  assertRunning: ${assertRunning}`
+        `Sdk syncer is not running, please call start() before calling this method.`
       );
     }
   }
 
+  public async isSynced() {
+    await this.checkRunningState();
+
+    if (this.useSyncerWorker) {
+      return await this.remoteSyncer.isSynced();
+    } else {
+      return await this.syncer.isSynced();
+    }
+  }
+
+  public async awaitSynced(timeout?: number) {
+    await retryUntil(() => this.isSynced(), 'data synced', timeout);
+  }
+
   public async isAccountSynced(accountPk: string) {
-    return await this.syncer.isAccountSynced(accountPk);
+    await this.checkRunningState();
+
+    if (this.useSyncerWorker) {
+      return await this.remoteSyncer.isAccountSynced(accountPk);
+    } else {
+      return await this.syncer.isAccountSynced(accountPk);
+    }
   }
 
   public async awaitAccountSynced(accountPk: string, timeout?: number) {
-    this.checkState(true);
-
     await retryUntil(
       () => this.isAccountSynced(accountPk),
       `account synced ${accountPk}`,
       timeout
     );
-  }
-
-  public getAccountKeySigningData(): string {
-    return 'Sign this message to generate your Anomix Account Key. This key lets the application decrypt your balance on Anomix.\n\nIMPORTANT: Only sign this message if you trust the application.';
-  }
-
-  public getSigningKeySigningData() {
-    return 'Sign this message to generate your Anomix Signing Key. This key lets the application spend your funds on Anomix.\n\nIMPORTANT: Only sign this message if you trust the application.';
   }
 
   public generateKeyPair(sign: Signature): {
@@ -134,35 +215,88 @@ export class AnomixSdk {
     return genNewKeyPairBySignature(sign);
   }
 
-  public addSecretKey(privateKey: PrivateKey, pwd: string): Promise<PublicKey> {
-    return this.keyStore.addAccount(privateKey, pwd);
+  public generateKeyPairByProviderSignature(sign: ProviderSignature) {
+    const signature = convertProviderSignatureToSignature(sign);
+    return this.generateKeyPair(signature);
   }
 
-  public getSecretKey(
+  public getAccountKeySigningData(): string {
+    return 'Sign this message to generate your Anomix Account Key. This key lets the application decrypt your balance on Anomix.\n\nIMPORTANT: Only sign this message if you trust the application.';
+  }
+
+  public async generateAccountKeyPair(signer: MinaSignerProvider) {
+    const signingData = this.getAccountKeySigningData();
+    const signedData = await signer.signMessage({ message: signingData });
+    const sign = Signature.fromObject({
+      r: Field(signedData.signature.field),
+      s: Scalar.fromJSON(signedData.signature.scalar),
+    });
+
+    return this.generateKeyPair(sign);
+  }
+
+  public getSigningKeySigningData() {
+    return 'Sign this message to generate your Anomix Signing Key. This key lets the application spend your funds on Anomix.\n\nIMPORTANT: Only sign this message if you trust the application.';
+  }
+
+  public async generateSigningKeyPair(signer: MinaSignerProvider) {
+    const signingData = this.getSigningKeySigningData();
+    const signedData = await signer.signMessage({ message: signingData });
+    const sign = Signature.fromObject({
+      r: Field(signedData.signature.field),
+      s: Scalar.fromJSON(signedData.signature.scalar),
+    });
+
+    return this.generateKeyPair(sign);
+  }
+
+  public async unlockKeyStore(cachePubKeys: string[], pwd: string) {
+    await this.keyStore.unlock(cachePubKeys, pwd);
+  }
+
+  public lockKeyStore() {
+    this.keyStore.lock();
+  }
+
+  public async addSecretKey(
+    privateKey: PrivateKey,
+    pwd: string,
+    isCached = true
+  ): Promise<PublicKey> {
+    return await this.keyStore.addAccount(privateKey, pwd, isCached);
+  }
+
+  public async getSecretKey(
     publicKey: PublicKey,
     pwd: string
   ): Promise<PrivateKey | undefined> {
-    return this.keyStore.getAccountPrivateKey(publicKey, pwd);
+    return await this.keyStore.getAccountPrivateKey(publicKey, pwd);
   }
 
-  public async isAccountRegistered(accountPk: string): Promise<boolean> {
-    const aliasHash = await this.node.getAliasHashByAccountPublicKey(accountPk);
-    if (aliasHash) {
-      return true;
-    }
-
-    return false;
+  public async isAccountRegistered(
+    accountPk: string,
+    includePending: boolean
+  ): Promise<boolean> {
+    return await this.node.isAccountRegistered(accountPk, includePending);
   }
 
-  public async isAliasRegistered(aliasHash: string): Promise<boolean> {
-    const accountPks = await this.node.getAccountPublicKeysByAliasHash(
-      aliasHash
+  public async isAliasRegistered(
+    aliasHash: string,
+    includePending: boolean
+  ): Promise<boolean> {
+    return await this.node.isAliasRegistered(aliasHash, includePending);
+  }
+
+  public async isAliasRegisterdToAccount(
+    aliasHash: string,
+    accountPk: string,
+    includePending: boolean
+  ): Promise<boolean> {
+    return await this.node.isAliasRegisteredToAccount(
+      aliasHash,
+      accountPk,
+      includePending
     );
-    if (accountPks.length > 0) {
-      return true;
-    }
-
-    return false;
   }
 
   private computeAliasHash(alias: string): string {
@@ -224,29 +358,39 @@ export class AnomixSdk {
     const accountPk = accountPrivateKey.toPublicKey();
     const accountPk58 = accountPk.toBase58();
 
-    const userState = await this.db.getUserState(accountPk58);
-    if (userState) {
+    const isAccountExist = await this.localAccountExists(accountPk58);
+    if (isAccountExist) {
       throw new Error('Account already exists');
     }
     await this.db.upsertUserState(new UserState(accountPk58, 0, alias));
-    await this.keyStore.addAccount(accountPrivateKey, pwd);
+    await this.keyStore.addAccount(accountPrivateKey, pwd, true);
 
-    if (signingPrivateKey1 && signingPrivateKey2) {
+    if (signingPrivateKey1) {
       const signingPubKey1 = signingPrivateKey1.toPublicKey();
-      const signingPubKey2 = signingPrivateKey2.toPublicKey();
-      const signingKeys: SigningKey[] = [
-        {
-          signingPk: signingPubKey1.toBase58(),
-          accountPk: accountPk58,
-        },
-        { signingPk: signingPubKey2.toBase58(), accountPk: accountPk58 },
-      ];
-      await this.db.addSigningKeys(signingKeys);
-      await this.keyStore.addAccount(signingPrivateKey1, pwd);
-      await this.keyStore.addAccount(signingPrivateKey2, pwd);
+      const signingKey1 = {
+        signingPk: signingPubKey1.toBase58(),
+        accountPk: accountPk58,
+      };
+      await this.db.upsertSigningKey(signingKey1);
+      await this.keyStore.addAccount(signingPrivateKey1, pwd, true);
     }
 
-    this.syncer.addAccount(accountPrivateKey);
+    if (signingPrivateKey2) {
+      const signingPubKey2 = signingPrivateKey2.toPublicKey();
+      const signingKey2 = {
+        signingPk: signingPubKey2.toBase58(),
+        accountPk: accountPk58,
+      };
+      await this.db.upsertSigningKey(signingKey2);
+      await this.keyStore.addAccount(signingPrivateKey2, pwd, true);
+    }
+
+    if (this.useSyncerWorker) {
+      await this.remoteSyncer.addAccount(accountPk58);
+    } else {
+      this.syncer.addAccount(accountPk);
+    }
+
     this.log.info(`added account: ${accountPk58}`);
 
     return accountPk;
@@ -262,7 +406,10 @@ export class AnomixSdk {
     return keys.map((k) => PublicKey.fromBase58(k.signingPk));
   }
 
-  public async getBalance(accountPk: string, assetId: string) {
+  public async getBalance(
+    accountPk: string,
+    assetId: string = AssetId.MINA.toString()
+  ) {
     const unspentNotes = await this.db.getNotes(
       accountPk,
       NoteType.NORMAL.toString()
@@ -278,41 +425,67 @@ export class AnomixSdk {
     return balance;
   }
 
-  public async getWaitForWithdrawBalance(accountPk: string, assetId: string) {
-    await this.awaitAccountSynced(accountPk, 15 * 60 * 1000);
-    const unspentNotes = await this.db.getNotes(
+  public async getWithdrawNotes(
+    accountPk: string,
+    assetId: string = AssetId.MINA.toString()
+  ) {
+    const notes = await this.db.getNotes(
       accountPk,
       NoteType.WITHDRAWAL.toString()
     );
-    let balance = 0n;
-    for (let i = 0; i < unspentNotes.length; i++) {
-      const note = unspentNotes[i];
-      if (note.assetId === assetId) {
-        balance = balance + BigInt(unspentNotes[i].value);
-      }
-    }
-
-    return balance;
+    return notes.filter((n) => n.assetId === assetId);
   }
 
   public async getUserTxs(accountPk: string) {
     return await this.db.getUserTxs(accountPk);
   }
 
-  public async createDepositTx(
-    payerAddress: PublicKey,
-    noteEncryptPrivateKey: PrivateKey,
-    receiverAddress: PublicKey,
-    amount: UInt64,
-    assetId: Field,
-    accountRequired: Field
-  ) {
-    this.log.info(`create deposit tx...`);
+  public async getPendingUserTxs(accountPk: string) {
+    return await this.db.getPendingUserTxs(accountPk);
+  }
+
+  public async sendTx(tx: Tx) {
+    await this.node.sendTx(tx.provedTx);
+    if (tx.txInfo.originTx) {
+      if (tx.txInfo.actionType === ActionType.ACCOUNT.toString()) {
+        await this.db.upsertUserAccountTx(tx.txInfo.originTx as UserAccountTx);
+      } else {
+        await this.db.upsertUserPaymentTx(tx.txInfo.originTx as UserPaymentTx);
+      }
+    }
+
+    if (tx.txInfo.originOutputNotes) {
+      await this.db.upsertNotes(tx.txInfo.originOutputNotes);
+    }
+  }
+
+  public async createDepositTx({
+    payerAddress,
+    receiverAddress,
+    amount,
+    assetId = AssetId.MINA,
+    anonymousToReceiver = false,
+    receiverAccountRequired = AccountRequired.REQUIRED,
+    noteEncryptPrivateKey = PrivateKey.random(),
+  }: {
+    payerAddress: PublicKey;
+    receiverAddress: PublicKey;
+    amount: UInt64;
+    assetId: Field;
+    anonymousToReceiver: boolean;
+    receiverAccountRequired: Field;
+    noteEncryptPrivateKey: PrivateKey;
+  }) {
+    this.log.info(`create deposit proof...`);
+    if (!this.isEntryContractCompiled) {
+      throw new Error('Entry contract is not compiled');
+    }
+
     const note = new ValueNote({
       secret: Field.random(),
       ownerPk: receiverAddress,
-      accountRequired,
-      creatorPk: payerAddress,
+      accountRequired: receiverAccountRequired,
+      creatorPk: anonymousToReceiver ? PublicKey.empty() : payerAddress,
       value: amount,
       assetId,
       inputNullifier: Poseidon.hash(payerAddress.toFields()),
@@ -329,55 +502,8 @@ export class AnomixSdk {
     });
 
     this.log.info(`prove deposit tx...`);
-    await transaction.prove().catch((err) => err);
+    await transaction.prove();
     return transaction.toJSON();
-  }
-
-  private async pickUnspentNotes(
-    accountPk: PublicKey,
-    amount: UInt64,
-    assetId: Field,
-    accountRequired: Field
-  ) {
-    const unspentNotes = await this.db.getNotes(
-      accountPk.toBase58(),
-      NoteType.NORMAL.toString()
-    );
-
-    let filterNotes: Note[] = [];
-    if (accountRequired.equals(AccountRequired.REQUIRED).toBoolean()) {
-      filterNotes = unspentNotes
-        .filter((n) => n.assetId === assetId.toString())
-        .sort((a, b) => Number(BigInt(b.value) - BigInt(a.value)));
-    } else {
-      filterNotes = unspentNotes
-        .filter(
-          (n) =>
-            n.assetId === assetId.toString() &&
-            n.ownerAccountRequired === AccountRequired.NOTREQUIRED.toString()
-        )
-        .sort((a, b) => Number(BigInt(b.value) - BigInt(a.value)));
-    }
-
-    if (filterNotes.length == 0) {
-      throw new Error('No unspent note that meets the requirement');
-    }
-    if (filterNotes.length == 1) {
-      if (BigInt(filterNotes[0].value) >= amount.toBigInt()) {
-        return [filterNotes[0]];
-      }
-
-      throw new Error('No unspent note that meets the requirement');
-    } else {
-      if (
-        BigInt(filterNotes[0].value) + BigInt(filterNotes[1].value) >=
-        amount.toBigInt()
-      ) {
-        return [filterNotes[0], filterNotes[1]];
-      }
-
-      throw new Error('No unspent note that meets the requirement');
-    }
   }
 
   public async encryptNotes(notes: ValueNote[], accountPrivateKey: PrivateKey) {
@@ -416,26 +542,48 @@ export class AnomixSdk {
     return encryptedNotes;
   }
 
-  public async sendPaymentTx(
-    accountPk: PublicKey,
-    accountPrivateKey: PrivateKey,
-    aliasHash: Field,
-    senderAccountRequired: Field,
-    receiver: PublicKey,
-    receiverAccountRequired: Field,
-    payAmount: UInt64,
-    payAssetId: Field,
+  public async createPaymentTx({
+    accountPk,
+    accountPrivateKey,
+    aliasHash,
+    senderAccountRequired,
+    receiver,
+    receiverAccountRequired,
+    anonymousToReceiver = false,
+    payAmount,
+    payAssetId,
+    txFee,
+    isWithdraw,
+  }: {
+    accountPk: PublicKey;
+    accountPrivateKey: PrivateKey;
+    aliasHash: Field;
+    senderAccountRequired: Field;
+    receiver: PublicKey;
+    receiverAccountRequired: Field;
+    anonymousToReceiver: boolean;
+    payAmount: UInt64;
+    payAssetId: Field;
+    txFee: UInt64;
+    isWithdraw: boolean;
+  }) {
+    this.log.info('create payment tx...');
 
-    txFee: UInt64,
-    pwd: string
-  ) {
-    this.log.info('pick unspent notes...');
-    const unspentNotes = await this.pickUnspentNotes(
-      accountPk,
-      payAmount,
-      payAssetId,
-      senderAccountRequired
+    if (!this.isPrivateCircuitCompiled) {
+      throw new Error('Private circuit is not compiled');
+    }
+
+    const notes = await this.db.getNotes(
+      accountPk.toBase58(),
+      NoteType.NORMAL.toString()
     );
+    const picker = new NotePicker(notes);
+    const unspentNotes = picker.pick(
+      payAmount.toBigInt(),
+      payAssetId.toString(),
+      senderAccountRequired.toString()
+    );
+
     let inputValueNote1 = ValueNote.zero();
     let inputValueNote2 = ValueNote.zero();
     let outputNote1: ValueNote = ValueNote.zero();
@@ -447,19 +595,28 @@ export class AnomixSdk {
     let inputNote2Witness = DataMerkleWitness.zero(DUMMY_FIELD);
     let accountNoteIndex = Field(0);
     let accountNoteWitness = DataMerkleWitness.zero(DUMMY_FIELD);
-    const aliases = await this.db.getAliasesByAliasHash(aliasHash.toString());
+    const aliasHashStr = aliasHash.toString();
+    const aliases = await this.db.getAliasesByAliasHash(aliasHashStr);
     if (aliases.length > 0) {
       accountNoteIndex = Field(aliases[0].index);
+      this.log.info(
+        `getMerkleWitnessesByCommitments... aliases[0].noteCommitment: ${aliases[0].noteCommitment} `
+      );
       accountNoteWitness = await this.node.getMerkleWitnessesByCommitments([
         aliases[0].noteCommitment!,
       ])[0];
     }
     let signingPk = accountPk;
-    if (await this.isAccountRegistered(accountPk.toBase58())) {
+    const accountPk58 = accountPk.toBase58();
+
+    this.log.info('check isAccountRegistered...');
+    if (
+      await this.isAliasRegisterdToAccount(aliasHashStr, accountPk58, false)
+    ) {
       signingPk = PublicKey.fromBase58(aliases[0].signingPk!);
     }
-    const publicValue = UInt64.zero;
-    const publicOwner = PublicKey.empty();
+    const publicValue = isWithdraw ? payAmount : UInt64.zero;
+    const publicOwner = isWithdraw ? receiver : PublicKey.empty();
     const dataRoot = Field(
       await (
         await this.node.getWorldState()
@@ -474,6 +631,10 @@ export class AnomixSdk {
       const inputNote = unspentNotes[0];
       inputValueNote1 = unspentNotes[0].valueNote;
       inputNote1Index = Field(inputNote.index!);
+
+      this.log.info(
+        `getMerkleWitnessesByCommitments... inputNote.commitment: ${inputNote.commitment} `
+      );
       inputNote1Witness = await this.node.getMerkleWitnessesByCommitments([
         inputNote.commitment!,
       ])[0];
@@ -497,22 +658,30 @@ export class AnomixSdk {
           secret: Field.random(),
           ownerPk: receiver,
           accountRequired: receiverAccountRequired,
-          creatorPk: accountPk,
+          creatorPk: isWithdraw
+            ? PublicKey.empty()
+            : anonymousToReceiver
+            ? PublicKey.empty()
+            : accountPk,
           value: payAmount,
           assetId: payAssetId,
           inputNullifier: nullifier1,
-          noteType: NoteType.NORMAL,
+          noteType: isWithdraw ? NoteType.WITHDRAWAL : NoteType.NORMAL,
         });
       } else {
         outputNote1 = new ValueNote({
           secret: Field.random(),
           ownerPk: receiver,
           accountRequired: receiverAccountRequired,
-          creatorPk: accountPk,
+          creatorPk: isWithdraw
+            ? PublicKey.empty()
+            : anonymousToReceiver
+            ? PublicKey.empty()
+            : accountPk,
           value: payAmount,
           assetId: payAssetId,
           inputNullifier: nullifier1,
-          noteType: NoteType.NORMAL,
+          noteType: isWithdraw ? NoteType.WITHDRAWAL : NoteType.NORMAL,
         });
 
         outputNote2 = new ValueNote({
@@ -568,22 +737,30 @@ export class AnomixSdk {
           secret: Field.random(),
           ownerPk: receiver,
           accountRequired: receiverAccountRequired,
-          creatorPk: accountPk,
+          creatorPk: isWithdraw
+            ? PublicKey.empty()
+            : anonymousToReceiver
+            ? PublicKey.empty()
+            : accountPk,
           value: payAmount,
           assetId: payAssetId,
           inputNullifier: nullifier1,
-          noteType: NoteType.NORMAL,
+          noteType: isWithdraw ? NoteType.WITHDRAWAL : NoteType.NORMAL,
         });
       } else {
         outputNote1 = new ValueNote({
           secret: Field.random(),
           ownerPk: receiver,
           accountRequired: receiverAccountRequired,
-          creatorPk: accountPk,
+          creatorPk: isWithdraw
+            ? PublicKey.empty()
+            : anonymousToReceiver
+            ? PublicKey.empty()
+            : accountPk,
           value: payAmount,
           assetId: payAssetId,
           inputNullifier: nullifier1,
-          noteType: NoteType.NORMAL,
+          noteType: isWithdraw ? NoteType.WITHDRAWAL : NoteType.NORMAL,
         });
 
         outputNote2 = new ValueNote({
@@ -599,6 +776,36 @@ export class AnomixSdk {
       }
     }
 
+    const outputNote1Commitment = outputNote1.commitment();
+    let outputNote2Commitment = outputNote2.commitment();
+
+    const outputValueNotes = [outputNote1];
+    const originOutputNotes = [
+      Note.from({
+        valueNoteJSON: ValueNote.toJSON(outputNote1),
+        commitment: outputNote1Commitment.toString(),
+        nullifier: nullifier1.toString(),
+        nullified: false,
+      }),
+    ];
+
+    const isOutputNote2Empty = outputNote2.value
+      .equals(UInt64.zero)
+      .toBoolean();
+    if (isOutputNote2Empty) {
+      outputNote2Commitment = DUMMY_FIELD;
+    } else {
+      outputValueNotes.push(outputNote2);
+      originOutputNotes.push(
+        Note.from({
+          valueNoteJSON: ValueNote.toJSON(outputNote2),
+          commitment: outputNote2Commitment.toString(),
+          nullifier: nullifier2.toString(),
+          nullified: false,
+        })
+      );
+    }
+
     const message = [
       outputNote1.commitment(),
       outputNote2.commitment(),
@@ -608,10 +815,7 @@ export class AnomixSdk {
       ...publicValue.toFields(),
       ...publicOwner.toFields(),
     ];
-    let signingPrivateKey = await this.keyStore.getAccountPrivateKey(
-      signingPk,
-      pwd
-    );
+    let signingPrivateKey = await this.keyStore.getAccountPrivateKey(signingPk);
     if (signingPrivateKey === undefined) {
       throw new Error('signingPrivateKeyBase58 is undefined');
     }
@@ -619,7 +823,7 @@ export class AnomixSdk {
     let signature = Signature.create(signingPrivateKey, message);
 
     const input = new JoinSplitSendInput({
-      actionType: ActionType.SEND,
+      actionType: isWithdraw ? ActionType.WITHDRAW : ActionType.SEND,
       assetId: payAssetId,
       inputNotesNum: inputNoteNum,
       inputNote1Index,
@@ -643,35 +847,67 @@ export class AnomixSdk {
     });
 
     this.log.info('proving...');
+    const startTime = Date.now();
     const proof = await JoinSplitProver.send(input);
+    const endTime = Date.now();
+    this.log.info(`proving time: ${endTime - startTime}ms`);
 
     const encryptedNotes = await this.encryptNotes(
-      [outputNote1, outputNote2],
+      outputValueNotes,
       accountPrivateKey
     );
-    const tx = {
+    const provedTx = {
       proof: proof.toJSON(),
       extraData: {
         outputNote1: encryptedNotes[0],
-        outputNote2: encryptedNotes[1],
+        outputNote2:
+          encryptedNotes.length === 2 ? encryptedNotes[1] : undefined,
       },
     } as L2TxReqDto;
 
-    const res = await this.node.sendTx(tx);
-    if (res.code !== 0) {
-      throw new Error(res.msg);
-    }
+    // add pending note2
+    const txHash = proof.publicOutput.hash().toString();
+    const originTx = UserPaymentTx.from({
+      txHash: txHash,
+      accountPk: accountPk58,
+      actionType: proof.publicOutput.actionType.toString(),
+      publicValue: proof.publicOutput.publicValue.toString(),
+      publicAssetId: proof.publicOutput.publicAssetId.toString(),
+      publicOwner: proof.publicOutput.publicOwner.toBase58(),
+      txFee: proof.publicOutput.txFee.toString(),
+      txFeeAssetId: proof.publicOutput.txFeeAssetId.toString(),
+      depositRoot: proof.publicOutput.depositRoot.toString(),
+      depositIndex: Number(proof.publicOutput.depositIndex.toString()),
+      privateValue: payAmount.toString(),
+      privateValueAssetId: payAssetId.toString(),
+      sender: accountPk58,
+      receiver: receiver.toBase58(),
+      isSender: true,
+      createdTs: 0,
+      finalizedTs: 0,
+    });
 
-    return res.data;
+    return {
+      provedTx,
+      txInfo: {
+        actionType: ActionType.SEND.toString(),
+        originTx,
+        originOutputNotes,
+      },
+    } as Tx;
   }
 
-  public async sendAccountRegisterTx(
-    accountPk: PublicKey,
-    accountPrivateKey: PrivateKey,
-    alias: string,
-    newSigningPk1: PublicKey,
-    newSigningPk2: PublicKey
-  ) {
+  public async createAccountRegisterTx({
+    accountPk,
+    alias,
+    newSigningPk1,
+    newSigningPk2,
+  }: {
+    accountPk: PublicKey;
+    alias: string;
+    newSigningPk1: PublicKey;
+    newSigningPk2: PublicKey;
+  }) {
     this.log.info('pick unspent notes...');
     let newAccountPk = accountPk;
     let signingPk = accountPk;
@@ -693,6 +929,12 @@ export class AnomixSdk {
       nullifier2,
     ];
 
+    const accountPrivateKey = await this.keyStore.getAccountPrivateKey(
+      accountPk
+    );
+    if (accountPrivateKey === undefined) {
+      throw new Error('AccountPrivateKey cannot be found in keyStore');
+    }
     let signature = Signature.create(accountPrivateKey, message);
 
     const input = new JoinSplitAccountInput({
@@ -710,7 +952,10 @@ export class AnomixSdk {
     });
 
     this.log.info('proving...');
+    const startTime = Date.now();
     const proof = await JoinSplitProver.operateAccount(input);
+    const endTime = Date.now();
+    this.log.info(`proving time: ${endTime - startTime}ms`);
 
     const tx = {
       proof: proof.toJSON(),
@@ -720,11 +965,42 @@ export class AnomixSdk {
       },
     } as L2TxReqDto;
 
-    const res = await this.node.sendTx(tx);
-    if (res.code !== 0) {
-      throw new Error(res.msg);
+    const originTx = UserAccountTx.from({
+      txHash: proof.publicOutput.hash().toString(),
+      accountPk: accountPk.toBase58(),
+      aliasHash: aliasHash.toString(),
+      alias,
+      newSigningPk1: newSigningPk1.toBase58(),
+      newSigningPk2: newSigningPk2.toBase58(),
+      txFee: '0',
+      txFeeAssetId: AssetId.MINA.toString(),
+      migrated: false,
+      createdTs: 0,
+      finalizedTs: 0,
+    });
+
+    return {
+      provedTx: tx,
+      txInfo: {
+        actionType: ActionType.ACCOUNT.toString(),
+        originTx,
+        alias,
+      },
+    } as Tx;
+  }
+
+  public async withdrawToL1(tx: WithdrawAssetReqDto) {
+    return await this.node.sendWithdrawTx(tx);
+  }
+
+  public async getWithdrawProvedL1Tx(l1addr: string, noteCommitment: string) {
+    const results = await this.node.getWithdrawProvedTx(l1addr, [
+      noteCommitment,
+    ]);
+    if (results.length === 0) {
+      throw new Error('Related withdraw note not found');
     }
 
-    return res.data;
+    return results[0].l1TxBody;
   }
 }

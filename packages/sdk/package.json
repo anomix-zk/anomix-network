@@ -37,7 +37,9 @@
     "@anomix/merkle-tree": "^0.1.0",
     "@anomix/utils": "^0.1.0",
     "async-mutex": "^0.4.0",
+    "comlink": "^4.4.1",
     "consola": "^3.2.3",
+    "detect-node": "^2.1.0",
     "dexie": "^3.2.4",
     "isomorphic-fetch": "^3.0.0"
   }
