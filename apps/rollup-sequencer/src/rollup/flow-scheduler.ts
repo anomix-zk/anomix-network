@@ -236,7 +236,7 @@ export class FlowScheduler {
     }
 
     private async preInsertIntoTreeCache(txList: MemPlL2Tx[]) {
-        const innerRollup_proveTxBatchParamList: { innerRollupInput: string, joinSplitProof1: string, joinSplitProof2: string }[] = []
+        const innerRollup_proveTxBatchParamList: { txId1: number, txId2: number, innerRollupInput: string, joinSplitProof1: string, joinSplitProof2: string }[] = []
 
         for (let i = 0; i < txList.length; i += 2) {
             const tx1 = txList[i];// if txList's length is uneven, tx1 would be the last one, ie. this.leftNonDepositTx .
@@ -365,8 +365,10 @@ export class FlowScheduler {
 
             innerRollup_proveTxBatchParamList.push(
                 {
-                    joinSplitProof1: tx1.proof,
-                    joinSplitProof2: tx2.proof,
+                    txId1: tx1.id,
+                    txId2: tx2.id,
+                    joinSplitProof1: tx1.proof,// if tx1 is depositL2Tx, then tx1.proof is undefined currently!
+                    joinSplitProof2: tx2.proof,// if tx2 is depositL2Tx, then tx1.proof is undefined currently!
                     innerRollupInput: innerRollupInputStr
                 }
             );
