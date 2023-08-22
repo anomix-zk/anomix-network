@@ -16,7 +16,7 @@ export function getLogger(name: string): Logger {
         transport: {
             targets: [
                 {
-                    target: __dirname.concat('../../../anomix-network-log-storage/log.log'),// TODO improve it for prod&dev
+                    target: config.pinoLogFilePath.concat('/log.log'),// TODO improve it for prod&dev
                     level: 'info',
                 },
                 { target: 'pino-pretty', options: { destination: '/dev/stdout' } }
