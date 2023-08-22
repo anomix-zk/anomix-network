@@ -14,26 +14,24 @@ export class ProofScheduler {
     constructor(private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) { }
 
     async startBatchMerge(blockId: number) {
-        let latestDepositTreeRoot: string = undefined as any as string;
         const connection = getConnection();
 
-        await connection.getRepository(L2Tx)
-            .find({ where: { blockId } })
-            .then(async txList => {
-                const hasDeposit = txList!.some(tx => {
-                    return tx.actionType == ActionType.DEPOSIT.toString();
-                });
-                if (hasDeposit) {
-                    // MUST stop 'deposit-processor', need WAIT until timeout!! will return the latest DepositTreeRoot if deposit_processor just sent out a deposit_batch L1tx.
-                    await $axiosDepositProcessor.post<BaseResponse<string>>('/rollup/stop-mark').then(r => {
-                        if (r.data.code == 1) {
-                            throw new Error(`could not obtain latest DEPOSIT_TREE root: ${r.data.msg}`);
-                        }
-                        latestDepositTreeRoot = r.data.data;
-                    });
-                }
+        const txList = await connection.getRepository(L2Tx)
+            .find({ where: { blockId } });
+        const hasDeposit = txList!.some(tx => {
+            return tx.actionType == ActionType.DEPOSIT.toString();
+        });
 
+        let latestDepositTreeRoot: string = undefined as any as string;
+        if (hasDeposit) {
+            //  coordinator has already stopped Broadcasting DepositRollupProof as L1Tx.
+            await $axiosDepositProcessor.post<BaseResponse<string>>('/rollup/deposit-tree-root').then(r => {
+                if (r.data.code == 1) {
+                    throw new Error(`could not obtain latest DEPOSIT_TREE root: ${r.data.msg}`);
+                }
+                latestDepositTreeRoot = r.data.data!;
             });
+        }
 
         // query related InnerRollupBatch regarding 'blockId'
         const innerRollupBatchRepo = connection.getRepository(InnerRollupBatch);
@@ -43,11 +41,27 @@ export class ProofScheduler {
         }
         const innerRollupBatchParamList = JSON.parse(innerRollupBatch.inputParam);
 
-        if (latestDepositTreeRoot) {// ie. has depositL2tx, then need change to latestDepositTreeRoot
+        if (hasDeposit) {// ie. has depositL2tx, then need change to latestDepositTreeRoot
+            const map = new Map<number, string>();
+            txList.forEach(tx => {
+                map.set(tx.id, tx.proof);
+            });
+
             // change to latest deposit tree root
             innerRollupBatchParamList.forEach(param => {
-                param.depositRoot = latestDepositTreeRoot
+                const paramJson = JSON.parse(param) as { txId1: number, txId2: number, innerRollupInput: string, joinSplitProof1: string, joinSplitProof2: string };
+
+                const innerRollupInput = JSON.parse(paramJson.innerRollupInput);
+                innerRollupInput.depositRoot = latestDepositTreeRoot;
+                paramJson.innerRollupInput = JSON.stringify(innerRollupInput);
+
+                // sync proof into paramJson
+                paramJson.joinSplitProof1 = map.get(paramJson.txId1)!;
+                paramJson.joinSplitProof2 = map.get(paramJson.txId2)!;
             })
+
+            innerRollupBatch.inputParam = JSON.stringify(innerRollupBatchParamList);
+            innerRollupBatchRepo.save(innerRollupBatch);
         }
 
         // send to proof-generator, construct proofTaskDto
