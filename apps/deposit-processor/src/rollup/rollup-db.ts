@@ -15,17 +15,24 @@ export class RollupDB {
         const queryRunner = connection.createQueryRunner();
 
         await queryRunner.startTransaction();
-        const depositTreeTransRepo = connection.getRepository(DepositTreeTrans);
-        await depositTreeTransRepo.save(depositTreeTrans);
+        try {
+            const depositTreeTransRepo = connection.getRepository(DepositTreeTrans);
+            await depositTreeTransRepo.save(depositTreeTrans);
 
-        const taskRepo = connection.getRepository(Task);
-        const task = new Task();
-        task.txHash = depositTreeTrans.txHash;
-        task.taskType = TaskType.DEPOSIT;
-        task.targetId = depositTreeTrans.id;
-        task.status = TaskStatus.PENDING;
-        await taskRepo.save(task);
+            const taskRepo = connection.getRepository(Task);
+            const task = new Task();
+            task.txHash = depositTreeTrans.txHash;
+            task.taskType = TaskType.DEPOSIT;
+            task.targetId = depositTreeTrans.id;
+            task.status = TaskStatus.PENDING;
+            await taskRepo.save(task);
 
-        await queryRunner.commitTransaction();
+            await queryRunner.commitTransaction();
+        } catch (error) {
+            console.error(error);
+            await queryRunner.rollbackTransaction();
+        } finally {
+            await queryRunner.release();
+        }
     }
 }

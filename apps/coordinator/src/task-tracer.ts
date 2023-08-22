@@ -46,7 +46,7 @@ async function traceTasks() {
             }
 
             const queryRunner = connection.createQueryRunner();
-            queryRunner.startTransaction();
+            await queryRunner.startTransaction();
             try {
                 // to here, means task id done, even if L1tx failed.
                 task.status = TaskStatus.DONE;
@@ -121,14 +121,14 @@ async function traceTasks() {
                         break;
                 }
 
-                queryRunner.commitTransaction();
+                await queryRunner.commitTransaction();
             } catch (error) {
                 console.error(error);
-                queryRunner.rollbackTransaction();
+                await queryRunner.rollbackTransaction();
 
                 throw error;
             } finally {
-                queryRunner.release();
+                await queryRunner.release();
             }
         });
     } catch (error) {

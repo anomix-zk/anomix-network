@@ -151,11 +151,11 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
 
             return { code: 0, data: joinSplitProof.publicOutput.hash().toString(), msg: '' };
         } catch (err) {
-            queryRunner.rollbackTransaction();
+            await queryRunner.rollbackTransaction();
 
             throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
         } finally {
-            queryRunner.release();
+            await queryRunner.release();
         }
     } catch (error) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")

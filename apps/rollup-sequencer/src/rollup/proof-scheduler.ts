@@ -123,20 +123,30 @@ export class ProofScheduler {
         // save it into db 
         const connection = getConnection();
         const queryRunner = connection.createQueryRunner();
-        queryRunner.startTransaction();
+        await queryRunner.startTransaction();
 
         const blockRepo = connection.getRepository(Block);
         const block = (await blockRepo.findOne({ where: { id: blockId } }))!;
-        block.status = BlockStatus.PROVED;
-        blockRepo.save(block);
+        try {
 
-        const blockProverOutputRepo = connection.getRepository(BlockProverOutput);
-        const blockProverOutput = new BlockProverOutput();
-        blockProverOutput.blockId = blockId;
-        blockProverOutput.output = JSON.stringify(blockProvedResult);
-        blockProverOutputRepo.save(blockProverOutput);
+            block.status = BlockStatus.PROVED;
+            blockRepo.save(block);
 
-        queryRunner.commitTransaction();
+            const blockProverOutputRepo = connection.getRepository(BlockProverOutput);
+            const blockProverOutput = new BlockProverOutput();
+            blockProverOutput.blockId = blockId;
+            blockProverOutput.output = JSON.stringify(blockProvedResult);
+            blockProverOutputRepo.save(blockProverOutput);
+
+            await queryRunner.commitTransaction();
+
+        } catch (error) {
+            console.error(error);
+            await queryRunner.rollbackTransaction();
+
+        } finally {
+            await queryRunner.release();
+        }
 
         // check if align with AnomixRollupContract's onchain states, then it must be the lowese PENDING L2Block.
         const rollupContractAddr = PublicKey.fromBase58(config.rollupContractAddress);
@@ -195,25 +205,32 @@ export class ProofScheduler {
     async whenL1TxComeback(data: { blockId: number, tx: any }) {
         // sign and broadcast it.
         const l1Tx = Mina.Transaction.fromJSON(data.tx);
-        await l1Tx.sign([PrivateKey.fromBase58(config.sequencerPrivateKey)]).send().then(txHash => {// TODO what if it fails currently!
+        await l1Tx.sign([PrivateKey.fromBase58(config.sequencerPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
             const txHash0 = txHash.hash()!;
 
             // insert L1 tx into db, underlying 
             const connection = getConnection();
             const queryRunner = connection.createQueryRunner();
-            queryRunner.startTransaction();
-            const blockRepo = connection.getRepository(Block);
-            blockRepo.update({ id: data.blockId }, { l1TxHash: txHash0 });
+            await queryRunner.startTransaction();
+            try {
+                const blockRepo = connection.getRepository(Block);
+                blockRepo.update({ id: data.blockId }, { l1TxHash: txHash0 });
 
-            // save task for 'Tracer-Watcher' and also save to task for 'Tracer-Watcher'
-            const taskRepo = connection.getRepository(Task);
-            const task = new Task();
-            task.status = TaskStatus.PENDING;
-            task.taskType = TaskType.ROLLUP;
-            task.txHash = txHash0;
-            taskRepo.save(task);
+                // save task for 'Tracer-Watcher' and also save to task for 'Tracer-Watcher'
+                const taskRepo = connection.getRepository(Task);
+                const task = new Task();
+                task.status = TaskStatus.PENDING;
+                task.taskType = TaskType.ROLLUP;
+                task.txHash = txHash0;
+                taskRepo.save(task);
 
-            queryRunner.commitTransaction();
+                await queryRunner.commitTransaction();
+            } catch (error) {
+                console.error(error);
+                await queryRunner.rollbackTransaction();
+            } finally {
+                await queryRunner.release();
+            }
 
         }).catch(reason => {
             // TODO log it

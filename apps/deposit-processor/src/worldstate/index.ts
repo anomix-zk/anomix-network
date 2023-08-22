@@ -115,14 +115,14 @@ export class WorldState {
         // save it into db accordingly
         const connection = getConnection();
         const queryRunner = connection.createQueryRunner();
-        queryRunner.startTransaction();
+        await queryRunner.startTransaction();
 
         const l2txRepo = await connection.getRepository(L2Tx);
         payload.data.forEach(async d => {
             await l2txRepo.update({ id: d.txId }, { proof: d.data });
         })
 
-        queryRunner.commitTransaction();
+        await queryRunner.commitTransaction();
 
         // construct rollupTaskDto
         const rollupTaskDto: RollupTaskDto<any, any> = {
