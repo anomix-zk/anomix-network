@@ -42,7 +42,7 @@ export const handler: RequestHandler<string[], null> = async function (
         // then query confirmed tx collection
         const ctxList = await txRepository.find({
             where: {
-                txHash: In(txHashList)
+                txHash: In(txHashList!)
             }
         }) ?? [];
 

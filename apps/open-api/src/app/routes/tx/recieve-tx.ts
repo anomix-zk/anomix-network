@@ -46,7 +46,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
     const rs = await $axiosSeq.post<BaseResponse<Map<string, string>>>('/existence/nullifiers', [nullifier1, nullifier2]).then(r => {
         return r.data.data
     })
-    if (rs.get(nullifier1) != '-1' || rs.get(nullifier2) != '-1') {
+    if (rs!.get(nullifier1) != '-1' || rs!.get(nullifier2) != '-1') {
         return { code: 1, data: undefined, msg: 'double spending: nullifier1 or nullifier2 is used' }
     }
 
