@@ -37,14 +37,18 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
         const dto = req.body;
         const targetId = dto.payload as number;
 
-        let respondData: any = undefined;
+        const respondData: any = undefined;
 
         if (dto.taskType == RollupTaskType.DEPOSIT_JOINSPLIT) {// when join-split_deposit done, coordinator trigger ROLLUP_PROCESSOR to start rolluping; 
             // trigger ROLLUP_PROCESSOR to start rolluping; 
             dto.taskType = RollupTaskType.ROLLUP_PROCESS;
             await $axiosSeq.post<BaseResponse<string>>('/rollup/proof-trigger', dto);
 
-        } else if (dto.taskType == RollupTaskType.DEPOSIT_BATCH_MERGE) {// when DEPOSIT_BATCH_MERGE done, then need check if bother seq-rollup-proof
+        }
+
+        /* no need this. since 'proof-trigger.ts' will decide if trigger 'DEPOSIT_CONTRACT_CALL'
+
+        else if (dto.taskType == RollupTaskType.DEPOSIT_BATCH_MERGE) {// when DEPOSIT_BATCH_MERGE done, then need check if bother seq-rollup-proof
             // check if bother seq-rollup-proof 
             const connection = getConnection();
             const seqStatusReposity = connection.getRepository(SeqStatus);
@@ -64,6 +68,8 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
                     });
             }
         }
+        */
+
         /* mv to sequencer side
         else if (dto.taskType == RollupTaskType.ROLLUP_PROCESS) {// when L2Block_proved done, coordinator trigger ROLLUP_PROCESSOR to invoke AnomixRollupContract; 
             const rollupContractAddr = PublicKey.fromBase58(config.rollupContractAddress);
