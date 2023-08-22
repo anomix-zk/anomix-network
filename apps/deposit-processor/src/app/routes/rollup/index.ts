@@ -1,13 +1,13 @@
 
 import { FastifyPlugin } from "fastify"
-import { triggerRollupBatch } from "./trigger-rollup-batch";
-import { queryCouldStopRollup } from "./query-could-stop-rollup";
+import { triggerSeqDepositCommitment } from "./trigger-seq-commitment";
+import { queryLatestDepositTreeRoot } from "./query-latest-deposit-tree-root";
 
 export const txEndpoint: FastifyPlugin = async (
     instance,
     options,
     done
 ): Promise<void> => {
-    instance.register(queryCouldStopRollup);
-    instance.register(triggerRollupBatch);
+    instance.register(queryLatestDepositTreeRoot);
+    instance.register(triggerSeqDepositCommitment);
 }
