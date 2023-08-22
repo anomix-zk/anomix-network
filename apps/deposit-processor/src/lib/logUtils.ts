@@ -16,10 +16,11 @@ export function getLogger(name: string): Logger {
         transport: {
             targets: [
                 {
-                    target: config.pinoLogFilePath.concat('/deposit-processor-log.log'),// TODO improve it for prod&dev
+                    target: 'pino/file',
                     level: 'info',
+                    options: { destination: config.pinoLogFilePath.concat('/deposit-processor-log.log') }
                 },
-                { target: 'pino-pretty', options: { destination: '/dev/stdout' } }
+                { target: 'pino-pretty', level: 'info', options: { destination: '/dev/stdout' } }
             ]
         }
     });
