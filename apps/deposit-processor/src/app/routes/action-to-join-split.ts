@@ -31,7 +31,7 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
         /**
          * collect all 'Pending' actions(within depositTx list) and exec 'JoinSplitProver.deposit'
          */
-        await this.worldState.processDepositActions(blockId);
+        await this.worldState.execActionDepositJoinSplit(blockId);
 
         return { code: 0, data: true, msg: '' };
     } catch (err) {
