@@ -1,12 +1,10 @@
-import {
-    VerificationKey,
-
-} from 'snarkyjs';
-import { JoinSplitProof } from "@anomix/circuits"
+import fs from "fs";
 import * as dotenv from "dotenv"
+import { JoinSplitProof } from "@anomix/circuits"
+
 dotenv.config({ path: '../../.env' })
 
-console.log('!process.env.TYPE_ORM_USERNAME=', process.env.TYPE_ORM_USERNAME)
+const JoinsplitProofDummyTx: string = fs.readFileSync('./JoinsplitProofDummyTx.string', 'utf8');
 
 const config = {
     port: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
@@ -43,7 +41,7 @@ const config = {
             title: "Anomix Network - rollup-sequencer api documentation",
             version: "0.1.0"
         },
-        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost:').concat(<string>process.env.DEPOSIT_PROCESSOR_PORT),
+        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost').concat(':').concat(<string>process.env.DEPOSIT_PROCESSOR_PORT),
         schemes: ["http"],
         consumes: ["application/json"],
         produces: ["application/json"],
@@ -65,7 +63,7 @@ const config = {
         batchNum: <number>Number(<string>process.env.DEPOSIT_ROLLUP_BATCH_NUM) || 8,
     },
 
-    joinsplitProofDummyTx: JoinSplitProof.fromJSON(<any>process.env.JoinsplitProofDummyTx),// TODO
+    joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx ?? JoinsplitProofDummyTx)),// TODO
 
     sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
     networkInit: <number>Number(<string>process.env.NETWORK_INIT) || 1,

@@ -63,8 +63,6 @@ bootProofTriggerThread();
 
 bootMempoolWatcherThread();
 
-// init Mina tool
-await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
-
 const app = new FastifyCore();
+app.server.decorate('workerMap', workerMap);
 await app.listen();

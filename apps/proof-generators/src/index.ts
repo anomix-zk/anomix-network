@@ -23,10 +23,14 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
 
     httpWorker.on('message', (proofTaskDto: ProofTaskDto<any, any>) => {
         const sendResultDepositCallback = async (p: any) => {
-            proofTaskDto.payload = p;
+            proofTaskDto.payload.data.data = p;
             axios.post(`http://${config.depositProcessorHost}:${config.depositProcessorPort}/proof-result`, proofTaskDto);
         }
 
+        const sendResultDepositJoinSplitCallback = async (p: any) => {
+            proofTaskDto.payload = p;
+            axios.post(`http://${config.depositProcessorHost}:${config.depositProcessorPort}/proof-result`, proofTaskDto);
+        }
         const sendResultSeqCallback = async (p: any) => {
             (proofTaskDto.payload as FlowTask<any>).data = p;
             axios.post(`http://${config.sequencerProcessorHost}:${config.sequencerProcessorPort}/proof-result`, proofTaskDto);
@@ -93,7 +97,7 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
 
                         case FlowTaskType.DEPOSIT_BATCH_MERGE:
                             {
-                                let payloads = (flowTask.data as (any[])).map(d => {
+                                let payloads = (flowTask.data.data as (any[])).map(d => {
                                     return {
                                         isProof: false,
                                         payload: d
@@ -123,7 +127,7 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                             {
                                 let payload = {
                                     isProof: false,
-                                    payload: flowTask.data
+                                    payload: flowTask.data.data
                                 } as ProofPayload<any>;
 
                                 subProcessCordinator.depositContract_updateDepositState(payload, sendResultDepositCallback)
@@ -167,7 +171,7 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                         payload: proofTaskDto.payload as { blockId: number, data: { txId: number, data: JoinSplitDepositInput }[] }
                     } as ProofPayload<any>;
 
-                    subProcessCordinator.jointSplit_deposit(payload, sendResultDepositCallback);
+                    subProcessCordinator.jointSplit_deposit(payload, sendResultDepositJoinSplitCallback);
                 }
                 break;
 

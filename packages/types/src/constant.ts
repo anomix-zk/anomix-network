@@ -114,6 +114,12 @@ export class L1TxStatus {
     }
 }
 
+export enum DepositTreeTransStatus {
+    PROCESSING,
+    PROVED,
+    CONFIRMED
+}
+
 export enum SequencerStatus {
     NotAtRollup = 0,
     AtRollup = 1

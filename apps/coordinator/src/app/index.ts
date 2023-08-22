@@ -13,7 +13,7 @@ import { routes } from './routes'
 
 export class FastifyCore {
 
-    private readonly server: FastifyInstance<Server, IncomingMessage, ServerResponse>
+    readonly server: FastifyInstance<Server, IncomingMessage, ServerResponse>
 
     constructor() {
 

@@ -38,7 +38,7 @@ const config = {
             title: "Anomix Network - openAPI api documentation",
             version: "0.1.0"
         },
-        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost:').concat(<string>process.env.OPENAPI_PORT),
+        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost').concat(':').concat(<string>process.env.OPENAPI_PORT),
         schemes: ["http"],
         consumes: ["application/json"],
         produces: ["application/json"],
@@ -51,6 +51,8 @@ const config = {
             }
         }
     },
+    pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/',
+
     joinSplitVK: <string>process.env.JoinSplitVK,
     txFeeFloor: <number>Number(<string>process.env.TxFeeFloor) || 1000 * 1000, // default 0.01Mina
     sequencerHost: <string>process.env.ROLLUP_SEQUENCER_HOST || '127.0.0.1',

@@ -17,13 +17,6 @@ export class SequenceFlow {
     }
 
     async start() {
-        // update db status to SeqStatus.ATROLLUP
-        const connection = getConnection();
-        const seqStatusReposity = connection.getRepository(SeqStatus);
-        const seqStatus = (await seqStatusReposity.findOne({ where: { id: 1 } }))!;
-        seqStatus.status = SequencerStatus.AtRollup;
-
-        seqStatusReposity.save(seqStatus);
 
         this.flowScheduler.start();
     }
@@ -31,13 +24,6 @@ export class SequenceFlow {
     async end() {
         await this.worldStateDB.rollback();
 
-        // update db status to SeqStatus.NOTATROLLUP
-        const connection = getConnection();
-        const seqStatusReposity = connection.getRepository(SeqStatus);
-
-        const seqStatus = (await seqStatusReposity.findOne({ where: { id: 1 } }))!;
-        seqStatus.status = SequencerStatus.NotAtRollup;
-        seqStatusReposity.save(seqStatus);
     }
 
 }

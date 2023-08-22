@@ -1,5 +1,5 @@
 import pino, { Logger } from 'pino';
-import config from './lib/config';
+import config from './config';
 
 const logLevelData = { '*': 'info' };
 const logLevels = new Map<string, string>(Object.entries(logLevelData));
@@ -16,7 +16,7 @@ export function getLogger(name: string): Logger {
         transport: {
             targets: [
                 {
-                    target: __dirname.concat('../../../anomix-network-log-storage/log.log'),// TODO improve it for prod&dev
+                    target: config.pinoLogFilePath.concat('/deposit-processor-log.log'),// TODO improve it for prod&dev
                     level: 'info',
                 },
                 { target: 'pino-pretty', options: { destination: '/dev/stdout' } }

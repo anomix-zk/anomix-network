@@ -5,16 +5,16 @@ import { RequestHandler } from '@/lib/types'
 import { BaseResponse } from "@anomix/types";
 
 /**
- * trigger deposit rollup
+ * trigger deposit rollup-seq
  */
-export const triggerRollupBatch: FastifyPlugin = async function (
+export const triggerSeqDepositCommitment: FastifyPlugin = async function (
     instance,
     options,
     done
 ): Promise<void> {
     instance.route({
         method: "GET",
-        url: "/rollup/batch",
+        url: "/rollup/seq",
         //preHandler: [instance.authGuard],
         schema,
         handler

@@ -2,38 +2,36 @@
 import { WorldStateDB, RollupDB, IndexDB } from "@/worldstate";
 import config from "@/lib/config";
 import { BaseResponse, BlockStatus, RollupTaskDto, RollupTaskType, ProofTaskDto, ProofTaskType, FlowTaskType } from "@anomix/types";
-import { ActionType, InnerRollupProof } from "@anomix/circuits";
+import { ActionType, AnomixRollupContract, InnerRollupProof } from "@anomix/circuits";
 import { BlockProverOutput, Block, InnerRollupBatch, Task, TaskStatus, TaskType, L2Tx } from "@anomix/dao";
-import { Mina, PrivateKey } from 'snarkyjs';
+import { Mina, PrivateKey, PublicKey, Field } from 'snarkyjs';
 import { $axiosProofGenerator, $axiosDepositProcessor, $axiosCoordinator } from "@/lib";
 import { getConnection } from "typeorm";
-import axios from "axios";
+import { syncAcctInfo } from "@anomix/utils";
 
 export class ProofScheduler {
 
     constructor(private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) { }
 
     async startBatchMerge(blockId: number) {
-        let latestDepositTreeRoot: string = undefined as any as string;
         const connection = getConnection();
 
-        await connection.getRepository(L2Tx)
-            .find({ where: { blockId } })
-            .then(async txList => {
-                const hasDeposit = txList!.some(tx => {
-                    return tx.actionType == ActionType.DEPOSIT.toString();
-                });
-                if (hasDeposit) {
-                    // MUST stop 'deposit-processor', need WAIT until timeout!! will return the latest DepositTreeRoot if deposit_processor just sent out a deposit_batch L1tx.
-                    await $axiosDepositProcessor.post<BaseResponse<string>>('/rollup/stop-mark').then(r => {
-                        if (r.data.code == 1) {
-                            throw new Error(`could not obtain latest DEPOSIT_TREE root: ${r.data.msg}`);
-                        }
-                        latestDepositTreeRoot = r.data.data;
-                    });
-                }
+        const txList = await connection.getRepository(L2Tx)
+            .find({ where: { blockId } });
+        const hasDeposit = txList!.some(tx => {
+            return tx.actionType == ActionType.DEPOSIT.toString();
+        });
 
+        let latestDepositTreeRoot: string = undefined as any as string;
+        if (hasDeposit) {
+            //  coordinator has already stopped Broadcasting DepositRollupProof as L1Tx.
+            await $axiosDepositProcessor.post<BaseResponse<string>>('/rollup/deposit-tree-root').then(r => {
+                if (r.data.code == 1) {
+                    throw new Error(`could not obtain latest DEPOSIT_TREE root: ${r.data.msg}`);
+                }
+                latestDepositTreeRoot = r.data.data!;
             });
+        }
 
         // query related InnerRollupBatch regarding 'blockId'
         const innerRollupBatchRepo = connection.getRepository(InnerRollupBatch);
@@ -43,11 +41,27 @@ export class ProofScheduler {
         }
         const innerRollupBatchParamList = JSON.parse(innerRollupBatch.inputParam);
 
-        if (latestDepositTreeRoot) {// ie. has depositL2tx, then need change to latestDepositTreeRoot
+        if (hasDeposit) {// ie. has depositL2tx, then need change to latestDepositTreeRoot
+            const map = new Map<number, string>();
+            txList.forEach(tx => {
+                map.set(tx.id, tx.proof);
+            });
+
             // change to latest deposit tree root
             innerRollupBatchParamList.forEach(param => {
-                param.depositRoot = latestDepositTreeRoot
+                const paramJson = JSON.parse(param) as { txId1: number, txId2: number, innerRollupInput: string, joinSplitProof1: string, joinSplitProof2: string };
+
+                const innerRollupInput = JSON.parse(paramJson.innerRollupInput);
+                innerRollupInput.depositRoot = latestDepositTreeRoot;
+                paramJson.innerRollupInput = JSON.stringify(innerRollupInput);
+
+                // sync proof into paramJson
+                paramJson.joinSplitProof1 = map.get(paramJson.txId1)!;
+                paramJson.joinSplitProof2 = map.get(paramJson.txId2)!;
             })
+
+            innerRollupBatch.inputParam = JSON.stringify(innerRollupBatchParamList);
+            innerRollupBatchRepo.save(innerRollupBatch);
         }
 
         // send to proof-generator, construct proofTaskDto
@@ -109,21 +123,40 @@ export class ProofScheduler {
         // save it into db 
         const connection = getConnection();
         const queryRunner = connection.createQueryRunner();
-        queryRunner.startTransaction();
+        await queryRunner.startTransaction();
 
         const blockRepo = connection.getRepository(Block);
         const block = (await blockRepo.findOne({ where: { id: blockId } }))!;
-        block.status = BlockStatus.PROVED;
-        blockRepo.save(block);
+        try {
 
-        const blockProverOutputRepo = connection.getRepository(BlockProverOutput);
-        const blockProverOutput = new BlockProverOutput();
-        blockProverOutput.blockId = blockId;
-        blockProverOutput.output = JSON.stringify(blockProvedResult);
-        blockProverOutputRepo.save(blockProverOutput);
+            block.status = BlockStatus.PROVED;
+            blockRepo.save(block);
 
-        queryRunner.commitTransaction();
+            const blockProverOutputRepo = connection.getRepository(BlockProverOutput);
+            const blockProverOutput = new BlockProverOutput();
+            blockProverOutput.blockId = blockId;
+            blockProverOutput.output = JSON.stringify(blockProvedResult);
+            blockProverOutputRepo.save(blockProverOutput);
 
+            await queryRunner.commitTransaction();
+
+        } catch (error) {
+            console.error(error);
+            await queryRunner.rollbackTransaction();
+
+        } finally {
+            await queryRunner.release();
+        }
+
+        // check if align with AnomixRollupContract's onchain states, then it must be the lowese PENDING L2Block.
+        const rollupContractAddr = PublicKey.fromBase58(config.rollupContractAddress);
+        await syncAcctInfo(rollupContractAddr);
+        const rollupContract = new AnomixRollupContract(rollupContractAddr);
+        if (block?.dataTreeRoot0 == rollupContract.state.get().dataRoot.toString()) { // check here
+            this.callRollupContract(blockId, blockProvedResult);
+        }
+
+        /*
         // notify Coordinator
         const rollupTaskDto = {} as RollupTaskDto<any, any>;
         rollupTaskDto.taskType = RollupTaskType.ROLLUP_PROCESS;
@@ -137,16 +170,18 @@ export class ProofScheduler {
                 await this.callRollupContract(blockId);
             }
         });// TODO future: could improve when fail by 'timeout' after retry
-
+        */
     }
 
-    async callRollupContract(blockId: number) {
+    async callRollupContract(blockId: number, blockProvedResultStr?: any) {
         // load BlockProvedResult regarding 'blockId' from db
         const connection = getConnection();
         const blockProverOutputRepo = connection.getRepository(BlockProverOutput);
 
-        const blockProvedResult = (await blockProverOutputRepo.findOne({ where: { blockId } }))!;
-        const blockProvedResultStr = JSON.parse(blockProvedResult.output);
+        if (!blockProvedResultStr) {
+            const blockProvedResult = (await blockProverOutputRepo.findOne({ where: { blockId } }))!;
+            blockProvedResultStr = blockProvedResult.output;
+        }
 
         // send to proof-generator for 'AnomixRollupContract.updateRollupState'
         // construct proofTaskDto
@@ -170,25 +205,32 @@ export class ProofScheduler {
     async whenL1TxComeback(data: { blockId: number, tx: any }) {
         // sign and broadcast it.
         const l1Tx = Mina.Transaction.fromJSON(data.tx);
-        await l1Tx.sign([PrivateKey.fromBase58(config.sequencerPrivateKey)]).send().then(txHash => {// TODO what if it fails currently!
+        await l1Tx.sign([PrivateKey.fromBase58(config.sequencerPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
             const txHash0 = txHash.hash()!;
 
             // insert L1 tx into db, underlying 
             const connection = getConnection();
             const queryRunner = connection.createQueryRunner();
-            queryRunner.startTransaction();
-            const blockRepo = connection.getRepository(Block);
-            blockRepo.update({ id: data.blockId }, { l1TxHash: txHash0 });
+            await queryRunner.startTransaction();
+            try {
+                const blockRepo = connection.getRepository(Block);
+                blockRepo.update({ id: data.blockId }, { l1TxHash: txHash0 });
 
-            // save task for 'Tracer-Watcher' and also save to task for 'Tracer-Watcher'
-            const taskRepo = connection.getRepository(Task);
-            const task = new Task();
-            task.status = TaskStatus.PENDING;
-            task.taskType = TaskType.ROLLUP;
-            task.txHash = txHash0;
-            taskRepo.save(task);
+                // save task for 'Tracer-Watcher' and also save to task for 'Tracer-Watcher'
+                const taskRepo = connection.getRepository(Task);
+                const task = new Task();
+                task.status = TaskStatus.PENDING;
+                task.taskType = TaskType.ROLLUP;
+                task.txHash = txHash0;
+                taskRepo.save(task);
 
-            queryRunner.commitTransaction();
+                await queryRunner.commitTransaction();
+            } catch (error) {
+                console.error(error);
+                await queryRunner.rollbackTransaction();
+            } finally {
+                await queryRunner.release();
+            }
 
         }).catch(reason => {
             // TODO log it

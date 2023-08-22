@@ -121,122 +121,130 @@ export class FlowScheduler {
         const connection = getConnection();
         const queryRunner = connection.createQueryRunner();
         await queryRunner.startTransaction();
+        try {
+            // create a new block
+            const blockRepo = connection.getRepository(Block);
+            let block = new Block();
+            block.blockHash = '';// TODO
+            block.rollupSize = rollupSize;// TODO non-dummy?
+            block.rootTreeRoot0 = this.currentRootTreeRoot.toString();
+            block.dataTreeRoot0 = this.currentDataRoot.toString();
+            block.nullifierTreeRoot0 = this.currentNullifierRoot.toString();
+            block.depositStartIndex0 = this.depositStartIndexInBlock.toString();
+            block.rootTreeRoot1 = this.targetRootTreeRoot.toString();
+            block.dataTreeRoot1 = this.targetDataRoot.toString();
+            block.nullifierTreeRoot1 = this.targetNullifierRoot.toString();
+            block.depositStartIndex1 = this.depositEndIndexInBlock.toString();
+            block.depositCount = depositCount.toString();
+            block.totalTxFees = totalTxFee.toString();
+            block = await blockRepo.save(block);// save it
 
-        // create a new block
-        const blockRepo = connection.getRepository(Block);
-        let block = new Block();
-        block.blockHash = '';// TODO
-        block.rollupSize = rollupSize;// TODO non-dummy?
-        block.rootTreeRoot0 = this.currentRootTreeRoot.toString();
-        block.dataTreeRoot0 = this.currentDataRoot.toString();
-        block.nullifierTreeRoot0 = this.currentNullifierRoot.toString();
-        block.depositStartIndex0 = this.depositStartIndexInBlock.toString();
-        block.rootTreeRoot1 = this.targetRootTreeRoot.toString();
-        block.dataTreeRoot1 = this.targetDataRoot.toString();
-        block.nullifierTreeRoot1 = this.targetNullifierRoot.toString();
-        block.depositStartIndex1 = this.depositEndIndexInBlock.toString();
-        block.depositCount = depositCount.toString();
-        block.totalTxFees = totalTxFee.toString();
-        block = await blockRepo.save(block);// save it
+            // del mpL2Tx from memory pool
+            const memPlL2TxRepo = connection.getRepository(MemPlL2Tx);
+            const mpL2TxIds = nonDummyTxList.map(tx => {
+                return tx.id;
+            })
+            memPlL2TxRepo.delete(mpL2TxIds);
 
-        // del mpL2Tx from memory pool
-        const memPlL2TxRepo = connection.getRepository(MemPlL2Tx);
-        const mpL2TxIds = nonDummyTxList.map(tx => {
-            return tx.id;
-        })
-        memPlL2TxRepo.delete(mpL2TxIds);
+            // update L2Tx and move to L2Tx table
+            const l2TxRepo = connection.getRepository(L2Tx);
+            nonDummyTxList.forEach((tx, i) => {
+                if (tx.actionType == ActionType.DEPOSIT.toString()) {
+                    tx.dataRoot = this.currentDataRoot.toString();
+                }
+                tx.id = undefined as any;// TODO Need check if could insert!
+                tx.status = L2TxStatus.CONFIRMED;
+                tx.blockId = block.id;
+                tx.blockHash = block.blockHash;
+                tx.indexInBlock = i;
+            })
+            l2TxRepo.save(nonDummyTxList as L2Tx[]);// insert all!
 
-        // update L2Tx and move to L2Tx table
-        const l2TxRepo = connection.getRepository(L2Tx);
-        nonDummyTxList.forEach((tx, i) => {
-            if (tx.actionType == ActionType.DEPOSIT.toString()) {
-                tx.dataRoot = this.currentDataRoot.toString();
-            }
-            tx.id = undefined as any;// TODO Need check if could insert!
-            tx.status = L2TxStatus.CONFIRMED;
-            tx.blockId = block.id;
-            tx.blockHash = block.blockHash;
-            tx.indexInBlock = i;
-        })
-        l2TxRepo.save(nonDummyTxList as L2Tx[]);// insert all!
+            // save innerRollupBatch
+            const innerRollupBatchRepo = connection.getRepository(InnerRollupBatch);
+            const innerRollupBatch = new InnerRollupBatch();
+            innerRollupBatch.inputParam = JSON.stringify(innerRollup_proveTxBatchParamList);
+            innerRollupBatch.blockId = block.id;
+            innerRollupBatchRepo.save(innerRollupBatch);
 
-        // save innerRollupBatch
-        const innerRollupBatchRepo = connection.getRepository(InnerRollupBatch);
-        const innerRollupBatch = new InnerRollupBatch();
-        innerRollupBatch.inputParam = JSON.stringify(innerRollup_proveTxBatchParamList);
-        innerRollupBatch.blockId = block.id;
-        innerRollupBatchRepo.save(innerRollupBatch);
+            // update DepositStatus.CONFIRMED
+            const depositCommitmentRepo = connection.getRepository(DepositCommitment);
+            const dcCommitments = nonDummyTxList.filter(tx => {
+                return tx.actionType == ActionType.DEPOSIT.toString();
+            }).map(tx => {
+                return tx.outputNoteCommitment1
+            })
+            depositCommitmentRepo.update({ depositNoteCommitment: In(dcCommitments) }, { status: DepositStatus.CONFIRMED });// TODO imporve here?
 
-        // update DepositStatus.CONFIRMED
-        const depositCommitmentRepo = connection.getRepository(DepositCommitment);
-        const dcCommitments = nonDummyTxList.filter(tx => {
-            return tx.actionType == ActionType.DEPOSIT.toString();
-        }).map(tx => {
-            return tx.outputNoteCommitment1
-        })
-        depositCommitmentRepo.update({ depositNoteCommitment: In(dcCommitments) }, { status: DepositStatus.CONFIRMED });// TODO imporve here?
+            // commit
+            await queryRunner.commitTransaction();
 
-        // commit
-        await queryRunner.commitTransaction();
+            // TODO =======================need make them into a Distributed Transaction =======================
 
-        // TODO =======================need make them into a Distributed Transaction =======================
+            // commit leveldb at last
+            await this.worldStateDB.commit();
 
-        // commit leveldb at last
-        await this.worldStateDB.commit();
+            // cache in indexDB
+            let batch: { key: any, value: any }[] = [];
+            nonDummyTxList.forEach((tx, i) => {
+                /**
+                 * cache KV for acceleration:
+                 * * L2TX:{noteHash} -> l2tx
+                 * * DataTree:{comitment} -> leafIndex
+                 * * NullifierTree:{nullifier} -> leafIndex
+                 */
+                batch = batch.concat([
+                    // L2TX part:
+                    {
+                        key: `L2TX:${tx.outputNoteCommitment1}`,
+                        value: tx.txHash
+                    }, {
+                        key: `L2TX:${tx.outputNoteCommitment2}`,
+                        value: tx.txHash
+                    }, {
+                        key: `L2TX:${tx.nullifier1}`,
+                        value: tx.txHash
+                    }, {
+                        key: `L2TX:${tx.nullifier2}`,
+                        value: tx.txHash
+                    },
+                    // DataTree part:
+                    {
+                        key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${tx.outputNoteCommitment1}`,
+                        value: tx.outputNoteCommitmentIdx1
+                    }, {
+                        key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${tx.outputNoteCommitment2}`,
+                        value: tx.outputNoteCommitmentIdx2
+                    },
+                    // NullifierTree part:
+                    {
+                        key: `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${tx.nullifier1}`,
+                        value: tx.nullifierIdx1
+                    }, {
+                        key: `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${tx.nullifier2}`,
+                        value: tx.nullifierIdx2
+                    }]);
+            });
+            batch.push({
+                key: `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${this.targetRootTreeRoot.toString()}`,
+                value: dataRootLeafIndex.toString()
+            });
+            await this.indexDB.batchInsert(batch);
 
-        // cache in indexDB
-        let batch: { key: any, value: any }[] = [];
-        nonDummyTxList.forEach((tx, i) => {
-            /**
-             * cache KV for acceleration:
-             * * L2TX:{noteHash} -> l2tx
-             * * DataTree:{comitment} -> leafIndex
-             * * NullifierTree:{nullifier} -> leafIndex
-             */
-            batch = batch.concat([
-                // L2TX part:
-                {
-                    key: `L2TX:${tx.outputNoteCommitment1}`,
-                    value: tx.txHash
-                }, {
-                    key: `L2TX:${tx.outputNoteCommitment2}`,
-                    value: tx.txHash
-                }, {
-                    key: `L2TX:${tx.nullifier1}`,
-                    value: tx.txHash
-                }, {
-                    key: `L2TX:${tx.nullifier2}`,
-                    value: tx.txHash
-                },
-                // DataTree part:
-                {
-                    key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${tx.outputNoteCommitment1}`,
-                    value: tx.outputNoteCommitmentIdx1
-                }, {
-                    key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${tx.outputNoteCommitment2}`,
-                    value: tx.outputNoteCommitmentIdx2
-                },
-                // NullifierTree part:
-                {
-                    key: `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${tx.nullifier1}`,
-                    value: tx.nullifierIdx1
-                }, {
-                    key: `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${tx.nullifier2}`,
-                    value: tx.nullifierIdx2
-                }]);
-        });
-        batch.push({
-            key: `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${this.targetRootTreeRoot.toString()}`,
-            value: dataRootLeafIndex.toString()
-        });
-        await this.indexDB.batchInsert(batch);
+        } catch (error) {
+            console.error(error);
+            await queryRunner.rollbackTransaction();
+            await this.worldStateDB.rollback();
 
-        // end the flow
-        await this.worldState.reset();
+        } finally {
+            // end the flow
+            await this.worldState.reset();
+            await queryRunner.release();
+        }
     }
 
     private async preInsertIntoTreeCache(txList: MemPlL2Tx[]) {
-        const innerRollup_proveTxBatchParamList: { innerRollupInput: string, joinSplitProof1: string, joinSplitProof2: string }[] = []
+        const innerRollup_proveTxBatchParamList: { txId1: number, txId2: number, innerRollupInput: string, joinSplitProof1: string, joinSplitProof2: string }[] = []
 
         for (let i = 0; i < txList.length; i += 2) {
             const tx1 = txList[i];// if txList's length is uneven, tx1 would be the last one, ie. this.leftNonDepositTx .
@@ -365,8 +373,10 @@ export class FlowScheduler {
 
             innerRollup_proveTxBatchParamList.push(
                 {
-                    joinSplitProof1: tx1.proof,
-                    joinSplitProof2: tx2.proof,
+                    txId1: tx1.id,
+                    txId2: tx2.id,
+                    joinSplitProof1: tx1.proof,// if tx1 is depositL2Tx, then tx1.proof is undefined currently!
+                    joinSplitProof2: tx2.proof,// if tx2 is depositL2Tx, then tx1.proof is undefined currently!
                     innerRollupInput: innerRollupInputStr
                 }
             );
@@ -404,18 +414,28 @@ export class FlowScheduler {
         const queryRunner = mpL2TxRepository.queryRunner!;
 
         await queryRunner.startTransaction();
+        try {
 
-        const ridTxList: MemPlL2Tx[] = [];
-        mpTxList.forEach(tx => {
-            if (!set.has(tx)) {
-                tx.status = L2TxStatus.FAILED;
-                ridTxList.push(tx);
-            }
-        });
-        mpL2TxRepository.save(ridTxList);
+            const ridTxList: MemPlL2Tx[] = [];
+            mpTxList.forEach(tx => {
+                if (!set.has(tx)) {
+                    tx.status = L2TxStatus.FAILED;
+                    ridTxList.push(tx);
+                }
+            });
+            mpL2TxRepository.save(ridTxList);
 
-        await queryRunner.commitTransaction();
+            await queryRunner.commitTransaction();
 
-        return [...set];
+            return [...set];
+        } catch (error) {
+            console.error(error);
+            await queryRunner.rollbackTransaction();
+
+            throw new Error(`ridTxList failed... `);
+
+        } finally {
+            await queryRunner.release();
+        }
     }
 }

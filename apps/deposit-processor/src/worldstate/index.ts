@@ -11,10 +11,12 @@ import { $axiosCoordinator, $axiosProofGenerator } from "@/lib";
 import { getConnection } from "typeorm";
 import { L2Tx } from "@anomix/dao";
 import axios from "axios";
+import { ProofScheduler } from "@/rollup/proof-scheduler";
 
 export * from './worldstate-db'
 export class WorldState {
-    private flow: RollupFlow
+    private flow: RollupFlow;
+    private proofScheduler: ProofScheduler;
     depositTreeRootOnchain: any;
 
     constructor(public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) { }
@@ -50,24 +52,22 @@ export class WorldState {
         if (taskType == ProofTaskType.DEPOSIT_JOIN_SPLIT) {
             await this.whenDepositL2TxListComeBack(payload);
 
-        } else {// Rollup flow
+        } else {// deposit rollup proof flow
             const { flowId, taskType, data } = payload as FlowTask<any>;
-            if (!(this.ongingFlow?.flowId == flowId)) {// check if not valid
-                throw new Error("error flowId!");
-            }
 
             if (taskType == FlowTaskType.DEPOSIT_BATCH_MERGE) {
-                await this.ongingFlow.flowScheduler.whenMergedResultComeBack(data);
+                await this.proofScheduler.whenMergedResultComeBack(data);
             } else if (taskType == FlowTaskType.DEPOSIT_UPDATESTATE) {
-                await this.ongingFlow.flowScheduler.whenRollupL1TxComeBack(data);
+                await this.proofScheduler.whenRollupL1TxComeBack(data);
             }
         }
     }
 
     /**
      * since the leveldb can only support one process, so this processing is moved from 'sequencer' to here. 
+     * * TODO but I think it would be reasonable to mv it to 'sequencer' and http-get all 
      */
-    async processDepositActions(blockId: number) {
+    async execActionDepositJoinSplit(blockId: number) {
         // select 'outputNoteCommitment1' from depositL2Tx order by 'depositIndex' ASC
         // compute JoinSplitDepositInput.depositWitness
         // compose JoinSplitDepositInput
@@ -115,18 +115,18 @@ export class WorldState {
         // save it into db accordingly
         const connection = getConnection();
         const queryRunner = connection.createQueryRunner();
-        queryRunner.startTransaction();
+        await queryRunner.startTransaction();
 
         const l2txRepo = await connection.getRepository(L2Tx);
         payload.data.forEach(async d => {
             await l2txRepo.update({ id: d.txId }, { proof: d.data });
         })
 
-        queryRunner.commitTransaction();
+        await queryRunner.commitTransaction();
 
         // construct rollupTaskDto
         const rollupTaskDto: RollupTaskDto<any, any> = {
-            taskType: RollupTaskType.DEPOSIT_PROCESS,
+            taskType: RollupTaskType.DEPOSIT_JOINSPLIT,
             index: undefined,
             payload: { blockId }
         }

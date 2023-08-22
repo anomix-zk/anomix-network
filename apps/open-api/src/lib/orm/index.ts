@@ -10,7 +10,7 @@ export const initORM = async (connectionOverrides?: Partial<MysqlConnectionOptio
     try {
         const connection = await createConnection(<MysqlConnectionOptions>{
             ...config.typeORM,
-            entities,
+            ...entities,
             ...connectionOverrides,
         });
 

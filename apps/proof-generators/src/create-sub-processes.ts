@@ -98,12 +98,12 @@ export const createSubProcesses = async (n: number) => {
                             )!.status = 'IsReady';
 
                             try {
-                                d.data = message.payload as any;
+                                d.data = message.payload as any;// replace the original to the proof result
                                 sum++;
                                 console.log(`jointSplit_deposit: sum: ${sum}`);
 
-                                if (sum + 1 == data.length) {
-                                    // send back to sequencer
+                                if (sum + 1 == data.length) {// when the proof count is equals to the target, then send the whole results to deposit_processor
+                                    // send back to deposit_processor
                                     if (sendCallBack) {
                                         sendCallBack(proofPayload.payload)
                                     }

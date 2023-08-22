@@ -14,7 +14,6 @@ export class IndexDB {
     private readonly indexDB: LevelUp
     constructor(dbPath: string) {
         this.indexDB = levelup(leveldown(dbPath));
-        this.indexDB.batch
     }
 
     async get(key: string) {
