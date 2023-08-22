@@ -1,5 +1,5 @@
 import config from '../config';
-import entities from '@anomix/dao'
+import * as entities from '@anomix/dao'
 import "reflect-metadata"
 
 import { createConnection } from 'typeorm'
@@ -10,7 +10,7 @@ export const initORM = async (connectionOverrides?: Partial<MysqlConnectionOptio
     try {
         const connection = await createConnection(<MysqlConnectionOptions>{
             ...config.typeORM,
-            entities,
+            ...entities,
             ...connectionOverrides,
         });
 
