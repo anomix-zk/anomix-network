@@ -1,5 +1,5 @@
 import pino, { Logger } from 'pino';
-import config from './lib/config';
+import config from './config';
 
 const logLevelData = { '*': 'info' };
 const logLevels = new Map<string, string>(Object.entries(logLevelData));
