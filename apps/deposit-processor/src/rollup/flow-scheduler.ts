@@ -57,20 +57,20 @@ export class FlowScheduler {
         const includeUnCommit = true;
 
         const connection = getConnection();
-        const depositCommitmentRepo = connection.getRepository(DepositCommitment);
 
-        const depositCommitmentList = await depositCommitmentRepo.find({ where: { status: DepositStatus.PENDING }, order: { id: 'ASC' } }) ?? [];
-        if (depositCommitmentList.length == 0) {// if no, end.
+        const depositCommitmentRepo = connection.getRepository(DepositCommitment);
+        const originDcList = await depositCommitmentRepo.find({ where: { status: DepositStatus.PENDING }, order: { id: 'ASC' } }) ?? [];
+        if (originDcList.length == 0) {// if no, end.
             return;
         }
 
+        const depositCommitmentList = [...originDcList];
         const DUMMY_ACTION = DUMMY_FIELD;
         let dummyActionSize = DEPOSIT_ACTION_BATCH_SIZE - depositCommitmentList.length % DEPOSIT_ACTION_BATCH_SIZE;
         while (dummyActionSize > 0) {// check if need dummy_actions,
             depositCommitmentList.push(({ depositNoteCommitment: DUMMY_ACTION } as any) as DepositCommitment)
             dummyActionSize--;
         }
-
 
         const queryRunner = connection.createQueryRunner();
         await queryRunner.startTransaction();
@@ -117,6 +117,12 @@ export class FlowScheduler {
             this.targetDepositRoot = depositRootX;
             this.targetHandledActionsNum = handledActionsNumX;
 
+            // update status to MARKED
+            originDcList.forEach(dc => {
+                dc.status = DepositStatus.MARKED;
+            });
+            depositCommitmentRepo.save(originDcList);
+
             // get the (startBlock, endBlock) of depositTreeTrans
             const recordIds = depositCommitmentList.map(dc => {
                 return dc.depositActionEventFetchRecordId;
@@ -149,7 +155,7 @@ export class FlowScheduler {
             await this.worldStateDB.commit();
 
             // try to send to proof-generator for exec 'InnerRollupProver.proveTxBatch(*)'
-            // if fail, task-thread will trigger again later.
+            // if fail, deposit-rollup-proof-watcher will trigger again later.
             try {
                 const proofTaskDto = {
                     taskType: ProofTaskType.ROLLUP_FLOW,
@@ -157,7 +163,7 @@ export class FlowScheduler {
                     payload: {
                         flowId: this.flowId,// no need actually later version!
                         taskType: FlowTaskType.DEPOSIT_BATCH_MERGE,
-                        data: batchParamList
+                        data: { transId: depositTreeTrans.id, data: batchParamList }
                     }
                 } as ProofTaskDto<any, FlowTask<any>>;
                 await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {

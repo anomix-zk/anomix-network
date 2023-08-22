@@ -12,7 +12,7 @@ async function traceTasks() {
 
         const taskList = await taskRepo.find({ where: { status: TaskStatus.PENDING } }) ?? [];
 
-        taskList.forEach(async (task) => {
+        taskList.forEach(async task => {
             // check if txHash is confirmed or failed
             const l1TxHash = task.txHash;
             // TODO need record the error!
@@ -68,8 +68,6 @@ async function traceTasks() {
                                 const vDepositTxList: MemPlL2Tx[] = [];
                                 const dcList = await dcRepo.find({ where: { depositTreeTransId: depositTrans!.id } });
                                 dcList!.forEach(dc => {
-                                    dc.status = DepositStatus.MARKED;
-
                                     // pre-construct depositTx
                                     vDepositTxList.push({
                                         actionType: ActionType.DEPOSIT.toString(),
@@ -110,14 +108,12 @@ async function traceTasks() {
 
                     case TaskType.WITHDRAW:
                         {
-                            {
-                                const wInfoRepo = connection.getRepository(WithdrawInfo);
-                                await wInfoRepo.findOne({ where: { id: task.targetId } }).then(async (w) => {
-                                    w!.status = rs.data.zkapp.failureReason ? w!.status : WithdrawNoteStatus.DONE;// TODO FAILED??
-                                    w!.finalizedAt = new Date(rs.data.zkapp.dateTime);
-                                    await wInfoRepo.save(w!);
-                                });
-                            }
+                            const wInfoRepo = connection.getRepository(WithdrawInfo);
+                            await wInfoRepo.findOne({ where: { id: task.targetId } }).then(async (w) => {
+                                w!.status = rs.data.zkapp.failureReason ? w!.status : WithdrawNoteStatus.DONE;// TODO FAILED??
+                                w!.finalizedAt = new Date(rs.data.zkapp.dateTime);
+                                await wInfoRepo.save(w!);
+                            });
                         }
                         break;
 
