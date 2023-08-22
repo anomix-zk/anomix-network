@@ -14,6 +14,8 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "scripts": {
+    "deploy:rollup": "tsc -p tsconfig.json --module esnext && cross-env TEST_ON_BERKELEY=true DEPLOY_CONTRACT=rollup node --experimental-specifier-resolution=node ./dist/scripts/deploy.js",
+    "deploy:entry": "tsc -p tsconfig.json --module esnext && cross-env TEST_ON_BERKELEY=true DEPLOY_CONTRACT=entry node --experimental-specifier-resolution=node ./dist/scripts/deploy.js",
     "token": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/token.js",
     "enc": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/encrypt.js",
     "ok": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/ok.js",
@@ -42,6 +44,7 @@
     "@types/jest": "^27.0.3",
     "@typescript-eslint/eslint-plugin": "^5.5.0",
     "@typescript-eslint/parser": "^5.5.0",
+    "cross-env": "^7.0.3",
     "eslint": "^8.7.0",
     "eslint-plugin-snarkyjs": "^0.1.0",
     "husky": "^7.0.1",

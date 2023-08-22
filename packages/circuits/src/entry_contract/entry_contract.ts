@@ -40,13 +40,19 @@ export class AnomixEntryContract extends SmartContract {
   deployEntryContract(args: DeployArgs, rollupContractAddress: PublicKey) {
     super.deploy(args);
     this.rollupContractAddress.set(rollupContractAddress);
+    this.account.permissions.set({
+      ...Permissions.default(),
+      editState: Permissions.proof(),
+      editActionState: Permissions.proof(),
+      setVerificationKey: Permissions.proof(),
+    });
   }
 
   @method init() {
     super.init();
 
-    this.account.provedState.assertEquals(this.account.provedState.get());
-    this.account.provedState.get().assertFalse();
+    const provedState = this.account.provedState.getAndAssertEquals();
+    provedState.assertFalse('The entry contract has been initialized');
 
     this.depositState.set(
       new DepositRollupState({
@@ -55,13 +61,6 @@ export class AnomixEntryContract extends SmartContract {
         currentActionsHash: Reducer.initialActionState,
       })
     );
-
-    this.account.permissions.set({
-      ...Permissions.default(),
-      editState: Permissions.proof(),
-      editActionState: Permissions.proof(),
-      setVerificationKey: Permissions.proof(),
-    });
   }
 
   @method getDepositRoot(): Field {

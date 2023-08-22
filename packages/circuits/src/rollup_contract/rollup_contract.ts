@@ -37,7 +37,6 @@ import {
 } from '../models/merkle_witness';
 import { AssetId, DUMMY_FIELD, NoteType } from '../models/constants';
 import { checkMembershipAndAssert } from '../utils/utils';
-import { ValueNote } from '../models/value_note';
 
 function updateNullifierRootAndNullStartIndex(
   nullifierRoot: Field,
@@ -139,13 +138,20 @@ export class AnomixRollupContract extends SmartContract {
   deployRollup(args: DeployArgs, operatorAddress: PublicKey) {
     super.deploy(args);
     this.operatorAddress.set(operatorAddress);
+    this.account.permissions.set({
+      ...Permissions.default(),
+      editState: Permissions.proof(),
+      receive: Permissions.none(),
+      setVerificationKey: Permissions.proof(),
+      access: Permissions.proof(),
+    });
   }
 
   @method init() {
     super.init();
 
-    this.account.provedState.assertEquals(this.account.provedState.get());
-    this.account.provedState.get().assertFalse();
+    const provedState = this.account.provedState.getAndAssertEquals();
+    provedState.assertFalse('Rollup contract already initialized');
 
     this.state.set(
       new RollupState({
@@ -156,13 +162,6 @@ export class AnomixRollupContract extends SmartContract {
       })
     );
     this.blockHeight.set(Field(0));
-    this.account.permissions.set({
-      ...Permissions.default(),
-      editState: Permissions.proof(),
-      receive: Permissions.none(),
-      setVerificationKey: Permissions.proof(),
-      access: Permissions.proof(),
-    });
   }
 
   public get entryContract() {
