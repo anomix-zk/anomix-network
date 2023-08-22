@@ -1,8 +1,6 @@
 import fs from "fs";
-
-// import joinsplitProofDummyTxStr2 from "./joinsplitProofDummyTx2";
-import { JoinSplitProof, JoinSplitProver } from "@anomix/circuits"
 import * as dotenv from "dotenv"
+import { JoinSplitProof } from "@anomix/circuits"
 
 dotenv.config({ path: '../../.env' })
 
