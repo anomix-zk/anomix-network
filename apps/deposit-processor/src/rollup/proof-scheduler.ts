@@ -32,10 +32,6 @@ export class ProofScheduler {
         const queryRunner = connection.createQueryRunner();
         await queryRunner.startTransaction();
         try {
-            // save the result, in case the flow unexpectedly ends after sending to 'ProofGenerator', 
-            // just like 'ProofGenerator' crashes and lost the returning proof, then cannot gen L1Tx to sync with contract.
-            // just like in parrallel scenes, a 'depositProverOutput' invoke contract earlier than its predecessor and failed for the unconsistence with zkappStatus.
-            // if these case, a timing-task will help re-start the flow and trigger gen L1Tx to sync with contract.
             const depositProverOutputRepo = connection.getRepository(DepositProverOutput);
             await depositProverOutputRepo.save({
                 output: proof,
@@ -65,6 +61,7 @@ export class ProofScheduler {
                 });
             */
 
+            /* no need notify Coordinator, since Coordinator_'proof-trigger' uniformly decides if trigger DEPOSIT_CONTRACT_CALL
             try {
                 // notify Coordinator
                 const rollupTaskDto = {} as RollupTaskDto<any, any>;
@@ -83,6 +80,7 @@ export class ProofScheduler {
             } catch (error) {
                 console.error(error);
             }
+            */
         } catch (error) {
             console.error(error);
             await queryRunner.rollbackTransaction();
