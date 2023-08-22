@@ -1,12 +1,12 @@
-import {
-    VerificationKey,
+import fs from "fs";
 
-} from 'snarkyjs';
-import { JoinSplitProof } from "@anomix/circuits"
+// import joinsplitProofDummyTxStr2 from "./joinsplitProofDummyTx2";
+import { JoinSplitProof, JoinSplitProver } from "@anomix/circuits"
 import * as dotenv from "dotenv"
+
 dotenv.config({ path: '../../.env' })
 
-console.log('!process.env.TYPE_ORM_USERNAME=', process.env.TYPE_ORM_USERNAME)
+const JoinsplitProofDummyTx: string = fs.readFileSync('./JoinsplitProofDummyTx.string', 'utf8');
 
 const config = {
     port: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
@@ -65,7 +65,7 @@ const config = {
         batchNum: <number>Number(<string>process.env.DEPOSIT_ROLLUP_BATCH_NUM) || 8,
     },
 
-    joinsplitProofDummyTx: JoinSplitProof.fromJSON(<any>process.env.JoinsplitProofDummyTx),// TODO
+    joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx ?? JoinsplitProofDummyTx)),// TODO
 
     sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
     networkInit: <number>Number(<string>process.env.NETWORK_INIT) || 1,
