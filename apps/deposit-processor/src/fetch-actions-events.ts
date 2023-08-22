@@ -17,7 +17,7 @@ import { syncActions } from "@anomix/utils";
 //   insert to db as 'DepositActionEventFetchRecord'
 // commit.
 
-setInterval(fetchActionsAndEvents, 2 * 60 * 1000);// exec/2mins
+setInterval(fetchActionsAndEvents, 1 * 60 * 1000);// exec/1mins
 
 async function fetchActionsAndEvents() {
     const connection = getConnection();
