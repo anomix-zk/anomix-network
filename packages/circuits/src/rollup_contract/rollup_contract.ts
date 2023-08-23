@@ -26,14 +26,17 @@ import {
 import { AnomixEntryContract } from '../entry_contract/entry_contract';
 import { BlockProveOutput } from '../block_prover/models';
 import {
+  DATA_TREE_INIT_ROOT,
   INDEX_TREE_INIT_ROOT_16,
   INDEX_TREE_INIT_ROOT_20,
   MINA,
+  NULLIFIER_TREE_INIT_ROOT,
+  ROOT_TREE_INIT_ROOT,
   STANDARD_TREE_INIT_ROOT_20,
 } from '../constants';
 import {
-  LowLeafWitnessData,
-  NullifierMerkleWitness,
+  UserLowLeafWitnessData,
+  UserNullifierMerkleWitness,
 } from '../models/merkle_witness';
 import { AssetId, DUMMY_FIELD, NoteType } from '../models/constants';
 import { checkMembershipAndAssert } from '../utils/utils';
@@ -42,8 +45,8 @@ function updateNullifierRootAndNullStartIndex(
   nullifierRoot: Field,
   nullStartIndex: Field,
   nullifier: Field,
-  lowLeafWitness: LowLeafWitnessData,
-  oldNullWitness: NullifierMerkleWitness
+  lowLeafWitness: UserLowLeafWitnessData,
+  oldNullWitness: UserNullifierMerkleWitness
 ): { nullifierRoot: Field; nullStartIndex: Field } {
   nullifier.assertNotEquals(DUMMY_FIELD, 'nullifier is dummy field');
 
@@ -94,8 +97,8 @@ export class WithdrawAccount extends SmartContract {
 
   @method updateState(
     nullifier: Field,
-    lowLeafWitness: LowLeafWitnessData,
-    oldNullWitness: NullifierMerkleWitness
+    lowLeafWitness: UserLowLeafWitnessData,
+    oldNullWitness: UserNullifierMerkleWitness
   ): Field {
     const nullifierRoot = this.nullifierRoot.getAndAssertEquals();
     const nullStartIndex = this.nullStartIndex.getAndAssertEquals();
@@ -155,9 +158,9 @@ export class AnomixRollupContract extends SmartContract {
 
     this.state.set(
       new RollupState({
-        dataRoot: STANDARD_TREE_INIT_ROOT_20,
-        nullifierRoot: INDEX_TREE_INIT_ROOT_20,
-        dataRootsRoot: STANDARD_TREE_INIT_ROOT_20,
+        dataRoot: DATA_TREE_INIT_ROOT,
+        nullifierRoot: NULLIFIER_TREE_INIT_ROOT,
+        dataRootsRoot: ROOT_TREE_INIT_ROOT,
         depositStartIndex: Field(0),
       })
     );
@@ -181,8 +184,8 @@ export class AnomixRollupContract extends SmartContract {
   @method firstWithdraw(
     verificationKey: VerificationKey,
     withdrawNoteWitnessData: WithdrawNoteWitnessData,
-    lowLeafWitness: LowLeafWitnessData,
-    oldNullWitness: NullifierMerkleWitness
+    lowLeafWitness: UserLowLeafWitnessData,
+    oldNullWitness: UserNullifierMerkleWitness
   ) {
     verificationKey.hash.assertEquals(this.withdrawAccountVKHash, 'invalid vk');
 
@@ -278,8 +281,8 @@ export class AnomixRollupContract extends SmartContract {
 
   @method withdraw(
     withdrawNoteWitnessData: WithdrawNoteWitnessData,
-    lowLeafWitness: LowLeafWitnessData,
-    oldNullWitness: NullifierMerkleWitness
+    lowLeafWitness: UserLowLeafWitnessData,
+    oldNullWitness: UserNullifierMerkleWitness
   ) {
     const withdrawNote = withdrawNoteWitnessData.withdrawNote;
     withdrawNote.assetId.assertEquals(

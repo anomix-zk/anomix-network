@@ -24,7 +24,7 @@ import {
   EncryptedNoteFieldData,
 } from './models';
 import { ValueNote } from '../models/value_note';
-import { STANDARD_TREE_INIT_ROOT_20 } from '../constants';
+import { DEPOSIT_TREE_INIT_ROOT, STANDARD_TREE_INIT_ROOT_20 } from '../constants';
 
 export class AnomixEntryContract extends SmartContract {
   @state(DepositRollupState) depositState = State<DepositRollupState>();
@@ -56,7 +56,7 @@ export class AnomixEntryContract extends SmartContract {
 
     this.depositState.set(
       new DepositRollupState({
-        depositRoot: STANDARD_TREE_INIT_ROOT_20,
+        depositRoot: DEPOSIT_TREE_INIT_ROOT,
         handledActionsNum: Field(0),
         currentActionsHash: Reducer.initialActionState,
       })

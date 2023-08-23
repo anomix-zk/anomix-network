@@ -29,6 +29,26 @@ const entryContractKey = PrivateKey.fromBase58(
 );
 
 async function deployRollupContract() {
+  console.time('compile depositRollupProver');
+  const { verificationKey: depositRollupVerifyKey } =
+    await DepositRollupProver.compile();
+  console.timeEnd('compile depositRollupProver');
+
+  console.log(
+    'depositRollupVerifyKey: ',
+    JSON.stringify(depositRollupVerifyKey)
+  );
+
+  console.time('compile entryContract');
+  const { verificationKey: entryContractVerifyKey } =
+    await AnomixEntryContract.compile();
+  console.timeEnd('compile entryContract');
+
+  console.log(
+    'entryContractVerifyKey: ',
+    JSON.stringify(entryContractVerifyKey)
+  );
+
   console.time('compile JoinSplitProver');
   const { verificationKey: joinSplitVerifyKey } =
     await JoinSplitProver.compile();
