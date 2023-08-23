@@ -4,8 +4,12 @@ import { DepositRollupBatch, DepositTreeTrans } from '@anomix/dao';
 import { BaseResponse, FlowTask, FlowTaskType, DepositTreeTransStatus, ProofTaskDto, ProofTaskType } from '@anomix/types';
 import { $axiosProofGenerator } from './lib';
 import { getLogger } from "@/lib/logUtils";
+import { activeMinaInstance } from '@anomix/utils';
 
 const logger = getLogger('deposit-rollup-proof-watcher');
+
+// init Mina tool
+await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
 const periodRange = 5 * 60 * 1000
 
