@@ -11,7 +11,7 @@ const createMemDown = () => (memdown as any)() as MemDown<any, any>;
 
 let db = new levelup(createMemDown());
 let poseidonHasher = new PoseidonHasher();
-const PRIVATE_DATA_TREE_HEIGHT = 12;
+const PRIVATE_DATA_TREE_HEIGHT = 4;
 // const tree: IndexedTree = await newTree(
 //   StandardIndexedTree,
 //   db,
@@ -41,17 +41,17 @@ const tree: StandardTree = await newTree(
   PRIVATE_DATA_TREE_HEIGHT
 );
 
-console.log('standard tree init root12: ', tree.getRoot(true).toString());
+console.log('standard tree init root4: ', tree.getRoot(true).toString());
 
 const tree2: StandardIndexedTree = await newTree(
   StandardIndexedTree,
   db,
   poseidonHasher,
   'indexData',
-  12
+  4
 );
 
-console.log('indexTree init root12: ', tree2.getRoot(true).toString());
+console.log('indexTree init root4: ', tree2.getRoot(true).toString());
 
 await tree.appendLeaves([Field(11)]);
 await tree.appendLeaves([Field(21)]);

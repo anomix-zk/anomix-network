@@ -29,51 +29,45 @@ const entryContractKey = PrivateKey.fromBase58(
 );
 
 async function deployRollupContract() {
-  console.time('compile depositRollupProver');
-  const { verificationKey: depositRollupVerifyKey } =
-    await DepositRollupProver.compile();
-  console.timeEnd('compile depositRollupProver');
+  // console.time('compile depositRollupProver');
+  // const { verificationKey: depositRollupVerifyKey } =
+  //   await DepositRollupProver.compile();
+  // console.timeEnd('compile depositRollupProver');
+  // console.log(
+  //   'depositRollupVerifyKey: ',
+  //   JSON.stringify(depositRollupVerifyKey)
+  // );
 
-  console.log(
-    'depositRollupVerifyKey: ',
-    JSON.stringify(depositRollupVerifyKey)
-  );
-
-  console.time('compile entryContract');
-  const { verificationKey: entryContractVerifyKey } =
-    await AnomixEntryContract.compile();
-  console.timeEnd('compile entryContract');
-
-  console.log(
-    'entryContractVerifyKey: ',
-    JSON.stringify(entryContractVerifyKey)
-  );
+  // console.time('compile entryContract');
+  // const { verificationKey: entryContractVerifyKey } =
+  //   await AnomixEntryContract.compile();
+  // console.timeEnd('compile entryContract');
+  // console.log(
+  //   'entryContractVerifyKey: ',
+  //   JSON.stringify(entryContractVerifyKey)
+  // );
 
   console.time('compile JoinSplitProver');
   const { verificationKey: joinSplitVerifyKey } =
     await JoinSplitProver.compile();
   console.timeEnd('compile JoinSplitProver');
-
   console.log('joinSplitVerifyKey: ', JSON.stringify(joinSplitVerifyKey));
 
   console.time('compile InnerRollupProver');
   const { verificationKey: innerRollupVerifyKey } =
     await InnerRollupProver.compile();
   console.timeEnd('compile InnerRollupProver');
-
   console.log('innerRollupVerifyKey: ', JSON.stringify(innerRollupVerifyKey));
 
   console.time('compile BlockProver');
   const { verificationKey: blockVerifyKey } = await BlockProver.compile();
   console.timeEnd('compile BlockProver');
-
   console.log('blockVerifyKey: ', JSON.stringify(blockVerifyKey));
 
   console.time('compile withdrawAccount');
   const { verificationKey: withdrawAccountVerifyKey } =
     await WithdrawAccount.compile();
   console.timeEnd('compile withdrawAccount');
-
   console.log(
     'withdrawAccountVerifyKey: ',
     JSON.stringify(withdrawAccountVerifyKey)

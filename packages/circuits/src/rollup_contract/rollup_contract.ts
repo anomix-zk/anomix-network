@@ -27,12 +27,10 @@ import { AnomixEntryContract } from '../entry_contract/entry_contract';
 import { BlockProveOutput } from '../block_prover/models';
 import {
   DATA_TREE_INIT_ROOT,
-  INDEX_TREE_INIT_ROOT_16,
-  INDEX_TREE_INIT_ROOT_20,
   MINA,
   NULLIFIER_TREE_INIT_ROOT,
   ROOT_TREE_INIT_ROOT,
-  STANDARD_TREE_INIT_ROOT_20,
+  USER_NULLIFIER_TREE_INIT_ROOT,
 } from '../constants';
 import {
   UserLowLeafWitnessData,
@@ -150,11 +148,11 @@ export class AnomixRollupContract extends SmartContract {
     });
   }
 
-  @method init() {
+  init() {
     super.init();
 
-    const provedState = this.account.provedState.getAndAssertEquals();
-    provedState.assertFalse('Rollup contract already initialized');
+    // const provedState = this.account.provedState.getAndAssertEquals();
+    // provedState.assertFalse('Rollup contract already initialized');
 
     this.state.set(
       new RollupState({
@@ -167,12 +165,19 @@ export class AnomixRollupContract extends SmartContract {
     this.blockHeight.set(Field(0));
   }
 
-  public get entryContract() {
+  public get entryAddress() {
     if (!AnomixRollupContract.entryContractAddress) {
       throw new Error('Anomix entry contract address unknown!');
     }
-    return new AnomixEntryContract(AnomixRollupContract.entryContractAddress);
+    return AnomixRollupContract.entryContractAddress;
   }
+
+  // public get entryContract() {
+  //   if (!AnomixRollupContract.entryContractAddress) {
+  //     throw new Error('Anomix entry contract address unknown!');
+  //   }
+  //   return new AnomixEntryContract(AnomixRollupContract.entryContractAddress);
+  // }
 
   public get withdrawAccountVKHash() {
     if (!AnomixRollupContract.withdrawAccountVKHash) {
@@ -246,7 +251,7 @@ export class AnomixRollupContract extends SmartContract {
     const initNullStartIndex = Field(0);
     const { nullifierRoot, nullStartIndex } =
       updateNullifierRootAndNullStartIndex(
-        INDEX_TREE_INIT_ROOT_16,
+        USER_NULLIFIER_TREE_INIT_ROOT,
         initNullStartIndex,
         nullifier,
         lowLeafWitness,
@@ -346,7 +351,11 @@ export class AnomixRollupContract extends SmartContract {
     );
   }
 
-  @method updateRollupState(proof: RollupProof, operatorSign: Signature) {
+  @method updateRollupState(
+    proof: RollupProof,
+    operatorSign: Signature,
+    entryDepositRoot: Field
+  ) {
     proof.verify();
 
     const globalSlots = this.network.globalSlotSinceGenesis.get();
@@ -370,7 +379,12 @@ export class AnomixRollupContract extends SmartContract {
       'The operator signature is invalid when the current slot is not in the escape period'
     );
 
-    const entryDepositRoot = this.entryContract.getDepositRoot();
+    //const entryDepositRoot = this.entryContract.getDepositRoot();
+    const accountUpdate = AccountUpdate.create(this.entryAddress);
+    AccountUpdate.assertEquals(
+      accountUpdate.body.preconditions.account.state[0],
+      entryDepositRoot
+    );
 
     Provable.if(
       output.depositCount.greaterThan(0),
