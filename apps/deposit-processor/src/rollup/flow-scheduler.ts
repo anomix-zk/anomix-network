@@ -13,6 +13,9 @@ import { FlowTask, FlowTaskType } from "@anomix/types";
 import { getConnection, In } from "typeorm";
 import { AccountUpdate, Field, PublicKey, Mina, PrivateKey } from 'snarkyjs';
 import { assert } from "console";
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('flow-scheduler');
 
 /**
  * deposit_processor rollup flow at 'deposit_tree'
@@ -172,11 +175,11 @@ export class FlowScheduler {
                     }
                 });// TODO future: could improve when fail by 'timeout' after retry
             } catch (error) {
-                console.error(error);
+                logger.error(error);
             }
 
         } catch (error) {
-            console.error(error);
+            logger.error(error);
 
             await queryRunner.rollbackTransaction();
             await this.worldStateDB.rollback();

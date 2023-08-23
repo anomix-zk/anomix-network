@@ -5,6 +5,9 @@ import { getConnection } from 'typeorm';
 import { DepositActionEventFetchRecord, DepositCommitment } from '@anomix/dao';
 import { AnomixEntryContract } from '@anomix/circuits';
 import { syncActions } from "@anomix/utils";
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('fetch-actions-events');
 
 // Task:
 // set interval for fetching actions
@@ -20,6 +23,7 @@ import { syncActions } from "@anomix/utils";
 setInterval(fetchActionsAndEvents, 1 * 60 * 1000);// exec/1mins
 
 async function fetchActionsAndEvents() {
+    logger.info('start fetching Actions And Events...');
     try {
         const connection = getConnection();
         const queryRunner = connection.createQueryRunner();
@@ -109,13 +113,13 @@ async function fetchActionsAndEvents() {
             depositCommitmentRepo.save(dcList);
             await queryRunner.commitTransaction();
         } catch (error) {
-            console.error(error);
+            logger.error(error);
 
             await queryRunner.rollbackTransaction();
         } finally {
             await queryRunner.release();
         }
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 }

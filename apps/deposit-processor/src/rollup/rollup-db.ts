@@ -1,8 +1,9 @@
 import { initORM } from '@/lib/orm'
-import { DepositCommitment, DepositTreeTrans, Task, TaskStatus, TaskType, } from "@anomix/dao";
-import { JoinSplitProof } from "@anomix/circuits";
+import { DepositTreeTrans, Task, TaskStatus, TaskType, } from "@anomix/dao";
 import { getConnection } from 'typeorm';
-import { Field } from "snarkyjs";
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('rollup-db');
 
 export class RollupDB {
 
@@ -29,7 +30,7 @@ export class RollupDB {
 
             await queryRunner.commitTransaction();
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             await queryRunner.rollbackTransaction();
         } finally {
             await queryRunner.release();

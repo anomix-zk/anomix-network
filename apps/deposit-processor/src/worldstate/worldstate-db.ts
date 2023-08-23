@@ -1,12 +1,11 @@
 
-import { AppendOnlyTree, IndexedTree, LeafData, newTree, loadTree, StandardTree, StandardIndexedTree } from "@anomix/merkle-tree";
-import { BaseSiblingPath, MerkleTreeId } from "@anomix/types";
+import { AppendOnlyTree, newTree, loadTree, StandardTree, StandardIndexedTree } from "@anomix/merkle-tree";
+import { MerkleTreeId } from "@anomix/types";
 import { PoseidonHasher } from '@anomix/types';
-import { DATA_TREE_HEIGHT, ROOT_TREE_HEIGHT, NULLIFIER_TREE_HEIGHT, DEPOSIT_TREE_HEIGHT, LowLeafWitnessData } from "@anomix/circuits";
-import { Field, Poseidon } from "snarkyjs";
+import { NULLIFIER_TREE_HEIGHT, DEPOSIT_TREE_HEIGHT } from "@anomix/circuits";
+import { Field } from "snarkyjs";
 import levelup, { LevelUp } from 'levelup';
-import leveldown, { LevelDown } from "leveldown";
-import config from "@/lib/config";
+import leveldown from "leveldown";
 
 let INIT_NULLIFIER_TREE_HEIGHT = NULLIFIER_TREE_HEIGHT;
 

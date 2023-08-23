@@ -6,7 +6,9 @@ import { activeMinaInstance } from "@anomix/utils";
 import { FastifyCore } from "./app";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { getLogger } from "@/lib/logUtils";
 
+const logger = getLogger('deposit-processor-main');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -14,7 +16,7 @@ function bootFetchActionEventsThread() {
     // init worker thread A
     let worker = new Worker(`${__dirname}/fetch-actions-events.js`);// TODO
     worker.on('online', () => {
-        console.log('fetch-actions-events worker is online...');
+        logger.info('fetch-actions-events worker is online...');
     })
 
     worker.on('exit', (exitCode: number) => {
@@ -26,7 +28,7 @@ function bootRollupProofWatcherThread() {
     // init worker thread B
     let worker = new Worker(`${__dirname}/deposit-rollup-proof-watcher.js`);// TODO
     worker.on('online', () => {
-        console.log('deposit-rollup-proof-watcher worker is online...');
+        logger.info('deposit-rollup-proof-watcher worker is online...');
     })
 
     worker.on('exit', (exitCode: number) => {
@@ -41,19 +43,25 @@ const worldStateDB = new WorldStateDB(config.depositWorldStateDBPath);
 // check if network initialze
 if (config.networkInit == 0) {
     worldStateDB.initTrees();
+    logger.info('worldStateDB.initTrees completed.');
 } else {
     worldStateDB.loadTrees();
+    logger.info('worldStateDB.loadTrees completed.');
 }
 
+
 // init IndexDB
-const indexDB = new IndexDB(config.indexedDBPath);// for cache
+const indexDB = new IndexDB(config.depositIndexedDBPath);// for cache
+logger.info('indexDB started.');
 
 // init mysqlDB
 const rollupDB = new RollupDB();
 rollupDB.start();
+logger.info('rollupDB started.');
 
 // construct WorldState
 const worldState = new WorldState(worldStateDB, rollupDB, indexDB);
+logger.info('worldState prepared done.');
 
 // start fetching...
 bootFetchActionEventsThread();

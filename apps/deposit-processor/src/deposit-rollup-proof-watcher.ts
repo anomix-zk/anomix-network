@@ -3,6 +3,9 @@ import { getConnection, In, LessThan } from 'typeorm';
 import { DepositRollupBatch, DepositTreeTrans } from '@anomix/dao';
 import { BaseResponse, FlowTask, FlowTaskType, DepositTreeTransStatus, ProofTaskDto, ProofTaskType } from '@anomix/types';
 import { $axiosProofGenerator } from './lib';
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('deposit-rollup-proof-watcher');
 
 const periodRange = 5 * 60 * 1000
 
@@ -12,6 +15,8 @@ setInterval(depositRollupProofWatch, periodRange); // exec/5mins
  * the flowScheduler would try to send to proof-generator for exec 'InnerRollupProver.proveTxBatch(*)' as soon as the seq done, but if fail, then this timing task would help re-trigger!
  */
 async function depositRollupProofWatch() {
+    logger.info('start depositRollupProofWatch...');
+
     const connection = getConnection();
     const transRepo = connection.getRepository(DepositTreeTrans);
     const dTranList = await transRepo.find({
@@ -48,7 +53,7 @@ async function depositRollupProofWatch() {
                 }
             });// TODO future: could improve when fail by 'timeout' after retry
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         }
     });
 

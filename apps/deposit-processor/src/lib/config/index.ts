@@ -68,13 +68,8 @@ const config = {
     sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
     networkInit: <number>Number(<string>process.env.NETWORK_INIT) || 1,
 
-    worldStateDBPath: <string>process.env.LEVELDB_WORLDSTATE_DB_PATH || '/var/leveldb/anomix_world_state_db',
-    indexedDBPath: <string>process.env.LEVELDB_INDEX_DB_PATH || '/var/leveldb/anomix_index_db',
-
-    depositWorldStateDBPath: <string>process.env.LEVELDB_DEPOSIT_STATE_DB_PATH || '/var/leveldb/anomix_deposit_rollup_state_db',
-    depositIndexedDBPath: <string>process.env.LEVELDB_INDEX_DB_PATH || '/var/leveldb/anomix_deposit_index_db',
-
-    withdrawDBPath: <string>process.env.LEVELDB_WITHDRAW_DB_PATH || '/var/leveldb/anomix_withdraw_db',
+    depositWorldStateDBPath: /* <string>process.env.LEVELDB_DEPOSIT_ROLLUP_STATE_DB_PATH || */ './anomix_deposit_rollup_state_db',
+    depositIndexedDBPath: /* <string>process.env.LEVELDB_DEPOSIT_INDEX_DB_PATH || */ './anomix_deposit_index_db',
 
     pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/',
 
