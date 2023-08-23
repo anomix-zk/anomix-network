@@ -1,4 +1,4 @@
-import { BlockProver, DepositRollupProver, AnomixEntryContract, InnerRollupProver, JoinSplitProver, WithdrawAccount, AnomixRollupContract, } from ".";
+import { BlockProver, DepositRollupProver, AnomixEntryContract, InnerRollupProver, JoinSplitProver, WithdrawAccount, AnomixRollupContract, } from "../src";
 
 
 await JoinSplitProver.compile();

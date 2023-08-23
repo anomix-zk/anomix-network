@@ -20,7 +20,7 @@ import {
   PrivateKey,
   PublicKey,
 } from 'snarkyjs';
-import { ValueNote } from './models/value_note';
+import { ValueNote } from '../src/models/value_note';
 
 // let MyProgram = Experimental.ZkProgram({
 //   publicOutput: Field,
