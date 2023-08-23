@@ -24,7 +24,7 @@ import {
   EncryptedNoteFieldData,
 } from './models';
 import { ValueNote } from '../models/value_note';
-import { STANDARD_TREE_INIT_ROOT_20 } from '../constants';
+import { DEPOSIT_TREE_INIT_ROOT, STANDARD_TREE_INIT_ROOT_20 } from '../constants';
 
 export class AnomixEntryContract extends SmartContract {
   @state(DepositRollupState) depositState = State<DepositRollupState>();
@@ -40,28 +40,27 @@ export class AnomixEntryContract extends SmartContract {
   deployEntryContract(args: DeployArgs, rollupContractAddress: PublicKey) {
     super.deploy(args);
     this.rollupContractAddress.set(rollupContractAddress);
-  }
-
-  @method init() {
-    super.init();
-
-    this.account.provedState.assertEquals(this.account.provedState.get());
-    this.account.provedState.get().assertFalse();
-
-    this.depositState.set(
-      new DepositRollupState({
-        depositRoot: STANDARD_TREE_INIT_ROOT_20,
-        handledActionsNum: Field(0),
-        currentActionsHash: Reducer.initialActionState,
-      })
-    );
-
     this.account.permissions.set({
       ...Permissions.default(),
       editState: Permissions.proof(),
       editActionState: Permissions.proof(),
       setVerificationKey: Permissions.proof(),
     });
+  }
+
+  @method init() {
+    super.init();
+
+    const provedState = this.account.provedState.getAndAssertEquals();
+    provedState.assertFalse('The entry contract has been initialized');
+
+    this.depositState.set(
+      new DepositRollupState({
+        depositRoot: DEPOSIT_TREE_INIT_ROOT,
+        handledActionsNum: Field(0),
+        currentActionsHash: Reducer.initialActionState,
+      })
+    );
   }
 
   @method getDepositRoot(): Field {

@@ -15,12 +15,7 @@ import {
   NoteType,
   ValueNote,
 } from '@anomix/circuits';
-import {
-  EncryptedNote,
-  L2TxReqDto,
-  L2TxSimpleDto,
-  WithdrawAssetReqDto,
-} from '@anomix/types';
+import { EncryptedNote, L2TxReqDto, WithdrawAssetReqDto } from '@anomix/types';
 import {
   calculateShareSecret,
   derivePublicKeyBigInt,
@@ -42,7 +37,7 @@ import {
   Signature,
   UInt64,
 } from 'snarkyjs';
-import { Database, SigningKey } from './database/database';
+import { Database } from './database/database';
 import { KeyStore } from './key_store/key_store';
 import { PasswordKeyStore } from './key_store/password_key_store';
 import { MinaSignerProvider, ProviderSignature } from './mina_provider';
@@ -63,7 +58,8 @@ import type { SyncerWrapper } from './syncer/syncer_worker';
 import { Worker as NodeWorker } from 'worker_threads';
 import { isNode } from 'detect-node';
 import { Remote, wrap } from 'comlink';
-import nodeEndpoint from 'comlink/dist/umd/node-adapter';
+import nodeEndpoint from 'comlink/dist/esm/node-adapter';
+import { SdkEventType, SDK_BROADCAST_CHANNNEL_NAME } from './constants';
 
 export class AnomixSdk {
   private entryContract: AnomixEntryContract;
@@ -76,6 +72,7 @@ export class AnomixSdk {
   private remoteSyncer: Remote<SyncerWrapper>;
   private isEntryContractCompiled: boolean = false;
   private isPrivateCircuitCompiled: boolean = false;
+  private broadcastChannel: BroadcastChannel | undefined;
 
   constructor(
     private db: Database,
@@ -97,7 +94,9 @@ export class AnomixSdk {
     this.keyStore = new PasswordKeyStore(db);
     this.syncer = new Syncer(this.node, db, this.keyStore);
     this.entryContract = new AnomixEntryContract(this.entryContractAddress);
-  }
+    if(!isNode) {
+      this.broadcastChannel = new BroadcastChannel(SDK_BROADCAST_CHANNNEL_NAME);
+    }
 
   public async compileEntryContract() {
     this.log.info('Compile EntryContract Circuits...');
@@ -147,6 +146,7 @@ export class AnomixSdk {
       );
     }
 
+    this.broadcastChannel?.postMessage({eventType: SdkEventType.STARTED});
     const host = this.node.getHost();
     this.log.info(`Started, using node at ${host}`);
   }
@@ -159,6 +159,10 @@ export class AnomixSdk {
       await this.syncer.stop();
     }
 
+    await this.db.close();
+    await this.keyStore.lock();
+
+    this.broadcastChannel?.postMessage({eventType: SdkEventType.STOPPED});
     this.log.info('Stopped');
   }
 
@@ -908,6 +912,11 @@ export class AnomixSdk {
     newSigningPk1: PublicKey;
     newSigningPk2: PublicKey;
   }) {
+    this.log.info('create account register tx...');
+    if (!this.isPrivateCircuitCompiled) {
+      throw new Error('Private circuit is not compiled');
+    }
+
     this.log.info('pick unspent notes...');
     let newAccountPk = accountPk;
     let signingPk = accountPk;

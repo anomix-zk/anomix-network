@@ -3,6 +3,7 @@ import {
   DEPOSIT_TREE_HEIGHT,
   NULLIFIER_TREE_HEIGHT,
   ROOT_TREE_HEIGHT,
+  USER_NULLIFIER_TREE_HEIGHT,
 } from '../constants';
 import { MerkleProofDto, SiblingPath } from '@anomix/types';
 import { Field, Poseidon, Provable, Struct } from 'snarkyjs';
@@ -21,6 +22,10 @@ export class NullifierMerkleWitness extends SiblingPath(
 ) {}
 
 export class RootMerkleWitness extends SiblingPath(ROOT_TREE_HEIGHT) {}
+
+export class UserNullifierMerkleWitness extends SiblingPath(
+  USER_NULLIFIER_TREE_HEIGHT
+) {}
 
 export class LeafData extends Struct({
   value: Field,
@@ -52,6 +57,25 @@ export class LowLeafWitnessData extends Struct({
 }) {
   static zero(zeroWitness: NullifierMerkleWitness): LowLeafWitnessData {
     return new LowLeafWitnessData({
+      leafData: LeafData.zero(),
+      siblingPath: zeroWitness,
+      index: DUMMY_FIELD,
+    });
+  }
+
+  public checkMembershipAndAssert(root: Field, msg?: string) {
+    const leaf = this.leafData.commitment();
+    this.siblingPath.calculateRoot(leaf, this.index).assertEquals(root, msg);
+  }
+}
+
+export class UserLowLeafWitnessData extends Struct({
+  leafData: LeafData,
+  siblingPath: UserNullifierMerkleWitness,
+  index: Field,
+}) {
+  static zero(zeroWitness: UserNullifierMerkleWitness): UserLowLeafWitnessData {
+    return new UserLowLeafWitnessData({
       leafData: LeafData.zero(),
       siblingPath: zeroWitness,
       index: DUMMY_FIELD,

@@ -1,10 +1,10 @@
-import { BlockProver } from './block_prover/block_prover';
-import { InnerRollupProver } from './inner_rollup/inner_rollup_prover';
-import { JoinSplitProver } from './join_split/join_split_prover';
+import { BlockProver } from '../src/block_prover/block_prover';
+import { InnerRollupProver } from '../src/inner_rollup/inner_rollup_prover';
+import { JoinSplitProver } from '../src/join_split/join_split_prover';
 import {
   AnomixRollupContract,
   WithdrawAccount,
-} from './rollup_contract/rollup_contract';
+} from '../src/rollup_contract/rollup_contract';
 
 let result = JoinSplitProver.analyzeMethods();
 console.log('join split analyze result: ', result);
