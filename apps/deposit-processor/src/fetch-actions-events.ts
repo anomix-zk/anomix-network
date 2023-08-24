@@ -28,7 +28,7 @@ await initORM();
 //   insert to db as 'DepositActionEventFetchRecord'
 // commit.
 
-setInterval(fetchActionsAndEvents, 1 * 10 * 1000);// exec/1mins
+setInterval(fetchActionsAndEvents, 1 * 60 * 1000);// exec/1mins
 
 async function fetchActionsAndEvents() {
     logger.info('start fetching Actions And Events...');
