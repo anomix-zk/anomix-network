@@ -6,6 +6,9 @@ import { initWorker } from './proof-worker.js';
 import { Field } from "snarkyjs";
 import { SubProcessCordinator } from '@/create-sub-processes';
 import { ProofPayload } from "../constant";
+import { getLogger } from "../lib/logUtils";
+
+const logger = getLogger('inner-rollup-handler');
 
 export const innerRollupBatchAndMerge = async (subProcessCordinator: SubProcessCordinator, proofPayloads: ProofPayload<any>[], sendCallBack?: any) => {
     const filterStep = (openTasks: ProofPayload<any>[]) => {
@@ -31,22 +34,22 @@ export const innerRollupBatchAndMerge = async (subProcessCordinator: SubProcessC
 
     let queue = new TaskStack<ProofPayload<any>>(filterStep, reducerStep);
 
-    console.log(`beginning work of ${proofPayloads.length} innerRollupBatchAndMerge cases`);
+    logger.info(`beginning work of ${proofPayloads.length} innerRollupBatchAndMerge cases`);
 
     queue.prepare(
         ...proofPayloads
     );
     let totalComputationalSeconds = Date.now();
 
-    console.log('starting work, generating proofs in parallel');
+    logger.info('starting work, generating proofs in parallel');
 
     console.time('duration');
     let res = await queue.work();
     console.timeEnd('duration');
 
-    console.log('result: ', res);
+    logger.info('result: ', res);
 
-    console.log(
+    logger.info(
         'totalComputationalSeconds',
         (Date.now() - totalComputationalSeconds) / 1000
     );

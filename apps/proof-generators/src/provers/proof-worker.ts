@@ -4,13 +4,16 @@ import config from "../lib/config";
 import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, AnomixRollupContract, WithdrawAccount, AnomixEntryContract, InnerRollupInput, JoinSplitProof, InnerRollupOutput, InnerRollupProof, BlockProveInput, JoinSplitDepositInput, RollupProof, LowLeafWitnessData, NullifierMerkleWitness, WithdrawNoteWitnessData, DepositActionBatch, DepositRollupState, DepositRollupProof } from "@anomix/circuits";
 import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
 import { ProofTaskType, FlowTaskType } from '@anomix/types';
+import { getLogger } from "../lib/logUtils";
+
+const logger = getLogger('proof-worker');
 
 export { initWorker };
 
 function processMsgFromMaster() {
     process.on('message', async (message: { type: string; payload: any }) => {
 
-        console.log(`[WORKER ${process.pid}] running ${message.type}`);
+        logger.info(`[WORKER ${process.pid}] running ${message.type}`);
 
         switch (message.type) {
             case `${FlowTaskType[FlowTaskType.DEPOSIT_BATCH]}`:
@@ -149,7 +152,7 @@ function processMsgFromMaster() {
             default:
                 throw Error(`Unknown message ${message}`);
         }
-        console.log(`[WORKER ${process.pid}] completed ${message.type}`);
+        logger.info(`[WORKER ${process.pid}] completed ${message.type}`);
     });
 }
 
@@ -172,7 +175,7 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             },
         });
     } catch (error) {
-        console.log(error);
+        logger.info(error);
     }
 }
 
@@ -180,7 +183,7 @@ const initWorker = async () => {
     // init 
     await activeMinaInstance();
 
-    console.log(`[WORKER ${process.pid}] new worker forked`);
+    logger.info(`[WORKER ${process.pid}] new worker forked`);
 
     await InnerRollupProver.compile();
     await JoinSplitProver.compile();
@@ -197,5 +200,5 @@ const initWorker = async () => {
     process.send!({
         type: 'isReady',
     });
-    console.log(`[WORKER ${process.pid}] new worker ready`);
+    logger.info(`[WORKER ${process.pid}] new worker ready`);
 };

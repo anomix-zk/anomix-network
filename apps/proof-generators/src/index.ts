@@ -8,12 +8,15 @@ import { ProofPayload } from "./constant";
 import { createSubProcesses, SubProcessCordinator } from "./create-sub-processes";
 import axios from "axios";
 import { JoinSplitDepositInput } from "@anomix/circuits";
+import { getLogger } from "./lib/logUtils";
+
+const logger = getLogger('proof-generator');
 
 function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
     // init worker thread A
     let httpWorker = new HttpWorker('./web-server.js');
     httpWorker.on('online', () => {
-        console.log('web-server worker is online...');
+        logger.info('web-server worker is online...');
     })
 
     httpWorker.on('exit', (exitCode: number) => {
