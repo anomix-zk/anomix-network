@@ -1,9 +1,4 @@
-import cluster, { Worker } from 'cluster';
-import os from 'os';
 import { TaskStack } from './task-stack.js';
-import { InnerRollupProof } from '@anomix/circuits';
-import { initWorker } from './proof-worker.js';
-import { Field } from "snarkyjs";
 import { SubProcessCordinator } from '@/create-sub-processes';
 import { ProofPayload } from "../constant";
 import { getLogger } from "../lib/logUtils";
