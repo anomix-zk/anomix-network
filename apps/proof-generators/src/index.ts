@@ -9,6 +9,7 @@ import { createSubProcesses, SubProcessCordinator } from "./create-sub-processes
 import axios from "axios";
 import { JoinSplitDepositInput } from "@anomix/circuits";
 import { getLogger } from "./lib/logUtils";
+import cluster from "cluster";
 
 const logger = getLogger('proof-generator');
 
@@ -189,11 +190,12 @@ const proof_generation_init = async () => {
     // init Mina tool
     await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
-    let subProcessCordinator = await createSubProcesses(config.subProcessCnt);
-
-    // start web server in worker thread
-    bootWebServerThread(subProcessCordinator);
+    if (cluster.isPrimary) {
+        let subProcessCordinator = await createSubProcesses(config.subProcessCnt);
+        // start web server in worker thread
+        bootWebServerThread(subProcessCordinator);
+    }
 }
 
-proof_generation_init();
+await proof_generation_init();
 
