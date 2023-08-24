@@ -8,6 +8,8 @@ import { Mina, PrivateKey, PublicKey, Field } from 'snarkyjs';
 import { $axiosProofGenerator, $axiosDepositProcessor, $axiosCoordinator } from "@/lib";
 import { getConnection } from "typeorm";
 import { syncAcctInfo } from "@anomix/utils";
+import { getLogger } from "@/lib/logUtils";
+const logger = getLogger('ProofScheduler');
 
 export class ProofScheduler {
 
@@ -141,7 +143,7 @@ export class ProofScheduler {
             await queryRunner.commitTransaction();
 
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             await queryRunner.rollbackTransaction();
 
         } finally {
@@ -226,7 +228,7 @@ export class ProofScheduler {
 
                 await queryRunner.commitTransaction();
             } catch (error) {
-                console.error(error);
+                logger.error(error);
                 await queryRunner.rollbackTransaction();
             } finally {
                 await queryRunner.release();
@@ -234,7 +236,7 @@ export class ProofScheduler {
 
         }).catch(reason => {
             // TODO log it
-            console.log(data.tx, ' failed!', 'reason: ', JSON.stringify(reason));
+            logger.info(data.tx, ' failed!', 'reason: ', JSON.stringify(reason));
         });
     }
 

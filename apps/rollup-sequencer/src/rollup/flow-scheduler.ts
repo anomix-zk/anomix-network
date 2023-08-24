@@ -11,6 +11,8 @@ import { Field, PublicKey } from 'snarkyjs';
 import { syncAcctInfo } from "@anomix/utils";
 import { getConnection, In } from "typeorm";
 import { assert } from "console";
+import { getLogger } from "@/lib/logUtils";
+const logger = getLogger('FlowScheduler');
 
 export class FlowScheduler {
     private depositStartIndexInBlock: Field
@@ -232,7 +234,7 @@ export class FlowScheduler {
             await this.indexDB.batchInsert(batch);
 
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             await queryRunner.rollbackTransaction();
             await this.worldStateDB.rollback();
 
@@ -429,7 +431,7 @@ export class FlowScheduler {
 
             return [...set];
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             await queryRunner.rollbackTransaction();
 
             throw new Error(`ridTxList failed... `);

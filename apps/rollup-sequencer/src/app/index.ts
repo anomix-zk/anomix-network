@@ -10,6 +10,8 @@ import { IncomingMessage, Server, ServerResponse } from 'http'
 import { requestSerializer, responseSerializer } from './serializers'
 import { throwError } from './decorators'
 import { routes } from './routes'
+import { getLogger } from "@/lib/logUtils";
+const logger = getLogger('web-server');
 
 export class FastifyCore {
 
@@ -51,7 +53,7 @@ export class FastifyCore {
         this.server.register(routes)
 
         this.server.ready(() => {
-            console.log(this.server.printRoutes())
+            logger.info(this.server.printRoutes())
         })
 
     }
