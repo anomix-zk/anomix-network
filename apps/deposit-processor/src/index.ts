@@ -1,10 +1,10 @@
-import { Worker } from "worker_threads";
+import { threadId, Worker } from "worker_threads";
 import { activeMinaInstance } from "@anomix/utils";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { getLogger } from "@/lib/logUtils";
 
-const logger = getLogger('deposit-processor-main');
+const logger = getLogger('deposit-processor');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -44,11 +44,12 @@ function bootWebServerThread() {
         bootWebServerThread();
     })
 }
+
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
 // start fetching...
-// bootFetchActionEventsThread();
+bootFetchActionEventsThread();
 
 // start watch...
 // bootRollupProofWatcherThread();
