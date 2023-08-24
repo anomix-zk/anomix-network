@@ -1,21 +1,71 @@
-import {
-    Field,
-    Poseidon,
-    PrivateKey,
-    PublicKey,
-    Sign,
-    Signature,
-} from "snarkyjs";
+import { Field, Poseidon, PrivateKey, PublicKey, Signature } from "snarkyjs";
+import { int256ToBuffer } from "./binary";
+import * as bip32 from "bip32";
+import { Buffer } from "buffer";
+import bs58check from "bs58check";
+
+export function reverse(bytes: Buffer) {
+    const reversed = Buffer.alloc(bytes.length);
+    for (let i = bytes.length; i > 0; i--) {
+        reversed[bytes.length - i] = bytes[i - 1];
+    }
+    return reversed;
+}
+
+export function getHDpath(account: number = 0) {
+    const purpse = 44;
+    const index = 0;
+    const charge = 0;
+    const coinType = 12586;
+    const hdpath =
+        "m/" +
+        purpse +
+        "'/" +
+        coinType +
+        "'/" +
+        account +
+        "'/" +
+        charge +
+        "/" +
+        index;
+    return hdpath;
+}
 
 export function genNewKeyPairForNote(
     privateKeyBigInt: bigint,
     noteCommitmentBigInt: bigint
 ): { privateKey: PrivateKey; publicKey: PublicKey } {
-    const newKeyBigInt = privateKeyBigInt & noteCommitmentBigInt;
-    const newPriKey = PrivateKey.fromBigInt(newKeyBigInt);
-    const newPubKey = newPriKey.toPublicKey();
+    const newKeySeed = privateKeyBigInt & noteCommitmentBigInt;
+    return genNewKeyPairBySeed(newKeySeed);
+}
 
-    return { privateKey: newPriKey, publicKey: newPubKey };
+export function genNewKeyPairBySignature(
+    sign: Signature,
+    accountIndex: number = 0
+): { privateKey: PrivateKey; publicKey: PublicKey } {
+    const seed = Poseidon.hash(sign.toFields()).toBigInt();
+    return genNewKeyPairBySeed(seed, accountIndex);
+}
+
+export function genNewKeyPairBySeed(
+    seed: bigint,
+    accountIndex: number = 0
+): {
+    privateKey: PrivateKey;
+    publicKey: PublicKey;
+} {
+    const seedBuffer = int256ToBuffer(seed);
+    const masterNode = bip32.fromSeed(seedBuffer);
+    let hdPath = getHDpath(accountIndex);
+    const child0 = masterNode.derivePath(hdPath);
+    //@ts-ignore
+    child0.privateKey[0] &= 0x3f;
+    const childPrivateKey = reverse(child0.privateKey!);
+    const privateKeyHex = `5a01${childPrivateKey.toString("hex")}`;
+    const privateKey58 = bs58check.encode(Buffer.from(privateKeyHex, "hex"));
+
+    const privateKey = PrivateKey.fromBase58(privateKey58);
+    return { privateKey, publicKey: privateKey.toPublicKey() };
 }
 
 export function derivePublicKeyBigInt(publicKey: PublicKey): bigint {
@@ -59,15 +109,4 @@ export function recoverReceiverBySender(
 
     const originFs0BigInt = fs0BigInt ^ sercet;
     return PublicKey.fromFields([Field(originFs0BigInt), receiverInfo[1]]);
-}
-
-export function genNewKeyPairBySignature(
-    sign: Signature,
-    index: bigint = 0n
-): { privateKey: PrivateKey; publicKey: PublicKey } {
-    const randomValueBigInt = Poseidon.hash(sign.toFields()).toBigInt();
-    const privateKeyBigInt = randomValueBigInt & index;
-    const privateKey = PrivateKey.fromBigInt(privateKeyBigInt);
-
-    return { privateKey, publicKey: privateKey.toPublicKey() };
 }
