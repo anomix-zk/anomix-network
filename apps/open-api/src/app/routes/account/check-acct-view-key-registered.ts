@@ -9,6 +9,9 @@ import { getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { Account, MemPlL2Tx } from '@anomix/dao'
 import { BaseResponse, L2TxStatus } from "@anomix/types";
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('web-server');
 
 export const checkAcctViewKeyRegistered: FastifyPlugin = async function (
     instance,
@@ -57,7 +60,7 @@ export const handler: RequestHandler<reqBody, null> = async function (
         };
 
     } catch (err) {
-        console.log(err);
+        logger.info(err);
 
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }

@@ -9,7 +9,9 @@ import { getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { Account } from '@anomix/dao'
 import { BaseResponse } from "@anomix/types";
+import { getLogger } from "@/lib/logUtils";
 
+const logger = getLogger('web-server');
 export const queryAcctViewKeyByAlias: FastifyPlugin = async function (
     instance,
     options,
@@ -44,7 +46,7 @@ export const handler: RequestHandler<null, AliasHashParam> = async function (
         };
 
     } catch (err) {
-        console.log(err);
+        logger.info(err);
 
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }

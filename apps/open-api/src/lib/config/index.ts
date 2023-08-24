@@ -1,8 +1,6 @@
 import * as dotenv from "dotenv"
 dotenv.config({ path: '../../.env' })
 
-console.log('!process.env.TYPE_ORM_USERNAME=', process.env.TYPE_ORM_USERNAME)
-
 const config = {
     port: <number>Number(<string>process.env.OPENAPI_PORT) || 80,
     logger: {
