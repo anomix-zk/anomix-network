@@ -3,6 +3,9 @@ import { getConnection } from 'typeorm';
 import { Block, DepositCommitment, DepositTreeTrans, MemPlL2Tx, Task, TaskStatus, TaskType, WithdrawInfo } from '@anomix/dao';
 import { L1TxStatus, BlockStatus, WithdrawNoteStatus, DepositStatus, L2TxStatus, DepositTreeTransStatus } from "@anomix/types";
 import { ActionType, DUMMY_FIELD } from '@anomix/circuits';
+import { getLogger } from "./lib/logUtils";
+
+const logger = getLogger('task-tracer');
 
 async function traceTasks() {
     try {
@@ -123,7 +126,7 @@ async function traceTasks() {
 
                 await queryRunner.commitTransaction();
             } catch (error) {
-                console.error(error);
+                logger.error(error);
                 await queryRunner.rollbackTransaction();
 
                 throw error;
@@ -132,7 +135,7 @@ async function traceTasks() {
             }
         });
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 }
 

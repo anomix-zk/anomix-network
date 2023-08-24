@@ -3,6 +3,9 @@ import { getConnection, In } from 'typeorm';
 import { Block, DepositProverOutput, DepositTreeTrans, L2Tx, SeqStatus } from '@anomix/dao';
 import { ActionType } from '@anomix/circuits';
 import { BaseResponse, BlockStatus, DepositTreeTransStatus, FlowTask, FlowTaskType, ProofTaskDto, ProofTaskType, RollupTaskDto, RollupTaskType, SequencerStatus } from '@anomix/types';
+import { getLogger } from "./lib/logUtils";
+
+const logger = getLogger('proof-trigger');
 
 const periodRange = 5 * 60 * 1000
 
@@ -76,7 +79,7 @@ async function proofTrigger() {
 
                 await $axiosSeq.post<BaseResponse<string>>('/rollup/proof-trigger', rollupTaskDto).then(r => {
                     if (r.data.code == 1) {
-                        console.error(r.data.msg);
+                        logger.error(r.data.msg);
                         throw new Error(r.data.msg);
                     }
                 }); // TODO future: could improve when fail by 'timeout' after retry
@@ -106,7 +109,7 @@ async function proofTrigger() {
 
                     await $axiosDeposit.post<BaseResponse<string>>(url, rollupTaskDto).then(r => {
                         if (r.data.code == 1) {
-                            console.error(r.data.msg);
+                            logger.error(r.data.msg);
                             throw new Error(r.data.msg);
                         }
                     });
@@ -123,7 +126,7 @@ async function proofTrigger() {
 
                     await $axiosSeq.post<BaseResponse<string>>(url, rollupTaskDto).then(r => {
                         if (r.data.code == 1) {
-                            console.error(r.data.msg);
+                            logger.error(r.data.msg);
                             throw new Error(r.data.msg);
                         }
                     });
@@ -132,7 +135,7 @@ async function proofTrigger() {
         });
 
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 }
 

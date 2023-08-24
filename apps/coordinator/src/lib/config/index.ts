@@ -6,8 +6,6 @@ import { JoinSplitProof } from "@anomix/circuits"
 import * as dotenv from "dotenv"
 dotenv.config({ path: '../../.env' })
 
-console.log('!process.env.TYPE_ORM_USERNAME=', process.env.TYPE_ORM_USERNAME)
-
 const config = {
     port: <number>Number(<string>process.env.COORDINATOR_PORT) || 8083,
     logger: {
