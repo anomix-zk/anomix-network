@@ -3,6 +3,9 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { FastifyCore } from './app'
 import { activeMinaInstance } from "@anomix/utils";
+import { getLogger } from "./lib/logUtils";
+
+const logger = getLogger('coordinator');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,7 +16,7 @@ function bootTaskTracerThread() {
     // init worker thread A
     const worker = new Worker(`${__dirname}/task-tracer.js`);// TODO
     worker.on('online', () => {
-        console.log('task-tracer is online...');
+        logger.info('task-tracer is online...');
     })
 
     worker.on('exit', (exitCode: number) => {
@@ -28,7 +31,7 @@ function bootMempoolWatcherThread() {
     // init worker thread A
     const worker = new Worker(`${__dirname}/mempool-watcher.js`);// TODO
     worker.on('online', () => {
-        console.log('mempool-watcher is online...');
+        logger.info('mempool-watcher is online...');
     })
 
     worker.on('exit', (exitCode: number) => {
@@ -43,7 +46,7 @@ function bootProofTriggerThread() {
     // init worker thread A
     const worker = new Worker(`${__dirname}/proof-trigger.js`);// TODO
     worker.on('online', () => {
-        console.log('proof-trigger is online...');
+        logger.info('proof-trigger is online...');
     })
 
     worker.on('exit', (exitCode: number) => {

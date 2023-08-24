@@ -2,7 +2,9 @@
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse, ProofTaskDto, ProofTaskDtoSchma } from "@anomix/types";
+import { getLogger } from "@/lib/logUtils";
 
+const logger = getLogger('deposit-processor-main-server');
 /**
 * recieve proof result from proof-generator
 */
@@ -29,7 +31,7 @@ const handler: RequestHandler<ProofTaskDto<any, any>, null> = async function (
         await this.worldState.processProofResult(req.body);
 
     } catch (error) {
-        console.log(`error: ${req.body}`);
+        logger.info(`error: ${req.body}`);
         return {
             code: 1,
             data: '',

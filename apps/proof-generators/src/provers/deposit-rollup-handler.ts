@@ -1,11 +1,9 @@
-import cluster, { Worker } from 'cluster';
-import os from 'os';
 import { TaskStack } from './task-stack.js';
-import { InnerRollupProof } from '@anomix/circuits';
-import { initWorker } from './proof-worker.js';
-import { Field } from "snarkyjs";
 import { SubProcessCordinator } from '@/create-sub-processes';
 import { ProofPayload } from "../constant";
+import { getLogger } from "../lib/logUtils";
+
+const logger = getLogger('deposit-rollup-handler');
 
 export const depositRollupBatchAndMerge = async (subProcessCordinator: SubProcessCordinator, proofPayloads: ProofPayload<any>[], sendCallBack?: any) => {
     const filterStep = (openTasks: ProofPayload<any>[]) => {
@@ -31,22 +29,22 @@ export const depositRollupBatchAndMerge = async (subProcessCordinator: SubProces
 
     let queue = new TaskStack<ProofPayload<any>>(filterStep, reducerStep);
 
-    console.log(`beginning work of ${proofPayloads.length} depositRollupBatchAndMerge cases`);
+    logger.info(`beginning work of ${proofPayloads.length} depositRollupBatchAndMerge cases`);
 
     queue.prepare(
         ...proofPayloads
     );
     let totalComputationalSeconds = Date.now();
 
-    console.log('starting work, generating proofs in parallel');
+    logger.info('starting work, generating proofs in parallel');
 
     console.time('duration');
     let res = await queue.work();
     console.timeEnd('duration');
 
-    console.log('result: ', res);
+    logger.info('result: ', res);
 
-    console.log(
+    logger.info(
         'totalComputationalSeconds',
         (Date.now() - totalComputationalSeconds) / 1000
     );

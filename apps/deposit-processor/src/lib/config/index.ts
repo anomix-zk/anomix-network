@@ -7,7 +7,7 @@ dotenv.config({ path: '../../.env' })
 const JoinsplitProofDummyTx: string = fs.readFileSync('./JoinsplitProofDummyTx.string', 'utf8');
 
 const config = {
-    port: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
+    port: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT) || 8082,
     logger: {
         prettyPrint: <boolean>(process.env.LOGGING_PRETTY_PRINT === 'true' || true), // change if .env
         level: process.env.LOGGING_LEVEL || 'info',
@@ -55,26 +55,21 @@ const config = {
         }
     },
     depositProcessorHost: <string>process.env.DEPOSIT_PROCESSOR_HOST || '127.0.0.1',
-    depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT) || 8082,
+    depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT ?? 8082),
     proofGeneratorHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
-    proofGeneratorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8081,
+    proofGeneratorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8081),
 
     depositRollup: {
-        batchNum: <number>Number(<string>process.env.DEPOSIT_ROLLUP_BATCH_NUM) || 8,
+        batchNum: <number>Number(<string>process.env.DEPOSIT_ROLLUP_BATCH_NUM ?? 8),
     },
 
     joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx ?? JoinsplitProofDummyTx)),// TODO
 
     sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
-    networkInit: <number>Number(<string>process.env.NETWORK_INIT) || 1,
+    networkInit: <number>Number(<string>process.env.NETWORK_INIT ?? '1'),
 
-    worldStateDBPath: <string>process.env.LEVELDB_WORLDSTATE_DB_PATH || '/var/leveldb/anomix_world_state_db',
-    indexedDBPath: <string>process.env.LEVELDB_INDEX_DB_PATH || '/var/leveldb/anomix_index_db',
-
-    depositWorldStateDBPath: <string>process.env.LEVELDB_DEPOSIT_STATE_DB_PATH || '/var/leveldb/anomix_deposit_rollup_state_db',
-    depositIndexedDBPath: <string>process.env.LEVELDB_INDEX_DB_PATH || '/var/leveldb/anomix_deposit_index_db',
-
-    withdrawDBPath: <string>process.env.LEVELDB_WITHDRAW_DB_PATH || '/var/leveldb/anomix_withdraw_db',
+    depositWorldStateDBPath: <string>process.env.LEVELDB_DEPOSIT_ROLLUP_STATE_DB_PATH || './anomix_deposit_rollup_state_db',
+    depositIndexedDBPath: <string>process.env.LEVELDB_DEPOSIT_INDEX_DB_PATH || './anomix_deposit_index_db',
 
     pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/',
 
@@ -82,7 +77,7 @@ const config = {
     rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
 
     coordinatorHost: <string>process.env.COORDINATOR_HOST || '127.0.0.1',
-    coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT) || 8083,
+    coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT ?? 8083),
 }
 
 export default config

@@ -6,6 +6,10 @@ import { BaseResponse, L2TxStatus, RollupTaskDto, RollupTaskType } from '@anomix
 import { parentPort } from 'worker_threads';
 import { $axiosSeq } from './lib/api';
 
+import { getLogger } from "./lib/logUtils";
+
+const logger = getLogger('mempool-watcher');
+
 let highFeeTxExit = false;
 let lastSeqTs = new Date().getTime();
 
@@ -29,7 +33,7 @@ async function mempoolWatch() {
             // trigger seq
             await $axiosSeq.post<BaseResponse<string>>('/rollup/seq-trigger', rollupTaskDto).then(r => {
                 if (r.data.code == 1) {
-                    console.error(r.data.msg);
+                    logger.error(r.data.msg);
                     throw new Error(r.data.msg);
                 }
             }); // TODO future: could improve when fail by 'timeout' after retry
@@ -50,7 +54,7 @@ async function mempoolWatch() {
             // trigger seq
             await $axiosSeq.post<BaseResponse<string>>('/rollup/seq-trigger', rollupTaskDto).then(r => {
                 if (r.data.code == 1) {
-                    console.error(r.data.msg);
+                    logger.error(r.data.msg);
                     throw new Error(r.data.msg);
                 }
             }); // TODO future: could improve when fail by 'timeout' after retry
@@ -66,7 +70,7 @@ async function mempoolWatch() {
             // trigger seq
             await $axiosSeq.post<BaseResponse<string>>('/rollup/seq-trigger', rollupTaskDto).then(r => {
                 if (r.data.code == 1) {
-                    console.error(r.data.msg);
+                    logger.error(r.data.msg);
                     throw new Error(r.data.msg);
                 }
             }); // TODO future: could improve when fail by 'timeout' after retry
@@ -81,7 +85,7 @@ async function mempoolWatch() {
                 // trigger seq
                 await $axiosSeq.post<BaseResponse<string>>('/rollup/seq-trigger', rollupTaskDto).then(r => {
                     if (r.data.code == 1) {
-                        console.error(r.data.msg);
+                        logger.error(r.data.msg);
                         throw new Error(r.data.msg);
                     }
                 }); // TODO future: could improve when fail by 'timeout' after retry
@@ -90,7 +94,7 @@ async function mempoolWatch() {
         });
 
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     } finally {
         highFeeTxExit = false;
         lastSeqTs = new Date().getTime();

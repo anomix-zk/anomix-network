@@ -1,5 +1,4 @@
 import pino, { Logger } from 'pino';
-import { isMainThread, threadId } from 'worker_threads';
 import config from './config';
 
 const logLevelData = { '*': 'info' };
@@ -13,13 +12,13 @@ function getLogLevel(logger: string): string {
 export function getLogger(name: string): Logger {
     return pino({
         name,
-        level: getLogLevel(name.concat(isMainThread ? '-main-' : '-worker-').concat(`${threadId}`)),
+        level: getLogLevel(name),
         transport: {
             targets: [
                 {
                     target: 'pino/file',
                     level: 'info',
-                    options: { destination: config.pinoLogFilePath.concat('/open-api-log.log') }
+                    options: { destination: config.pinoLogFilePath.concat('/deposit-processor-log.log') }
                 },
                 { target: 'pino-pretty', level: 'info', options: { destination: '/dev/stdout' } }
             ]

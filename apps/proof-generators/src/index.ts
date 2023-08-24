@@ -8,12 +8,17 @@ import { ProofPayload } from "./constant";
 import { createSubProcesses, SubProcessCordinator } from "./create-sub-processes";
 import axios from "axios";
 import { JoinSplitDepositInput } from "@anomix/circuits";
+import { getLogger } from "./lib/logUtils";
+import cluster from "cluster";
+import { $axiosDeposit, $axiosSeq } from "./lib";
+
+const logger = getLogger('proof-generator');
 
 function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
     // init worker thread A
     let httpWorker = new HttpWorker('./web-server.js');
     httpWorker.on('online', () => {
-        console.log('web-server worker is online...');
+        logger.info('web-server worker is online...');
     })
 
     httpWorker.on('exit', (exitCode: number) => {
@@ -24,16 +29,15 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
     httpWorker.on('message', (proofTaskDto: ProofTaskDto<any, any>) => {
         const sendResultDepositCallback = async (p: any) => {
             proofTaskDto.payload.data.data = p;
-            axios.post(`http://${config.depositProcessorHost}:${config.depositProcessorPort}/proof-result`, proofTaskDto);
+            $axiosDeposit.post('/proof-result', proofTaskDto);
         }
-
         const sendResultDepositJoinSplitCallback = async (p: any) => {
             proofTaskDto.payload = p;
-            axios.post(`http://${config.depositProcessorHost}:${config.depositProcessorPort}/proof-result`, proofTaskDto);
+            $axiosDeposit.post('/proof-result', proofTaskDto);
         }
         const sendResultSeqCallback = async (p: any) => {
             (proofTaskDto.payload as FlowTask<any>).data = p;
-            axios.post(`http://${config.sequencerProcessorHost}:${config.sequencerProcessorPort}/proof-result`, proofTaskDto);
+            $axiosSeq.post('/proof-result', proofTaskDto);
         }
 
         // recieve from http-server thread
@@ -186,11 +190,12 @@ const proof_generation_init = async () => {
     // init Mina tool
     await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
-    let subProcessCordinator = await createSubProcesses(config.subProcessCnt);
-
-    // start web server in worker thread
-    bootWebServerThread(subProcessCordinator);
+    if (cluster.isPrimary) {
+        let subProcessCordinator = await createSubProcesses(config.subProcessCnt);
+        // start web server in worker thread
+        bootWebServerThread(subProcessCordinator);
+    }
 }
 
-proof_generation_init();
+await proof_generation_init();
 

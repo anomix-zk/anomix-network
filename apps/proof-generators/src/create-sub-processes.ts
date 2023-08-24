@@ -1,17 +1,16 @@
 import os from 'os';
 import cluster, { Worker } from 'cluster';
-import { Field, PublicKey, Proof, Mina, Signature, VerificationKey } from 'snarkyjs';
+import { PublicKey, Signature, VerificationKey } from 'snarkyjs';
 
 import { ProofPayload } from './constant';
 import {
     BlockProveInput, DepositActionBatch, DepositRollupProof, DepositRollupState, InnerRollupInput, InnerRollupProof,
     JoinSplitDepositInput, JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, RollupProof, WithdrawNoteWitnessData
 } from "@anomix/circuits";
-import { ProofTaskDto, ProofTaskType, FlowTaskType } from '@anomix/types';
-import { $axios } from './lib';
-import axios from 'axios';
-import config from './lib/config';
-import { send } from 'process';
+import { ProofTaskType, FlowTaskType } from '@anomix/types';
+import { getLogger } from "./lib/logUtils";
+
+const logger = getLogger('create-sub-processes');
 
 export type SubProcessCordinator = {
     workers: { worker: Worker; status: WorkerStatus }[],
@@ -39,8 +38,8 @@ export type SubProcessCordinator = {
 
 export const createSubProcesses = async (n: number) => {
     let cores = os.cpus().length;
-    console.log(`Number of CPUs is ${cores}`);
-    console.log(`Master ${process.pid} is running`);
+    logger.info(`Number of CPUs is ${cores}`);
+    logger.info(`Master ${process.pid} is running`);
     if (cores - 2 <= n)
         throw Error(
             `You have ${cores} cores available, but you are trying to spin up ${n} processes. Please give your CPU some room to breathe!`
@@ -100,7 +99,7 @@ export const createSubProcesses = async (n: number) => {
                             try {
                                 d.data = message.payload as any;// replace the original to the proof result
                                 sum++;
-                                console.log(`jointSplit_deposit: sum: ${sum}`);
+                                logger.info(`jointSplit_deposit: sum: ${sum}`);
 
                                 if (sum + 1 == data.length) {// when the proof count is equals to the target, then send the whole results to deposit_processor
                                     // send back to deposit_processor

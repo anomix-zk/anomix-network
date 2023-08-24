@@ -3,7 +3,8 @@ import { FlowTaskType, RollupTaskType } from "@anomix/types";
 import { WorldState, WorldStateDB, RollupDB, IndexDB } from "./worldstate";
 import config from './lib/config';
 import { activeMinaInstance } from "@anomix/utils";
-
+import { getLogger } from "@/lib/logUtils";
+const logger = getLogger('rollup-sequencer');
 class ProofSchedulerWorkers extends Array<{ status: number, worker: Worker }> {
     private cursor: number
 
@@ -21,7 +22,7 @@ class ProofSchedulerWorkers extends Array<{ status: number, worker: Worker }> {
         // init worker thread
         const worker = new Worker('./prover.js');
         worker.on('online', () => {
-            console.log('proof-scheduler worker is online...');
+            logger.info('proof-scheduler worker is online...');
         })
 
         worker.on('exit', (exitCode: number) => {
@@ -92,7 +93,7 @@ function bootWebServerThread(worldState: WorldState) {
     // init worker thread A
     let worker = new Worker('./web-server.js');
     worker.on('online', () => {
-        console.log('web-server worker is online...');
+        logger.info('web-server worker is online...');
     })
 
     worker.on('exit', (exitCode: number) => {

@@ -1,5 +1,6 @@
 import { FastifyPlugin } from "fastify"
 import { health } from '../plugins'
+import { txEndpoint } from "./rollup";
 import { proofCallback } from "./proof-callback";
 import { actionToJoinSplitDeposit } from "./action-to-join-split";
 
@@ -10,5 +11,6 @@ export const routes: FastifyPlugin = async function (
 ): Promise<void> {
     instance.register(health)
     instance.register(actionToJoinSplitDeposit);
-    instance.register(proofCallback)
+    instance.register(proofCallback);
+    instance.register(txEndpoint);
 }

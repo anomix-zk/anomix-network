@@ -6,15 +6,12 @@ import { JoinSplitProof } from "@anomix/circuits"
 import * as dotenv from "dotenv"
 dotenv.config({ path: '../../.env' })
 
-console.log('!process.env.TYPE_ORM_USERNAME=', process.env.TYPE_ORM_USERNAME)
-
 const config = {
-    port: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
+    port: <number>Number(<string>process.env.PROOF_GENERATOR_PORT ?? 8081),
     logger: {
         prettyPrint: <boolean>(process.env.LOGGING_PRETTY_PRINT === 'true' || true), // change if .env
         level: process.env.LOGGING_LEVEL || 'info',
     },
-
     auth: {
         jwtSecret: <string>process.env.JWT_SECRET || "gtrpohgkeropk12k3k124oi23j4oifefe",
         jwtExpires: <string>process.env.JWT_EXPIRES || "1d"
@@ -48,13 +45,10 @@ const config = {
         }
     },
     depositProcessorHost: <string>process.env.DEPOSIT_PROCESSOR_HOST || '127.0.0.1',
-    depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT) || 8082,
+    depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT ?? 8082),
 
     sequencerProcessorHost: <string>process.env.ROLLUP_SEQUENCER_HOST || '127.0.0.1',
-    sequencerProcessorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
-
-    joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx)),// TODO
-    withdrawAccountVK: VerificationKey.fromJSON(<string>process.env.WithdrawAccountVK),
+    sequencerProcessorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8080),
 
     pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/proof-generators/',
 
@@ -62,8 +56,6 @@ const config = {
     rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
 
     subProcessCnt: <number>Number(<string>process.env.PROOR_GENERATOR_SUB_PROCESSOR_COUNT) || 1,
-    sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
-
 }
 
 export default config

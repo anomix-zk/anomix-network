@@ -4,7 +4,18 @@ import { AccountUpdate, Field, PublicKey, UInt32, Reducer } from 'snarkyjs';
 import { getConnection } from 'typeorm';
 import { DepositActionEventFetchRecord, DepositCommitment } from '@anomix/dao';
 import { AnomixEntryContract } from '@anomix/circuits';
-import { syncActions } from "@anomix/utils";
+import { activeMinaInstance, syncActions } from "@anomix/utils";
+import { getLogger } from "@/lib/logUtils";
+import { initORM } from './lib';
+
+const logger = getLogger('fetch-actions-events');
+
+logger.info('hi, I am fetch-actions-events');
+
+// init Mina tool
+await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
+
+await initORM();
 
 // Task:
 // set interval for fetching actions
@@ -20,6 +31,7 @@ import { syncActions } from "@anomix/utils";
 setInterval(fetchActionsAndEvents, 1 * 60 * 1000);// exec/1mins
 
 async function fetchActionsAndEvents() {
+    logger.info('start fetching Actions And Events...');
     try {
         const connection = getConnection();
         const queryRunner = connection.createQueryRunner();
@@ -109,13 +121,13 @@ async function fetchActionsAndEvents() {
             depositCommitmentRepo.save(dcList);
             await queryRunner.commitTransaction();
         } catch (error) {
-            console.error(error);
+            logger.error(error);
 
             await queryRunner.rollbackTransaction();
         } finally {
             await queryRunner.release();
         }
     } catch (error) {
-        console.error(error);
+        logger.error(error);
     }
 }

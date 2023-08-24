@@ -75,3 +75,10 @@ settings.json
 *-schema.json
 l2-tx-req-dto-schema.json
 asset-in-block-dto-schema.json
+
+anomix_index_db/
+anomix_withdraw_db/
+anomix_world_state_db/
+
+anomix_deposit_index_db/
+anomix_deposit_rollup_state_db/

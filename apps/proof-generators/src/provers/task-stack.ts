@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import { getLogger } from '../log-util';
+import { getLogger } from '../lib/logUtils';
 
 let logger = getLogger('proof-generators');
 

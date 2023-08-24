@@ -2,18 +2,17 @@
 import { WorldStateDB } from "@/worldstate/worldstate-db";
 import { RollupDB } from "./rollup-db";
 import config from "@/lib/config";
-import { BaseResponse, DepositTreeTransStatus, ProofTaskDto, ProofTaskType, RollupTaskDto, RollupTaskType } from "@anomix/types";
+import { BaseResponse, DepositTreeTransStatus, ProofTaskDto, ProofTaskType } from "@anomix/types";
 import { WorldState } from "@/worldstate";
 import { IndexDB } from "./index-db";
 import { DepositProverOutput, DepositTreeTrans } from "@anomix/dao";
-import { $axiosCoordinator, $axiosProofGenerator } from "@/lib";
+import { $axiosProofGenerator } from "@/lib";
 import { FlowTask, FlowTaskType } from "@anomix/types";
 import { getConnection } from "typeorm";
 import { Mina, PrivateKey } from 'snarkyjs';
-import { Field, PublicKey } from 'snarkyjs';
-import { AnomixEntryContract } from "@anomix/circuits";
-import { syncAcctInfo } from "@anomix/utils";
+import { getLogger } from "@/lib/logUtils";
 
+const logger = getLogger('proof-scheduler');
 
 /**
  * deposit_processor rollup proof-gen flow at 'deposit_tree'
@@ -78,11 +77,11 @@ export class ProofScheduler {
                 });// TODO future: could improve when fail by 'timeout' after retry
 
             } catch (error) {
-                console.error(error);
+                logger.error(error);
             }
             */
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             await queryRunner.rollbackTransaction();
 
             throw error;
@@ -127,7 +126,7 @@ export class ProofScheduler {
 
         }).catch(reason => {
             // TODO log it
-            console.log(tx, ' failed!', 'reason: ', JSON.stringify(reason));
+            logger.info(tx, ' failed!', 'reason: ', JSON.stringify(reason));
         });
 
         this.worldState.reset();

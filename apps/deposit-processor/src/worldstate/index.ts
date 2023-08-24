@@ -2,15 +2,11 @@
 
 import { IndexDB, RollupDB, RollupFlow } from "@/rollup";
 import { WorldStateDB } from "./worldstate-db";
-import { AnomixEntryContract, JoinSplitDepositInput } from "@anomix/circuits";
-import { AccountUpdate, Field, PublicKey, Mina, PrivateKey, UInt32, Reducer } from 'snarkyjs';
-import config from "@/lib/config";
-import { syncAcctInfo } from "@anomix/utils";
+import { JoinSplitDepositInput } from "@anomix/circuits";
 import { BaseResponse, FlowTask, FlowTaskType, ProofTaskDto, ProofTaskType, RollupTaskDto, RollupTaskType, MerkleTreeId } from "@anomix/types";
 import { $axiosCoordinator, $axiosProofGenerator } from "@/lib";
 import { getConnection } from "typeorm";
 import { L2Tx } from "@anomix/dao";
-import axios from "axios";
 import { ProofScheduler } from "@/rollup/proof-scheduler";
 
 export * from './worldstate-db'

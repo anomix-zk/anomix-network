@@ -4,9 +4,11 @@ import {
 } from 'snarkyjs';
 import { JoinSplitProof } from "@anomix/circuits"
 import * as dotenv from "dotenv"
-dotenv.config({ path: '../../.env' })
 
-console.log('!process.env.TYPE_ORM_USERNAME=', process.env.TYPE_ORM_USERNAME)
+import { getLogger } from "@/lib/logUtils";
+const logger = getLogger('config');
+
+dotenv.config({ path: '../../.env' })
 
 const config = {
     port: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
@@ -57,19 +59,19 @@ const config = {
         }
     },
     depositProcessorHost: <string>process.env.DEPOSIT_PROCESSOR_HOST || '127.0.0.1',
-    depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT) || 8082,
+    depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT ?? 8082),
     proofGeneratorHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
-    proofGeneratorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8081,
+    proofGeneratorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8081),
     joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx)),// TODO
     withdrawAccountVK: VerificationKey.fromJSON(<string>process.env.WithdrawAccountVK),
     innerRollup: {
-        txCount: <number>Number(<string>process.env.InnerRollupTxCount) || 2,
+        txCount: <number>Number(<string>process.env.InnerRollupTxCount ?? 2),
     },
     outRollup: {
-        innerBatchesCount: <number>Number(<string>process.env.OuterRollupInnerBatchesCount) || 12,
+        innerBatchesCount: <number>Number(<string>process.env.OuterRollupInnerBatchesCount ?? 12),
     },
     sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
-    networkInit: <number>Number(<string>process.env.NETWORK_INIT) || 1,
+    networkInit: <number>Number(<string>process.env.NETWORK_INIT ?? 1),
     worldStateDBPath: <string>process.env.LEVELDB_WORLDSTATE_DB_PATH || '/var/leveldb/anomix_world_state_db',
     indexedDBPath: <string>process.env.LEVELDB_INDEX_DB_PATH || '/var/leveldb/anomix_index_db',
     withdrawDBPath: <string>process.env.LEVELDB_WITHDRAW_DB_PATH || '/var/leveldb/anomix_withdraw_db',
@@ -78,9 +80,9 @@ const config = {
     rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
 
     coordinatorHost: <string>process.env.COORDINATOR_HOST || '127.0.0.1',
-    coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT) || 8083,
+    coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT ?? 8083),
 
-    proofSchedulerWorkerNum: <number>Number(<string>process.env.PROOF_SCHEDULER_WORKER_NUM) || 3,
+    proofSchedulerWorkerNum: <number>Number(<string>process.env.PROOF_SCHEDULER_WORKER_NUM ?? 3),
 }
 
 export default config

@@ -4,7 +4,8 @@ import config from "@/lib/config";
 import { activeMinaInstance } from "@anomix/utils";
 import { ProofScheduler } from "./rollup/proof-scheduler";
 import { ProofTaskDto, RollupTaskDto, RollupTaskType, FlowTask, FlowTaskType } from '@anomix/types';
-
+import { getLogger } from "@/lib/logUtils";
+const logger = getLogger('prover');
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
@@ -34,7 +35,7 @@ parentPort!.on('message', async dto => {
                 break;
 
             default: // rid it
-                console.log('rid RollupTask', JSON.stringify(rollupTask));
+                logger.info('rid RollupTask', JSON.stringify(rollupTask));
                 break;
         }
 
@@ -56,7 +57,7 @@ parentPort!.on('message', async dto => {
             await proofScheduler.whenL1TxComeback(flowTask.data);
             break;
         default: // rid it
-            console.log('rid FlowTask', JSON.stringify(flowTask));
+            logger.info('rid FlowTask', JSON.stringify(flowTask));
             break;
     }
 });

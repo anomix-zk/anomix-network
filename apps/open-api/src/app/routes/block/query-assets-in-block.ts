@@ -4,7 +4,9 @@ import { Connection, In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { Account, Block, L2Tx, WithdrawInfo } from "@anomix/dao";
 import { BaseResponse, EncryptedNote, AssetInBlockReqDto, AssetInBlockReqDtoSchema, AssetsInBlockDto, AssetsInBlockDtoSchema, L2TxSimpleDto, WithdrawNoteStatus, WithdrawInfoDto } from '@anomix/types'
+import { getLogger } from "@/lib/logUtils";
 
+const logger = getLogger('web-server');
 export const queryAssetsInBlocks: FastifyPlugin = async function (
     instance,
     options,
@@ -58,7 +60,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
             },
             order: { indexInBlock: 'ASC' }
         }).then(async txList => {
-            console.log('query txList: ', JSON.stringify(txList));
+            logger.info('query txList: ', JSON.stringify(txList));
 
             await txList.forEach(async tx => {
                 const { proof, blockId, blockHash, updatedAt, createdAt, encryptedData1, encryptedData2, ...restObj } = tx;
