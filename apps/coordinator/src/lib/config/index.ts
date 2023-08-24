@@ -61,9 +61,6 @@ const config = {
     proofGeneratorHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
     proofGeneratorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8081,
 
-    joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx)),// TODO
-    withdrawAccountVK: VerificationKey.fromJSON(<string>process.env.WithdrawAccountVK),
-
     innerRollup: {
         txCount: <number>Number(<string>process.env.InnerRollupTxCount) || 2,
     },
