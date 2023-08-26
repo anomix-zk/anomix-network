@@ -5,9 +5,8 @@ import { KeyStore } from '../key_store/key_store';
 import { NoteProcessor } from '../note_processor/note_processor';
 import { AnomixNode } from '../rollup_node/anomix_node';
 import { InterruptableSleep } from '../utils/sleep';
-import { isNode } from 'detect-node';
+import isNode from 'detect-node';
 import { SdkEventType, SDK_BROADCAST_CHANNNEL_NAME } from '../constants';
-import { SdkEvent } from '../types/types';
 
 export class Syncer {
   private runningPromise?: Promise<void>;
@@ -101,7 +100,7 @@ export class Syncer {
       this.broadcastChannel?.postMessage({
         eventType: SdkEventType.UPDATED_SYNCER_STATE,
         data: this.getSyncStatus(),
-      } as SdkEvent<ReturnType<typeof this.getSyncStatus>>);
+      });
     } catch (err) {
       this.log.error(err);
       await this.interruptableSleep.sleep(retryInterval);

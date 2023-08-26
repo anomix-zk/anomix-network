@@ -139,21 +139,6 @@ export class AnomixRollupContract extends SmartContract {
   deployRollup(args: DeployArgs, operatorAddress: PublicKey) {
     super.deploy(args);
     this.operatorAddress.set(operatorAddress);
-    this.account.permissions.set({
-      ...Permissions.default(),
-      editState: Permissions.proof(),
-      receive: Permissions.none(),
-      setVerificationKey: Permissions.proof(),
-      access: Permissions.proof(),
-    });
-  }
-
-  init() {
-    super.init();
-
-    // const provedState = this.account.provedState.getAndAssertEquals();
-    // provedState.assertFalse('Rollup contract already initialized');
-
     this.state.set(
       new RollupState({
         dataRoot: DATA_TREE_INIT_ROOT,
@@ -163,7 +148,31 @@ export class AnomixRollupContract extends SmartContract {
       })
     );
     this.blockHeight.set(Field(0));
+    this.account.permissions.set({
+      ...Permissions.default(),
+      editState: Permissions.proof(),
+      receive: Permissions.none(),
+      //setVerificationKey: Permissions.proof(),
+      access: Permissions.proof(),
+    });
   }
+
+  // @method init() {
+  //   super.init();
+
+  //   const provedState = this.account.provedState.getAndAssertEquals();
+  //   provedState.assertFalse('Rollup contract already initialized');
+
+  //   this.state.set(
+  //     new RollupState({
+  //       dataRoot: DATA_TREE_INIT_ROOT,
+  //       nullifierRoot: NULLIFIER_TREE_INIT_ROOT,
+  //       dataRootsRoot: ROOT_TREE_INIT_ROOT,
+  //       depositStartIndex: Field(0),
+  //     })
+  //   );
+  //   this.blockHeight.set(Field(0));
+  // }
 
   public get entryAddress() {
     if (!AnomixRollupContract.entryContractAddress) {
@@ -421,25 +430,25 @@ export class AnomixRollupContract extends SmartContract {
     Provable.log('anomix rollup success');
   }
 
-  @method updateOperatorAddress(
-    newOperatorAddress: PublicKey,
-    oldOperatorSign: Signature
-  ) {
-    const currentOperatorAddress = this.operatorAddress.getAndAssertEquals();
-    oldOperatorSign
-      .verify(currentOperatorAddress, newOperatorAddress.toFields())
-      .assertTrue('The old operator signature is invalid');
-    this.operatorAddress.set(newOperatorAddress);
-  }
+  // @method updateOperatorAddress(
+  //   newOperatorAddress: PublicKey,
+  //   oldOperatorSign: Signature
+  // ) {
+  //   const currentOperatorAddress = this.operatorAddress.getAndAssertEquals();
+  //   oldOperatorSign
+  //     .verify(currentOperatorAddress, newOperatorAddress.toFields())
+  //     .assertTrue('The old operator signature is invalid');
+  //   this.operatorAddress.set(newOperatorAddress);
+  // }
 
-  @method updateVerificationKey(
-    verificationKey: VerificationKey,
-    operatorSign: Signature
-  ) {
-    const currentOperatorAddress = this.operatorAddress.getAndAssertEquals();
-    operatorSign
-      .verify(currentOperatorAddress, [verificationKey.hash])
-      .assertTrue('The operator signature is invalid');
-    this.account.verificationKey.set(verificationKey);
-  }
+  // @method updateVerificationKey(
+  //   verificationKey: VerificationKey,
+  //   operatorSign: Signature
+  // ) {
+  //   const currentOperatorAddress = this.operatorAddress.getAndAssertEquals();
+  //   operatorSign
+  //     .verify(currentOperatorAddress, [verificationKey.hash])
+  //     .assertTrue('The operator signature is invalid');
+  //   this.account.verificationKey.set(verificationKey);
+  // }
 }

@@ -24,7 +24,10 @@ import {
   EncryptedNoteFieldData,
 } from './models';
 import { ValueNote } from '../models/value_note';
-import { DEPOSIT_TREE_INIT_ROOT, STANDARD_TREE_INIT_ROOT_20 } from '../constants';
+import {
+  DEPOSIT_TREE_INIT_ROOT,
+  STANDARD_TREE_INIT_ROOT_20,
+} from '../constants';
 
 export class AnomixEntryContract extends SmartContract {
   @state(DepositRollupState) depositState = State<DepositRollupState>();
@@ -40,20 +43,6 @@ export class AnomixEntryContract extends SmartContract {
   deployEntryContract(args: DeployArgs, rollupContractAddress: PublicKey) {
     super.deploy(args);
     this.rollupContractAddress.set(rollupContractAddress);
-    this.account.permissions.set({
-      ...Permissions.default(),
-      editState: Permissions.proof(),
-      editActionState: Permissions.proof(),
-      setVerificationKey: Permissions.proof(),
-    });
-  }
-
-  @method init() {
-    super.init();
-
-    const provedState = this.account.provedState.getAndAssertEquals();
-    provedState.assertFalse('The entry contract has been initialized');
-
     this.depositState.set(
       new DepositRollupState({
         depositRoot: DEPOSIT_TREE_INIT_ROOT,
@@ -61,18 +50,40 @@ export class AnomixEntryContract extends SmartContract {
         currentActionsHash: Reducer.initialActionState,
       })
     );
+    this.account.permissions.set({
+      ...Permissions.default(),
+      editState: Permissions.proof(),
+      editActionState: Permissions.proof(),
+      //setVerificationKey: Permissions.proof(),
+    });
   }
 
-  @method getDepositRoot(): Field {
-    const depositState = this.depositState.getAndAssertEquals();
-    return depositState.depositRoot;
-  }
+  // @method init() {
+  //   super.init();
+
+  //   const provedState = this.account.provedState.getAndAssertEquals();
+  //   provedState.assertFalse('The entry contract has been initialized');
+
+  //   this.depositState.set(
+  //     new DepositRollupState({
+  //       depositRoot: DEPOSIT_TREE_INIT_ROOT,
+  //       handledActionsNum: Field(0),
+  //       currentActionsHash: Reducer.initialActionState,
+  //     })
+  //   );
+  // }
+
+  // @method getDepositRoot(): Field {
+  //   const depositState = this.depositState.getAndAssertEquals();
+  //   return depositState.depositRoot;
+  // }
 
   @method deposit(
     payer: PublicKey,
     note: ValueNote,
     encryptedNoteData: EncryptedNoteFieldData
   ) {
+    Provable.log('start deposit');
     note.assetId.assertEquals(AssetId.MINA, 'assetId is not MINA');
     note.noteType.assertEquals(NoteType.NORMAL, 'noteType is not NORMAL');
     note.value.assertGreaterThan(UInt64.zero, 'note value is zero');
@@ -85,12 +96,23 @@ export class AnomixEntryContract extends SmartContract {
       Poseidon.hash(payer.toFields()),
       'The inputNullifier of note is not equal to hash of payer address'
     );
-    let rollupContractAddress = this.rollupContractAddress.getAndAssertEquals();
-    let payerAccUpdate = AccountUpdate.createSigned(payer);
-    payerAccUpdate.send({ to: rollupContractAddress, amount: note.value });
 
+    Provable.log('check rollup contract address');
+    let rollupContractAddress = this.rollupContractAddress.getAndAssertEquals();
+    rollupContractAddress
+      .isEmpty()
+      .assertFalse('The rollup contract address is empty');
+
+    Provable.log('create payer account update');
+    let payerAccUpdate = AccountUpdate.createSigned(payer);
+    let receiverUpdate = AccountUpdate.create(rollupContractAddress);
+    payerAccUpdate.balance.subInPlace(note.value);
+    receiverUpdate.balance.addInPlace(note.value);
+
+    Provable.log('calculate note commitment');
     const noteCommitment = note.commitment();
 
+    Provable.log('emit deposit event');
     this.emitEvent(
       'deposit',
       new DepositEvent({
@@ -102,6 +124,7 @@ export class AnomixEntryContract extends SmartContract {
       })
     );
 
+    Provable.log('dispatch note commitment to reducer');
     this.reducer.dispatch(noteCommitment);
   }
 
@@ -118,29 +141,29 @@ export class AnomixEntryContract extends SmartContract {
     Provable.log('update deposit state success');
   }
 
-  @method updateVerificationKey(
-    verificationKey: VerificationKey,
-    operatorAddress: PublicKey,
-    operatorSign: Signature
-  ) {
-    const rollupContractAddress =
-      this.rollupContractAddress.getAndAssertEquals();
+  // @method updateVerificationKey(
+  //   verificationKey: VerificationKey,
+  //   operatorAddress: PublicKey,
+  //   operatorSign: Signature
+  // ) {
+  //   const rollupContractAddress =
+  //     this.rollupContractAddress.getAndAssertEquals();
 
-    // check operator address of rollup contract
-    const operatorFields = operatorAddress.toFields();
-    const accountUpdate = AccountUpdate.create(rollupContractAddress);
-    AccountUpdate.assertEquals(
-      accountUpdate.body.preconditions.account.state[5],
-      operatorFields[0]
-    );
-    AccountUpdate.assertEquals(
-      accountUpdate.body.preconditions.account.state[6],
-      operatorFields[1]
-    );
+  //   // check operator address of rollup contract
+  //   const operatorFields = operatorAddress.toFields();
+  //   const accountUpdate = AccountUpdate.create(rollupContractAddress);
+  //   AccountUpdate.assertEquals(
+  //     accountUpdate.body.preconditions.account.state[5],
+  //     operatorFields[0]
+  //   );
+  //   AccountUpdate.assertEquals(
+  //     accountUpdate.body.preconditions.account.state[6],
+  //     operatorFields[1]
+  //   );
 
-    operatorSign
-      .verify(operatorAddress, [verificationKey.hash])
-      .assertTrue('The operator signature is invalid');
-    this.account.verificationKey.set(verificationKey);
-  }
+  //   operatorSign
+  //     .verify(operatorAddress, [verificationKey.hash])
+  //     .assertTrue('The operator signature is invalid');
+  //   this.account.verificationKey.set(verificationKey);
+  // }
 }

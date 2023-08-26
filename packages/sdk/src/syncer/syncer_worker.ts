@@ -7,13 +7,14 @@ import { Syncer } from './syncer';
 import { PublicKey } from 'snarkyjs';
 
 import { parentPort } from 'worker_threads';
-import { isNode } from 'detect-node';
+import isNode from 'detect-node';
 import { expose } from 'comlink';
 import nodeEndpoint from 'comlink/dist/esm/node-adapter';
 
 let currSyncer: Syncer;
 let sdkOptions: SdkOptions;
 const log = consola.withTag('anomix:sdk:syncer_worker');
+log.info('syncer_worker start success');
 
 const syncerWrapper = {
   create: async (options: SdkOptions) => {
