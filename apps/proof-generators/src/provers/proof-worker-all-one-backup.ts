@@ -185,14 +185,14 @@ const initWorker = async () => {
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    await InnerRollupProver.compile();
-    await JoinSplitProver.compile();
-    await BlockProver.compile();
     await DepositRollupProver.compile();
-    await WithdrawAccount.compile();
-
-    await AnomixRollupContract.compile();
     await AnomixEntryContract.compile();
+
+    await JoinSplitProver.compile();
+    await InnerRollupProver.compile();
+    await BlockProver.compile();
+    await WithdrawAccount.compile();
+    await AnomixRollupContract.compile();
 
     // recieve message from main process...
     processMsgFromMaster();
