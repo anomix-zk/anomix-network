@@ -43,17 +43,3 @@ export class RollupBlockEvent extends Struct({
   txFeeReceiver: PublicKey,
   // blockInfo: BlockProveOutput,
 }) {}
-
-export class WithdrawFundEvent extends Struct({
-  receiverAddress: PublicKey,
-  noteNullifier: Field,
-  nullifierIndex: Field,
-  amount: UInt64,
-  assetId: Field,
-}) {}
-
-export class WithdrawNoteWitnessData extends Struct({
-  withdrawNote: ValueNote,
-  index: Field,
-  witness: DataMerkleWitness,
-}) {}
