@@ -13,7 +13,7 @@ const logger = getLogger('ProofScheduler');
 
 export class ProofScheduler {
 
-    constructor(private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) { }
+    constructor(private worldStateDB?: WorldStateDB, private rollupDB?: RollupDB, private indexDB?: IndexDB) { }
 
     async startBatchMerge(blockId: number) {
         const connection = getConnection();
