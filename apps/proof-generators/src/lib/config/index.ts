@@ -1,8 +1,3 @@
-import {
-    VerificationKey,
-
-} from 'snarkyjs';
-import { JoinSplitProof } from "@anomix/circuits"
 import * as dotenv from "dotenv"
 dotenv.config({ path: '../../.env' })
 
@@ -55,7 +50,7 @@ const config = {
     entryContractAddress: <string>process.env.ENTRY_CONTRACT_ADDRESS || 'B62785kfljj8784990kj0kj90kjjiekljk',
     rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
 
-    subProcessCnt: <number>Number(<string>process.env.PROOR_GENERATOR_SUB_PROCESSOR_COUNT) || 1,
+    subProcessCnt: <number>Number(<string>process.env.PROOR_GENERATOR_SUB_PROCESSOR_COUNT ?? 1),
 }
 
 export default config

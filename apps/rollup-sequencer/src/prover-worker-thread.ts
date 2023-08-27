@@ -10,19 +10,19 @@ const logger = getLogger('prover');
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
 // init leveldb
-// const worldStateDB = new WorldStateDB(config.worldStateDBPath);
-// worldStateDB.loadTrees();// just need load!
+const worldStateDB = new WorldStateDB(config.worldStateDBPath);
+worldStateDB.loadTrees();// just need load!
 
 // init RollupDB
-// const rollupDB = new RollupDB();
+const rollupDB = new RollupDB();
 
 // init IndexDB
-// const indexDB = new IndexDB(config.indexedDBPath);
+const indexDB = new IndexDB(config.indexedDBPath);
 
-const proofScheduler = new ProofScheduler();
+const proofScheduler = new ProofScheduler(worldStateDB, rollupDB, indexDB);
 
-process!.on('message', async dto => {
-    if ((dto as any).taskType >= RollupTaskType.ROLLUP_PROCESS) {// TODO MUST improve it！！
+parentPort!.on('message', async dto => {
+    if (dto.taskType >= RollupTaskType.ROLLUP_PROCESS) {// TODO MUST improve it！！
         const rollupTask = dto as RollupTaskDto<any, any>;
 
         switch (rollupTask.taskType) {

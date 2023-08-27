@@ -16,76 +16,7 @@ function processMsgFromMaster() {
         logger.info(`[WORKER ${process.pid}] running ${message.type}`);
 
         switch (message.type) {
-            case `${FlowTaskType[FlowTaskType.DEPOSIT_BATCH]}`:
-                execCircuit(message, async () => {
-                    let params = message.payload as {
-                        depositRollupState: DepositRollupState,
-                        depositActionBatch: DepositActionBatch
-                    }
-                    return await DepositRollupProver.commitActionBatch(params.depositRollupState, params.depositActionBatch)
-                });
-                break;
-            case `${FlowTaskType[FlowTaskType.DEPOSIT_MERGE]}`:
-                execCircuit(message, async () => {
-                    let params = message.payload as {
-                        DepositRollupProof1: DepositRollupProof,
-                        DepositRollupProof2: DepositRollupProof
-                    }
-                    return await DepositRollupProver.merge(params.DepositRollupProof1, params.DepositRollupProof2)
-                });
-                break;
-            case `${FlowTaskType[FlowTaskType.DEPOSIT_UPDATESTATE]}`:
-                execCircuit(message, async () => {
-                    const params = message.payload as {
-                        feePayer: PublicKey,
-                        depositRollupProof: DepositRollupProof
-                    }
-                    const addr = PublicKey.fromBase58(config.entryContractAddress);
-                    await syncAcctInfo(addr);// fetch account.
-                    const entryContract = new AnomixEntryContract(addr);
-                    let tx = await Mina.transaction(params.feePayer, () => {
-                        entryContract.updateDepositState(params.depositRollupProof);
-                    });
-                    return tx;
-                });
-                break;
 
-
-
-            case `${ProofTaskType[ProofTaskType.DEPOSIT_JOIN_SPLIT]}`:
-                execCircuit(message, async () => {
-                    let params = message.payload as JoinSplitDepositInput
-                    return await JoinSplitProver.deposit(params)
-                });
-                break;
-            case `${FlowTaskType[FlowTaskType.ROLLUP_TX_BATCH]}`:
-                execCircuit(message, async () => {
-                    const params = message.payload as {
-                        innerRollupInput: InnerRollupInput,
-                        joinSplitProof1: JoinSplitProof,
-                        joinSplitProof2: JoinSplitProof
-                    }
-                    return await InnerRollupProver.proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
-                });
-                break;
-            case `${FlowTaskType[FlowTaskType.ROLLUP_MERGE]}`:
-                execCircuit(message, async () => {
-                    let params = message.payload as {
-                        innerRollupProof1: InnerRollupProof,
-                        innerRollupProof2: InnerRollupProof
-                    }
-                    return await InnerRollupProver.merge(params.innerRollupProof1, params.innerRollupProof2);
-                });
-                break;
-            case `${FlowTaskType[FlowTaskType.BLOCK_PROVE]}`:
-                execCircuit(message, async () => {
-                    let params = message.payload as {
-                        innerRollupProof1: BlockProveInput,
-                        innerRollupProof2: InnerRollupProof
-                    }
-                    return await BlockProver.prove(params.innerRollupProof1, params.innerRollupProof2);
-                });
-                break;
             case `${FlowTaskType[FlowTaskType.ROLLUP_CONTRACT_CALL]}`:
                 execCircuit(message, async () => {
                     let params = message.payload as {
@@ -185,14 +116,14 @@ const initWorker = async () => {
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    await InnerRollupProver.compile();
-    await JoinSplitProver.compile();
-    await BlockProver.compile();
     await DepositRollupProver.compile();
-    await WithdrawAccount.compile();
-
-    await AnomixRollupContract.compile();
     await AnomixEntryContract.compile();
+
+    await JoinSplitProver.compile();
+    await InnerRollupProver.compile();
+    await BlockProver.compile();
+    await WithdrawAccount.compile();
+    await AnomixRollupContract.compile();
 
     // recieve message from main process...
     processMsgFromMaster();
