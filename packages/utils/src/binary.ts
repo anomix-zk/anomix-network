@@ -1,3 +1,5 @@
+import { Buffer } from "buffer";
+
 const ifDefined =
     <T, R>(cb: (input: T) => R) =>
     <U extends T | undefined>(input: U) => {
@@ -22,6 +24,17 @@ export const decodeUtf8Base64 = ifDefined((input: string) =>
 
 const isString = (data: any): data is string | String => {
     return typeof data === "string" || data instanceof String;
+};
+
+export const int256ToBuffer = (n: bigint) => {
+    const buf = Buffer.alloc(32); // 256 bits = 32 bytes
+
+    for (let i = 0; i < 32; i++) {
+        buf[31 - i] = Number(n & BigInt(0xff));
+        n >>= BigInt(8);
+    }
+
+    return buf;
 };
 
 /**

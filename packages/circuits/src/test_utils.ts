@@ -17,7 +17,7 @@ export { TestContext, getTestContext, TEST_TIMEOUT, MINA };
 
 const MINA = 1e9;
 const TEST_TIMEOUT = 1000 * 60 * 120;
-const DEFAULT_TX_FEE = 0.01 * MINA;
+const DEFAULT_TX_FEE = 0.101 * MINA;
 const KEYS_DIR = 'keys';
 const KEY_FILE_PREFIX = 'berkeley_';
 

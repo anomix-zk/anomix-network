@@ -17,21 +17,42 @@ let BlockProver = Experimental.ZkProgram({
         rollupProof.verify();
 
         const rollupOutput = rollupProof.publicOutput;
+        const txFeeReceiverNote = input.txFeeReceiverNote;
+        txFeeReceiverNote.ownerPk
+          .isEmpty()
+          .assertFalse('txFeeReceiver should not be empty');
+        rollupOutput.totalTxFees[0].fee.assertEquals(txFeeReceiverNote.value);
+        rollupOutput.totalTxFees[0].assetId.assertEquals(
+          txFeeReceiverNote.assetId,
+          'assetId should match'
+        );
 
         input.depositRoot.assertEquals(
           rollupOutput.depositRoot,
           'depositRoot should match'
         );
 
-        input.txFeeReceiver
-          .isEmpty()
-          .assertFalse('txFeeReceiver should not be empty');
-
         input.oldDataRootsRoot.assertEquals(
           rollupOutput.dataRootsRoot,
           'dataRootsRoot should match'
         );
 
+        // update data tree
+        const oldDataRoot = rollupOutput.newDataRoot;
+        // check index and witness of old data root
+        checkMembershipAndAssert(
+          DUMMY_FIELD,
+          input.dataStartIndex,
+          input.oldDataWitness,
+          oldDataRoot,
+          'dataStartIndex and oldDataWitness should be valid'
+        );
+        const newDataRoot = input.oldDataWitness.calculateRoot(
+          txFeeReceiverNote.commitment(),
+          input.dataStartIndex
+        );
+
+        // update root root tree
         // check index and witness of old data roots root
         checkMembershipAndAssert(
           DUMMY_FIELD,
@@ -43,7 +64,7 @@ let BlockProver = Experimental.ZkProgram({
 
         // use index and witness to update data roots root
         const newDataRootsRoot = input.oldRootWitness.calculateRoot(
-          rollupOutput.newDataRoot,
+          newDataRoot,
           input.rootStartIndex
         );
 
@@ -58,7 +79,7 @@ let BlockProver = Experimental.ZkProgram({
               depositStartIndex: rollupOutput.oldDepositStartIndex,
             }),
             target: new RollupState({
-              dataRoot: rollupOutput.newDataRoot,
+              dataRoot: newDataRoot,
               nullifierRoot: rollupOutput.newNullRoot,
               dataRootsRoot: newDataRootsRoot,
               depositStartIndex: rollupOutput.newDepositStartIndex,
@@ -67,7 +88,7 @@ let BlockProver = Experimental.ZkProgram({
           depositRoot: rollupOutput.depositRoot,
           depositCount: rollupOutput.depositCount,
           totalTxFees: rollupOutput.totalTxFees,
-          txFeeReceiver: input.txFeeReceiver,
+          txFeeReceiver: input.txFeeReceiverNote.ownerPk,
         });
         const blockHash = output.generateBlockHash();
         output.blockHash = blockHash;

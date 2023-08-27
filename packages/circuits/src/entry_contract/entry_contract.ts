@@ -1,5 +1,4 @@
 import {
-  AccountUpdate,
   DeployArgs,
   Field,
   method,
@@ -11,8 +10,6 @@ import {
   State,
   state,
   UInt64,
-  VerificationKey,
-  Signature,
   Poseidon,
 } from 'snarkyjs';
 import { DepositRollupProof } from './deposit_rollup_prover';
@@ -24,11 +21,13 @@ import {
   EncryptedNoteFieldData,
 } from './models';
 import { ValueNote } from '../models/value_note';
-import { DEPOSIT_TREE_INIT_ROOT, STANDARD_TREE_INIT_ROOT_20 } from '../constants';
+import { DEPOSIT_TREE_INIT_ROOT } from '../constants';
+import { AnomixVaultContract } from '../vault_contract/vault_contract';
 
 export class AnomixEntryContract extends SmartContract {
   @state(DepositRollupState) depositState = State<DepositRollupState>();
-  @state(PublicKey) rollupContractAddress = State<PublicKey>();
+  @state(PublicKey) vaultContractAddress = State<PublicKey>();
+  // @state(PublicKey) rollupContractAddress = State<PublicKey>();
 
   reducer = Reducer({ actionType: Field });
 
@@ -37,23 +36,9 @@ export class AnomixEntryContract extends SmartContract {
     depositStateUpdate: DepositRollupStateTransition,
   };
 
-  deployEntryContract(args: DeployArgs, rollupContractAddress: PublicKey) {
+  deployEntryContract(args: DeployArgs, vaultContractAddress: PublicKey) {
     super.deploy(args);
-    this.rollupContractAddress.set(rollupContractAddress);
-    this.account.permissions.set({
-      ...Permissions.default(),
-      editState: Permissions.proof(),
-      editActionState: Permissions.proof(),
-      setVerificationKey: Permissions.proof(),
-    });
-  }
-
-  @method init() {
-    super.init();
-
-    const provedState = this.account.provedState.getAndAssertEquals();
-    provedState.assertFalse('The entry contract has been initialized');
-
+    this.vaultContractAddress.set(vaultContractAddress);
     this.depositState.set(
       new DepositRollupState({
         depositRoot: DEPOSIT_TREE_INIT_ROOT,
@@ -61,18 +46,20 @@ export class AnomixEntryContract extends SmartContract {
         currentActionsHash: Reducer.initialActionState,
       })
     );
-  }
-
-  @method getDepositRoot(): Field {
-    const depositState = this.depositState.getAndAssertEquals();
-    return depositState.depositRoot;
+    this.account.permissions.set({
+      ...Permissions.default(),
+      editState: Permissions.proof(),
+      editActionState: Permissions.proof(),
+      //setVerificationKey: Permissions.proof(),
+    });
   }
 
   @method deposit(
-    payer: PublicKey,
+    payerAddress: PublicKey,
     note: ValueNote,
     encryptedNoteData: EncryptedNoteFieldData
   ) {
+    Provable.log('start deposit');
     note.assetId.assertEquals(AssetId.MINA, 'assetId is not MINA');
     note.noteType.assertEquals(NoteType.NORMAL, 'noteType is not NORMAL');
     note.value.assertGreaterThan(UInt64.zero, 'note value is zero');
@@ -82,26 +69,36 @@ export class AnomixEntryContract extends SmartContract {
       .or(note.accountRequired.equals(AccountRequired.NOTREQUIRED))
       .assertTrue('The accountRequired of note is not REQUIRED or NOTREQUIRED');
     note.inputNullifier.assertEquals(
-      Poseidon.hash(payer.toFields()),
+      Poseidon.hash(payerAddress.toFields()),
       'The inputNullifier of note is not equal to hash of payer address'
     );
-    let rollupContractAddress = this.rollupContractAddress.getAndAssertEquals();
-    let payerAccUpdate = AccountUpdate.createSigned(payer);
-    payerAccUpdate.send({ to: rollupContractAddress, amount: note.value });
 
+    Provable.log('check vault contract address');
+    let vaultContractAddress = this.vaultContractAddress.getAndAssertEquals();
+    vaultContractAddress
+      .isEmpty()
+      .assertFalse('The vault contract address is empty');
+
+    Provable.log('deposit mina');
+    const vaultContract = new AnomixVaultContract(vaultContractAddress);
+    vaultContract.deposit(payerAddress, note.value);
+
+    Provable.log('calculate note commitment');
     const noteCommitment = note.commitment();
 
+    Provable.log('emit deposit event');
     this.emitEvent(
       'deposit',
       new DepositEvent({
         noteCommitment: noteCommitment,
         assetId: note.assetId,
         depositValue: note.value,
-        sender: payer,
+        sender: payerAddress,
         encryptedNoteData,
       })
     );
 
+    Provable.log('dispatch note commitment to reducer');
     this.reducer.dispatch(noteCommitment);
   }
 
@@ -118,29 +115,29 @@ export class AnomixEntryContract extends SmartContract {
     Provable.log('update deposit state success');
   }
 
-  @method updateVerificationKey(
-    verificationKey: VerificationKey,
-    operatorAddress: PublicKey,
-    operatorSign: Signature
-  ) {
-    const rollupContractAddress =
-      this.rollupContractAddress.getAndAssertEquals();
+  // @method updateVerificationKey(
+  //   verificationKey: VerificationKey,
+  //   operatorAddress: PublicKey,
+  //   operatorSign: Signature
+  // ) {
+  //   const rollupContractAddress =
+  //     this.rollupContractAddress.getAndAssertEquals();
 
-    // check operator address of rollup contract
-    const operatorFields = operatorAddress.toFields();
-    const accountUpdate = AccountUpdate.create(rollupContractAddress);
-    AccountUpdate.assertEquals(
-      accountUpdate.body.preconditions.account.state[5],
-      operatorFields[0]
-    );
-    AccountUpdate.assertEquals(
-      accountUpdate.body.preconditions.account.state[6],
-      operatorFields[1]
-    );
+  //   // check operator address of rollup contract
+  //   const operatorFields = operatorAddress.toFields();
+  //   const accountUpdate = AccountUpdate.create(rollupContractAddress);
+  //   AccountUpdate.assertEquals(
+  //     accountUpdate.body.preconditions.account.state[5],
+  //     operatorFields[0]
+  //   );
+  //   AccountUpdate.assertEquals(
+  //     accountUpdate.body.preconditions.account.state[6],
+  //     operatorFields[1]
+  //   );
 
-    operatorSign
-      .verify(operatorAddress, [verificationKey.hash])
-      .assertTrue('The operator signature is invalid');
-    this.account.verificationKey.set(verificationKey);
-  }
+  //   operatorSign
+  //     .verify(operatorAddress, [verificationKey.hash])
+  //     .assertTrue('The operator signature is invalid');
+  //   this.account.verificationKey.set(verificationKey);
+  // }
 }

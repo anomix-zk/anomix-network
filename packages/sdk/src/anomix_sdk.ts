@@ -1,6 +1,5 @@
 import {
   AccountOperationType,
-  AccountRequired,
   ActionType,
   AnomixEntryContract,
   AssetId,
@@ -56,10 +55,19 @@ import { UserAccountTx } from './user_tx/user_account_tx';
 
 import type { SyncerWrapper } from './syncer/syncer_worker';
 import { Worker as NodeWorker } from 'worker_threads';
-import { isNode } from 'detect-node';
+import isNode from 'detect-node';
 import { Remote, wrap } from 'comlink';
 import nodeEndpoint from 'comlink/dist/esm/node-adapter';
 import { SdkEventType, SDK_BROADCAST_CHANNNEL_NAME } from './constants';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+let _filename;
+let _dirname;
+if (isNode) {
+  _filename = fileURLToPath(import.meta.url);
+  _dirname = dirname(_filename);
+}
 
 export class AnomixSdk {
   private entryContract: AnomixEntryContract;
@@ -79,24 +87,29 @@ export class AnomixSdk {
     private entryContractAddress: PublicKey,
     private options: SdkOptions
   ) {
-    this.log.info('Initializing Anomix SDK...');
+    this.log = consola.withTag('anomix:sdk');
+    if (options.debug) {
+      consola.level = 4;
+    }
+
     this.node = new NodeProvider(
       options.nodeUrl,
       options.nodeRequestTimeoutMS
         ? options.nodeRequestTimeoutMS
         : 3 * 60 * 1000
     );
-    this.log = consola.withTag('anomix:sdk');
-    if (options.debug) {
-      consola.level = 4;
-    }
 
     this.keyStore = new PasswordKeyStore(db);
     this.syncer = new Syncer(this.node, db, this.keyStore);
     this.entryContract = new AnomixEntryContract(this.entryContractAddress);
-    if(!isNode) {
+    if (!isNode) {
       this.broadcastChannel = new BroadcastChannel(SDK_BROADCAST_CHANNNEL_NAME);
     }
+
+    this.log.info('Endpoint-mina: ', options.minaEndpoint);
+    let blockchain = Mina.Network(options.minaEndpoint);
+    Mina.setActiveInstance(blockchain);
+  }
 
   public async compileEntryContract() {
     this.log.info('Compile EntryContract Circuits...');
@@ -118,24 +131,42 @@ export class AnomixSdk {
   public async start(useSyncerWorker = true) {
     this.useSyncerWorker = useSyncerWorker;
     if (this.useSyncerWorker) {
+      this.log.info('Use syncer worker to start');
+      this.log.info('current env - isNode: ', isNode);
       if (isNode) {
         // throw new Error('Syncer worker is not supported in nodejs environment');
-        this.syncerWorker = new NodeWorker('./syncer/syncer_worker.js');
+        this.syncerWorker = new NodeWorker(
+          _dirname.concat('/syncer/syncer_worker.js'),
+          {
+            workerData: {
+              memory: new WebAssembly.Memory({
+                initial: 20,
+                maximum: 5000,
+                shared: true,
+              }),
+            },
+          }
+        );
         this.remoteSyncer = wrap<SyncerWrapper>(
           nodeEndpoint(this.syncerWorker)
         );
       } else {
         this.syncerWorker = new Worker(
-          new URL('./syncer/syncer_worker.js', import.meta.url),
+          new URL('./syncer/syncer_worker.ts', import.meta.url),
           {
             type: 'module',
           }
         );
         this.remoteSyncer = wrap<SyncerWrapper>(this.syncerWorker);
       }
-
-      await this.remoteSyncer.create(this.options);
-      await this.remoteSyncer.start();
+      this.log.debug('worker init done');
+      try {
+        await this.remoteSyncer.create(this.options);
+        this.log.debug('remoe syncer created');
+        await this.remoteSyncer.start();
+      } catch (err) {
+        this.log.error(err);
+      }
     } else {
       await this.syncer.start(
         1,
@@ -146,7 +177,7 @@ export class AnomixSdk {
       );
     }
 
-    this.broadcastChannel?.postMessage({eventType: SdkEventType.STARTED});
+    this.broadcastChannel?.postMessage({ eventType: SdkEventType.STARTED });
     const host = this.node.getHost();
     this.log.info(`Started, using node at ${host}`);
   }
@@ -162,7 +193,7 @@ export class AnomixSdk {
     await this.db.close();
     await this.keyStore.lock();
 
-    this.broadcastChannel?.postMessage({eventType: SdkEventType.STOPPED});
+    this.broadcastChannel?.postMessage({ eventType: SdkEventType.STOPPED });
     this.log.info('Stopped');
   }
 
@@ -466,14 +497,18 @@ export class AnomixSdk {
   public async createDepositTx({
     payerAddress,
     receiverAddress,
+    feePayerAddress,
+    suggestedTxFee,
     amount,
     assetId = AssetId.MINA,
     anonymousToReceiver = false,
-    receiverAccountRequired = AccountRequired.REQUIRED,
-    noteEncryptPrivateKey = PrivateKey.random(),
+    receiverAccountRequired,
+    noteEncryptPrivateKey,
   }: {
     payerAddress: PublicKey;
     receiverAddress: PublicKey;
+    feePayerAddress: PublicKey;
+    suggestedTxFee?: UInt64;
     amount: UInt64;
     assetId: Field;
     anonymousToReceiver: boolean;
@@ -501,9 +536,13 @@ export class AnomixSdk {
       noteEncryptPrivateKey
     );
 
-    let transaction = await Mina.transaction(() => {
-      this.entryContract.deposit(payerAddress, note, noteFieldData);
-    });
+    let txFee = suggestedTxFee ? suggestedTxFee : UInt64.from(0.02 * 1e9);
+    let transaction = await Mina.transaction(
+      { sender: feePayerAddress, fee: txFee },
+      () => {
+        this.entryContract.deposit(payerAddress, note, noteFieldData);
+      }
+    );
 
     this.log.info(`prove deposit tx...`);
     await transaction.prove();

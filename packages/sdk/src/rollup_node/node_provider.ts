@@ -105,7 +105,7 @@ export class NodeProvider implements AnomixNode {
     });
 
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -117,7 +117,7 @@ export class NodeProvider implements AnomixNode {
 
     const res = await this.makeRequest<boolean>(url);
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -129,7 +129,7 @@ export class NodeProvider implements AnomixNode {
 
     const res = await this.makeRequest<number>(url);
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -155,7 +155,7 @@ export class NodeProvider implements AnomixNode {
       body,
     });
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -172,7 +172,7 @@ export class NodeProvider implements AnomixNode {
       body,
     });
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -188,7 +188,7 @@ export class NodeProvider implements AnomixNode {
     });
 
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -230,7 +230,7 @@ export class NodeProvider implements AnomixNode {
     });
 
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -242,7 +242,7 @@ export class NodeProvider implements AnomixNode {
 
     const res = await this.makeRequest<TxFeeSuggestionDto>(url);
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -254,7 +254,7 @@ export class NodeProvider implements AnomixNode {
 
     const res = await this.makeRequest<WorldStateRespDto>(url);
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -266,7 +266,7 @@ export class NodeProvider implements AnomixNode {
 
     const res = await this.makeRequest<NetworkStatusDto>(url);
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -282,7 +282,7 @@ export class NodeProvider implements AnomixNode {
 
     const res = await this.makeRequest<string[]>(url);
     if (res.code == 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -328,7 +328,7 @@ export class NodeProvider implements AnomixNode {
     });
 
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -354,7 +354,7 @@ export class NodeProvider implements AnomixNode {
     });
 
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);
@@ -382,7 +382,7 @@ export class NodeProvider implements AnomixNode {
     });
 
     if (res.code === 0) {
-      return res.data;
+      return res.data!;
     }
 
     throw new Error(res.msg);

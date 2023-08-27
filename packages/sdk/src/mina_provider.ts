@@ -16,3 +16,19 @@ export interface SignedData {
 export interface MinaSignerProvider {
   signMessage(args: SignMessageArgs): Promise<SignedData>;
 }
+
+export interface SendTransactionArgs {
+  readonly transaction: any;
+  readonly feePayer?: {
+    readonly fee?: number;
+    readonly memo?: string;
+  };
+}
+
+export type SendTransactionResult = {
+  hash: string;
+};
+
+export interface MinaProvider extends MinaSignerProvider {
+  sendTransaction(args: SendTransactionArgs): Promise<SendTransactionResult>;
+}

@@ -7,6 +7,8 @@ export async function getDb() {
     await db.open();
     return db;
   } else {
-    throw new Error('Not implemented under node env');
+    const db = new DexieDatabase();
+    await db.open();
+    return db;
   }
 }
