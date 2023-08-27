@@ -1,5 +1,11 @@
-import { BlockProver, DepositRollupProver, AnomixEntryContract, InnerRollupProver, JoinSplitProver, WithdrawAccount, AnomixRollupContract, } from "../src";
-
+import {
+  BlockProver,
+  DepositRollupProver,
+  AnomixEntryContract,
+  InnerRollupProver,
+  JoinSplitProver,
+  AnomixRollupContract,
+} from '../src';
 
 await JoinSplitProver.compile();
 const proof = await JoinSplitProver.dummy();

@@ -6,9 +6,9 @@ import {
   DepositRollupProver,
   InnerRollupProver,
   JoinSplitProver,
-  WithdrawAccount,
 } from '../src';
 import { getTestContext } from '../src/test_utils';
+import { AnomixVaultContract } from '../src/vault_contract/vault_contract';
 import KeyConfig from './keys.json' assert { type: 'json' };
 
 const feePayerAddress = PublicKey.fromBase58(KeyConfig.feePayer.publicKey);
@@ -26,6 +26,13 @@ const enctryContractAddress = PublicKey.fromBase58(
 );
 const entryContractKey = PrivateKey.fromBase58(
   KeyConfig.entryContract.privateKey
+);
+
+const vaultContractAddress = PublicKey.fromBase58(
+  KeyConfig.vaultContract.publicKey
+);
+const vaultContractKey = PrivateKey.fromBase58(
+  KeyConfig.vaultContract.privateKey
 );
 
 async function deployRollupContract() {
@@ -64,22 +71,11 @@ async function deployRollupContract() {
   console.timeEnd('compile BlockProver');
   console.log('blockVerifyKey: ', JSON.stringify(blockVerifyKey));
 
-  console.time('compile withdrawAccount');
-  const { verificationKey: withdrawAccountVerifyKey } =
-    await WithdrawAccount.compile();
-  console.timeEnd('compile withdrawAccount');
-  console.log(
-    'withdrawAccountVerifyKey: ',
-    JSON.stringify(withdrawAccountVerifyKey)
-  );
-
-  AnomixRollupContract.withdrawAccountVKHash = withdrawAccountVerifyKey.hash;
   AnomixRollupContract.entryContractAddress = enctryContractAddress;
   console.time('compile rollupContract');
   const { verificationKey: rollupContractVerifyKey } =
     await AnomixRollupContract.compile();
   console.timeEnd('compile rollupContract');
-
   console.log(
     'rollupContractVerifyKey: ',
     JSON.stringify(rollupContractVerifyKey)
@@ -94,7 +90,7 @@ async function deployRollupContract() {
     {
       sender: feePayerAddress,
       fee: ctx.txFee,
-      memo: 'Deploy anomix rollup contract',
+      memo: 'Deploy rollup contract',
     },
     () => {
       AccountUpdate.fundNewAccount(feePayerAddress);
@@ -108,19 +104,26 @@ async function deployRollupContract() {
 
   await ctx.submitTx(tx, {
     feePayerKey,
-    contractKeys: [rollupContractKey],
     logLabel: 'deploy anomix rollup contract',
   });
 
   console.log('deploy rollup contract done');
 }
 
-async function deployEntryContract() {
+async function deployEntryVaultContract() {
+  console.time('compile vaultContract');
+  const { verificationKey: vaultContractVerifyKey } =
+    await AnomixVaultContract.compile();
+  console.timeEnd('compile vaultContract');
+  console.log(
+    'vaultContractVerifyKey: ',
+    JSON.stringify(vaultContractVerifyKey)
+  );
+
   console.time('compile depositRollupProver');
   const { verificationKey: depositRollupVerifyKey } =
     await DepositRollupProver.compile();
   console.timeEnd('compile depositRollupProver');
-
   console.log(
     'depositRollupVerifyKey: ',
     JSON.stringify(depositRollupVerifyKey)
@@ -130,7 +133,6 @@ async function deployEntryContract() {
   const { verificationKey: entryContractVerifyKey } =
     await AnomixEntryContract.compile();
   console.timeEnd('compile entryContract');
-
   console.log(
     'entryContractVerifyKey: ',
     JSON.stringify(entryContractVerifyKey)
@@ -139,36 +141,40 @@ async function deployEntryContract() {
   const ctx = getTestContext();
   await ctx.initMinaNetwork();
 
+  const vaultContract = new AnomixVaultContract(vaultContractAddress);
   const entryContract = new AnomixEntryContract(enctryContractAddress);
 
   let tx = await Mina.transaction(
     {
       sender: feePayerAddress,
       fee: ctx.txFee,
-      memo: 'Deploy anomix entry contract',
+      memo: 'Deploy entryvault contract',
     },
     () => {
       AccountUpdate.fundNewAccount(feePayerAddress);
 
+      vaultContract.deployVaultContract(
+        { zkappKey: vaultContractKey },
+        rollupContractAddress
+      );
       entryContract.deployEntryContract(
         { zkappKey: entryContractKey },
-        rollupContractAddress
+        vaultContractAddress
       );
     }
   );
 
   await ctx.submitTx(tx, {
     feePayerKey,
-    contractKeys: [entryContractKey],
-    logLabel: 'deploy anomix entry contract',
+    logLabel: 'deploy entryvault contract',
   });
 
-  console.log('deploy entry contract done');
+  console.log('deploy entry and vault contract done');
 }
 
 async function run() {
   if (process.env.DEPLOY_CONTRACT === 'entry') {
-    await deployEntryContract();
+    await deployEntryVaultContract();
   } else if (process.env.DEPLOY_CONTRACT === 'rollup') {
     await deployRollupContract();
   } else {

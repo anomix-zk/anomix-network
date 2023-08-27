@@ -1,5 +1,4 @@
 import {
-  AccountUpdate,
   DeployArgs,
   Field,
   method,
@@ -11,8 +10,6 @@ import {
   State,
   state,
   UInt64,
-  VerificationKey,
-  Signature,
   Poseidon,
 } from 'snarkyjs';
 import { DepositRollupProof } from './deposit_rollup_prover';
@@ -24,14 +21,13 @@ import {
   EncryptedNoteFieldData,
 } from './models';
 import { ValueNote } from '../models/value_note';
-import {
-  DEPOSIT_TREE_INIT_ROOT,
-  STANDARD_TREE_INIT_ROOT_20,
-} from '../constants';
+import { DEPOSIT_TREE_INIT_ROOT } from '../constants';
+import { AnomixVaultContract } from '../vault_contract/vault_contract';
 
 export class AnomixEntryContract extends SmartContract {
   @state(DepositRollupState) depositState = State<DepositRollupState>();
-  @state(PublicKey) rollupContractAddress = State<PublicKey>();
+  @state(PublicKey) vaultContractAddress = State<PublicKey>();
+  // @state(PublicKey) rollupContractAddress = State<PublicKey>();
 
   reducer = Reducer({ actionType: Field });
 
@@ -40,9 +36,9 @@ export class AnomixEntryContract extends SmartContract {
     depositStateUpdate: DepositRollupStateTransition,
   };
 
-  deployEntryContract(args: DeployArgs, rollupContractAddress: PublicKey) {
+  deployEntryContract(args: DeployArgs, vaultContractAddress: PublicKey) {
     super.deploy(args);
-    this.rollupContractAddress.set(rollupContractAddress);
+    this.vaultContractAddress.set(vaultContractAddress);
     this.depositState.set(
       new DepositRollupState({
         depositRoot: DEPOSIT_TREE_INIT_ROOT,
@@ -58,28 +54,8 @@ export class AnomixEntryContract extends SmartContract {
     });
   }
 
-  // @method init() {
-  //   super.init();
-
-  //   const provedState = this.account.provedState.getAndAssertEquals();
-  //   provedState.assertFalse('The entry contract has been initialized');
-
-  //   this.depositState.set(
-  //     new DepositRollupState({
-  //       depositRoot: DEPOSIT_TREE_INIT_ROOT,
-  //       handledActionsNum: Field(0),
-  //       currentActionsHash: Reducer.initialActionState,
-  //     })
-  //   );
-  // }
-
-  // @method getDepositRoot(): Field {
-  //   const depositState = this.depositState.getAndAssertEquals();
-  //   return depositState.depositRoot;
-  // }
-
   @method deposit(
-    payer: PublicKey,
+    payerAddress: PublicKey,
     note: ValueNote,
     encryptedNoteData: EncryptedNoteFieldData
   ) {
@@ -93,21 +69,19 @@ export class AnomixEntryContract extends SmartContract {
       .or(note.accountRequired.equals(AccountRequired.NOTREQUIRED))
       .assertTrue('The accountRequired of note is not REQUIRED or NOTREQUIRED');
     note.inputNullifier.assertEquals(
-      Poseidon.hash(payer.toFields()),
+      Poseidon.hash(payerAddress.toFields()),
       'The inputNullifier of note is not equal to hash of payer address'
     );
 
-    Provable.log('check rollup contract address');
-    let rollupContractAddress = this.rollupContractAddress.getAndAssertEquals();
-    rollupContractAddress
+    Provable.log('check vault contract address');
+    let vaultContractAddress = this.vaultContractAddress.getAndAssertEquals();
+    vaultContractAddress
       .isEmpty()
-      .assertFalse('The rollup contract address is empty');
+      .assertFalse('The vault contract address is empty');
 
-    Provable.log('create payer account update');
-    let payerAccUpdate = AccountUpdate.createSigned(payer);
-    let receiverUpdate = AccountUpdate.create(rollupContractAddress);
-    payerAccUpdate.balance.subInPlace(note.value);
-    receiverUpdate.balance.addInPlace(note.value);
+    Provable.log('deposit mina');
+    const vaultContract = new AnomixVaultContract(vaultContractAddress);
+    vaultContract.deposit(payerAddress, note.value);
 
     Provable.log('calculate note commitment');
     const noteCommitment = note.commitment();
@@ -119,7 +93,7 @@ export class AnomixEntryContract extends SmartContract {
         noteCommitment: noteCommitment,
         assetId: note.assetId,
         depositValue: note.value,
-        sender: payer,
+        sender: payerAddress,
         encryptedNoteData,
       })
     );
