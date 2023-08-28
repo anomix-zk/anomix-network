@@ -56,7 +56,7 @@ class ProofSchedulerWorkers extends Array<{ status: number, worker: cp.ChildProc
             return t.status == 0;
         });
 
-        if (freeWorkers.length == 0) {// if no free workers, then distribute task as order
+        if (freeWorkers.length == 0) {// if no free workers, then distribute task to subprocess as order
             const i = (this.cursor++) % config.proofSchedulerWorkerNum;
             this[i].status = 1;
             this[i].worker.send(task);
@@ -68,61 +68,30 @@ class ProofSchedulerWorkers extends Array<{ status: number, worker: cp.ChildProc
     }
 }
 
-
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
-if (process.argv[2] != 'child') {
+// start proof-scheduler workers
+let proofSchedulerWorkers = new ProofSchedulerWorkers(config.proofSchedulerWorkerNum);
 
-    // init leveldb
-    const worldStateDB = new WorldStateDB(config.worldStateDBPath);
-    // check if network initialze
-    if (config.networkInit == 0) {
-        worldStateDB.initTrees();
-    } else {
-        worldStateDB.loadTrees();
-    }
+const bootWebServerThread = () => {
+    // init worker thread A
+    // let worker = new WorkerThread(`${__dirname}/web-server.js`);
+    let serverProcess = cp.fork(`${__dirname}/web-server.js`, ['child']);
+    serverProcess.on('online', () => {
+        logger.info('web-server process is online...');
+    })
 
-    // init IndexDB
-    const indexDB = new IndexDB(config.indexedDBPath);// for cache
+    serverProcess.on('exit', (exitCode: number) => {
+        // create a new process for http-server
+        bootWebServerThread();
+    })
 
-    // init mysqlDB
-    const rollupDB = new RollupDB();
-    rollupDB.start();
-
-    // construct WorldState
-    const worldState = new WorldState(worldStateDB, rollupDB, indexDB);
-
-    // start proof-scheduler workers
-    let proofSchedulerWorkers = new ProofSchedulerWorkers(config.proofSchedulerWorkerNum);
-
-    const bootWebServerThread = (worldState: WorldState) => {
-        // init worker thread A
-        // let worker = new WorkerThread(`${__dirname}/web-server.js`);
-        let worker = cp.fork(`${__dirname}/web-server.js`, ['child']);
-        worker.on('online', () => {
-            logger.info('web-server worker is online...');
-        })
-
-        worker.on('exit', (exitCode: number) => {
-            // create a new worker for http-server
-            bootWebServerThread(worldState);
-        })
-
-        worker.on('message', (value: any) => {
-            if (value.taskType == RollupTaskType.SEQUENCE) {// trigger seq
-                // if (worldState.ongingFlow) {// single thread for 'seq', no need check!
-                //     return;
-                // }
-                worldState.startNewFlow();
-                return;
-            }
-            // dispatch to 'proof-scheduler' worker
-            proofSchedulerWorkers.exec(value);
-        })
-    }
-
-    // start web server in worker thread 
-    // bootWebServerThread(worldState);
-
+    serverProcess.on('message', (value: any) => {
+        // dispatch to 'proof-scheduler' worker
+        proofSchedulerWorkers.exec(value);
+    })
 }
+
+// start web server in worker thread 
+bootWebServerThread();
