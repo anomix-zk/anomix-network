@@ -27,8 +27,10 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
     res
 ): Promise<BaseResponse<boolean>> {
     try {
-        // forward it to main thread, and will further forward it to Rollup threads.
-        parentPort?.postMessage(req.body)
+        // if (worldState.ongingFlow) {// single thread for 'seq', no need check!
+        //     return;
+        // }
+        this.worldState.startNewFlow();
 
         return { code: 0, data: true, msg: '' };
     } catch (err) {
