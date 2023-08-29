@@ -14,7 +14,7 @@ export class WorldStateDB {
     private trees = new Map<MerkleTreeId, (AppendOnlyTree | StandardIndexedTree)>();
 
     constructor(dbPath: string) {
-        this.db = levelup(leveldown(dbPath));
+        this.db = levelup(leveldown(dbPath));// leveldown itself will mkdir underlyingly if dir not exists.
     }
 
     /**

@@ -3,13 +3,19 @@ import { WorldStateDB, RollupDB, IndexDB, WorldState } from "./worldstate";
 import config from "@/lib/config";
 import { activeMinaInstance } from "@anomix/utils";
 import { WithdrawDB } from './worldstate/withdraw-db';
+import fs from "fs";
 
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
-// init leveldb
+
+const existDB = fs.existsSync(config.worldStateDBPath);
 const worldStateDB = new WorldStateDB(config.worldStateDBPath);
-worldStateDB.loadTrees();// just need load!
+if (!existDB) {
+    await worldStateDB.initTrees();
+} else {
+    await worldStateDB.loadTrees();
+}
 
 // init mysqlDB
 const rollupDB = new RollupDB();
