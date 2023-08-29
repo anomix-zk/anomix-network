@@ -37,6 +37,13 @@ export const int256ToBuffer = (n: bigint) => {
     return buf;
 };
 
+export const bufferToInt256 = (buf: Buffer) => {
+    const bi = BigInt("0x" + buf.toString("hex"));
+    const res = bi & ((BigInt(1) << BigInt(256)) - BigInt(1));
+
+    return res;
+};
+
 /**
  * Convert a string to an array of 8-bit integers
  * @param str String to convert
