@@ -1,11 +1,11 @@
 
 import { WorldStateDB, RollupDB, IndexDB } from "@/worldstate";
 import config from "@/lib/config";
-import { BaseResponse, BlockStatus, RollupTaskDto, RollupTaskType, ProofTaskDto, ProofTaskType, FlowTaskType } from "@anomix/types";
-import { ActionType, AnomixRollupContract, InnerRollupProof } from "@anomix/circuits";
-import { BlockProverOutput, Block, InnerRollupBatch, Task, TaskStatus, TaskType, L2Tx } from "@anomix/dao";
-import { Mina, PrivateKey, PublicKey, Field } from 'snarkyjs';
-import { $axiosProofGenerator, $axiosDepositProcessor, $axiosCoordinator } from "@/lib";
+import { BaseResponse, BlockStatus, RollupTaskDto, RollupTaskType, ProofTaskDto, ProofTaskType, FlowTaskType, MerkleProofDto, MerkleTreeId, BlockCacheType } from "@anomix/types";
+import { ActionType, AnomixRollupContract, BlockProveInput, BlockProveOutput, DataMerkleWitness, InnerRollupProof, RollupProof, RootMerkleWitness, ValueNote } from "@anomix/circuits";
+import { BlockProverOutput, Block, InnerRollupBatch, Task, TaskStatus, TaskType, L2Tx, WithdrawInfo, BlockCache } from "@anomix/dao";
+import { Mina, PrivateKey, Poseidon, PublicKey, Field, UInt64, Signature } from 'snarkyjs';
+import { $axiosProofGenerator, $axiosDepositProcessor, $axiosCoordinator, $axiosSeq } from "@/lib";
 import { getConnection } from "typeorm";
 import { syncAcctInfo } from "@anomix/utils";
 import { getLogger } from "@/lib/logUtils";
@@ -89,18 +89,60 @@ export class ProofScheduler {
      * when a MergedResult(ie. InnerRollupProof) comes back, then create L2Block.
      * @param innerRollupProofList 
      */
-    async whenMergedResultComeBack(innerRollupProof: any) {
+    async whenMergedResultComeBack(blockId: number, innerRollupProof1: any) {
         // verify proof??
         //
+
+        const connection = getConnection();
+        const block = (await connection.getRepository(Block).findOne({ where: { id: blockId } }))!;
+        const txFeeCommitment = block.txFeeCommitment;
+        const txFeeWInfo = (await connection.getRepository(WithdrawInfo).findOne({ where: { outputNoteCommitment: txFeeCommitment } }))!;
+        const blockCacheWitnessTxFee = (await connection.getRepository(BlockCache).findOne({ where: { blockId, type: BlockCacheType.TX_FEE_EMPTY_LEAF_WITNESS } }))!;
+        const blockCacheWitnessDataTreeRoot = (await connection.getRepository(BlockCache).findOne({ where: { blockId, type: BlockCacheType.DATA_TREE_ROOT_EMPTY_LEAF_WITNESS } }))!;
+
+        const innerRollupProof = InnerRollupProof.fromJSON(innerRollupProof1);
+        const depositRoot = innerRollupProof.publicOutput.depositRoot;
+        const txFeeReceiverNote: ValueNote = new ValueNote({
+            secret: Field(txFeeWInfo.secret),
+            ownerPk: PublicKey.fromBase58(txFeeWInfo.ownerPk),
+            accountRequired: Field(txFeeWInfo.accountRequired),
+            creatorPk: PublicKey.fromBase58(txFeeWInfo.creatorPk),
+            value: new UInt64(txFeeWInfo.value),
+            assetId: Field(txFeeWInfo.assetId),
+            inputNullifier: Field(txFeeWInfo.inputNullifier),
+            noteType: Field(txFeeWInfo.noteType)
+        });
+        const dataStartIndex = Field(txFeeWInfo.outputNoteCommitmentIdx);
+        const oldDataWitness: DataMerkleWitness = DataMerkleWitness.fromMerkleProofDTO(JSON.parse(blockCacheWitnessTxFee.cache));
+
+        const oldDataRootsRoot: Field = innerRollupProof.publicOutput.dataRootsRoot;
+        const rootStartIndex: Field = Field(block.dataTreeRoot1Indx);
+        const oldRootWitness: RootMerkleWitness = new RootMerkleWitness(
+            JSON.parse(blockCacheWitnessDataTreeRoot.cache).paths.map(p => Field(p))
+        );
+
+        // compose BlockProveInput
+        const blockProveInput = new BlockProveInput({
+            depositRoot,
+            txFeeReceiverNote,
+            oldDataWitness,
+            dataStartIndex,
+            oldDataRootsRoot,
+            rootStartIndex,
+            oldRootWitness
+        });
 
         // construct proofTaskDto
         const proofTaskDto: ProofTaskDto<any, any> = {
             taskType: ProofTaskType.ROLLUP_FLOW,
-            index: {},
+            index: { blockId },
             payload: {
                 flowId: undefined,
                 taskType: FlowTaskType.BLOCK_PROVE,
-                data: innerRollupProof
+                data: {
+                    blockProveInput,
+                    innerRollupProof: innerRollupProof1
+                }
             }
         }
         // send to proof-generator to exec BlockProver
@@ -178,22 +220,33 @@ export class ProofScheduler {
     async callRollupContract(blockId: number, blockProvedResultStr?: any) {
         // load BlockProvedResult regarding 'blockId' from db
         const connection = getConnection();
-        const blockProverOutputRepo = connection.getRepository(BlockProverOutput);
+        const blockRepo = connection.getRepository(Block);
+        const block = (await blockRepo.findOne({ where: { id: blockId } }))!;
 
+        const blockProverOutputRepo = connection.getRepository(BlockProverOutput);
         if (!blockProvedResultStr) {
             const blockProvedResult = (await blockProverOutputRepo.findOne({ where: { blockId } }))!;
             blockProvedResultStr = blockProvedResult.output;
         }
 
+        const rollupProof = RollupProof.fromJSON(JSON.parse(blockProvedResultStr));
+        const output = rollupProof.publicOutput;
+        const signMessage = BlockProveOutput.toFields(output);
+        const operatorSign = Signature.create(PrivateKey.fromBase58(config.sequencerPrivateKey), signMessage);
+        const entryDepositRoot = block.depositRoot;
         // send to proof-generator for 'AnomixRollupContract.updateRollupState'
         // construct proofTaskDto
         const proofTaskDto: ProofTaskDto<any, any> = {
             taskType: ProofTaskType.ROLLUP_FLOW,
-            index: {},
+            index: { blockId },
             payload: {
                 flowId: undefined,
                 taskType: FlowTaskType.ROLLUP_CONTRACT_CALL,
-                data: blockProvedResultStr
+                data: {
+                    proof: blockProvedResultStr,
+                    operatorSign,
+                    entryDepositRoot
+                }
             }
         }
         // send to proof-generator to trigger ROLLUP_CONTRACT
