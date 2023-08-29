@@ -46,7 +46,7 @@ export class WithdrawDB {
     }
 
     /**
-     * when a withdrawal is done, then rm it.
+     * when the scene with 'initTree() or loadTree()' is done, then rm it.
      */
     reset() {
         this.currectTree = (undefined as any) as WithdrawTreeWrapper
