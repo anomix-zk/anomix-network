@@ -49,7 +49,7 @@ function bootWebServerThread() {
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
 // start fetching...
-bootFetchActionEventsThread();
+// bootFetchActionEventsThread();
 
 // start watch...
 // bootRollupProofWatcherThread();
