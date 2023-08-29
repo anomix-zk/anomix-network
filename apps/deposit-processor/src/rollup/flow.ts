@@ -13,8 +13,7 @@ export class RollupFlow {
     constructor(private worldState: WorldState, private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) {
         this.flowId = randomUUID();
         //  prepare all for flow-scheduler
-        new FlowScheduler(this.flowId, this.worldState, this.worldStateDB, this.rollupDB, this.indexDB).start();
-
+        this.flowScheduler = new FlowScheduler(this.flowId, this.worldState, this.worldStateDB, this.rollupDB, this.indexDB);
     }
 
     async start() {
