@@ -12,15 +12,28 @@ import {
 export async function activeMinaInstance() {
     const isLocalBlockChain = false;// TODO get it from config here
     /*
-    const Blockchain = isLocalBlockChain ? Mina.LocalBlockchain({ proofsEnabled: true }) : Mina.Network({
-        mina: 'https://proxy.berkeley.minaexplorer.com/graphql',
-        archive: 'https://archive.berkeley.minaexplorer.com/',
-    }); 
+        const Blockchain = isLocalBlockChain ? Mina.LocalBlockchain({ proofsEnabled: true }) : Mina.Network({
+            mina: 'https://proxy.berkeley.minaexplorer.com/graphql',
+            archive: 'https://archive.berkeley.minaexplorer.com/',
+        });
     */
+    /*
+         const Blockchain = isLocalBlockChain ? Mina.LocalBlockchain({ proofsEnabled: true }) : Mina.Network({
+             mina: 'https://berkeley.minascan.io/graphql',
+             archive: 'https://api.minascan.io/archive/berkeley/v1/graphql',
+         });
+         */
+    /* 
+        const Blockchain = isLocalBlockChain ? Mina.LocalBlockchain({ proofsEnabled: true }) : Mina.Network({
+            mina: 'https://berkeley.minascan.io/graphql',
+            archive: 'https://archive-node-api.p42.xyz/',
+        });
+     */
     const Blockchain = isLocalBlockChain ? Mina.LocalBlockchain({ proofsEnabled: true }) : Mina.Network({
         mina: 'https://berkeley.minascan.io/graphql',
-        archive: 'https://archive-node-api.p42.xyz/',
+        archive: 'https://archive.berkeley.minaexplorer.com',
     });
+
     Mina.setActiveInstance(Blockchain);
 }
 
@@ -113,7 +126,12 @@ export async function syncAcctInfo(acctAddr: PublicKey, tokenId?: Field, isLocal
         console.log('isLocalBlockChain: ', isLocalBlockChain);
         acctInfo = Mina.activeInstance.getAccount(acctAddr, tokenId);
     } else {
-        acctInfo = (await fetchAccount({ publicKey: acctAddr, tokenId })).account!;
+        try {
+            acctInfo = (await fetchAccount({ publicKey: acctAddr, tokenId })).account!;
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
     }
     return acctInfo;
 }
