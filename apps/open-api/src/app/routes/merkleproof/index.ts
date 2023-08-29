@@ -7,6 +7,7 @@
 */
 import { FastifyPlugin } from "fastify"
 import { queryMerkleProof } from "./query-merkle-proof";
+import { queryWitnessByWithdrawNotes } from "./query-witness-by-withdraw-notes";
 
 export const merkleproofEndpoint: FastifyPlugin = async (
     instance,
@@ -14,4 +15,5 @@ export const merkleproofEndpoint: FastifyPlugin = async (
     done
 ): Promise<void> => {
     instance.register(queryMerkleProof);
+    instance.register(queryWitnessByWithdrawNotes);
 }

@@ -9,7 +9,8 @@
   "license": "MIT",
   "scripts": {
     "lib:dev": "npm run lib:build && (concurrently \"tsc --build tsconfig.json --watch\" \"tsc-alias -w\")",
-    "lib:build": "npm run gen-schema-aibreqdto && npm run gen-schema-aibdto && npm run gen-schema-txreqdto && npm run gen-schema-txrespdto && npm run gen-schema-mpdto && npm run gen-schema-nsdto && npm run gen-schema-ptdto && npm run gen-schema-rtdto && npm run gen-schema-tfsdto && npm run gen-schema-widto && npm run gen-schema-wareqdto && npm run gen-schema-wsrespdto && npm run gen-schema-wwdto && tsc --build tsconfig.json && tsc-alias",
+    "lib:gen-schema": "npm run gen-schema-aibreqdto && npm run gen-schema-aibdto && npm run gen-schema-txreqdto && npm run gen-schema-txrespdto && npm run gen-schema-mpdto && npm run gen-schema-nsdto && npm run gen-schema-ptdto && npm run gen-schema-rtdto && npm run gen-schema-tfsdto && npm run gen-schema-widto && npm run gen-schema-wareqdto && npm run gen-schema-wsrespdto && npm run gen-schema-wwdto ",
+    "lib:build": "npm run lib:gen-schema && tsc --build tsconfig.json && tsc-alias",
     "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
     "lib:lint": "eslint \"src/**/*.ts\" --fix",
     "gen-schema-aibreqdto": "npx typescript-json-schema --refs false ./src/asset-in-block-req-dto.ts AssetInBlockReqDto -o ./src/asset-in-block-req-dto-schema.json",

@@ -48,7 +48,7 @@ process!.on('message', async dto => {
     const flowTask = (proofTaskDto.payload) as FlowTask<any>;
     switch (flowTask.taskType) {
         case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
-            await proofScheduler.whenMergedResultComeBack(flowTask.data);
+            await proofScheduler.whenMergedResultComeBack(proofTaskDto.index, flowTask.data);
             break;
         case FlowTaskType.BLOCK_PROVE:
             await proofScheduler.whenL2BlockComeback(flowTask.data);

@@ -9,6 +9,7 @@ import leveldown from "leveldown";
  * * DATA_TREE_ROOTS_TREE:{data_tree_root} -> leafIndex
  * * NULLIFIER_TREE:{nullifier} -> leafIndex
  * * USER_NULLIFIER_TREE:{L1Address}:{commitment} -> leafIndex
+ * * USER_NULLIFIER_TREE:{commitment} -> {L1Address}
  */
 export class IndexDB {
     private readonly indexDB: LevelUp

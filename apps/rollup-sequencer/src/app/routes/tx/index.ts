@@ -8,5 +8,5 @@ export const txEndpoint: FastifyPlugin = async (
     done
 ): Promise<void> => {
     instance.register(queryTxByNoteHash);
-    instance.register(withdrawAsset);
+    // instance.register(withdrawAsset);
 }

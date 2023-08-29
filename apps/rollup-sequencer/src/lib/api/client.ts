@@ -1,6 +1,11 @@
 import config from '../config';
 import axios from 'axios';
 
+export const $axiosSeq = axios.create({
+    baseURL: `${config.sequencerHost}:${config.sequencerPort}`,
+    withCredentials: true,
+});
+
 export const $axiosProofGenerator = axios.create({
     baseURL: `${config.proofGeneratorHost}:${config.proofGeneratorPort}`,
     withCredentials: true,

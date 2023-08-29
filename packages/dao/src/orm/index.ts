@@ -1,6 +1,7 @@
 export * from './account'
 export * from './block'
 export * from './block-prover-output'
+export * from './block-cache'
 export * from './deposit-tree-trans'
 export * from './deposit-prover-output'
 export * from './deposit_commitment'

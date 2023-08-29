@@ -1,17 +1,18 @@
 
 import config from "@/lib/config";
-import { DepositStatus, MerkleTreeId, L2TxStatus } from "@anomix/types";
+import { DepositStatus, MerkleTreeId, L2TxStatus, PoseidonHasher, MerkleProofDto, BlockCacheType } from "@anomix/types";
 import {
     DataMerkleWitness, DataRootWitnessData, LowLeafWitnessData, NullifierMerkleWitness,
-    DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType
+    DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, NoteType, ValueNote, Commitment
 } from "@anomix/circuits";
 import { WorldStateDB, WorldState, IndexDB, RollupDB } from "@/worldstate";
-import { Block, DepositCommitment, InnerRollupBatch, L2Tx, MemPlL2Tx } from "@anomix/dao";
-import { Field, PublicKey } from 'snarkyjs';
-import { syncAcctInfo } from "@anomix/utils";
+import { Block, BlockCache, DepositCommitment, InnerRollupBatch, L2Tx, MemPlL2Tx, WithdrawInfo } from "@anomix/dao";
+import { Field, PublicKey, PrivateKey, Poseidon, UInt64 } from 'snarkyjs';
+import { syncAcctInfo, uint8ArrayToBase64String } from "@anomix/utils";
 import { getConnection, In } from "typeorm";
 import { assert } from "console";
 import { getLogger } from "@/lib/logUtils";
+import { randomBytes, randomInt, randomUUID } from "crypto";
 const logger = getLogger('FlowScheduler');
 
 export class FlowScheduler {
@@ -113,10 +114,41 @@ export class FlowScheduler {
         // pre insert into tree cache
         let innerRollup_proveTxBatchParamList = await this.preInsertIntoTreeCache(mpTxList);
 
+        // prepare txFee valueNote
+        const feeValueNote = new ValueNote({
+            secret: Poseidon.hash([Field.random()]),
+            ownerPk: PrivateKey.fromBase58(config.sequencerPrivateKey).toPublicKey(),
+            accountRequired: Field(1),
+            creatorPk: PublicKey.empty(),
+            value: new UInt64(nonDummyTxList.reduce((p, c, i) => {
+                return Number(c.txFee) + p;
+            }, 0)),
+            assetId: Field(1),// TODO
+            inputNullifier: Poseidon.hash([Field.random()]),
+            noteType: NoteType.WITHDRAWAL
+        });
+        const txFeeCommitment = feeValueNote.commitment();
+        const txFeeCommitmentIdx = this.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE, true).toString();
+        const txFeeSiblingPath = (await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, BigInt(txFeeCommitmentIdx), true))!.path;
+        const txFeeCtEmptyLeafWitness = {
+            leafIndex: Number(txFeeCommitmentIdx),
+            commitment: DUMMY_FIELD.toString(),
+            paths: txFeeSiblingPath.map(p => p.toString())
+        } as MerkleProofDto;
+        await this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, txFeeCommitment);
+
+
+
         this.targetDataRoot = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, true);
         this.targetNullifierRoot = this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true);
         // insert new data_root
         const dataRootLeafIndex = this.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, false);
+        const dataRootSiblingPath = (await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, BigInt(dataRootLeafIndex), true))!.path;
+        const dataRootEmptyLeafWitness = {
+            leafIndex: Number(dataRootLeafIndex),
+            commitment: DUMMY_FIELD.toString(),
+            paths: dataRootSiblingPath.map(p => p.toString())
+        } as MerkleProofDto;
         this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE_ROOTS_TREE, this.targetDataRoot);
         this.targetRootTreeRoot = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE_ROOTS_TREE, true);
 
@@ -137,16 +169,54 @@ export class FlowScheduler {
             block.dataTreeRoot1 = this.targetDataRoot.toString();
             block.nullifierTreeRoot1 = this.targetNullifierRoot.toString();
             block.depositStartIndex1 = this.depositEndIndexInBlock.toString();
-            block.depositCount = depositCount.toString();
+            block.depositCount = depositCount;
             block.totalTxFees = totalTxFee.toString();
+            block.txFeeCommitment = txFeeCommitment.toString();
+            block.txFeeReceiver = feeValueNote.ownerPk.toBase58();
             block = await blockRepo.save(block);// save it
+
+            const cachedUpdates = this.worldStateDB.exportCacheUpdates(MerkleTreeId.DATA_TREE);
+            const blockCacheRepo = connection.getRepository(BlockCache);
+            const blockCachedUpdates = new BlockCache();
+            blockCachedUpdates.blockId = block.id;
+            blockCachedUpdates.cache = cachedUpdates;
+            blockCachedUpdates.type = BlockCacheType.DATA_TREE_UPDATES;//  0
+            await blockCacheRepo.save(blockCachedUpdates);
+
+            // cache txFee's empty leaf witness
+            const blockCachedWitnessTxFee = new BlockCache();
+            blockCachedWitnessTxFee.blockId = block.id;
+            blockCachedWitnessTxFee.cache = JSON.stringify(txFeeCtEmptyLeafWitness);
+            blockCachedWitnessTxFee.type = BlockCacheType.TX_FEE_EMPTY_LEAF_WITNESS;// 1
+            await blockCacheRepo.save(blockCachedWitnessTxFee);
+
+            // cache dataTreeRoot's empty leaf witness
+            const blockCachedWitnessDataRoot = new BlockCache();
+            blockCachedWitnessDataRoot.blockId = block.id;
+            blockCachedWitnessDataRoot.cache = JSON.stringify(dataRootEmptyLeafWitness);
+            blockCachedWitnessDataRoot.type = BlockCacheType.DATA_TREE_ROOT_EMPTY_LEAF_WITNESS;// 2
+            await blockCacheRepo.save(blockCachedWitnessDataRoot);
+
+            const txFeeWithdrawInfo = new WithdrawInfo();
+            txFeeWithdrawInfo.secret = feeValueNote.secret.toString();
+            txFeeWithdrawInfo.ownerPk = feeValueNote.ownerPk.toBase58();
+            txFeeWithdrawInfo.accountRequired = feeValueNote.accountRequired.toString();
+            txFeeWithdrawInfo.creatorPk = feeValueNote.creatorPk.toBase58();
+            txFeeWithdrawInfo.value = feeValueNote.value.toString();
+            txFeeWithdrawInfo.assetId = feeValueNote.assetId.toString();
+            txFeeWithdrawInfo.inputNullifier = feeValueNote.inputNullifier.toString();
+            txFeeWithdrawInfo.noteType = feeValueNote.noteType.toString();
+            txFeeWithdrawInfo.outputNoteCommitment = txFeeCommitment.toString();
+            txFeeWithdrawInfo.outputNoteCommitmentIdx = txFeeCommitmentIdx;
+            const wInfoRepo = connection.getRepository(WithdrawInfo);
+            await wInfoRepo.save(txFeeWithdrawInfo);
 
             // del mpL2Tx from memory pool
             const memPlL2TxRepo = connection.getRepository(MemPlL2Tx);
             const mpL2TxIds = nonDummyTxList.map(tx => {
                 return tx.id;
             })
-            memPlL2TxRepo.delete(mpL2TxIds);
+            await memPlL2TxRepo.delete(mpL2TxIds);
 
             // update L2Tx and move to L2Tx table
             const l2TxRepo = connection.getRepository(L2Tx);
@@ -160,14 +230,14 @@ export class FlowScheduler {
                 tx.blockHash = block.blockHash;
                 tx.indexInBlock = i;
             })
-            l2TxRepo.save(nonDummyTxList as L2Tx[]);// insert all!
+            await l2TxRepo.save(nonDummyTxList as L2Tx[]);// insert all!
 
             // save innerRollupBatch
             const innerRollupBatchRepo = connection.getRepository(InnerRollupBatch);
             const innerRollupBatch = new InnerRollupBatch();
             innerRollupBatch.inputParam = JSON.stringify(innerRollup_proveTxBatchParamList);
             innerRollupBatch.blockId = block.id;
-            innerRollupBatchRepo.save(innerRollupBatch);
+            await innerRollupBatchRepo.save(innerRollupBatch);
 
             // update DepositStatus.CONFIRMED
             const depositCommitmentRepo = connection.getRepository(DepositCommitment);
@@ -176,7 +246,7 @@ export class FlowScheduler {
             }).map(tx => {
                 return tx.outputNoteCommitment1
             })
-            depositCommitmentRepo.update({ depositNoteCommitment: In(dcCommitments) }, { status: DepositStatus.CONFIRMED });// TODO imporve here?
+            await depositCommitmentRepo.update({ depositNoteCommitment: In(dcCommitments) }, { status: DepositStatus.CONFIRMED });// TODO imporve here?
 
             // commit
             await queryRunner.commitTransaction();
@@ -226,6 +296,10 @@ export class FlowScheduler {
                         key: `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${tx.nullifier2}`,
                         value: tx.nullifierIdx2
                     }]);
+            });
+            batch.push({
+                key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${txFeeCommitment.toString()}`,
+                value: txFeeCommitmentIdx
             });
             batch.push({
                 key: `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${this.targetRootTreeRoot.toString()}`,

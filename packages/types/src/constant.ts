@@ -149,8 +149,26 @@ export type FlowTask<T> = {
  */
 export enum MerkleTreeId {
     DEPOSIT_TREE = 0,
+    /**
+     * for normal 
+     */
     DATA_TREE,
+    /**
+     * always keep sync with onchain contract's data_tree root. when L2Block is confirmed on Layer1, ie. constract's data_tree root changes, 
+     * then persist the coorresponding cached incrementing updates to keep sync with onchain contract's data_tree root.
+     * * this tree is for Withdrawal scene currently.
+     */
+    SYNC_DATA_TREE,
     NULLIFIER_TREE,
     DATA_TREE_ROOTS_TREE,
     USER_NULLIFIER_TREE
+}
+
+/**
+ * the type of 'BlockCache'
+ */
+export enum BlockCacheType {
+    DATA_TREE_UPDATES,
+    TX_FEE_EMPTY_LEAF_WITNESS,
+    DATA_TREE_ROOT_EMPTY_LEAF_WITNESS,
 }

@@ -31,5 +31,5 @@ export const txEndpoint: FastifyPlugin = async (
     instance.register(queryByTxHashes);
     instance.register(queryTxByNoteHash);
     instance.register(queryWithdrawalNotes);
-    instance.register(withdrawAsset);
+    // instance.register(withdrawAsset);
 }

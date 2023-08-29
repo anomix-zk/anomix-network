@@ -11,9 +11,15 @@ import {
 
 export async function activeMinaInstance() {
     const isLocalBlockChain = false;// TODO get it from config here
+    /*
     const Blockchain = isLocalBlockChain ? Mina.LocalBlockchain({ proofsEnabled: true }) : Mina.Network({
         mina: 'https://proxy.berkeley.minaexplorer.com/graphql',
         archive: 'https://archive.berkeley.minaexplorer.com/',
+    }); 
+    */
+    const Blockchain = isLocalBlockChain ? Mina.LocalBlockchain({ proofsEnabled: true }) : Mina.Network({
+        mina: 'https://berkeley.minascan.io/graphql',
+        archive: 'https://archive-node-api.p42.xyz/',
     });
     Mina.setActiveInstance(Blockchain);
 }
@@ -33,6 +39,7 @@ export async function syncActions(targetAddr: PublicKey, startActionHash: Field,
                 actionsList = await Mina.fetchActions(targetAddr, { fromActionState: startActionHash });// will throw error if duplicate actions issue.
             } catch (error) {// exisitng issue: duplicate actions 
                 console.log(`error: await fetchActions({ publicKey: ${targetAddr.toBase58()} }): `, JSON.stringify(error));
+                console.error(error);
 
                 console.log(`wait for a block and fetchActions again...`);
                 await waitBlockHeightToExceed((await syncNetworkStatus()).blockchainLength.add(1));

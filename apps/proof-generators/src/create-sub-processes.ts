@@ -264,9 +264,9 @@ export const createSubProcesses = async (n: number) => {
 
                     const msg = {
                         type: `${FlowTaskType[FlowTaskType.BLOCK_PROVE]}`,
-                        payload: { innerRollupProof1: proofPayload.payload.innerRollupProof1, innerRollupProof2: proofPayload.payload.innerRollupProof2 } as {
-                            innerRollupProof1: BlockProveInput,
-                            innerRollupProof2: InnerRollupProof
+                        payload: { blockProveInput: proofPayload.payload.blockProveInput, innerRollupProof: proofPayload.payload.innerRollupProof } as {
+                            blockProveInput: BlockProveInput,
+                            innerRollupProof: InnerRollupProof
                         }
                     };
 
