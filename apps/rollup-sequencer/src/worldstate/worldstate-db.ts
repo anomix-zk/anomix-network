@@ -1,18 +1,17 @@
 
-import { AppendOnlyTree, IndexedTree, LeafData, newTree, loadTree, StandardTree, StandardIndexedTree } from "@anomix/merkle-tree";
-import { BaseSiblingPath, MerkleTreeId } from "@anomix/types";
+import { AppendOnlyTree, LeafData, newTree, loadTree, StandardTree, StandardIndexedTree, IndexedTree, TreeBase } from "@anomix/merkle-tree";
+import { MerkleTreeId } from "@anomix/types";
 import { PoseidonHasher } from '@anomix/types';
-import { DATA_TREE_HEIGHT, ROOT_TREE_HEIGHT, NULLIFIER_TREE_HEIGHT, DEPOSIT_TREE_HEIGHT, LowLeafWitnessData } from "@anomix/circuits";
-import { Field, Poseidon } from "snarkyjs";
+import { DATA_TREE_HEIGHT, ROOT_TREE_HEIGHT, NULLIFIER_TREE_HEIGHT, LowLeafWitnessData } from "@anomix/circuits";
+import { Field } from "snarkyjs";
 import levelup, { LevelUp } from 'levelup';
-import leveldown, { LevelDown } from "leveldown";
-import config from "@/lib/config";
+import leveldown from "leveldown";
 
 let INIT_NULLIFIER_TREE_HEIGHT = NULLIFIER_TREE_HEIGHT;
 
 export class WorldStateDB {
     private readonly db: LevelUp
-    private trees = new Map<MerkleTreeId, (AppendOnlyTree | StandardIndexedTree)>();
+    private trees = new Map<MerkleTreeId, (AppendOnlyTree | IndexedTree)>();
 
     constructor(dbPath: string) {
         this.db = levelup(leveldown(dbPath));
@@ -23,13 +22,13 @@ export class WorldStateDB {
      */
     async initTrees() {
         let poseidonHasher = new PoseidonHasher();
-        // const depositTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`, DEPOSIT_TREE_HEIGHT)
         const dataTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE]}`, DATA_TREE_HEIGHT)
+        const syncDataTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.SYNC_DATA_TREE]}`, DATA_TREE_HEIGHT)
         const nullifierTree = await newTree(StandardIndexedTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}`, NULLIFIER_TREE_HEIGHT, INIT_NULLIFIER_TREE_HEIGHT)
         const dataTreeRootsTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}`, ROOT_TREE_HEIGHT)
 
-        // this.trees.set(MerkleTreeId.DEPOSIT_TREE, depositTree);
         this.trees.set(MerkleTreeId.DATA_TREE, dataTree);
+        this.trees.set(MerkleTreeId.SYNC_DATA_TREE, syncDataTree);
         this.trees.set(MerkleTreeId.NULLIFIER_TREE, nullifierTree);
         this.trees.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, dataTreeRootsTree);
     }
@@ -40,13 +39,14 @@ export class WorldStateDB {
     async loadTrees() {
         let poseidonHasher = new PoseidonHasher();
 
-        // const depositTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`)
         const dataTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE]}`)
+        const syncDataTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.SYNC_DATA_TREE]}`)
         const nullifierTree = await loadTree(StandardIndexedTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}`)
         const dataTreeRootsTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}`)
 
-        // this.trees.set(MerkleTreeId.DEPOSIT_TREE, depositTree);
         this.trees.set(MerkleTreeId.DATA_TREE, dataTree);
+        this.trees.set(MerkleTreeId.SYNC_DATA_TREE, syncDataTree);
+
         this.trees.set(MerkleTreeId.NULLIFIER_TREE, nullifierTree);
         this.trees.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, dataTreeRootsTree);
     }
@@ -93,6 +93,14 @@ export class WorldStateDB {
      */
     getNumLeaves(treeId: MerkleTreeId, includeUncommitted: boolean): bigint {
         return this.trees.get(treeId)!.getNumLeaves(includeUncommitted);
+    }
+
+    /**
+     * export cached updates as string
+     */
+    exportCacheUpdates(treeId: MerkleTreeId) {
+        const updates = (this.trees.get(treeId)! as any as { exportCache: () => string }).exportCache();
+        return updates;
     }
 
     /**

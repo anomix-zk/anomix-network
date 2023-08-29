@@ -3,11 +3,9 @@ import {
     CreateDateColumn,
     Entity,
     PrimaryGeneratedColumn,
-    UpdateDateColumn,
-    OneToMany
+    UpdateDateColumn
 } from 'typeorm'
-import { L2Tx } from './l2-tx';
-import { BlockStatus, PoseidonHasher } from "@anomix/types";
+import { BlockStatus } from "@anomix/types";
 
 @Entity('tb_block')
 export class Block {
@@ -62,7 +60,7 @@ export class Block {
     depositRoot: string
 
     @Column()
-    depositCount: string
+    depositCount: number
 
     /**
      * json string from: Provable.Array(TxFee, FEE_ASSET_ID_SUPPORT_NUM)
@@ -72,6 +70,9 @@ export class Block {
 
     @Column()
     txFeeReceiver: string
+
+    @Column()
+    txFeeCommitment: string
 
     /**
      * record the L1TxHash when it's broadcast

@@ -1,9 +1,10 @@
 
 import { getConnection } from 'typeorm';
 import { Block, DepositCommitment, DepositTreeTrans, MemPlL2Tx, Task, TaskStatus, TaskType, WithdrawInfo } from '@anomix/dao';
-import { L1TxStatus, BlockStatus, WithdrawNoteStatus, DepositStatus, L2TxStatus, DepositTreeTransStatus } from "@anomix/types";
+import { L1TxStatus, BlockStatus, WithdrawNoteStatus, DepositStatus, L2TxStatus, DepositTreeTransStatus, BaseResponse } from "@anomix/types";
 import { ActionType, DUMMY_FIELD } from '@anomix/circuits';
 import { getLogger } from "./lib/logUtils";
+import { $axiosSeq } from './lib/api';
 
 const logger = getLogger('task-tracer');
 
@@ -106,10 +107,16 @@ async function traceTasks() {
                                 await blockRepo.save(b!);
                             });
 
+                            // sync data tree
+                            await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
+                                if (rs.data.code != 0) {
+                                    throw new Error("cannot sync sync_data_tree!");
+                                }
+                            })
                         }
                         break;
 
-                    case TaskType.WITHDRAW:
+                    case TaskType.WITHDRAW: // omit currently
                         {
                             const wInfoRepo = connection.getRepository(WithdrawInfo);
                             await wInfoRepo.findOne({ where: { id: task.targetId } }).then(async (w) => {
