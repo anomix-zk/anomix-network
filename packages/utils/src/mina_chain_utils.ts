@@ -62,7 +62,6 @@ export async function syncNetworkStatus(isLocalBlockChain?: boolean) {
         await fetchLastBlock();
         console.log('sync Berkeley Network status: done!');
     }
-    console.log('current network state: ', JSON.stringify(Mina.activeInstance.getNetworkState()));
     return Mina.activeInstance.getNetworkState();
 }
 
