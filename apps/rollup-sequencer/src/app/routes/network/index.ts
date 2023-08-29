@@ -5,3 +5,13 @@
     ③查询memory pool的pending tx的数量
     ④最佳tx_free
 */
+import { FastifyPlugin } from "fastify"
+import { isNetworkReady } from './sequencer-status';
+
+export const notesEndpoint: FastifyPlugin = async (
+    instance,
+    options,
+    done
+): Promise<void> => {
+    instance.register(isNetworkReady);
+}
