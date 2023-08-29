@@ -42,10 +42,10 @@ export async function syncActions(targetAddr: PublicKey, startActionHash: Field,
                 console.error(error);
 
                 console.log(`wait for a block and fetchActions again...`);
-                await waitBlockHeightToExceed((await syncNetworkStatus()).blockchainLength.add(1));
+                await waitBlockHeightToGrow((new UInt32(1)));
             }
 
-            if (!(actionsList instanceof Array)) {
+            if (i == 4 && !(actionsList instanceof Array)) {
                 console.log(`error: await fetchActions({ publicKey: ${targetAddr.toBase58()} }): `, JSON.stringify(actionsList));
                 throw new Error('fetchActions failed! Pls try later.');
             }
@@ -62,29 +62,45 @@ export async function syncNetworkStatus(isLocalBlockChain?: boolean) {
         await fetchLastBlock();
         console.log('sync Berkeley Network status: done!');
     }
+    console.log('current network state: ', JSON.stringify(Mina.activeInstance.getNetworkState()));
     return Mina.activeInstance.getNetworkState();
 }
 
-export async function waitBlockHeightToExceed(aHeight: UInt32, isLocalBlockChain?: boolean) {
+export async function waitBlockHeightToGrow(gap: UInt32, isLocalBlockChain?: boolean) {
     if (!isLocalBlockChain) {
-        // wait for Berkeley's blockchainLength > aHeight
+        // wait for Berkeley's blockchainLength > targetHeight
         while (true) {
             let blockchainLength = (await syncNetworkStatus()).blockchainLength;
-            console.log(`aHeight: ${aHeight.toString()}, current blockchainLength: ${blockchainLength.toString()}`);
+            let targetHeight = blockchainLength.add(gap);
+            console.log(`targetHeight: ${targetHeight.toString()}, current blockchainLength: ${blockchainLength.toString()}`);
+            await new Promise((resolve) => setTimeout(resolve, Number(gap.toBigint()) * 3 * 60 * 1000));// about 3 minutes/block
+        }
+    } else {
+        let targetHeight = Mina.activeInstance.getNetworkState().blockchainLength.add(gap);
+        (Mina.activeInstance as any).setBlockchainLength(targetHeight);
+        console.log(`targetHeight: ${targetHeight.toString()}, current blockchainLength: ${Mina.activeInstance.getNetworkState().blockchainLength.toString()}`);
+    }
+}
 
-            if (aHeight.lessThan(blockchainLength).toBoolean()) {
+export async function waitBlockHeightToExceed(targetHeight: UInt32, isLocalBlockChain?: boolean) {
+    if (!isLocalBlockChain) {
+        // wait for Berkeley's blockchainLength > targetHeight
+        while (true) {
+            let blockchainLength = (await syncNetworkStatus()).blockchainLength;
+            console.log(`targetHeight: ${targetHeight.toString()}, current blockchainLength: ${blockchainLength.toString()}`);
+
+            if (targetHeight.lessThan(blockchainLength).toBoolean()) {
                 break;
             }
 
-            let blockGap = Number.parseInt(aHeight.sub(blockchainLength).toString());
+            let blockGap = Number.parseInt(targetHeight.sub(blockchainLength).toString());
             blockGap = blockGap == 0 ? 1 : blockGap;
             await new Promise((resolve) => setTimeout(resolve, blockGap * 3 * 60 * 1000));// about 3 minutes/block
         }
     } else {
-        (Mina.activeInstance as any).setBlockchainLength(aHeight.add(1));
-        console.log(`aHeight: ${aHeight.toString()}, current blockchainLength: ${Mina.activeInstance.getNetworkState().blockchainLength.toString()}`);
+        (Mina.activeInstance as any).setBlockchainLength(targetHeight.add(1));
+        console.log(`targetHeight: ${targetHeight.toString()}, current blockchainLength: ${Mina.activeInstance.getNetworkState().blockchainLength.toString()}`);
     }
-    console.log('current network state: ', JSON.stringify(Mina.activeInstance.getNetworkState()));
 }
 
 
