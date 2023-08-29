@@ -1,5 +1,12 @@
+import {
+    VerificationKey,
+} from 'snarkyjs';
+import fs from "fs";
 import * as dotenv from "dotenv"
+
 dotenv.config({ path: '../../.env' })
+
+const JoinSplitProverVK: string = fs.readFileSync('./circuit-JoinSplitProverVK.string', 'utf8');
 
 const config = {
     port: <number>Number(<string>process.env.OPENAPI_PORT) || 80,
@@ -50,7 +57,7 @@ const config = {
         }
     },
     pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/',
-
+    joinSplitProverVK: JoinSplitProverVK,
     txFeeFloor: <number>Number(<string>process.env.TxFeeFloor) || 1000 * 1000, // default 0.01Mina
     sequencerHost: <string>process.env.ROLLUP_SEQUENCER_HOST || '127.0.0.1',
     sequencerPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,

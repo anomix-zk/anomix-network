@@ -31,7 +31,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
 
     // validate tx's proof
     const joinSplitProof = JoinSplitProof.fromJSON(l2TxReqDto.proof);
-    const ok = await verify(joinSplitProof, config.joinSplitVK);
+    const ok = await verify(joinSplitProof, config.joinSplitProverVK);// TODO
     if (!ok) {
         return { code: 1, data: undefined, msg: 'proof verify failed!' }
     }
