@@ -1,25 +1,9 @@
-import { ValueNote } from '@anomix/circuits'
 import {
     Column,
     PrimaryGeneratedColumn,
     Entity,
-    CreateDateColumn,
     UpdateDateColumn
 } from 'typeorm'
-import {
-    Field,
-    Mina,
-    PublicKey,
-    fetchAccount,
-    Types,
-    fetchLastBlock,
-    UInt32,
-    UInt64,
-    Reducer,
-    Signature,
-    VerificationKey,
-
-} from 'snarkyjs';
 
 /**
  * record all value note's fields for withdraw
