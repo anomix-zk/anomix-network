@@ -34,7 +34,7 @@ export class FlowScheduler {
     private async init() {
 
         // clear dirty data on both rollupDB & worldStateDB
-        this.worldStateDB.rollback();
+        await this.worldStateDB.rollback();
 
         // fetch from contract
         const entryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
@@ -50,7 +50,7 @@ export class FlowScheduler {
 
     async start() {
         // clear dirty data on worldStateDB at the beginning
-        this.init();
+        await this.init();
         /*
         // fetch all pending actions from db, if no,  end the flow.
         // check if need dummy_actions,
