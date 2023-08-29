@@ -6,7 +6,7 @@ import { RequestHandler } from '@/lib/types'
 
 
 /**
- * obtain existence-proof on data_tree for note_commitment, <br>
+ * obtain existence-proof on data_tree/sync_data_tree for note_commitment, <br>
  */
 export const queryMerkleProof: FastifyPlugin = async function (
     instance,
@@ -22,20 +22,25 @@ export const queryMerkleProof: FastifyPlugin = async function (
     })
 }
 
-export const handler: RequestHandler<string[], null> = async function (
+export const handler: RequestHandler<{ treeId: number, commitmentList: string[] }, null> = async function (
     req,
     res
 ): Promise<BaseResponse<MerkleProofDto[]>> {
-    const commitmentList = req.body
+    const { treeId, commitmentList } = req.body
 
     try {
         const merkleProofDtoList = await Promise.all(commitmentList.map(async c => {
             // DATA_TREE:{comitment} -> leafIndex
-            let leafIndex = await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${c}`);
+            let leafIndex: string;
+            if (treeId == MerkleTreeId.DATA_TREE_ROOTS_TREE) {
+                leafIndex = this.worldState.worldStateDB.getNumLeaves(treeId, false).toString();
+            } else {
+                leafIndex = await this.worldState.indexDB.get(`${MerkleTreeId[treeId]}:${c}`);
+            }
 
-            const siblingPath = await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, BigInt(leafIndex), false);
+            const siblingPath = await this.worldState.worldStateDB.getSiblingPath(treeId, BigInt(leafIndex), false);
             return {
-                leafIndex,
+                leafIndex: Number(leafIndex),
                 commitment: c,
                 paths: siblingPath.path.map(p => { return p.toString(); })
             } as MerkleProofDto;
@@ -48,7 +53,7 @@ export const handler: RequestHandler<string[], null> = async function (
 }
 
 const schema = {
-    description: 'query MerkleWitness by valueNote/accountNote commitment',
+    description: 'query MerkleWitness on data_tree/sync_data_tree by valueNote/accountNote commitment',
     tags: ['MerkleWitness'],
     body: {
         type: 'array',
