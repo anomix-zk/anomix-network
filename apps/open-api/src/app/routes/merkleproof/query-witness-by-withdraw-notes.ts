@@ -39,10 +39,15 @@ const handler: RequestHandler<null, string> = async function (
 }
 
 const schema = {
-    description: 'query all Witness By WithdrawNotes',
-    tags: ['NOTE'],
+    description: 'query all Witness By WithdrawNote commitment',
+    tags: ['MerkleWitness'],
     params: {
-        type: 'string'
+        type: "object",
+        properties: {
+            commitment: {
+                type: "string",
+            }
+        }
     },
     response: {
         200: {
@@ -52,7 +57,7 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: 'object',
+                    type: WithdrawalWitnessDtoSchema.type,
                     properties: WithdrawalWitnessDtoSchema.properties
                 },
                 msg: {

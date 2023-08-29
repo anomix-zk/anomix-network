@@ -56,7 +56,12 @@ const schema = {
     description: 'query MerkleTree Info',
     tags: ['MerkleTree'],
     params: {
-        type: 'number'
+        type: "object",
+        properties: {
+            blockId: {
+                type: "number",
+            }
+        }
     },
     response: {
         200: {

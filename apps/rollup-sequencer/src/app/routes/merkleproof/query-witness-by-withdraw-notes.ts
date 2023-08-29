@@ -96,7 +96,12 @@ const schema = {
     description: 'query all Witness By WithdrawNotes',
     tags: ['NOTE'],
     params: {
-        type: 'string'
+        type: "object",
+        properties: {
+            commitment: {
+                type: "string",
+            }
+        }
     },
     response: {
         200: {
