@@ -4,6 +4,8 @@ import { merkleProofEndpoint } from "./merkleproof";
 import { proofCallback } from "./proof-callback";
 import { rollupProofTrigger } from "./rollup-proof-trigger";
 import { rollupSeqTrigger } from "./rollup-seq-trigger";
+import { notesEndpoint } from "./note";
+import { txEndpoint } from "./tx";
 
 export const routes: FastifyPlugin = async function (
     instance,
@@ -15,4 +17,6 @@ export const routes: FastifyPlugin = async function (
     instance.register(proofCallback)
     instance.register(rollupProofTrigger)
     instance.register(rollupSeqTrigger)
+    instance.register(notesEndpoint)
+    instance.register(txEndpoint)
 }
