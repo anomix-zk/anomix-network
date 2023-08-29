@@ -4,9 +4,6 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { BaseResponse, L2TxRespDto } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
-import { $axiosProofGenerator } from "@/lib/api"
-import { getConnection, In } from "typeorm"
-import { L2Tx, Block } from "@anomix/dao"
 
 /**
 * 根据alias_nullifier/account_viewing_key/valueNote_commitment/nullifier查询L2Tx
