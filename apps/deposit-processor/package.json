@@ -32,6 +32,7 @@
     "serve:deposit-seq-trigger": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/deposit-seq-trigger.js",
     "serve:deposit-rollup-proof-watcher": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/deposit-rollup-proof-watcher.js",
     "serve:fetch-actions-events": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/fetch-actions-events.js",
+    "serve:fetch-events-only": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/fetch-events-only.js",
     "serve:web-server": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/web-server.js",
     "serve": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/index.js",
     "buildw": "tsc --build tsconfig.json --watch && (concurrently \"tsc --build tsconfig.json -w\" \"tsc-alias -w\")",

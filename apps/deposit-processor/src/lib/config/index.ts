@@ -66,7 +66,6 @@ const config = {
     joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx ?? JoinsplitProofDummyTx)),// TODO
 
     sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
-    networkInit: <number>Number(<string>process.env.NETWORK_INIT ?? '1'),
 
     depositWorldStateDBPath: <string>process.env.LEVELDB_DEPOSIT_ROLLUP_STATE_DB_PATH || './anomix_deposit_rollup_state_db',
     depositIndexedDBPath: <string>process.env.LEVELDB_DEPOSIT_INDEX_DB_PATH || './anomix_deposit_index_db',
@@ -76,8 +75,13 @@ const config = {
     entryContractAddress: <string>process.env.ENTRY_CONTRACT_ADDRESS || 'B62785kfljj8784990kj0kj90kjjiekljk',
     rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
 
+    entryContractDeploymentBlockHeight: <number>Number(<string>process.env.ENTRY_CONTRACT_ADDRESS_DEPLOYMENT_BLOCKHEIGHT ?? 0),
+    rollupContractDeploymentBlockHeight: <number>Number(<string>process.env.ROLLUP_CONTRACT_ADDRESS_DEPLOYMENT_BLOCKHEIGHT ?? 0),
+
     coordinatorHost: <string>process.env.COORDINATOR_HOST || '127.0.0.1',
     coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT ?? 8083),
+
+
 }
 
 export default config
