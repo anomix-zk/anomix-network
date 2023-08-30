@@ -21,13 +21,14 @@ function processMsgFromMaster() {
                 execCircuit(message, async () => {
                     const params = message.payload as {
                         feePayer: PublicKey,
+                        fee: number,
                         depositRollupProof: DepositRollupProof
                     }
                     const addr = PublicKey.fromBase58(config.entryContractAddress);
                     await syncAcctInfo(addr);// fetch account.
                     const entryContract = new AnomixEntryContract(addr);
 
-                    let tx = await Mina.transaction(params.feePayer, () => {
+                    let tx = await Mina.transaction({ sender: params.feePayer, fee: params.fee }, () => {
                         entryContract.updateDepositState(params.depositRollupProof);
                     });
 

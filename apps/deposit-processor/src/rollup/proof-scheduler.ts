@@ -105,6 +105,7 @@ export class ProofScheduler {
                 data: {
                     transId,
                     feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toBase58(),
+                    fee: 200_000_000,// 0.2 Mina as fee
                     data
                 }
             } as FlowTask<any>

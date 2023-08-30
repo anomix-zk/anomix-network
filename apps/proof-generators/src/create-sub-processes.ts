@@ -347,9 +347,11 @@ export const createSubProcesses = async (n: number) => {
                         type: `${FlowTaskType[FlowTaskType.DEPOSIT_UPDATESTATE]}`,
                         payload: {
                             feePayer: PublicKey.fromBase58(proofPayload.payload.feePayer),
+                            fee: proofPayload.payload.fee,
                             depositRollupProof: proofPayload.payload.data
                         } as {
                             feePayer: PublicKey,
+                            fee: number,
                             depositRollupProof: DepositRollupProof
                         }
                     };
