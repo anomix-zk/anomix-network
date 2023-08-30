@@ -7,10 +7,12 @@ import {
     Signature,
 } from "snarkyjs";
 import { genNewKeyPairBySignature, getHDpath, reverse } from "./keys_helper";
-import * as bip32 from "bip32";
+//import * as bip32 from "bip32";
+import { HDKey } from "@scure/bip32";
 import { Buffer } from "buffer";
 import bs58check from "bs58check";
 import {
+    bufferToInt256,
     int256ToBuffer,
     stringToUint8Array,
     stringToUtf8Array,
@@ -62,12 +64,15 @@ const randomValue = Poseidon.hash(
 let seedBuffer = int256ToBuffer(randomValue);
 console.log("buf: ", seedBuffer);
 console.log("n: ", seedBuffer.length);
-const masterNode = bip32.fromSeed(seedBuffer);
+//const masterNode = bip32.fromSeed(seedBuffer);
+const masterNode = HDKey.fromMasterSeed(seedBuffer);
 let hdPath = getHDpath(0);
-const child0 = masterNode.derivePath(hdPath);
+//const child0 = masterNode.derivePath(hdPath);
+const child0 = masterNode.derive(hdPath);
 //@ts-ignore
 child0.privateKey[0] &= 0x3f;
-const childPrivateKey = reverse(child0.privateKey!);
+// const childPrivateKey = reverse(child0.privateKey!);
+const childPrivateKey = reverse(Buffer.from(child0.privateKey!));
 const privateKeyHex = `5a01${childPrivateKey.toString("hex")}`;
 const privateKey = bs58check.encode(Buffer.from(privateKeyHex, "hex"));
 
@@ -77,3 +82,12 @@ const pubKey = priKey.toPublicKey();
 const group = pubKey.toGroup();
 
 console.log("group: ", group.toJSON());
+
+let r = Field.random().toBigInt();
+console.log("r: ", r);
+
+let buf = int256ToBuffer(r);
+
+let ori = bufferToInt256(buf);
+
+console.log("ori: ", ori);
