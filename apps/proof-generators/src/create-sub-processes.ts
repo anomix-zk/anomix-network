@@ -70,8 +70,7 @@ export const createSubProcesses = async (n: number) => {
         [CircuitName_AnomixRollupContract, []]
     ]);
 
-    const cnt_DepositRollupProver = 1;
-    // const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
+    const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_AnomixEntryContract = 1;// consider L1Tx execution one by one
     const cnt_JoinSplitProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_InnerRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
@@ -97,7 +96,7 @@ export const createSubProcesses = async (n: number) => {
                 }
             });
             worker.on('exit', (exitCode: number) => {
-                logger.info(`${circuitName} worker existed`);
+                logger.info(`${circuitName} worker exited`);
 
                 const index = workerMap.get(circuitName)!.findIndex((t, i) => {
                     return t.worker == worker;
@@ -163,24 +162,27 @@ export const createSubProcesses = async (n: number) => {
                                     (w) => w.worker.pid == worker!.worker.pid
                                 )!.status = 'IsReady';
 
-                                try {
-                                    d.data = message.payload as any;// replace the original to the proof result
-                                    sum++;
-                                    logger.info(`jointSplit_deposit: sum: ${sum}`);
+                                if (message.type == 'done') {
+                                    try {
+                                        d.data = message.payload as any;// replace the original to the proof result
+                                        sum++;
+                                        logger.info(`jointSplit_deposit: sum: ${sum}`);
 
-                                    if (sum + 1 == data.length) {// when the proof count is equals to the target, then send the whole results to deposit_processor
-                                        // send back to deposit_processor
-                                        if (sendCallBack) {
-                                            sendCallBack(proofPayload.payload)
+                                        if (sum + 1 == data.length) {// when the proof count is equals to the target, then send the whole results to deposit_processor
+                                            // send back to deposit_processor
+                                            if (sendCallBack) {
+                                                sendCallBack(proofPayload.payload)
+                                            }
+                                            resolve({
+                                                isProof: true,
+                                                payload: data,
+                                            });
                                         }
-                                        resolve({
-                                            isProof: true,
-                                            payload: data,
-                                        });
+                                    } catch (error) {
+                                        reject(error);
                                     }
-                                } catch (error) {
-                                    reject(error);
                                 }
+
                             });
                         })
 
@@ -471,19 +473,22 @@ function generateProof(
                 //(w) => w.worker.process.pid == worker!.worker.process.pid
                 (w) => w.worker.pid == worker!.worker.pid
             )!.status = 'IsReady';
-            try {
-                let proofJson = message.payload;
-                let p = fromJsonFn(proofJson);
-                if (sendCallBack) {
-                    sendCallBack(p);
-                }
 
-                resolve({
-                    isProof: true,
-                    payload: p,
-                });
-            } catch (error) {
-                reject(error);
+            if (message.type == 'done') {
+                try {
+                    let proofJson = message.payload;
+                    let p = fromJsonFn(proofJson);
+                    if (sendCallBack) {
+                        sendCallBack(p);
+                    }
+
+                    resolve({
+                        isProof: true,
+                        payload: p,
+                    });
+                } catch (error) {
+                    reject(error);
+                }
             }
         });
 
