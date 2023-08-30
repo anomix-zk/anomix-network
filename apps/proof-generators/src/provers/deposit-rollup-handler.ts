@@ -19,7 +19,11 @@ export const depositRollupBatchAndMerge = async (subProcessCordinator: SubProces
             }
         } else {
             for (let i = 0; i < proofPayLoadList.length; i = i + 2) {
-                promises.push(subProcessCordinator.depositRollup_merge(proofPayLoadList[i], proofPayLoadList[i + 1]));
+                if (proofPayLoadList[i + 1]) {
+                    promises.push(subProcessCordinator.depositRollup_merge(proofPayLoadList[i], proofPayLoadList[i + 1]));
+                } else {
+                    promises.push(Promise.resolve(proofPayLoadList[i]));
+                }
             }
         }
 
