@@ -19,7 +19,7 @@ const logger = getLogger('proof-generator');
 
 function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
     // init worker thread A
-    let httpWorker = cp.fork(`${__dirname}\\web-server.js`, ['child']);
+    let httpWorker = cp.fork(`${__dirname}/web-server.js`, ['child']);
     httpWorker.on('online', () => {
         logger.info('web-server worker is online...');
     })
