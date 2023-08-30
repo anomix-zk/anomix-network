@@ -85,3 +85,5 @@ const initWorker = async () => {
     });
     logger.info(`[WORKER ${process.pid}] new worker ready`);
 };
+
+await initWorker();
