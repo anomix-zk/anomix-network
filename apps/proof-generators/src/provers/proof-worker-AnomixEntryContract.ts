@@ -62,7 +62,16 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             },
         });
     } catch (error) {
-        logger.info(error);
+        logger.error(error);
+
+        console.error(error);
+
+        process.send!({
+            type: 'error',
+            messageType: message.type,
+            id: process.pid,
+            payload: {},
+        });
     }
 }
 
@@ -70,10 +79,14 @@ const initWorker = async () => {
     // init 
     await activeMinaInstance();
 
+    process.send!({
+        type: 'online',
+    });
+
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    await DepositRollupProver.compile();
-    await AnomixEntryContract.compile();
+    // await DepositRollupProver.compile();
+    // await AnomixEntryContract.compile();
 
     // recieve message from main process...
     processMsgFromMaster();

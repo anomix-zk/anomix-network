@@ -60,10 +60,16 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             },
         });
     } catch (error) {
-        logger.info(error);
+        logger.error(error);
 
-        throw error;
+        console.error(error);
 
+        process.send!({
+            type: 'error',
+            messageType: message.type,
+            id: process.pid,
+            payload: {},
+        });
     }
 }
 
@@ -77,7 +83,7 @@ const initWorker = async () => {
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    await DepositRollupProver.compile();
+    // await DepositRollupProver.compile();
 
     // recieve message from main process...
     processMsgFromMaster();
