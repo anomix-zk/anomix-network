@@ -85,9 +85,6 @@ const initWorker = async () => {
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    await DepositRollupProver.compile();
-    await AnomixEntryContract.compile();
-
     await JoinSplitProver.compile();
     await InnerRollupProver.compile();
     await BlockProver.compile();
