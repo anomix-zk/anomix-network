@@ -31,7 +31,7 @@ async function proofTrigger() {
             // which means that if blocks at previous trigger-round has not yet complete, then need stop Broadcasting DepositRollupProof as L1Tx,
             // further means only all existing blocks containing DepositL2Tx has confirmed at Layer1, then deposit-processor could broadcast DepositRollupProof as L1Tx
 
-            return block.depositCount != '0'//ie. has depositL2Tx within this trigger-round
+            return block.depositCount != 0//ie. has depositL2Tx within this trigger-round
         }))
 
         if (couldTriggerDepositContact) {// if there is no depositTx inside the blockList above, then could Broadcast DepositRollupProof as L1Tx !!
@@ -97,7 +97,7 @@ async function proofTrigger() {
                 let url: any = undefined;
                 let taskType: any = undefined;
 
-                if (block.depositCount != '0') {
+                if (block.depositCount != 0) {
                     url = '/rollup/joint-split-deposit';
                     taskType = RollupTaskType.DEPOSIT_JOINSPLIT;
 
