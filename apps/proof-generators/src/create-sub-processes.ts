@@ -96,7 +96,7 @@ export const createSubProcesses = async (n: number) => {
                         break;
                 }
             });
-            worker.on('e', (exitCode: number) => {
+            worker.on('exit', (exitCode: number) => {
                 logger.info(`${circuitName} worker existed`);
 
                 const index = workerMap.get(circuitName)!.findIndex((t, i) => {
@@ -502,8 +502,8 @@ function getFreeWorker(
     worker = workers.find((w) => w.status == 'IsReady');
 
     if (worker === undefined) {
-        console.log('no free worker currently, will ask it again 10s later...')
-        setTimeout(getFreeWorker, 10 * 1000, workers, resolve, reject);
+        console.log('no free worker currently, will ask it again 1mins later...')
+        setTimeout(getFreeWorker, 10 * 60 * 1000, workers, resolve, reject);
     } else {
         worker!.status = 'Busy';
         return resolve(worker);
