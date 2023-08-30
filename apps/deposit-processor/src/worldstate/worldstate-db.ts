@@ -43,7 +43,7 @@ export class WorldStateDB {
      * @param leaves - The set of leaves to be appended.
      */
     async appendLeaves(treeId: MerkleTreeId, leaves: Field[]) {
-        this.trees.get(treeId)!.appendLeaves(leaves);
+        await this.trees.get(treeId)!.appendLeaves(leaves);
     }
 
     /**
@@ -106,14 +106,14 @@ export class WorldStateDB {
      * TODO extreme case: if this fail, then should restore manually
      */
     async commit() {
-        this.trees.get(MerkleTreeId.DEPOSIT_TREE)?.commit();
+        await this.trees.get(MerkleTreeId.DEPOSIT_TREE)?.commit();
     }
 
     /**
      * Rollback pending update to the MerkleTreeId.
      */
     async rollback() {
-        this.trees.get(MerkleTreeId.DEPOSIT_TREE)?.rollback();
+        await this.trees.get(MerkleTreeId.DEPOSIT_TREE)?.rollback();
     }
 
 }

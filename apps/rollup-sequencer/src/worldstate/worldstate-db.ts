@@ -56,7 +56,7 @@ export class WorldStateDB {
      * @param leaves - The set of leaves to be appended.
      */
     async appendLeaves(treeId: MerkleTreeId, leaves: Field[]) {
-        this.trees.get(treeId)!.appendLeaves(leaves);
+        await this.trees.get(treeId)!.appendLeaves(leaves);
     }
 
     /**
@@ -76,7 +76,7 @@ export class WorldStateDB {
         index: bigint,
         includeUncommitted: boolean
     ) {//
-        return this.trees.get(treeId)!.getSiblingPath(index, includeUncommitted);
+        return await this.trees.get(treeId)!.getSiblingPath(index, includeUncommitted);
     }
 
     /**
@@ -107,9 +107,9 @@ export class WorldStateDB {
      * Commit pending updates to the MerkleTreeId.
      */
     async commit() {//
-        this.trees.get(MerkleTreeId.DATA_TREE)!.commit();
-        this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.commit();
-        this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.commit();
+        await this.trees.get(MerkleTreeId.DATA_TREE)!.commit();
+        await this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.commit();
+        await this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.commit();
     }
 
     /**
@@ -123,9 +123,9 @@ export class WorldStateDB {
      * Rollback pending update to the MerkleTreeId.
      */
     async rollback() {//
-        this.trees.get(MerkleTreeId.DATA_TREE)!.rollback();
-        this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.rollback();
-        this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.rollback();
+        await this.trees.get(MerkleTreeId.DATA_TREE)!.rollback();
+        await this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.rollback();
+        await this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.rollback();
     }
 
     /**
@@ -133,11 +133,11 @@ export class WorldStateDB {
      * @param index - The index of the leaf value to be returned.
      * @param includeUncommitted - Set to true to include uncommitted updates in the data set.
      */
-    getLeafValue(treeId: MerkleTreeId,
+    async getLeafValue(treeId: MerkleTreeId,
         index: bigint,
         includeUncommitted: boolean
     ): Promise<Field | undefined> {//
-        return this.trees.get(treeId)!.getLeafValue(index, includeUncommitted);
+        return await this.trees.get(treeId)!.getLeafValue(index, includeUncommitted);
     }
 
     async findPreviousValueAndMp(treeId: MerkleTreeId, nullifier1: Field, includeUncommitted: boolean) {//
