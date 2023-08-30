@@ -51,7 +51,7 @@ export class WorldStateDB {
      * @param leaf - The leaves to be appended.
      */
     async appendLeaf(treeId: MerkleTreeId, leaf: Field) {
-        return await this.appendLeaves(treeId, [leaf])[0];
+        await this.appendLeaves(treeId, [leaf]);
     }
 
     /**
