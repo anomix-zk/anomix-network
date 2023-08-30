@@ -120,13 +120,13 @@ export const createSubProcesses = async (n: number) => {
 
     createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
 
-    createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
+    // createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
 
-    createCircuitProcessor(cnt_InnerRollupProver, CircuitName_InnerRollupProver);
+    // createCircuitProcessor(cnt_InnerRollupProver, CircuitName_InnerRollupProver);
 
-    createCircuitProcessor(cnt_BlockProver, CircuitName_BlockProver);
+    // createCircuitProcessor(cnt_BlockProver, CircuitName_BlockProver);
 
-    createCircuitProcessor(cnt_AnomixRollupContract, CircuitName_AnomixRollupContract);
+    // createCircuitProcessor(cnt_AnomixRollupContract, CircuitName_AnomixRollupContract);
 
     await waitForAllWorkersReady(workerMap);
 
