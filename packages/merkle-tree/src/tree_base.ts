@@ -4,6 +4,7 @@ import { Hasher } from '@anomix/types';
 import { MerkleTree } from './interfaces/merkle_tree.js';
 import { toBigIntLE, toBufferLE } from './utils';
 import { Field } from 'snarkyjs';
+import { bufferToInt256, int256ToBuffer } from "@anomix/utils";
 
 const MAX_DEPTH = 254;
 
@@ -11,15 +12,15 @@ const indexToKeyHash = (name: string, level: number, index: bigint) =>
     `${name}:${level}:${index}`;
 
 const encodeMeta = (root: Field, depth: number, size: bigint) => {
-    const rootBuf = Buffer.from(root.toString());
-    const data = Buffer.alloc(36);
+    const rootBuf = int256ToBuffer(root.toBigInt());// 32-bytes buffer
+    const data = Buffer.alloc(32 + 4);
     rootBuf.copy(data);
     data.writeUInt32LE(depth, 32);
     return Buffer.concat([data, toBufferLE(size, 32)]);
 };
 
 export const decodeMeta = (meta: Buffer) => {
-    const root = meta.subarray(0, 32);
+    const root = Field(bufferToInt256(meta.subarray(0, 32)));
     const depth = meta.readUInt32LE(32);
     const size = toBigIntLE(meta.subarray(36));
     return {
