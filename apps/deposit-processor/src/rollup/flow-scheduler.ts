@@ -71,7 +71,8 @@ export class FlowScheduler {
 
             const depositCommitmentList = [...originDcList];
             const DUMMY_ACTION = DUMMY_FIELD;
-            let dummyActionSize = DEPOSIT_ACTION_BATCH_SIZE - depositCommitmentList.length % DEPOSIT_ACTION_BATCH_SIZE;
+            const mod = depositCommitmentList.length % DEPOSIT_ACTION_BATCH_SIZE;
+            let dummyActionSize = mod > 0 ? DEPOSIT_ACTION_BATCH_SIZE - mod : 0;
             while (dummyActionSize > 0) {// check if need dummy_actions,
                 const dc = new DepositCommitment();
                 dc.depositNoteCommitment = DUMMY_ACTION.toString();
