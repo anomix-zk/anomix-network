@@ -23,7 +23,7 @@ const config = {
     },
     swagger: {
         info: {
-            title: "Anomix Network - rollup-sequencer api documentation",
+            title: "Anomix Network - proof-generators api documentation",
             version: "0.1.0"
         },
         host: <string>process.env.SWAGGER_HOST ? (<string>process.env.SWAGGER_HOST).concat(':').concat(<string>process.env.PROOF_GENERATOR_PORT) : 'localhost:'.concat(<string>process.env.PROOF_GENERATOR_PORT),
