@@ -1,4 +1,5 @@
-import { Worker as HttpWorker } from "worker_threads";
+import cp from "child_process";
+import cluster from "cluster";
 import { activeMinaInstance } from "@anomix/utils";
 import { ProofTaskDto, ProofTaskType, FlowTask, FlowTaskType } from "@anomix/types";
 import config from "./lib/config";
@@ -6,22 +7,25 @@ import { innerRollupBatchAndMerge } from "./provers/inner-rollup-handler";
 import { depositRollupBatchAndMerge } from "./provers/deposit-rollup-handler";
 import { ProofPayload } from "./constant";
 import { createSubProcesses, SubProcessCordinator } from "./create-sub-processes";
-import axios from "axios";
 import { JoinSplitDepositInput } from "@anomix/circuits";
 import { getLogger } from "./lib/logUtils";
-import cluster from "cluster";
 import { $axiosDeposit, $axiosSeq } from "./lib";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const logger = getLogger('proof-generator');
 
 function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
     // init worker thread A
-    let httpWorker = new HttpWorker('./web-server.js');
+    let httpWorker = cp.fork(`${__dirname}\\web-server.js`, ['child']);
     httpWorker.on('online', () => {
         logger.info('web-server worker is online...');
     })
 
     httpWorker.on('exit', (exitCode: number) => {
+        console.log('webServer process exit...')
         // create a new worker for http-server
         bootWebServerThread(subProcessCordinator);
     })
