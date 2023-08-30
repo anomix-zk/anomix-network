@@ -68,6 +68,10 @@ const initWorker = async () => {
     // init 
     await activeMinaInstance();
 
+    process.send!({
+        type: 'online',
+    });
+
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
     await DepositRollupProver.compile();

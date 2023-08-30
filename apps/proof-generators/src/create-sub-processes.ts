@@ -83,12 +83,20 @@ export const createSubProcesses = async (n: number) => {
             let worker = cp.fork(__dirname.concat('/provers/proof-worker-').concat(circuitName).concat('.js'), [circuitName]);
 
             let workerEntity: { worker: Worker, status: WorkerStatus, type: string } = { worker, status: 'Busy', type: circuitName };
-            // let workerEntity = { worker, status: 'Busy', type: circuitName };
-            worker.on('online', () => {
-                logger.info(`${circuitName} worker is online...`);
-                workerMap.get(circuitName)!.push(workerEntity);
+            worker.on('message', (message: { type: string }) => {// change to 'IsReady'
+                message = JSON.parse(JSON.stringify(message));
+                switch (message.type) {
+                    case 'online':
+                        workerMap.get(circuitName)!.push(workerEntity);
+                        break;
+                    case 'isReady':
+                        workerEntity.status = 'IsReady';
+                        break;
+                    default:
+                        break;
+                }
             });
-            worker.on('exit', (exitCode: number) => {
+            worker.on('e', (exitCode: number) => {
                 logger.info(`${circuitName} worker existed`);
 
                 const index = workerMap.get(circuitName)!.findIndex((t, i) => {
@@ -99,16 +107,7 @@ export const createSubProcesses = async (n: number) => {
                 // create a new one again
                 createFn(proverCnt, circuitName);
             });
-            worker.on('message', (message: { type: string }) => {// change to 'IsReady'
-                message = JSON.parse(JSON.stringify(message));
-                switch (message.type) {
-                    case 'isReady':
-                        workerEntity.status = 'IsReady';
-                        break;
-                    default:
-                        break;
-                }
-            });
+
         }
 
         for (let index = 0; index < proverCnt; index++) {
@@ -118,7 +117,7 @@ export const createSubProcesses = async (n: number) => {
 
     createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
 
-    createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
+    // createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
 
     // createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
 
@@ -432,22 +431,23 @@ export const createSubProcesses = async (n: number) => {
 const waitForAllWorkersReady = async (
     workerMap: Map<string, { worker: Worker; status: WorkerStatus; type: string }[]>
 ): Promise<void> => {
-    let allReady = false;
+    let allReady = true;
     const executePoll = async (
         resolve: () => void,
         reject: (err: Error) => void | Error
     ) => {
         workerMap.forEach((arrValue, key) => {
-            allReady = arrValue.some(w => {
+            allReady = allReady && !arrValue.some(w => {
                 return w.status == 'Busy';
             });
         });
 
-        if (!allReady) {
+        if (allReady) {
             console.log('all workers are ready!')
             return resolve();
         }
-        setTimeout(executePoll, 1000, resolve, reject);
+        console.log('wait for all workers ready...')
+        setTimeout(executePoll, 60 * 1000, resolve, reject);
     };
     return new Promise(executePoll);
 };
