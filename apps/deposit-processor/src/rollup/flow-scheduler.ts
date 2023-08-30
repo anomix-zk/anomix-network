@@ -169,7 +169,10 @@ export class FlowScheduler {
                     payload: {
                         flowId: this.flowId,// no need actually later version!
                         taskType: FlowTaskType.DEPOSIT_BATCH_MERGE,
-                        data: { transId: depositTreeTrans.id, data: batchParamList }
+                        data: {
+                            transId: depositTreeTrans.id,
+                            data: batchParamList
+                        }
                     }
                 } as ProofTaskDto<any, FlowTask<any>>;
                 await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {

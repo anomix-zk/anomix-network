@@ -102,8 +102,12 @@ export class ProofScheduler {
             payload: {
                 flowId: undefined as any,
                 taskType: FlowTaskType.DEPOSIT_UPDATESTATE,
-                data: { transId, data }
-            }
+                data: {
+                    transId,
+                    feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toBase58(),
+                    data
+                }
+            } as FlowTask<any>
         } as ProofTaskDto<any, FlowTask<any>>;
 
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
@@ -113,11 +117,13 @@ export class ProofScheduler {
         });
     }
 
-    async whenRollupL1TxComeBack(result: { transId: number, tx: any }) {
-        const { transId, tx } = result;
+    async whenRollupL1TxComeBack(result: { transId: number, data: any }) {
+        const { transId, data: tx } = result;
+
         // sign and broadcast it.
         const l1Tx = Mina.Transaction.fromJSON(tx);
-        await l1Tx.sign([PrivateKey.fromBase58(config.sequencerPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
+
+        await l1Tx.sign([PrivateKey.fromBase58(config.txFeePayerPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
             await getConnection().getRepository(DepositTreeTrans).findOne({ where: { id: transId } }).then(async dt => {
                 // insert L1 tx into db, underlying also save to task for 'Tracer-Watcher'
                 dt!.txHash = txHash.hash()!;

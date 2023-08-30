@@ -53,6 +53,7 @@ export class WorldState {
 
             if (taskType == FlowTaskType.DEPOSIT_BATCH_MERGE) {
                 await this.proofScheduler.whenMergedResultComeBack(data);
+
             } else if (taskType == FlowTaskType.DEPOSIT_UPDATESTATE) {
                 await this.proofScheduler.whenRollupL1TxComeBack(data);
             }

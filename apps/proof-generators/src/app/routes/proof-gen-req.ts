@@ -2,6 +2,7 @@ import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse, ProofTaskDto, ProofTaskType, ProofTaskDtoSchma } from "@anomix/types";
 import { parentPort } from "worker_threads";
+import process from "process";
 
 /**
 * recieve proof-gen req from 'deposit-processor' & 'sequencer'
@@ -26,8 +27,9 @@ const handler: RequestHandler<ProofTaskDto<any, any>, null> = async function (
 ): Promise<BaseResponse<string>> {
     const { taskType, index, payload } = req.body
 
-    if (taskType == ProofTaskType.DEPOSIT_JOIN_SPLIT || ProofTaskType.ROLLUP_FLOW || ProofTaskType.USER_FIRST_WITHDRAW || ProofTaskType.USER_WITHDRAW) {
-        parentPort?.postMessage(payload);
+    if ([ProofTaskType.DEPOSIT_JOIN_SPLIT, ProofTaskType.ROLLUP_FLOW, ProofTaskType.USER_FIRST_WITHDRAW, ProofTaskType.USER_WITHDRAW].includes(taskType)) {
+        // parentPort?.postMessage(payload);
+        (process as any).send(req.body)
     }
 
     return {

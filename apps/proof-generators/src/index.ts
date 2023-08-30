@@ -133,12 +133,12 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
 
                         case FlowTaskType.DEPOSIT_UPDATESTATE:
                             {
-                                let payload = {
+                                let proofPayload = {
                                     isProof: false,
-                                    payload: flowTask.data.data
+                                    payload: flowTask.data
                                 } as ProofPayload<any>;
 
-                                subProcessCordinator.depositContract_updateDepositState(payload, sendResultDepositCallback)
+                                subProcessCordinator.depositContract_updateDepositState(proofPayload, sendResultDepositCallback)
                             }
                             break;
 

@@ -3,9 +3,11 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse, FlowTask, FlowTaskType, MerkleTreeId, ProofTaskDto, ProofTaskType } from "@anomix/types";
-import { type } from "os";
 import { getConnection } from "typeorm";
 import { DepositProverOutput } from "@anomix/dao";
+import config from "@/lib/config";
+import { PrivateKey } from "snarkyjs";
+import { $axiosProofGenerator } from "@/lib";
 
 /**
  * trigger rollup contract call
@@ -39,12 +41,20 @@ export const handler: RequestHandler<null, { transId: number }> = async function
             payload: {
                 flowId: undefined as any,
                 taskType: FlowTaskType.DEPOSIT_UPDATESTATE,
-                data: op!.output
+                data: {
+                    transId,
+                    feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toBase58(),
+                    data: op!.output
+                }
             } as FlowTask<any>
         } as ProofTaskDto<any, FlowTask<any>>;
 
-        await this.worldState.processProofResult(proofTaskDto);
-
+        // trigger directly
+        await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
+            if (r.data.code == 1) {
+                throw new Error(r.data.msg);
+            }
+        });
         return {
             code: 0, data: '', msg: ''
         };
