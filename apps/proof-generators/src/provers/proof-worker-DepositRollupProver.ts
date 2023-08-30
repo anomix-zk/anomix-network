@@ -61,6 +61,9 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
         });
     } catch (error) {
         logger.info(error);
+
+        throw error;
+
     }
 }
 
