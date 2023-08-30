@@ -2,7 +2,7 @@
 import { WorldStateDB } from "@/worldstate/worldstate-db";
 import { RollupDB } from "./rollup-db";
 import config from "@/lib/config";
-import { BaseResponse, DepositStatus, L2TxStatus, ProofTaskDto, ProofTaskType, MerkleTreeId, L1TxStatus } from "@anomix/types";
+import { BaseResponse, DepositStatus, L2TxStatus, ProofTaskDto, ProofTaskType, MerkleTreeId, L1TxStatus, DepositTreeTransStatus } from "@anomix/types";
 import { DEPOSIT_ACTION_BATCH_SIZE, DUMMY_FIELD, AnomixEntryContract, ActionType, DepositActionBatch, DepositRollupState, DepositRollupProof, DepositMerkleWitness } from "@anomix/circuits";
 import { WorldState } from "@/worldstate";
 import { IndexDB } from "./index-db";
@@ -138,7 +138,7 @@ export class FlowScheduler {
             depositTreeTrans.startActionIndex = this.depositStartIndexInBatch.toString();
             depositTreeTrans.nextActionHash = this.targetActionsHash.toString();
             depositTreeTrans.nextActionIndex = this.targetHandledActionsNum.toString();
-            depositTreeTrans.status = L1TxStatus.PROCESSING;// initial status
+            depositTreeTrans.status = DepositTreeTransStatus.PROCESSING;// initial status
             depositTreeTrans.startBlock = startBlock;
             depositTreeTrans.endBlock = endBlock;
             depositTreeTrans = await queryRunner.manager.save(depositTreeTrans);// record it in memory for later usage
