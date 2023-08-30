@@ -108,7 +108,7 @@ export class FlowScheduler {
 
                     const leafIndex = this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, includeUnCommit);
                     const merkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DEPOSIT_TREE, leafIndex, includeUnCommit);
-                    this.worldStateDB.appendLeaf(MerkleTreeId.DEPOSIT_TREE, targetAction);
+                    await this.worldStateDB.appendLeaf(MerkleTreeId.DEPOSIT_TREE, targetAction);
 
                     currentActionsHashX = AccountUpdate.Actions.updateSequenceState(currentActionsHashX, AccountUpdate.Actions.hash([targetAction.toFields()]));
 
