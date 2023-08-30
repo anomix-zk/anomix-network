@@ -3,7 +3,7 @@ import { WorldStateDB } from "@/worldstate/worldstate-db";
 import { RollupDB } from "./rollup-db";
 import config from "@/lib/config";
 import { BaseResponse, DepositStatus, L2TxStatus, ProofTaskDto, ProofTaskType, MerkleTreeId, L1TxStatus } from "@anomix/types";
-import { DEPOSIT_ACTION_BATCH_SIZE, DUMMY_FIELD, AnomixEntryContract, ActionType, DepositActionBatch, DepositRollupState, DepositRollupProof } from "@anomix/circuits";
+import { DEPOSIT_ACTION_BATCH_SIZE, DUMMY_FIELD, AnomixEntryContract, ActionType, DepositActionBatch, DepositRollupState, DepositRollupProof, DepositMerkleWitness } from "@anomix/circuits";
 import { WorldState } from "@/worldstate";
 import { IndexDB } from "./index-db";
 import { DepositActionEventFetchRecord, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, MemPlL2Tx } from "@anomix/dao";
@@ -60,24 +60,24 @@ export class FlowScheduler {
         const includeUnCommit = true;
 
         const connection = getConnection();
-
-        const depositCommitmentRepo = connection.getRepository(DepositCommitment);
-        const originDcList = await depositCommitmentRepo.find({ where: { status: DepositStatus.PENDING }, order: { id: 'ASC' } }) ?? [];
-        if (originDcList.length == 0) {// if no, end.
-            return;
-        }
-
-        const depositCommitmentList = [...originDcList];
-        const DUMMY_ACTION = DUMMY_FIELD;
-        let dummyActionSize = DEPOSIT_ACTION_BATCH_SIZE - depositCommitmentList.length % DEPOSIT_ACTION_BATCH_SIZE;
-        while (dummyActionSize > 0) {// check if need dummy_actions,
-            depositCommitmentList.push(({ depositNoteCommitment: DUMMY_ACTION } as any) as DepositCommitment)
-            dummyActionSize--;
-        }
-
         const queryRunner = connection.createQueryRunner();
+
         await queryRunner.startTransaction();
         try {
+            const originDcList = await queryRunner.manager.find(DepositCommitment, { where: { status: DepositStatus.PENDING }, order: { id: 'ASC' } }) ?? [];
+            if (originDcList.length == 0) {// if no, end.
+                return;
+            }
+
+            const depositCommitmentList = [...originDcList];
+            const DUMMY_ACTION = DUMMY_FIELD;
+            let dummyActionSize = DEPOSIT_ACTION_BATCH_SIZE - depositCommitmentList.length % DEPOSIT_ACTION_BATCH_SIZE;
+            while (dummyActionSize > 0) {// check if need dummy_actions,
+                const dc = new DepositCommitment();
+                dc.depositNoteCommitment = DUMMY_ACTION.toString();
+                depositCommitmentList.push(dc);
+                dummyActionSize--;
+            }
             // preinsert into tree cache,
             const batchParamList: { depositRollupState: DepositRollupState, depositActionBatch: DepositActionBatch }[] = [];
             let depositRootX = this.depositTreeRootOnchain;
@@ -85,16 +85,19 @@ export class FlowScheduler {
             let currentActionsHashX = this.currentActionsHash;
             const batchCnt = depositCommitmentList.length / DEPOSIT_ACTION_BATCH_SIZE;
             for (let i = 0; i < batchCnt; i++) {
+
+                const actions: Field[] = [];
+                const merkleWitnesses: DepositMerkleWitness[] = [];
                 let param = {
-                    depositRollupState: {
+                    depositRollupState: new DepositRollupState({
                         depositRoot: depositRootX,
                         handledActionsNum: handledActionsNumX,
                         currentActionsHash: currentActionsHashX
-                    } as any as DepositRollupState,
-                    depositActionBatch: {
-                        actions: [],
-                        merkleWitnesses: []
-                    } as any as DepositActionBatch
+                    }),
+                    depositActionBatch: new DepositActionBatch({
+                        actions,
+                        merkleWitnesses
+                    })
                 };
 
                 batchParamList.push(param);
@@ -120,16 +123,10 @@ export class FlowScheduler {
             this.targetDepositRoot = depositRootX;
             this.targetHandledActionsNum = handledActionsNumX;
 
-            // update status to MARKED
-            originDcList.forEach(dc => {
-                dc.status = DepositStatus.MARKED;
-            });
-            depositCommitmentRepo.save(originDcList);
-
             // get the (startBlock, endBlock) of depositTreeTrans
-            const recordIds = depositCommitmentList.map(dc => {
+            const recordIds = new Set(originDcList.map(dc => {
                 return dc.depositActionEventFetchRecordId;
-            })
+            }))
             const depositActionEventFetchRecordRepo = connection.getRepository(DepositActionEventFetchRecord);
             const fetchRecordList = await depositActionEventFetchRecordRepo.find({ where: { id: In([...recordIds]) }, order: { id: 'ASC' } })!;
             const startBlock = fetchRecordList[0].startBlock;
@@ -143,15 +140,20 @@ export class FlowScheduler {
             depositTreeTrans.status = L1TxStatus.PROCESSING;// initial status
             depositTreeTrans.startBlock = startBlock;
             depositTreeTrans.endBlock = endBlock;
-            const depositTreeTransRepo = connection.getRepository(DepositTreeTrans);
-            depositTreeTrans = await depositTreeTransRepo.save(depositTreeTrans);// record it in memory for later usage
+            depositTreeTrans = await queryRunner.manager.save(depositTreeTrans);// record it in memory for later usage
 
             // MUST save the circuit's parameters for later new proof-gen tries
-            const rollupBatchRepo = connection.getRepository(DepositRollupBatch);
-            await rollupBatchRepo.save({
-                inputParam: JSON.stringify(batchParamList),
-                transId: depositTreeTrans.id
-            } as DepositRollupBatch);
+            const batch = new DepositRollupBatch();
+            batch.inputParam = JSON.stringify(batchParamList);
+            batch.transId = depositTreeTrans.id
+            await queryRunner.manager.save(batch);
+
+            // update status to MARKED
+            originDcList.forEach(dc => {
+                dc.depositTreeTransId = depositTreeTrans.id;
+                dc.status = DepositStatus.MARKED;
+            });
+            await queryRunner.manager.save(originDcList);
 
             // commit
             await queryRunner.commitTransaction();
