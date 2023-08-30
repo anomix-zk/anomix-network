@@ -1,6 +1,6 @@
 import { Field, Poseidon, PrivateKey, PublicKey, Signature } from "snarkyjs";
 import { int256ToBuffer } from "./binary";
-import * as bip32 from "bip32";
+import { HDKey } from "@scure/bip32";
 import { Buffer } from "buffer";
 import bs58check from "bs58check";
 
@@ -55,12 +55,15 @@ export function genNewKeyPairBySeed(
     publicKey: PublicKey;
 } {
     const seedBuffer = int256ToBuffer(seed);
-    const masterNode = bip32.fromSeed(seedBuffer);
+    //const masterNode = bip32.fromSeed(seedBuffer);
+    const masterNode = HDKey.fromMasterSeed(seedBuffer);
     let hdPath = getHDpath(accountIndex);
-    const child0 = masterNode.derivePath(hdPath);
+    //const child0 = masterNode.derivePath(hdPath);
+    const child0 = masterNode.derive(hdPath);
     //@ts-ignore
     child0.privateKey[0] &= 0x3f;
-    const childPrivateKey = reverse(child0.privateKey!);
+    //const childPrivateKey = reverse(child0.privateKey!);
+    const childPrivateKey = reverse(Buffer.from(child0.privateKey!));
     const privateKeyHex = `5a01${childPrivateKey.toString("hex")}`;
     const privateKey58 = bs58check.encode(Buffer.from(privateKeyHex, "hex"));
 
