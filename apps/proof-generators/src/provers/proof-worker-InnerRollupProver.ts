@@ -6,7 +6,7 @@ import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
 import { ProofTaskType, FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 
-const logger = getLogger('proof-worker');
+const logger = getLogger('pWorker-InnerRollupProver');
 
 export { initWorker };
 

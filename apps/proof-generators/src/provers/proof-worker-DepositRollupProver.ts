@@ -1,12 +1,10 @@
-import { Field, PublicKey, Proof, Mina, Signature, VerificationKey } from 'snarkyjs';
-import config from "../lib/config";
 
-import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, AnomixRollupContract, WithdrawAccount, AnomixEntryContract, InnerRollupInput, JoinSplitProof, InnerRollupOutput, InnerRollupProof, BlockProveInput, JoinSplitDepositInput, RollupProof, LowLeafWitnessData, NullifierMerkleWitness, WithdrawNoteWitnessData, DepositActionBatch, DepositRollupState, DepositRollupProof } from "@anomix/circuits";
-import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
-import { ProofTaskType, FlowTaskType } from '@anomix/types';
+import { DepositRollupProver, DepositActionBatch, DepositRollupState, DepositRollupProof } from "@anomix/circuits";
+import { activeMinaInstance } from '@anomix/utils';
+import { FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 
-const logger = getLogger('proof-worker');
+const logger = getLogger('pWorker-DepositRollupProver');
 
 export { initWorker };
 
@@ -18,7 +16,7 @@ function processMsgFromMaster() {
         switch (message.type) {
 
             case `${FlowTaskType[FlowTaskType.DEPOSIT_BATCH]}`:
-                execCircuit(message, async () => {
+                await execCircuit(message, async () => {
                     let params = message.payload as {
                         depositRollupState: DepositRollupState,
                         depositActionBatch: DepositActionBatch
@@ -27,7 +25,7 @@ function processMsgFromMaster() {
                 });
                 break;
             case `${FlowTaskType[FlowTaskType.DEPOSIT_MERGE]}`:
-                execCircuit(message, async () => {
+                await execCircuit(message, async () => {
                     let params = message.payload as {
                         DepositRollupProof1: DepositRollupProof,
                         DepositRollupProof2: DepositRollupProof
@@ -82,3 +80,5 @@ const initWorker = async () => {
     });
     logger.info(`[WORKER ${process.pid}] new worker ready`);
 };
+
+await initWorker();

@@ -1,12 +1,12 @@
-import { Field, PublicKey, Proof, Mina, Signature, VerificationKey } from 'snarkyjs';
+import { PublicKey, Mina } from 'snarkyjs';
 import config from "../lib/config";
 
-import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, AnomixRollupContract, WithdrawAccount, AnomixEntryContract, InnerRollupInput, JoinSplitProof, InnerRollupOutput, InnerRollupProof, BlockProveInput, JoinSplitDepositInput, RollupProof, LowLeafWitnessData, NullifierMerkleWitness, WithdrawNoteWitnessData, DepositActionBatch, DepositRollupState, DepositRollupProof } from "@anomix/circuits";
+import { DepositRollupProver, AnomixEntryContract, DepositRollupProof } from "@anomix/circuits";
 import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
-import { ProofTaskType, FlowTaskType } from '@anomix/types';
+import { FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 
-const logger = getLogger('proof-worker');
+const logger = getLogger(`pWorker-AnomixEntryContract`);
 
 export { initWorker };
 
@@ -26,9 +26,11 @@ function processMsgFromMaster() {
                     const addr = PublicKey.fromBase58(config.entryContractAddress);
                     await syncAcctInfo(addr);// fetch account.
                     const entryContract = new AnomixEntryContract(addr);
+
                     let tx = await Mina.transaction(params.feePayer, () => {
                         entryContract.updateDepositState(params.depositRollupProof);
                     });
+
                     return tx;
                 });
                 break;

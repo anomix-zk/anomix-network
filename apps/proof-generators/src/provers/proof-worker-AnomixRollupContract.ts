@@ -1,12 +1,12 @@
-import { Field, PublicKey, Proof, Mina, Signature, VerificationKey } from 'snarkyjs';
+import { Field, PublicKey, Mina, Signature } from 'snarkyjs';
 import config from "../lib/config";
 
-import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, AnomixRollupContract, WithdrawAccount, AnomixEntryContract, InnerRollupInput, JoinSplitProof, InnerRollupOutput, InnerRollupProof, BlockProveInput, JoinSplitDepositInput, RollupProof, LowLeafWitnessData, NullifierMerkleWitness, WithdrawNoteWitnessData, DepositActionBatch, DepositRollupState, DepositRollupProof } from "@anomix/circuits";
+import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, AnomixRollupContract, WithdrawAccount, AnomixEntryContract, RollupProof } from "@anomix/circuits";
 import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
-import { ProofTaskType, FlowTaskType } from '@anomix/types';
+import { FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 
-const logger = getLogger('proof-worker');
+const logger = getLogger('pWorker-AnomixRollupContract');
 
 export { initWorker };
 
@@ -21,64 +21,20 @@ function processMsgFromMaster() {
                 execCircuit(message, async () => {
                     let params = message.payload as {
                         feePayer: PublicKey,
-                        innerRollupProof1: RollupProof,
-                        innerRollupProof2: Signature
+                        proof: RollupProof,
+                        operatorSign: Signature,
+                        entryDepositRoot: Field
                     }
 
                     const addr = PublicKey.fromBase58(config.rollupContractAddress);
                     await syncAcctInfo(addr);// fetch account.
                     const rollupContract = new AnomixRollupContract(addr);
                     let tx = await Mina.transaction(params.feePayer, () => {
-                        rollupContract.updateRollupState(params.innerRollupProof1, params.innerRollupProof2)
+                        rollupContract.updateRollupState(params.proof, params.operatorSign, params.entryDepositRoot)
                     });
                     return tx;
                 });
                 break;
-
-
-
-            case `${ProofTaskType[ProofTaskType.USER_FIRST_WITHDRAW]}`:
-                execCircuit(message, async () => {
-                    const params = message.payload as {
-                        feePayer: PublicKey,
-                        verificationKey: VerificationKey,
-                        withdrawNoteWitnessData: WithdrawNoteWitnessData,
-                        lowLeafWitness: LowLeafWitnessData,
-                        oldNullWitness: NullifierMerkleWitness
-                    }
-
-                    const addr = PublicKey.fromBase58(config.rollupContractAddress);
-                    await syncAcctInfo(addr);// fetch account.
-                    const rollupContract = new AnomixRollupContract(addr);
-                    let tx = await Mina.transaction(params.feePayer, () => {
-                        rollupContract.firstWithdraw(params.verificationKey, params.withdrawNoteWitnessData, params.lowLeafWitness, params.oldNullWitness)
-                    });
-
-                    return tx;
-                });
-                break;
-            case `${ProofTaskType[ProofTaskType.USER_WITHDRAW]}`:
-                execCircuit(message, async () => {
-                    const params = message.payload as {
-                        feePayer: PublicKey,
-                        verificationKey: VerificationKey,
-                        withdrawNoteWitnessData: WithdrawNoteWitnessData,
-                        lowLeafWitness: LowLeafWitnessData,
-                        oldNullWitness: NullifierMerkleWitness
-                    }
-
-                    const addr = PublicKey.fromBase58(config.rollupContractAddress);
-                    await syncAcctInfo(addr);// fetch account.
-                    const rollupContract = new AnomixRollupContract(addr);
-                    let tx = await Mina.transaction(params.feePayer, () => {
-                        rollupContract.withdraw(params.withdrawNoteWitnessData, params.lowLeafWitness, params.oldNullWitness)
-                    });
-
-                    return tx;
-                });
-                break;
-
-
 
             default:
                 throw Error(`Unknown message ${message}`);

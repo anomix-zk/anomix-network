@@ -4,7 +4,7 @@ import { activeMinaInstance } from '@anomix/utils';
 import { ProofTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 
-const logger = getLogger('proof-worker');
+const logger = getLogger('pWorker-JoinSplitProver');
 
 export { initWorker };
 

@@ -1,7 +1,7 @@
 import os from 'os';
-import cluster from 'cluster';
+import cluster, { Worker } from 'cluster';
 import { PublicKey, Signature, VerificationKey } from 'snarkyjs';
-import cp, { ChildProcess, ChildProcess as Worker } from "child_process";
+import cp from "child_process";
 
 import { ProofPayload } from './constant';
 import {
@@ -12,7 +12,6 @@ import { ProofTaskType, FlowTaskType } from '@anomix/types';
 import { getLogger } from "./lib/logUtils";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-
 
 const logger = getLogger('create-sub-processes');
 
@@ -43,8 +42,6 @@ export type SubProcessCordinator = {
     rollupContract_updateRollupState: (proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) => Promise<ProofPayload<any>>
 };
 
-type WorkerStatus = 'IsReady' | 'Busy';
-
 export const createSubProcesses = async (n: number) => {
     let cores = os.cpus().length - 2;
     logger.info(`Number of CPUs is ${cores}`);
@@ -61,7 +58,7 @@ export const createSubProcesses = async (n: number) => {
     const CircuitName_InnerRollupProver = 'InnerRollupProver';
     const CircuitName_BlockProver = 'BlockProver';
     const CircuitName_AnomixRollupContract = 'AnomixRollupContract';
-    let workerMap = new Map<string, { worker: Worker, status: WorkerStatus, type: string }[]>([
+    let workerMap = new Map<string, { worker: Worker; status: WorkerStatus; type: string }[]>([
         [CircuitName_DepositRollupProver, []],
         [CircuitName_AnomixEntryContract, []],
         [CircuitName_JoinSplitProver, []],
@@ -71,6 +68,7 @@ export const createSubProcesses = async (n: number) => {
     ]);
 
     const cnt_DepositRollupProver = 1;
+
     // const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_AnomixEntryContract = 1;// consider L1Tx execution one by one
     const cnt_JoinSplitProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
@@ -78,55 +76,82 @@ export const createSubProcesses = async (n: number) => {
     const cnt_BlockProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_AnomixRollupContract = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);// consider withdrawal scene in parallel
 
-    const createCircuitProcessor = (proverCnt: number, circuitName: string) => {
-        const createFn = (proverCnt: number, circuitName: string) => {
-            let worker = cp.fork(__dirname.concat('/provers/proof-worker-').concat(circuitName).concat('.js'), [circuitName]);
-
-            let workerEntity: { worker: Worker, status: WorkerStatus, type: string } = { worker, status: 'Busy', type: circuitName };
-            // let workerEntity = { worker, status: 'Busy', type: circuitName };
-            worker.on('online', () => {
-                logger.info(`${circuitName} worker is online...`);
-                workerMap.get(circuitName)!.push(workerEntity);
-            });
-            worker.on('exit', (exitCode: number) => {
-                logger.info(`${circuitName} worker existed`);
-
-                const index = workerMap.get(circuitName)!.findIndex((t, i) => {
-                    return t.worker == worker;
-                });
-                workerMap.get(circuitName)!.splice(index, 1);
-
-                // create a new one again
-                createFn(proverCnt, circuitName);
-            });
-            worker.on('message', (message: { type: string }) => {// change to 'IsReady'
-                message = JSON.parse(JSON.stringify(message));
-                switch (message.type) {
-                    case 'isReady':
-                        workerEntity.status = 'IsReady';
-                        break;
-                    default:
-                        break;
-                }
-            });
-        }
-
-        for (let index = 0; index < proverCnt; index++) {
-            createFn(proverCnt, circuitName);
-        }
+    for (let index = 0; index < cnt_DepositRollupProver; index++) {
+        /*
+        cluster.setupPrimary({
+            // execArgv: [CircuitName_DepositRollupProver.concat('1')],
+            args: [CircuitName_DepositRollupProver],
+            exec: __dirname.concat('/provers/proof-worker-').concat(CircuitName_DepositRollupProver).concat('.js')
+        });
+        let worker = cluster.fork(); 
+        */
+        let worker = cp.fork(__dirname.concat('/provers/proof-worker-').concat(CircuitName_DepositRollupProver).concat('.js'), [CircuitName_DepositRollupProver]);
+        workerMap.get(CircuitName_DepositRollupProver)!.push({ worker, status: 'Busy', type: CircuitName_DepositRollupProver });
     }
-
-    createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
-
-    createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
-
-    createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
-
-    createCircuitProcessor(cnt_InnerRollupProver, CircuitName_InnerRollupProver);
-
-    createCircuitProcessor(cnt_BlockProver, CircuitName_BlockProver);
-
-    createCircuitProcessor(cnt_AnomixRollupContract, CircuitName_AnomixRollupContract);
+    /* 
+        for (let index = 0; index < cnt_AnomixEntryContract; index++) {
+            cluster.setupPrimary({
+                execArgv: [CircuitName_AnomixEntryContract],
+    
+                exec: __dirname.concat('/provers/proof-worker-').concat(CircuitName_AnomixEntryContract).concat('.js')
+            });
+            let worker = cluster.fork();
+            workerMap.get(CircuitName_AnomixEntryContract)!.push({ worker, status: 'Busy', type: CircuitName_AnomixEntryContract });
+        }
+    
+        for (let index = 0; index < cnt_JoinSplitProver; index++) {
+            cluster.setupPrimary({
+                execArgv: [CircuitName_JoinSplitProver],
+    
+                exec: __dirname.concat('/provers/proof-worker-').concat(CircuitName_JoinSplitProver).concat('.js')
+            });
+            let worker = cluster.fork();
+            workerMap.get(CircuitName_JoinSplitProver)!.push({ worker, status: 'Busy', type: CircuitName_JoinSplitProver });
+        }
+    
+        for (let index = 0; index < cnt_InnerRollupProver; index++) {
+            cluster.setupPrimary({
+                execArgv: [CircuitName_InnerRollupProver],
+    
+                exec: __dirname.concat('/provers/proof-worker-').concat(CircuitName_InnerRollupProver).concat('.js')
+            });
+            let worker = cluster.fork();
+            workerMap.get(CircuitName_InnerRollupProver)!.push({ worker, status: 'Busy', type: CircuitName_InnerRollupProver });
+        }
+    
+        for (let index = 0; index < cnt_BlockProver; index++) {
+            cluster.setupPrimary({
+                execArgv: [CircuitName_BlockProver],
+    
+                exec: __dirname.concat('/provers/proof-worker-').concat(CircuitName_BlockProver).concat('.js')
+            });
+            let worker = cluster.fork();
+            workerMap.get(CircuitName_BlockProver)!.push({ worker, status: 'Busy', type: CircuitName_BlockProver });
+        }
+    
+        for (let index = 0; index < cnt_AnomixRollupContract; index++) {
+            cluster.setupPrimary({
+                execArgv: [CircuitName_AnomixRollupContract],
+    
+                exec: __dirname.concat('/provers/proof-worker-').concat(CircuitName_AnomixRollupContract).concat('.js')
+            });
+            let worker = cluster.fork();
+            workerMap.get(CircuitName_AnomixRollupContract)!.push({ worker, status: 'Busy', type: CircuitName_AnomixRollupContract });
+        }
+     */
+    cluster.on('message', (worker, message, signal) => {
+        message = JSON.parse(JSON.stringify(message));
+        const workers = workerMap.get(message.type)!;
+        switch (message.status) {
+            case 'isReady':
+                workers.find(
+                    (w) => w.worker.process.pid! == worker.process!.pid!
+                )!.status = 'IsReady';
+                break;
+            default:
+                break;
+        }
+    });
 
     await waitForAllWorkersReady(workerMap);
 
@@ -160,8 +185,7 @@ export const createSubProcesses = async (n: number) => {
 
                             worker?.worker!.on('message', (message: any) => {
                                 workerMap.get(CircuitName_JoinSplitProver)!.find(
-                                    // (w) => w.worker.process.pid == worker!.worker.process.pid
-                                    (w) => w.worker.pid == worker!.worker.pid
+                                    (w) => w.worker.process.pid == worker!.worker.process.pid
                                 )!.status = 'IsReady';
 
                                 try {
@@ -346,8 +370,8 @@ export const createSubProcesses = async (n: number) => {
                     const msg = {
                         type: `${FlowTaskType[FlowTaskType.DEPOSIT_UPDATESTATE]}`,
                         payload: {
-                            feePayer: PublicKey.fromBase58(proofPayload.payload.feePayer),
-                            depositRollupProof: proofPayload.payload.data
+                            feePayer: proofPayload.payload.feePayer,
+                            depositRollupProof: proofPayload.payload.depositRollupProof
                         } as {
                             feePayer: PublicKey,
                             depositRollupProof: DepositRollupProof
@@ -427,22 +451,23 @@ export const createSubProcesses = async (n: number) => {
     } as SubProcessCordinator;
 };
 
+type WorkerStatus = 'IsReady' | 'Busy';
+
 const waitForAllWorkersReady = async (
     workerMap: Map<string, { worker: Worker; status: WorkerStatus; type: string }[]>
 ): Promise<void> => {
-    let allReady = false;
+    let notAllReady = false;
     const executePoll = async (
         resolve: () => void,
         reject: (err: Error) => void | Error
     ) => {
         workerMap.forEach((arrValue, key) => {
-            allReady = arrValue.some(w => {
+            notAllReady = arrValue.some(w => {
                 return w.status == 'Busy';
             });
         });
 
-        if (!allReady) {
-            console.log('all workers are ready!')
+        if (!notAllReady) {
             return resolve();
         }
         setTimeout(executePoll, 1000, resolve, reject);
@@ -464,10 +489,12 @@ function generateProof(
 
     }).then(workerEntity => {
         let worker = workerEntity as { worker: Worker, status: WorkerStatus, type: string };
+
+        worker.worker!.send(msg);
+
         worker.worker!.on('message', (message: any) => {
             workers.find(
-                //(w) => w.worker.process.pid == worker!.worker.process.pid
-                (w) => w.worker.pid == worker!.worker.pid
+                (w) => w.worker.process.pid == worker!.worker.process.pid
             )!.status = 'IsReady';
             try {
                 let proofJson = message.payload;
@@ -484,9 +511,6 @@ function generateProof(
                 reject(error);
             }
         });
-
-        // async exec
-        worker.worker!.send(msg);
     });
 }
 
