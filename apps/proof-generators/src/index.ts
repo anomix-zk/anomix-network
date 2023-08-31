@@ -33,7 +33,7 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
     httpWorker.on('message', (proofTaskDto: ProofTaskDto<any, any>) => {
         try {
             const sendResultDepositCallback = async (p: any) => {
-                proofTaskDto.payload.data.data = p;
+                proofTaskDto.payload.data.data = p.payload;
                 await $axiosDeposit.post('/proof-result', proofTaskDto).then(value => {
                     console.log('$axiosDeposit.post to /proof-result, response:', value);
                 }).catch(reason => {
