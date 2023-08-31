@@ -43,7 +43,7 @@ export const handler: RequestHandler<null, { transId: number }> = async function
                 taskType: FlowTaskType.DEPOSIT_UPDATESTATE,
                 data: {
                     transId,
-                    feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toBase58(),
+                    feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toPublicKey().toBase58(),
                     data: depositProverOutput!.output
                 }
             } as FlowTask<any>
