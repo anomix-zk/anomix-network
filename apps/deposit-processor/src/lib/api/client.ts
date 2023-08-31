@@ -8,11 +8,10 @@ export const $axiosDeposit = axios.create({
 
 export const $axiosProofGenerator = axios.create({
     baseURL: `${config.httpProtocol}://${config.proofGeneratorHost}:${config.proofGeneratorPort}`,
-    withCredentials: true,
 });
 
 export const $axiosCoordinator = axios.create({
-    baseURL: `${config.httpProtocol}://${config.proofGeneratorHost}:${config.proofGeneratorPort}`,
+    baseURL: `${config.httpProtocol}://${config.coordinatorHost}:${config.coordinatorPort}`,
     withCredentials: true,
 });
 
