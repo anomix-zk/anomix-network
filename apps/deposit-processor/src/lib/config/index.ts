@@ -82,6 +82,7 @@ const config = {
     coordinatorHost: <string>process.env.COORDINATOR_HOST || '127.0.0.1',
     coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT ?? 8083),
 
+    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http'
 
 }
 

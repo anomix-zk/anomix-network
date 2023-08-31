@@ -51,6 +51,7 @@ const config = {
     rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
 
     subProcessCnt: <number>Number(<string>process.env.PROOR_GENERATOR_SUB_PROCESSOR_COUNT ?? 1),
+    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http'
 }
 
 export default config

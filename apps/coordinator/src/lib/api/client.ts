@@ -2,12 +2,12 @@ import config from '../config';
 import axios from 'axios';
 
 export const $axiosSeq = axios.create({
-    baseURL: `${config.sequencerHost}:${config.sequencerPort}`,
+    baseURL: `${config.httpProtocol}://${config.sequencerHost}:${config.sequencerPort}`,
     withCredentials: true,
 });
 
 export const $axiosDeposit = axios.create({
-    baseURL: `${config.depositProcessorHost}:${config.depositProcessorPort}`,
+    baseURL: `${config.httpProtocol}://${config.depositProcessorHost}:${config.depositProcessorPort}`,
     withCredentials: true,
 });
 
