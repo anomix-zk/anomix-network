@@ -17,20 +17,29 @@ function processMsgFromMaster() {
 
             case `${FlowTaskType[FlowTaskType.DEPOSIT_BATCH]}`:
                 await execCircuit(message, async () => {
-                    let params = message.payload as {
-                        depositRollupState: DepositRollupState,
-                        depositActionBatch: DepositActionBatch
+                    let params = {
+                        depositRollupState: new DepositRollupState(DepositRollupState.fromJSON(message.payload.depositRollupState)),
+                        depositActionBatch: new DepositActionBatch(DepositActionBatch.fromJSON(message.payload.depositActionBatch))
                     }
                     return await DepositRollupProver.commitActionBatch(params.depositRollupState, params.depositActionBatch)
                 });
                 break;
+
             case `${FlowTaskType[FlowTaskType.DEPOSIT_MERGE]}`:
                 await execCircuit(message, async () => {
-                    let params = message.payload as {
-                        DepositRollupProof1: DepositRollupProof,
-                        DepositRollupProof2: DepositRollupProof
+                    // let params = message.payload as {
+                    //     depositRollupProof1: DepositRollupProof,
+                    //     depositRollupProof2: DepositRollupProof
+                    // }
+
+                    let params = {
+                        depositRollupProof1: DepositRollupProof.fromJSON(message.payload.depositRollupProof1),
+                        depositRollupProof2: DepositRollupProof.fromJSON(message.payload.depositRollupProof2)
                     }
-                    return await DepositRollupProver.merge(params.DepositRollupProof1, params.DepositRollupProof2)
+
+                    const depositRollupProof1 = params.depositRollupProof1;
+                    const depositRollupProof2 = params.depositRollupProof2;
+                    return await DepositRollupProver.merge(depositRollupProof1, depositRollupProof2)
                 });
                 break;
 
@@ -83,7 +92,7 @@ const initWorker = async () => {
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    // await DepositRollupProver.compile();
+    await DepositRollupProver.compile();
 
     // recieve message from main process...
     processMsgFromMaster();
