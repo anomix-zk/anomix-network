@@ -33,8 +33,8 @@ export const handler: RequestHandler<null, { transId: number }> = async function
     try {
         const transId = req.params.transId;
 
-        const outputRepo = getConnection().getRepository(DepositProverOutput);
-        const op = await outputRepo.findOne({ where: { transId } });
+        const depositProverOutputRepo = getConnection().getRepository(DepositProverOutput);
+        const depositProverOutput = await depositProverOutputRepo.findOne({ where: { transId } });
         const proofTaskDto = {
             taskType: ProofTaskType.ROLLUP_FLOW,
             index: undefined,
@@ -44,7 +44,7 @@ export const handler: RequestHandler<null, { transId: number }> = async function
                 data: {
                     transId,
                     feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toBase58(),
-                    data: op!.output
+                    data: depositProverOutput!.output
                 }
             } as FlowTask<any>
         } as ProofTaskDto<any, FlowTask<any>>;
@@ -54,6 +54,8 @@ export const handler: RequestHandler<null, { transId: number }> = async function
             if (r.data.code == 1) {
                 throw new Error(r.data.msg);
             }
+        }).catch(reason => {
+            console.log(reason);
         });
         return {
             code: 0, data: '', msg: ''
