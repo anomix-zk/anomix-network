@@ -86,8 +86,8 @@ const initWorker = async () => {
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    // await DepositRollupProver.compile();
-    // await AnomixEntryContract.compile();
+    await DepositRollupProver.compile();
+    await AnomixEntryContract.compile();
 
     // recieve message from main process...
     processMsgFromMaster();
