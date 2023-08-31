@@ -1,6 +1,6 @@
 import os from 'os';
 import cluster from 'cluster';
-import { PublicKey, Signature, VerificationKey } from 'snarkyjs';
+import { PublicKey, Signature, VerificationKey, Field } from 'snarkyjs';
 import cp, { ChildProcess, ChildProcess as Worker } from "child_process";
 
 import { ProofPayload } from './constant';
@@ -114,9 +114,9 @@ export const createSubProcesses = async (n: number) => {
         }
     }
 
-    createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
+    // createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
 
-    // createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
+    createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
 
     // createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
 
@@ -273,12 +273,14 @@ export const createSubProcesses = async (n: number) => {
                         type: `${FlowTaskType[FlowTaskType.ROLLUP_CONTRACT_CALL]}`,
                         payload: {
                             feePayer: proofPayload.payload.feePayer,
-                            innerRollupProof1: proofPayload.payload.innerRollupProof1,
-                            innerRollupProof2: proofPayload.payload.innerRollupProof2
+                            proof: proofPayload.payload.proof,
+                            operatorSign: proofPayload.payload.operatorSign,
+                            entryDepositRoot: proofPayload.payload.entryDepositRoot
                         } as {
                             feePayer: PublicKey,
-                            innerRollupProof1: RollupProof,
-                            innerRollupProof2: Signature
+                            proof: RollupProof,
+                            operatorSign: Signature
+                            entryDepositRoot: Field
                         }
                     };
 
@@ -320,14 +322,21 @@ export const createSubProcesses = async (n: number) => {
                     resolve: (payload: ProofPayload<any>) => any,
                     reject: (err: any) => any | any
                 ) => {
-                    // add check if (x/y.payload instanceOf DepositRollupProof)！！！！！！！
-                    const msg = {
+                    let msg = {
                         type: `${FlowTaskType[FlowTaskType.DEPOSIT_MERGE]}`,
-                        payload: { depositRollupProof1: x.payload, depositRollupProof2: y.payload } as {
-                            depositRollupProof1: DepositRollupProof,
-                            depositRollupProof2: DepositRollupProof
+                        payload: {
+                            depositRollupProof1: x.payload,
+                            depositRollupProof2: y.payload
                         },
                     };
+
+                    // if the method is triggered by the same process, then no need DepositRollupProof.fromJSON(*), otherwise need it!
+                    if (!(x.payload instanceof DepositRollupProof)) {
+                        msg.payload.depositRollupProof1 = DepositRollupProof.fromJSON(x.payload);
+                    }
+                    if (!(y.payload instanceof DepositRollupProof)) {
+                        msg.payload.depositRollupProof2 = DepositRollupProof.fromJSON(y.payload);
+                    }
 
                     const fromJsonFn = (proofJson: any) => {
                         return DepositRollupProof.fromJSON(proofJson);
@@ -335,7 +344,6 @@ export const createSubProcesses = async (n: number) => {
 
                     generateProof(workerMap.get(CircuitName_DepositRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
 
-                    
                 }
             );
         },
@@ -349,13 +357,9 @@ export const createSubProcesses = async (n: number) => {
                     const msg = {
                         type: `${FlowTaskType[FlowTaskType.DEPOSIT_UPDATESTATE]}`,
                         payload: {
-                            feePayer: PublicKey.fromBase58(proofPayload.payload.feePayer),
+                            feePayer: proofPayload.payload.feePayer,
                             fee: proofPayload.payload.fee,
                             depositRollupProof: proofPayload.payload.data
-                        } as {
-                            feePayer: PublicKey,
-                            fee: number,
-                            depositRollupProof: DepositRollupProof
                         }
                     };
 

@@ -19,10 +19,10 @@ function processMsgFromMaster() {
 
             case `${FlowTaskType[FlowTaskType.DEPOSIT_UPDATESTATE]}`:
                 execCircuit(message, async () => {
-                    const params = message.payload as {
-                        feePayer: PublicKey,
-                        fee: number,
-                        depositRollupProof: DepositRollupProof
+                    const params = {
+                        feePayer: PublicKey.fromBase58(message.payload.feePayer),
+                        fee: message.payload.fee,
+                        depositRollupProof: DepositRollupProof.fromJSON(message.payload.depositRollupProof)
                     }
                     const addr = PublicKey.fromBase58(config.entryContractAddress);
                     await syncAcctInfo(addr);// fetch account.
@@ -31,6 +31,7 @@ function processMsgFromMaster() {
                     let tx = await Mina.transaction({ sender: params.feePayer, fee: params.fee }, () => {
                         entryContract.updateDepositState(params.depositRollupProof);
                     });
+                    await tx.prove();
 
                     return tx;
                 });
