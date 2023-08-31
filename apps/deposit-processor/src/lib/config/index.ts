@@ -56,8 +56,8 @@ const config = {
     },
     depositProcessorHost: <string>process.env.DEPOSIT_PROCESSOR_HOST || '127.0.0.1',
     depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT ?? 8082),
-    proofGeneratorHost: <string>process.env.ROLLUP_SEQUENCER_HOST || '127.0.0.1',
-    proofGeneratorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8081),
+    proofGeneratorHost: <string>process.env.PROOF_GENERATOR_HOST || '127.0.0.1',
+    proofGeneratorPort: <number>Number(<string>process.env.PROOF_GENERATOR_PORT ?? 8081),
 
     depositRollup: {
         batchNum: <number>Number(<string>process.env.DEPOSIT_ROLLUP_BATCH_NUM ?? 8),
