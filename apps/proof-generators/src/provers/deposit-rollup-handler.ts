@@ -55,7 +55,7 @@ export const depositRollupBatchAndMerge = async (subProcessCordinator: SubProces
 
     // send back to deposit-processor
     if (sendCallBack) {
-        await sendCallBack(res);
+        await sendCallBack(res.payload);
     }
 
 };
