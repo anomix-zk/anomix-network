@@ -28,6 +28,10 @@
   },
   "devDependencies": {},
   "scripts": {
+    "serve:proof-trigger": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/proof-trigger.js",
+    "serve:mempool-watcher": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/mempool-watcher.js",
+    "serve:task-tracer": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/task-tracer.js",
+    "serve:web-server": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/web-server.js",
     "serve": "tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/index.js",
     "build": "tsc --build tsconfig.json && tsc-alias",
     "buildw": "tsc --build tsconfig.json --watch && (concurrently \"tsc --build tsconfig.json -w\" \"tsc-alias -w\")",
