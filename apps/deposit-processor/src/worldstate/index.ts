@@ -56,7 +56,7 @@ export class WorldState {
                 await this.proofScheduler.whenMergedResultComeBack(data);
 
             } else if (taskType == FlowTaskType.DEPOSIT_UPDATESTATE) {
-                await this.proofScheduler.whenRollupL1TxComeBack(data);
+                await this.proofScheduler.whenDepositRollupL1TxComeBack(data);
             }
         }
     }
