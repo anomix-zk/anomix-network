@@ -19,20 +19,21 @@ function processMsgFromMaster() {
 
             case `${FlowTaskType[FlowTaskType.ROLLUP_TX_BATCH]}`:
                 execCircuit(message, async () => {
-                    const params = message.payload as {
-                        innerRollupInput: InnerRollupInput,
-                        joinSplitProof1: JoinSplitProof,
-                        joinSplitProof2: JoinSplitProof
+                    const params = {
+                        innerRollupInput: new InnerRollupInput(InnerRollupInput.fromJSON(message.payload.innerRollupInput)),
+                        joinSplitProof1: JoinSplitProof.fromJSON(message.payload.joinSplitProof1),
+                        joinSplitProof2: JoinSplitProof.fromJSON(message.payload.joinSplitProof2)
                     }
+
                     return await InnerRollupProver.proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
                 });
                 break;
 
             case `${FlowTaskType[FlowTaskType.ROLLUP_MERGE]}`:
                 execCircuit(message, async () => {
-                    let params = message.payload as {
-                        innerRollupProof1: InnerRollupProof,
-                        innerRollupProof2: InnerRollupProof
+                    let params = {
+                        innerRollupProof1: InnerRollupProof.fromJSON(message.payload.innerRollupProof1),
+                        innerRollupProof2: InnerRollupProof.fromJSON(message.payload.innerRollupProof2)
                     }
                     return await InnerRollupProver.merge(params.innerRollupProof1, params.innerRollupProof2);
                 });

@@ -17,7 +17,7 @@ function processMsgFromMaster() {
 
             case `${ProofTaskType[ProofTaskType.DEPOSIT_JOIN_SPLIT]}`:
                 execCircuit(message, async () => {
-                    let params = message.payload as JoinSplitDepositInput
+                    let params = new JoinSplitDepositInput(JoinSplitDepositInput.fromJSON(message.payload))
                     return await JoinSplitProver.deposit(params)
                 });
                 break;

@@ -19,11 +19,11 @@ function processMsgFromMaster() {
 
             case `${FlowTaskType[FlowTaskType.BLOCK_PROVE]}`:
                 execCircuit(message, async () => {
-                    let params = message.payload as {
-                        innerRollupProof1: BlockProveInput,
-                        innerRollupProof2: InnerRollupProof
+                    let params = {
+                        blockProveInput: new BlockProveInput(BlockProveInput.fromJSON(message.payload.blockProveInput)),
+                        innerRollupProof: InnerRollupProof.fromJSON(message.payload.innerRollupProof)
                     }
-                    return await BlockProver.prove(params.innerRollupProof1, params.innerRollupProof2);
+                    return await BlockProver.prove(params.blockProveInput, params.innerRollupProof);
                 });
                 break;
 
