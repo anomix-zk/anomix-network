@@ -44,7 +44,8 @@ export const handler: RequestHandler<null, { transId: number }> = async function
                 data: {
                     transId,
                     feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toPublicKey().toBase58(),
-                    data: depositProverOutput!.output
+                    fee: 200_000_000,// 0.2 Mina as fee
+                    data: JSON.parse(depositProverOutput!.output)
                 }
             } as FlowTask<any>
         } as ProofTaskDto<any, FlowTask<any>>;
