@@ -113,16 +113,21 @@ export class FlowScheduler {
 
                     const leafIndex = this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, includeUnCommit);
                     const merkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DEPOSIT_TREE, leafIndex, includeUnCommit);
-                    console.log(`leafIndex:`, leafIndex);
                     // assert for test
                     checkMembershipAndAssert(INITIAL_LEAF, Field(leafIndex), merkleWitness, this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, includeUnCommit));
 
-                    await this.worldStateDB.appendLeaf(MerkleTreeId.DEPOSIT_TREE, targetAction);
-
-                    currentActionsHashX = AccountUpdate.Actions.updateSequenceState(currentActionsHashX, AccountUpdate.Actions.hash([targetAction.toFields()]));
-
                     param.depositActionBatch.actions.push(targetAction);
                     param.depositActionBatch.merkleWitnesses.push(merkleWitness);
+
+                    if (targetAction.equals(INITIAL_LEAF).not().toBoolean()) {// skip dummy ones
+                        await this.worldStateDB.appendLeaf(MerkleTreeId.DEPOSIT_TREE, targetAction);
+
+                        currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
+                            currentActionsHashX,// 当前已累积值
+                            AccountUpdate.Actions.hash([targetAction.toFields()]) // 
+                        );
+                        console.log('currentActionsHashX:' + currentActionsHashX.toString());
+                    }
                 }
 
                 depositRootX = this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, includeUnCommit);
