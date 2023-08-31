@@ -13,9 +13,10 @@ export * from './worldstate-db'
 export class WorldState {
     private flow: RollupFlow;
     private proofScheduler: ProofScheduler;
-    depositTreeRootOnchain: any;
 
-    constructor(public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) { }
+    constructor(public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) {
+        this.proofScheduler = new ProofScheduler(this, worldStateDB, rollupDB, indexDB);
+    }
 
     get ongingFlow() {
         return this.flow;

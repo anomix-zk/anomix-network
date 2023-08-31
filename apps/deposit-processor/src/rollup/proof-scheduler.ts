@@ -18,7 +18,7 @@ const logger = getLogger('proof-scheduler');
  * deposit_processor rollup proof-gen flow at 'deposit_tree'
  */
 export class ProofScheduler {
-    constructor(private flowId: string, private worldState: WorldState, private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) { }
+    constructor(private worldState: WorldState, private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) { }
 
     /**
     * update all related status and send to trigger 'AnomixEntryContract.updateDepositState'.
@@ -31,17 +31,18 @@ export class ProofScheduler {
         const queryRunner = connection.createQueryRunner();
         await queryRunner.startTransaction();
         try {
-            const depositProverOutputRepo = connection.getRepository(DepositProverOutput);
-            await depositProverOutputRepo.save({
-                output: proof,
-                transId
-            } as DepositProverOutput);
+            const depositProverOutput = new DepositProverOutput();
+            depositProverOutput.output = JSON.stringify(proof);
+            depositProverOutput.transId = transId;
+            await queryRunner.manager.save(depositProverOutput);
 
             // change status to Proved
             const depositTreeTransRepo = connection.getRepository(DepositTreeTrans);
-            await depositTreeTransRepo.findOne({ where: { id: transId } }).then(depositTreeTrans => {
+            await depositTreeTransRepo.findOne({ where: { id: transId } }).then(async depositTreeTrans => {
                 depositTreeTrans!.status = DepositTreeTransStatus.PROVED;
+                await queryRunner.manager.save(depositTreeTrans);
             })
+
             await queryRunner.commitTransaction();
 
             /*
@@ -82,6 +83,7 @@ export class ProofScheduler {
             */
         } catch (error) {
             logger.error(error);
+            console.error(error);
             await queryRunner.rollbackTransaction();
 
             throw error;

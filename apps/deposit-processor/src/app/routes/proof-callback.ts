@@ -31,7 +31,6 @@ const handler: RequestHandler<ProofTaskDto<any, any>, null> = async function (
         await this.worldState.processProofResult(req.body);
 
     } catch (error) {
-        logger.info(`error: ${req.body}`);
         return {
             code: 1,
             data: '',
