@@ -68,7 +68,6 @@ async function fetchActionsAndEvents() {
             return;
         }
         // fetch pending events
-        // const eventList = await anomixEntryContract.fetchEvents(new UInt32(0)); // Attention: eventList might contain duplicated/exceptional 'events' from GraphQL.
         const eventList = await anomixEntryContract.fetchEvents(UInt32.from(startBlockHeight), endBlockHeight);
         if (eventList.length == 0) {
             console.log('fetch back no events!');
@@ -77,9 +76,12 @@ async function fetchActionsAndEvents() {
 
         await queryRunner.startTransaction(); // save them inside a Mysql.Transaction
         try {
-            eventList.filter(e => {
-                return e.type = 'deposit';
-            }).forEach(async e => {
+            for (let i = eventList.length - 1; i >= 0; i--) {
+                let e = eventList[i];
+                if (e.type != 'deposit') {
+                    continue;
+                }
+
                 endIdx++;
 
                 const txHash = e.event.transactionInfo.transactionHash;
@@ -107,7 +109,7 @@ async function fetchActionsAndEvents() {
                     nextActionHash,
                     hashX
                 );
-            });
+            }
 
             let depositActionEventFetchRecord = new DepositActionEventFetchRecord();
             depositActionEventFetchRecord.startBlock = startBlockHeight; //
