@@ -113,6 +113,7 @@ export class ProofScheduler {
                 }
             } as FlowTask<any>
         } as ProofTaskDto<any, FlowTask<any>>;
+        fs.writeFileSync('./DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
 
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {

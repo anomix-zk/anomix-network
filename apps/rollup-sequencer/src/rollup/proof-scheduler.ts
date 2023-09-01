@@ -1,14 +1,16 @@
 
 import { WorldStateDB, RollupDB, IndexDB } from "@/worldstate";
 import config from "@/lib/config";
-import { BaseResponse, BlockStatus, RollupTaskDto, RollupTaskType, ProofTaskDto, ProofTaskType, FlowTaskType, MerkleProofDto, MerkleTreeId, BlockCacheType } from "@anomix/types";
+import { BaseResponse, BlockStatus, ProofTaskDto, ProofTaskType, FlowTaskType, BlockCacheType } from "@anomix/types";
 import { ActionType, AnomixRollupContract, BlockProveInput, BlockProveOutput, DataMerkleWitness, InnerRollupProof, RollupProof, RootMerkleWitness, ValueNote } from "@anomix/circuits";
 import { BlockProverOutput, Block, InnerRollupBatch, Task, TaskStatus, TaskType, L2Tx, WithdrawInfo, BlockCache } from "@anomix/dao";
-import { Mina, PrivateKey, Poseidon, PublicKey, Field, UInt64, Signature } from 'snarkyjs';
-import { $axiosProofGenerator, $axiosDepositProcessor, $axiosCoordinator, $axiosSeq } from "@/lib";
+import { Mina, PrivateKey, PublicKey, Field, UInt64, Signature } from 'snarkyjs';
+import { $axiosProofGenerator, $axiosDepositProcessor } from "@/lib";
 import { getConnection } from "typeorm";
 import { syncAcctInfo } from "@anomix/utils";
 import { getLogger } from "@/lib/logUtils";
+import fs from "fs";
+
 const logger = getLogger('ProofScheduler');
 
 export class ProofScheduler {
@@ -76,6 +78,7 @@ export class ProofScheduler {
                 data: innerRollupBatchParamList
             }
         }
+        fs.writeFileSync('./ROLLUP_TX_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
 
         // send to proof-generator for exec 'InnerRollupProver.proveTxBatch(*) && merge(*)'
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
@@ -145,6 +148,8 @@ export class ProofScheduler {
                 }
             }
         }
+        fs.writeFileSync('./BLOCK_PROVE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
         // send to proof-generator to exec BlockProver
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {
@@ -249,6 +254,8 @@ export class ProofScheduler {
                 }
             }
         }
+        fs.writeFileSync('./ROLLUP_CONTRACT_CALL_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
         // send to proof-generator to trigger ROLLUP_CONTRACT
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {

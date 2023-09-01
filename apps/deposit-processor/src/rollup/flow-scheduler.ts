@@ -12,7 +12,7 @@ import { syncAcctInfo } from "@anomix/utils";
 import { FlowTask, FlowTaskType } from "@anomix/types";
 import { getConnection, In } from "typeorm";
 import { AccountUpdate, Field, PublicKey, Mina, PrivateKey } from 'snarkyjs';
-import { assert } from "console";
+import fs from "fs";
 import { getLogger } from "@/lib/logUtils";
 import { INITIAL_LEAF } from "@anomix/merkle-tree";
 
@@ -188,6 +188,8 @@ export class FlowScheduler {
                         }
                     }
                 } as ProofTaskDto<any, FlowTask<any>>;
+                fs.writeFileSync('./DEPOSIT_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
                 await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
                     if (r.data.code == 1) {
                         throw new Error(r.data.msg);
