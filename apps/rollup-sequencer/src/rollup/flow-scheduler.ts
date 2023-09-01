@@ -117,7 +117,7 @@ export class FlowScheduler {
         // prepare txFee valueNote
         const feeValueNote = new ValueNote({
             secret: Poseidon.hash([Field.random()]),
-            ownerPk: PrivateKey.fromBase58(config.sequencerPrivateKey).toPublicKey(),
+            ownerPk: PrivateKey.fromBase58(config.rollupContractPrivateKey).toPublicKey(),
             accountRequired: Field(1),
             creatorPk: PublicKey.empty(),
             value: new UInt64(nonDummyTxList.reduce((p, c, i) => {
@@ -157,7 +157,6 @@ export class FlowScheduler {
         await queryRunner.startTransaction();
         try {
             // create a new block
-            const blockRepo = connection.getRepository(Block);
             let block = new Block();
             block.blockHash = '';// TODO
             block.rollupSize = rollupSize;// TODO non-dummy?
@@ -173,29 +172,28 @@ export class FlowScheduler {
             block.totalTxFees = totalTxFee.toString();
             block.txFeeCommitment = txFeeCommitment.toString();
             block.txFeeReceiver = feeValueNote.ownerPk.toBase58();
-            block = await blockRepo.save(block);// save it
+            block = await queryRunner.manager.save(block);// save it
 
             const cachedUpdates = this.worldStateDB.exportCacheUpdates(MerkleTreeId.DATA_TREE);
-            const blockCacheRepo = connection.getRepository(BlockCache);
             const blockCachedUpdates = new BlockCache();
             blockCachedUpdates.blockId = block.id;
             blockCachedUpdates.cache = cachedUpdates;
             blockCachedUpdates.type = BlockCacheType.DATA_TREE_UPDATES;//  0
-            await blockCacheRepo.save(blockCachedUpdates);
+            await queryRunner.manager.save(blockCachedUpdates);
 
             // cache txFee's empty leaf witness
             const blockCachedWitnessTxFee = new BlockCache();
             blockCachedWitnessTxFee.blockId = block.id;
             blockCachedWitnessTxFee.cache = JSON.stringify(txFeeCtEmptyLeafWitness);
             blockCachedWitnessTxFee.type = BlockCacheType.TX_FEE_EMPTY_LEAF_WITNESS;// 1
-            await blockCacheRepo.save(blockCachedWitnessTxFee);
+            await queryRunner.manager.save(blockCachedWitnessTxFee);
 
             // cache dataTreeRoot's empty leaf witness
             const blockCachedWitnessDataRoot = new BlockCache();
             blockCachedWitnessDataRoot.blockId = block.id;
             blockCachedWitnessDataRoot.cache = JSON.stringify(dataRootEmptyLeafWitness);
             blockCachedWitnessDataRoot.type = BlockCacheType.DATA_TREE_ROOT_EMPTY_LEAF_WITNESS;// 2
-            await blockCacheRepo.save(blockCachedWitnessDataRoot);
+            await queryRunner.manager.save(blockCachedWitnessDataRoot);
 
             const txFeeWithdrawInfo = new WithdrawInfo();
             txFeeWithdrawInfo.secret = feeValueNote.secret.toString();
@@ -208,18 +206,15 @@ export class FlowScheduler {
             txFeeWithdrawInfo.noteType = feeValueNote.noteType.toString();
             txFeeWithdrawInfo.outputNoteCommitment = txFeeCommitment.toString();
             txFeeWithdrawInfo.outputNoteCommitmentIdx = txFeeCommitmentIdx;
-            const wInfoRepo = connection.getRepository(WithdrawInfo);
-            await wInfoRepo.save(txFeeWithdrawInfo);
+            await queryRunner.manager.save(txFeeWithdrawInfo);
 
             // del mpL2Tx from memory pool
-            const memPlL2TxRepo = connection.getRepository(MemPlL2Tx);
             const mpL2TxIds = nonDummyTxList.map(tx => {
                 return tx.id;
             })
-            await memPlL2TxRepo.delete(mpL2TxIds);
+            await queryRunner.manager.delete(MemPlL2Tx, mpL2TxIds);
 
             // update L2Tx and move to L2Tx table
-            const l2TxRepo = connection.getRepository(L2Tx);
             nonDummyTxList.forEach((tx, i) => {
                 if (tx.actionType == ActionType.DEPOSIT.toString()) {
                     tx.dataRoot = this.currentDataRoot.toString();
@@ -230,23 +225,21 @@ export class FlowScheduler {
                 tx.blockHash = block.blockHash;
                 tx.indexInBlock = i;
             })
-            await l2TxRepo.save(nonDummyTxList as L2Tx[]);// insert all!
+            await queryRunner.manager.save(nonDummyTxList as L2Tx[]);// insert all!
 
             // save innerRollupBatch
-            const innerRollupBatchRepo = connection.getRepository(InnerRollupBatch);
             const innerRollupBatch = new InnerRollupBatch();
             innerRollupBatch.inputParam = JSON.stringify(innerRollup_proveTxBatchParamList);
             innerRollupBatch.blockId = block.id;
-            await innerRollupBatchRepo.save(innerRollupBatch);
+            await queryRunner.manager.save(innerRollupBatch);
 
             // update DepositStatus.CONFIRMED
-            const depositCommitmentRepo = connection.getRepository(DepositCommitment);
             const dcCommitments = nonDummyTxList.filter(tx => {
                 return tx.actionType == ActionType.DEPOSIT.toString();
             }).map(tx => {
                 return tx.outputNoteCommitment1
             })
-            await depositCommitmentRepo.update({ depositNoteCommitment: In(dcCommitments) }, { status: DepositStatus.CONFIRMED });// TODO imporve here?
+            await queryRunner.manager.update(DepositCommitment, { depositNoteCommitment: In(dcCommitments) }, { status: DepositStatus.CONFIRMED });// TODO imporve here?
 
             // commit
             await queryRunner.commitTransaction();

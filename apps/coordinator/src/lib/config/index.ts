@@ -55,11 +55,11 @@ const config = {
         }
     },
     sequencerHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
-    sequencerPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
+    sequencerPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8080),
     depositProcessorHost: <string>process.env.DEPOSIT_PROCESSOR_HOST || '127.0.0.1',
-    depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT) || 8082,
-    proofGeneratorHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
-    proofGeneratorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8081,
+    depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT ?? 8082),
+    proofGeneratorHost: <string>process.env.PROOF_GENERATOR_HOST || '127.0.0.1',
+    proofGeneratorPort: <number>Number(<string>process.env.PROOF_GENERATOR_PORT ?? 8081),
 
     innerRollup: {
         txCount: <number>Number(<string>process.env.InnerRollupTxCount) || 2,
@@ -68,7 +68,7 @@ const config = {
         innerBatchesCount: <number>Number(<string>process.env.OuterRollupInnerBatchesCount) || 12,
     },
 
-    sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
+    rollupContractPrivateKey: <string>process.env.ROLLUP_CONTRACT_PRIVATE_KEY,
 
     networkInit: <number>Number(<string>process.env.NETWORK_INIT) || 1,
     worldStateDBPath: <string>process.env.LEVELDB_WORLDSTATE_DB_PATH || '/var/leveldb/anomix_world_state_db',
@@ -80,11 +80,6 @@ const config = {
     entryContractAddress: <string>process.env.ENTRY_CONTRACT_ADDRESS || 'B62785kfljj8784990kj0kj90kjjiekljk',
     rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
 
-    depositEndpoint_couldStopMarkDepositActions: `http://${<string>process.env.DEPOSIT_PROCESSOR_HOST}:${<number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT)}/stop-mark`,
-    coordinator_notify_url: `http://${<string>process.env.COORDINATOR_HOST}:${<number>Number(<string>process.env.COORDINATOR_PORT)}/notify`,
-
-    proofSchedulerWorkerNum: <number>Number(<string>process.env.PROOF_SCHEDULER_WORKER_NUM) || 3,
-
     // criterion to trigger seq
     maxMpTxCnt: <number>Number(<string>process.env.MAX_MP_TX_CNT) || 300,
     maxMpTxFeeSUM: <number>Number(<string>process.env.MAX_MP_TX_FEE_SUM) || 5 * 1000_000_000,
@@ -94,6 +89,7 @@ const config = {
     minMpTxFeeToGenBlock: <number>Number(<string>process.env.MIN_MP_TX_FEE_TO_GEN_BLOCK) || 0.09 * 1000_000_000,
     floorMpTxFee: <number>Number(<string>process.env.FLOOR_MP_TX_FEE) || 0.03 * 1000_000_000,
 
+    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http'
 }
 
 export default config

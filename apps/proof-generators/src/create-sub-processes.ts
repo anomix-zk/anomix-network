@@ -1,11 +1,11 @@
 import os from 'os';
 import cluster from 'cluster';
-import { PublicKey, Signature, VerificationKey } from 'snarkyjs';
+import { PublicKey, Signature, VerificationKey, Field } from 'snarkyjs';
 import cp, { ChildProcess, ChildProcess as Worker } from "child_process";
 
 import { ProofPayload } from './constant';
 import {
-    BlockProveInput, DepositActionBatch, DepositRollupProof, DepositRollupState, InnerRollupInput, InnerRollupProof,
+    BlockProveInput, BlockProveOutput, DepositActionBatch, DepositRollupProof, DepositRollupState, InnerRollupInput, InnerRollupProof,
     JoinSplitDepositInput, JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, RollupProof, WithdrawNoteWitnessData
 } from "@anomix/circuits";
 import { ProofTaskType, FlowTaskType } from '@anomix/types';
@@ -70,8 +70,7 @@ export const createSubProcesses = async (n: number) => {
         [CircuitName_AnomixRollupContract, []]
     ]);
 
-    const cnt_DepositRollupProver = 1;
-    // const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
+    const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_AnomixEntryContract = 1;// consider L1Tx execution one by one
     const cnt_JoinSplitProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_InnerRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
@@ -83,13 +82,21 @@ export const createSubProcesses = async (n: number) => {
             let worker = cp.fork(__dirname.concat('/provers/proof-worker-').concat(circuitName).concat('.js'), [circuitName]);
 
             let workerEntity: { worker: Worker, status: WorkerStatus, type: string } = { worker, status: 'Busy', type: circuitName };
-            // let workerEntity = { worker, status: 'Busy', type: circuitName };
-            worker.on('online', () => {
-                logger.info(`${circuitName} worker is online...`);
-                workerMap.get(circuitName)!.push(workerEntity);
+            worker.on('message', (message: { type: string }) => {// change to 'IsReady'
+                message = JSON.parse(JSON.stringify(message));
+                switch (message.type) {
+                    case 'online':
+                        workerMap.get(circuitName)!.push(workerEntity);
+                        break;
+                    case 'isReady':
+                        workerEntity.status = 'IsReady';
+                        break;
+                    default:
+                        break;
+                }
             });
             worker.on('exit', (exitCode: number) => {
-                logger.info(`${circuitName} worker existed`);
+                logger.info(`${circuitName} worker exited`);
 
                 const index = workerMap.get(circuitName)!.findIndex((t, i) => {
                     return t.worker == worker;
@@ -99,16 +106,7 @@ export const createSubProcesses = async (n: number) => {
                 // create a new one again
                 createFn(proverCnt, circuitName);
             });
-            worker.on('message', (message: { type: string }) => {// change to 'IsReady'
-                message = JSON.parse(JSON.stringify(message));
-                switch (message.type) {
-                    case 'isReady':
-                        workerEntity.status = 'IsReady';
-                        break;
-                    default:
-                        break;
-                }
-            });
+
         }
 
         for (let index = 0; index < proverCnt; index++) {
@@ -116,7 +114,7 @@ export const createSubProcesses = async (n: number) => {
         }
     }
 
-    createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
+    // createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
 
     createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
 
@@ -164,24 +162,27 @@ export const createSubProcesses = async (n: number) => {
                                     (w) => w.worker.pid == worker!.worker.pid
                                 )!.status = 'IsReady';
 
-                                try {
-                                    d.data = message.payload as any;// replace the original to the proof result
-                                    sum++;
-                                    logger.info(`jointSplit_deposit: sum: ${sum}`);
+                                if (message.type == 'done') {
+                                    try {
+                                        d.data = message.payload as any;// replace the original to the proof result
+                                        sum++;
+                                        logger.info(`jointSplit_deposit: sum: ${sum}`);
 
-                                    if (sum + 1 == data.length) {// when the proof count is equals to the target, then send the whole results to deposit_processor
-                                        // send back to deposit_processor
-                                        if (sendCallBack) {
-                                            sendCallBack(proofPayload.payload)
+                                        if (sum + 1 == data.length) {// when the proof count is equals to the target, then send the whole results to deposit_processor
+                                            // send back to deposit_processor
+                                            if (sendCallBack) {
+                                                sendCallBack(proofPayload.payload)
+                                            }
+                                            resolve({
+                                                isProof: true,
+                                                payload: data,
+                                            });
                                         }
-                                        resolve({
-                                            isProof: true,
-                                            payload: data,
-                                        });
+                                    } catch (error) {
+                                        reject(error);
                                     }
-                                } catch (error) {
-                                    reject(error);
                                 }
+
                             });
                         })
 
@@ -254,7 +255,7 @@ export const createSubProcesses = async (n: number) => {
                     };
 
                     const fromJsonFn = (proofJson: any) => {
-                        return DepositRollupProof.fromJSON(proofJson);
+                        return RollupProof.fromJSON(proofJson);
                     }
 
                     generateProof(workerMap.get(CircuitName_BlockProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
@@ -269,15 +270,17 @@ export const createSubProcesses = async (n: number) => {
                 ) => {
 
                     const msg = {
-                        type: `${ProofTaskType[ProofTaskType.USER_FIRST_WITHDRAW]}`,
+                        type: `${FlowTaskType[FlowTaskType.ROLLUP_CONTRACT_CALL]}`,
                         payload: {
                             feePayer: proofPayload.payload.feePayer,
-                            innerRollupProof1: proofPayload.payload.innerRollupProof1,
-                            innerRollupProof2: proofPayload.payload.innerRollupProof2
+                            proof: proofPayload.payload.proof,
+                            operatorSign: proofPayload.payload.operatorSign,
+                            entryDepositRoot: proofPayload.payload.entryDepositRoot
                         } as {
                             feePayer: PublicKey,
-                            innerRollupProof1: RollupProof,
-                            innerRollupProof2: Signature
+                            proof: RollupProof,
+                            operatorSign: Signature
+                            entryDepositRoot: Field
                         }
                     };
 
@@ -319,20 +322,28 @@ export const createSubProcesses = async (n: number) => {
                     resolve: (payload: ProofPayload<any>) => any,
                     reject: (err: any) => any | any
                 ) => {
-
-                    const msg = {
+                    let msg = {
                         type: `${FlowTaskType[FlowTaskType.DEPOSIT_MERGE]}`,
-                        payload: { DepositRollupProof1: x.payload, DepositRollupProof2: y.payload } as {
-                            DepositRollupProof1: DepositRollupProof,
-                            DepositRollupProof2: DepositRollupProof
+                        payload: {
+                            depositRollupProof1: x.payload,
+                            depositRollupProof2: y.payload
                         },
                     };
+
+                    // if the method is triggered by the same process, then no need DepositRollupProof.fromJSON(*), otherwise need it!
+                    if (!(x.payload instanceof DepositRollupProof)) {
+                        msg.payload.depositRollupProof1 = DepositRollupProof.fromJSON(x.payload);
+                    }
+                    if (!(y.payload instanceof DepositRollupProof)) {
+                        msg.payload.depositRollupProof2 = DepositRollupProof.fromJSON(y.payload);
+                    }
 
                     const fromJsonFn = (proofJson: any) => {
                         return DepositRollupProof.fromJSON(proofJson);
                     }
 
                     generateProof(workerMap.get(CircuitName_DepositRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
+
                 }
             );
         },
@@ -346,13 +357,9 @@ export const createSubProcesses = async (n: number) => {
                     const msg = {
                         type: `${FlowTaskType[FlowTaskType.DEPOSIT_UPDATESTATE]}`,
                         payload: {
-                            feePayer: PublicKey.fromBase58(proofPayload.payload.feePayer),
+                            feePayer: proofPayload.payload.feePayer,
                             fee: proofPayload.payload.fee,
                             depositRollupProof: proofPayload.payload.data
-                        } as {
-                            feePayer: PublicKey,
-                            fee: number,
-                            depositRollupProof: DepositRollupProof
                         }
                     };
 
@@ -432,22 +439,23 @@ export const createSubProcesses = async (n: number) => {
 const waitForAllWorkersReady = async (
     workerMap: Map<string, { worker: Worker; status: WorkerStatus; type: string }[]>
 ): Promise<void> => {
-    let allReady = false;
+    let allReady = true;
     const executePoll = async (
         resolve: () => void,
         reject: (err: Error) => void | Error
     ) => {
         workerMap.forEach((arrValue, key) => {
-            allReady = arrValue.some(w => {
+            allReady = allReady && !arrValue.some(w => {
                 return w.status == 'Busy';
             });
         });
 
-        if (!allReady) {
+        if (allReady) {
             console.log('all workers are ready!')
             return resolve();
         }
-        setTimeout(executePoll, 1000, resolve, reject);
+        console.log('wait for all workers ready...')
+        setTimeout(executePoll, 60 * 1000, resolve, reject);
     };
     return new Promise(executePoll);
 };
@@ -471,19 +479,22 @@ function generateProof(
                 //(w) => w.worker.process.pid == worker!.worker.process.pid
                 (w) => w.worker.pid == worker!.worker.pid
             )!.status = 'IsReady';
-            try {
-                let proofJson = message.payload;
-                let p = fromJsonFn(proofJson);
-                if (sendCallBack) {
-                    sendCallBack(p);
-                }
 
-                resolve({
-                    isProof: true,
-                    payload: p,
-                });
-            } catch (error) {
-                reject(error);
+            if (message.type == 'done') {
+                try {
+                    let proofJson = message.payload.payload;
+                    if (sendCallBack) {
+                        sendCallBack(proofJson);
+                    }
+
+                    let proof = fromJsonFn(proofJson);
+                    resolve({
+                        isProof: true,
+                        payload: proof,
+                    });
+                } catch (error) {
+                    reject(error);
+                }
             }
         });
 
@@ -502,8 +513,8 @@ function getFreeWorker(
     worker = workers.find((w) => w.status == 'IsReady');
 
     if (worker === undefined) {
-        console.log('no free worker currently, will ask it again 10s later...')
-        setTimeout(getFreeWorker, 10 * 1000, workers, resolve, reject);
+        console.log('no free worker currently, will ask it again 1mins later...')
+        setTimeout(getFreeWorker, 2 * 60 * 1000, workers, resolve, reject);
     } else {
         worker!.status = 'Busy';
         return resolve(worker);

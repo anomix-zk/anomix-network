@@ -59,20 +59,22 @@ const config = {
         }
     },
     sequencerHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
-    sequencerPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
+    sequencerPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8080),
     depositProcessorHost: <string>process.env.DEPOSIT_PROCESSOR_HOST || '127.0.0.1',
     depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT ?? 8082),
-    proofGeneratorHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
-    proofGeneratorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8081),
+    proofGeneratorHost: <string>process.env.PROOF_GENERATOR_HOST || '127.0.0.1',
+    proofGeneratorPort: <number>Number(<string>process.env.PROOF_GENERATOR_PORT ?? 8081),
+
     joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx ?? JoinsplitProofDummyTx)),// TODO
     withdrawAccountVK: VerificationKey.fromJSON(JSON.parse(WithdrawAccountVK)),
+
     innerRollup: {
         txCount: <number>Number(<string>process.env.InnerRollupTxCount ?? 2),
     },
     outRollup: {
         innerBatchesCount: <number>Number(<string>process.env.OuterRollupInnerBatchesCount ?? 12),
     },
-    sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
+    rollupContractPrivateKey: <string>process.env.ROLLUP_CONTRACT_PRIVATE_KEY,
     networkInit: <number>Number(<string>process.env.NETWORK_INIT ?? 1),
     worldStateDBPath: <string>process.env.LEVELDB_WORLDSTATE_DB_PATH || '/var/leveldb/anomix_world_state_db',
     indexedDBPath: <string>process.env.LEVELDB_INDEX_DB_PATH || '/var/leveldb/anomix_index_db',
@@ -85,6 +87,8 @@ const config = {
     coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT ?? 8083),
 
     proofSchedulerWorkerNum: <number>Number(<string>process.env.PROOF_SCHEDULER_WORKER_NUM ?? 3),
+    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http'
+
 }
 
 export default config

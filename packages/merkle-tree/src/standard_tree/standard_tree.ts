@@ -13,7 +13,6 @@ export class StandardTree extends TreeBase implements AppendOnlyTree {
    */
   public async appendLeaves(leaves: Field[]): Promise<void> {
     const numLeaves = this.getNumLeaves(true);
-    console.log('numLeaves: ', numLeaves);
     if (numLeaves + BigInt(leaves.length) - 1n > this.maxIndex) {
       throw Error(`Can't append beyond max index. Max index: ${this.maxIndex}`);
     }

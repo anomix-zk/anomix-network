@@ -3,7 +3,7 @@ import { WorldStateDB } from "@/worldstate/worldstate-db";
 import { RollupDB } from "./rollup-db";
 import config from "@/lib/config";
 import { BaseResponse, DepositStatus, L2TxStatus, ProofTaskDto, ProofTaskType, MerkleTreeId, L1TxStatus, DepositTreeTransStatus } from "@anomix/types";
-import { DEPOSIT_ACTION_BATCH_SIZE, DUMMY_FIELD, AnomixEntryContract, ActionType, DepositActionBatch, DepositRollupState, DepositRollupProof, DepositMerkleWitness } from "@anomix/circuits";
+import { DEPOSIT_ACTION_BATCH_SIZE, DUMMY_FIELD, AnomixEntryContract, ActionType, DepositActionBatch, DepositRollupState, DepositRollupProof, DepositMerkleWitness, checkMembershipAndAssert } from "@anomix/circuits";
 import { WorldState } from "@/worldstate";
 import { IndexDB } from "./index-db";
 import { DepositActionEventFetchRecord, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, MemPlL2Tx } from "@anomix/dao";
@@ -12,8 +12,9 @@ import { syncAcctInfo } from "@anomix/utils";
 import { FlowTask, FlowTaskType } from "@anomix/types";
 import { getConnection, In } from "typeorm";
 import { AccountUpdate, Field, PublicKey, Mina, PrivateKey } from 'snarkyjs';
-import { assert } from "console";
+import fs from "fs";
 import { getLogger } from "@/lib/logUtils";
+import { INITIAL_LEAF } from "@anomix/merkle-tree";
 
 const logger = getLogger('flow-scheduler');
 
@@ -21,9 +22,11 @@ const logger = getLogger('flow-scheduler');
  * deposit_processor rollup flow at 'deposit_tree'
  */
 export class FlowScheduler {
+    private currentHandledActionsNumOnchain: Field
+    private currentTreeRootOnchain: Field
+    private currentActionsHashOnchain: Field
+
     private depositStartIndexInBatch: Field
-    private depositTreeRootOnchain: Field
-    private currentActionsHash: Field
 
     private targetHandledActionsNum: Field
     private targetDepositRoot: Field
@@ -40,12 +43,14 @@ export class FlowScheduler {
         const entryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
         await syncAcctInfo(entryContractAddr);
         const entryContract = new AnomixEntryContract(entryContractAddr);
-        this.depositStartIndexInBatch = entryContract.depositState.get().handledActionsNum;
-        this.depositTreeRootOnchain = entryContract.depositState.get().depositRoot;
-        this.currentActionsHash = entryContract.depositState.get().currentActionsHash;
+        this.currentHandledActionsNumOnchain = entryContract.depositState.get().handledActionsNum;
+        this.currentTreeRootOnchain = entryContract.depositState.get().depositRoot;
+        this.currentActionsHashOnchain = entryContract.depositState.get().currentActionsHash;
 
-        assert(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false) == this.depositStartIndexInBatch.toBigInt());
-        assert(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false).equals(this.depositTreeRootOnchain).toBoolean());
+        this.depositStartIndexInBatch = this.currentHandledActionsNumOnchain.add(1);
+
+        console.assert(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false) == this.depositStartIndexInBatch.toBigInt());
+        console.assert(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false).equals(this.currentTreeRootOnchain).toBoolean());
     }
 
     async start() {
@@ -70,7 +75,7 @@ export class FlowScheduler {
             }
 
             const depositCommitmentList = [...originDcList];
-            const DUMMY_ACTION = DUMMY_FIELD;
+            const DUMMY_ACTION = INITIAL_LEAF;
             const mod = depositCommitmentList.length % DEPOSIT_ACTION_BATCH_SIZE;
             let dummyActionSize = mod > 0 ? DEPOSIT_ACTION_BATCH_SIZE - mod : 0;
             while (dummyActionSize > 0) {// check if need dummy_actions,
@@ -81,12 +86,11 @@ export class FlowScheduler {
             }
             // preinsert into tree cache,
             const batchParamList: { depositRollupState: DepositRollupState, depositActionBatch: DepositActionBatch }[] = [];
-            let depositRootX = this.depositTreeRootOnchain;
-            let handledActionsNumX = this.depositStartIndexInBatch;
-            let currentActionsHashX = this.currentActionsHash;
+            let depositRootX = this.currentTreeRootOnchain;
+            let handledActionsNumX = this.currentHandledActionsNumOnchain;
+            let currentActionsHashX = this.currentActionsHashOnchain;
             const batchCnt = depositCommitmentList.length / DEPOSIT_ACTION_BATCH_SIZE;
             for (let i = 0; i < batchCnt; i++) {
-
                 const actions: Field[] = [];
                 const merkleWitnesses: DepositMerkleWitness[] = [];
                 let param = {
@@ -109,16 +113,25 @@ export class FlowScheduler {
 
                     const leafIndex = this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, includeUnCommit);
                     const merkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DEPOSIT_TREE, leafIndex, includeUnCommit);
-                    await this.worldStateDB.appendLeaf(MerkleTreeId.DEPOSIT_TREE, targetAction);
-
-                    currentActionsHashX = AccountUpdate.Actions.updateSequenceState(currentActionsHashX, AccountUpdate.Actions.hash([targetAction.toFields()]));
+                    // assert for test
+                    checkMembershipAndAssert(INITIAL_LEAF, Field(leafIndex), merkleWitness, this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, includeUnCommit));
 
                     param.depositActionBatch.actions.push(targetAction);
                     param.depositActionBatch.merkleWitnesses.push(merkleWitness);
+
+                    if (targetAction.equals(INITIAL_LEAF).not().toBoolean()) {// skip dummy ones
+                        await this.worldStateDB.appendLeaf(MerkleTreeId.DEPOSIT_TREE, targetAction);
+
+                        currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
+                            currentActionsHashX,// 当前已累积值
+                            AccountUpdate.Actions.hash([targetAction.toFields()]) // 
+                        );
+                        console.log('currentActionsHashX:' + currentActionsHashX.toString());
+                    }
                 }
 
                 depositRootX = this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, includeUnCommit);
-                handledActionsNumX = Field(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, includeUnCommit));
+                handledActionsNumX = Field(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, includeUnCommit) - 1n);// exclude the leafIndex-0 INIT_LEAF
             }
             this.targetActionsHash = currentActionsHashX;
             this.targetDepositRoot = depositRootX;
@@ -134,7 +147,7 @@ export class FlowScheduler {
             const endBlock = fetchRecordList[fetchRecordList.length - 1].endBlock;
 
             let depositTreeTrans = new DepositTreeTrans();
-            depositTreeTrans.startActionHash = this.currentActionsHash.toString();
+            depositTreeTrans.startActionHash = this.currentActionsHashOnchain.toString();
             depositTreeTrans.startActionIndex = this.depositStartIndexInBatch.toString();
             depositTreeTrans.nextActionHash = this.targetActionsHash.toString();
             depositTreeTrans.nextActionIndex = this.targetHandledActionsNum.toString();
@@ -175,6 +188,8 @@ export class FlowScheduler {
                         }
                     }
                 } as ProofTaskDto<any, FlowTask<any>>;
+                fs.writeFileSync('./DEPOSIT_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
                 await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
                     if (r.data.code == 1) {
                         throw new Error(r.data.msg);

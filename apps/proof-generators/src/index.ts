@@ -31,162 +31,179 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
     })
 
     httpWorker.on('message', (proofTaskDto: ProofTaskDto<any, any>) => {
-        const sendResultDepositCallback = async (p: any) => {
-            proofTaskDto.payload.data.data = p;
-            $axiosDeposit.post('/proof-result', proofTaskDto);
-        }
-        const sendResultDepositJoinSplitCallback = async (p: any) => {
-            proofTaskDto.payload = p;
-            $axiosDeposit.post('/proof-result', proofTaskDto);
-        }
-        const sendResultSeqCallback = async (p: any) => {
-            (proofTaskDto.payload as FlowTask<any>).data = p;
-            $axiosSeq.post('/proof-result', proofTaskDto);
-        }
+        try {
+            const sendResultDepositCallback = async (p: any) => {
+                proofTaskDto.payload.data.data = p;
+                await $axiosDeposit.post('/proof-result', proofTaskDto).then(value => {
+                    console.log('$axiosDeposit.post to /proof-result, response:', value);
+                }).catch(reason => {
+                    console.log('$axiosDeposit.post to /proof-result, error:', reason);
+                });
+            }
+            const sendResultDepositJoinSplitCallback = async (p: any) => {
+                proofTaskDto.payload = p;
+                await $axiosDeposit.post('/proof-result', proofTaskDto).then(value => {
+                    console.log('$axiosDeposit.post to /proof-result, response:', value);
+                }).catch(reason => {
+                    console.log('$axiosDeposit.post to /proof-result, error:', reason);
+                });
+            }
+            const sendResultSeqCallback = async (p: any) => {
+                (proofTaskDto.payload as FlowTask<any>).data = p;
+                await $axiosSeq.post('/proof-result', proofTaskDto).then(value => {
+                    console.log('$axiosSeq.post to /proof-result, response:', value);
+                }).catch(reason => {
+                    console.log('$axiosSeq.post to /proof-result, error:', reason);
+                });
+            }
 
-        // recieve from http-server thread
-        switch (proofTaskDto.taskType) {
-            case ProofTaskType.ROLLUP_FLOW:
-                {
-                    const flowTask = proofTaskDto.payload as FlowTask<any>;
+            // recieve from http-server thread
+            switch (proofTaskDto.taskType) {
+                case ProofTaskType.ROLLUP_FLOW:
+                    {
+                        const flowTask = proofTaskDto.payload as FlowTask<any>;
 
-                    switch (flowTask.taskType) {
-                        case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
-                            {
-                                let payloads = (flowTask.data as (any[])).map(d => {
-                                    return {
+                        switch (flowTask.taskType) {
+                            case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
+                                {
+                                    let payloads = (flowTask.data as (any[])).map(d => {
+                                        return {
+                                            isProof: false,
+                                            payload: d
+                                        } as ProofPayload<any>;
+                                    });
+                                    innerRollupBatchAndMerge(subProcessCordinator, payloads, sendResultSeqCallback);
+                                }
+
+                                break;
+                            /* 
+                            case FlowTaskType.ROLLUP_MERGE:
+                                {
+                                    let payloads = (flowTask.data as (any[])).map(d => {
+                                        return {
+                                            isProof: false,
+                                            payload: d
+                                        } as ProofPayload<any>;
+                                    });
+                                    subProcessCordinator.innerRollup_merge(payloads[0], payloads[1], sendResultSeqCallback);
+                                }
+    
+                                break; 
+                            */
+
+                            case FlowTaskType.BLOCK_PROVE:
+                                {
+                                    let payload = {
                                         isProof: false,
-                                        payload: d
+                                        payload: flowTask.data
                                     } as ProofPayload<any>;
-                                });
-                                innerRollupBatchAndMerge(subProcessCordinator, payloads, sendResultSeqCallback);
-                            }
 
-                            break;
-                        /* 
-                        case FlowTaskType.ROLLUP_MERGE:
-                            {
-                                let payloads = (flowTask.data as (any[])).map(d => {
-                                    return {
+                                    subProcessCordinator.blockProve(payload, sendResultSeqCallback);
+                                }
+
+                                break;
+
+                            case FlowTaskType.ROLLUP_CONTRACT_CALL:
+                                {
+                                    let payload = {
                                         isProof: false,
-                                        payload: d
+                                        payload: flowTask.data
                                     } as ProofPayload<any>;
-                                });
-                                subProcessCordinator.innerRollup_merge(payloads[0], payloads[1], sendResultSeqCallback);
-                            }
 
-                            break; 
-                        */
+                                    subProcessCordinator.rollupContract_updateRollupState(payload, sendResultSeqCallback)
+                                }
 
-                        case FlowTaskType.BLOCK_PROVE:
-                            {
-                                let payload = {
-                                    isProof: false,
-                                    payload: flowTask.data
-                                } as ProofPayload<any>;
-
-                                subProcessCordinator.blockProve(payload, sendResultSeqCallback);
-                            }
-
-                            break;
-
-                        case FlowTaskType.ROLLUP_CONTRACT_CALL:
-                            {
-                                let payload = {
-                                    isProof: false,
-                                    payload: flowTask.data
-                                } as ProofPayload<any>;
-
-                                subProcessCordinator.rollupContract_updateRollupState(payload, sendResultSeqCallback)
-                            }
-
-                            break;
+                                break;
 
 
-                        case FlowTaskType.DEPOSIT_BATCH_MERGE:
-                            {
-                                let payloads = (flowTask.data.data as (any[])).map(d => {
-                                    return {
+                            case FlowTaskType.DEPOSIT_BATCH_MERGE:
+                                {
+                                    let payloads = (flowTask.data.data as (any[])).map(d => {
+                                        return {
+                                            isProof: false,
+                                            payload: d
+                                        } as ProofPayload<any>;
+                                    });
+                                    depositRollupBatchAndMerge(subProcessCordinator, payloads, sendResultDepositCallback);
+                                }
+
+                                break;
+
+                            /*
+                            case ProofTaskType.DEPOSIT_MERGE:
+                                {
+                                    let payloads = (proofTaskDto.payload as (any[])).map(d => {
+                                        return {
+                                            isProof: false,
+                                            payload: d
+                                        } as ProofPayload<any>;
+                                    });
+                                    subProcessCordinator.depositRollup_merge(payloads[0], payloads[1], sendResultDepositCallback);
+                                }
+    
+                                break;
+                            */
+
+                            case FlowTaskType.DEPOSIT_UPDATESTATE:
+                                {
+                                    let proofPayload = {
                                         isProof: false,
-                                        payload: d
+                                        payload: flowTask.data
                                     } as ProofPayload<any>;
-                                });
-                                depositRollupBatchAndMerge(subProcessCordinator, payloads, sendResultDepositCallback);
-                            }
 
-                            break;
+                                    subProcessCordinator.depositContract_updateDepositState(proofPayload, sendResultDepositCallback)
+                                }
+                                break;
 
-                        /*
-                        case ProofTaskType.DEPOSIT_MERGE:
-                            {
-                                let payloads = (proofTaskDto.payload as (any[])).map(d => {
-                                    return {
-                                        isProof: false,
-                                        payload: d
-                                    } as ProofPayload<any>;
-                                });
-                                subProcessCordinator.depositRollup_merge(payloads[0], payloads[1], sendResultDepositCallback);
-                            }
+                            default:
+                                break;
 
-                            break;
-                        */
-
-                        case FlowTaskType.DEPOSIT_UPDATESTATE:
-                            {
-                                let proofPayload = {
-                                    isProof: false,
-                                    payload: flowTask.data
-                                } as ProofPayload<any>;
-
-                                subProcessCordinator.depositContract_updateDepositState(proofPayload, sendResultDepositCallback)
-                            }
-                            break;
-
-                        default:
-                            break;
-
+                        }
                     }
-                }
 
-                break;
+                    break;
 
-            case ProofTaskType.USER_FIRST_WITHDRAW:
-                {
-                    let payload = {
-                        isProof: false,
-                        payload: proofTaskDto.payload
-                    } as ProofPayload<any>;
+                case ProofTaskType.USER_FIRST_WITHDRAW:
+                    {
+                        let payload = {
+                            isProof: false,
+                            payload: proofTaskDto.payload
+                        } as ProofPayload<any>;
 
-                    subProcessCordinator.rollupContract_firstWithdraw(payload, sendResultSeqCallback);
-                }
-                break;
+                        subProcessCordinator.rollupContract_firstWithdraw(payload, sendResultSeqCallback);
+                    }
+                    break;
 
-            case ProofTaskType.USER_WITHDRAW:
-                {
-                    let payload = {
-                        isProof: false,
-                        payload: proofTaskDto.payload
-                    } as ProofPayload<any>;
+                case ProofTaskType.USER_WITHDRAW:
+                    {
+                        let payload = {
+                            isProof: false,
+                            payload: proofTaskDto.payload
+                        } as ProofPayload<any>;
 
-                    subProcessCordinator.rollupContract_withdraw(payload, sendResultSeqCallback);
-                }
-                break;
+                        subProcessCordinator.rollupContract_withdraw(payload, sendResultSeqCallback);
+                    }
+                    break;
 
-            case ProofTaskType.DEPOSIT_JOIN_SPLIT:
-                {
-                    let payload = {
-                        isProof: false,
-                        payload: proofTaskDto.payload as { blockId: number, data: { txId: number, data: JoinSplitDepositInput }[] }
-                    } as ProofPayload<any>;
+                case ProofTaskType.DEPOSIT_JOIN_SPLIT:
+                    {
+                        let payload = {
+                            isProof: false,
+                            payload: proofTaskDto.payload as { blockId: number, data: { txId: number, data: JoinSplitDepositInput }[] }
+                        } as ProofPayload<any>;
 
-                    subProcessCordinator.jointSplit_deposit(payload, sendResultDepositJoinSplitCallback);
-                }
-                break;
+                        subProcessCordinator.jointSplit_deposit(payload, sendResultDepositJoinSplitCallback);
+                    }
+                    break;
 
-            default:
-                break;
+                default:
+                    break;
+            }
+        } catch (error) {
+            // notice: don't throw error, will make primary process exit!
+            logger.error(error);
+            console.error(error);
         }
-
     })
 }
 

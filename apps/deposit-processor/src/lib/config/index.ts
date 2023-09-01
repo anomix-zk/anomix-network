@@ -56,8 +56,8 @@ const config = {
     },
     depositProcessorHost: <string>process.env.DEPOSIT_PROCESSOR_HOST || '127.0.0.1',
     depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT ?? 8082),
-    proofGeneratorHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
-    proofGeneratorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8081),
+    proofGeneratorHost: <string>process.env.PROOF_GENERATOR_HOST || '127.0.0.1',
+    proofGeneratorPort: <number>Number(<string>process.env.PROOF_GENERATOR_PORT ?? 8081),
 
     depositRollup: {
         batchNum: <number>Number(<string>process.env.DEPOSIT_ROLLUP_BATCH_NUM ?? 8),
@@ -66,7 +66,7 @@ const config = {
     joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx ?? JoinsplitProofDummyTx)),// TODO
 
     txFeePayerPrivateKey: <string>process.env.L1_TX_FEE_PAYER_PRIVATE_KEY,
-    sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
+    rollupContractPrivateKey: <string>process.env.ROLLUP_CONTRACT_PRIVATE_KEY,
 
     depositWorldStateDBPath: <string>process.env.LEVELDB_DEPOSIT_ROLLUP_STATE_DB_PATH || './anomix_deposit_rollup_state_db',
     depositIndexedDBPath: <string>process.env.LEVELDB_DEPOSIT_INDEX_DB_PATH || './anomix_deposit_index_db',
@@ -82,6 +82,7 @@ const config = {
     coordinatorHost: <string>process.env.COORDINATOR_HOST || '127.0.0.1',
     coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT ?? 8083),
 
+    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http'
 
 }
 

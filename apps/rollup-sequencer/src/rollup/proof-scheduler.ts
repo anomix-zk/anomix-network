@@ -1,14 +1,16 @@
 
 import { WorldStateDB, RollupDB, IndexDB } from "@/worldstate";
 import config from "@/lib/config";
-import { BaseResponse, BlockStatus, RollupTaskDto, RollupTaskType, ProofTaskDto, ProofTaskType, FlowTaskType, MerkleProofDto, MerkleTreeId, BlockCacheType } from "@anomix/types";
+import { BaseResponse, BlockStatus, ProofTaskDto, ProofTaskType, FlowTaskType, BlockCacheType } from "@anomix/types";
 import { ActionType, AnomixRollupContract, BlockProveInput, BlockProveOutput, DataMerkleWitness, InnerRollupProof, RollupProof, RootMerkleWitness, ValueNote } from "@anomix/circuits";
 import { BlockProverOutput, Block, InnerRollupBatch, Task, TaskStatus, TaskType, L2Tx, WithdrawInfo, BlockCache } from "@anomix/dao";
-import { Mina, PrivateKey, Poseidon, PublicKey, Field, UInt64, Signature } from 'snarkyjs';
-import { $axiosProofGenerator, $axiosDepositProcessor, $axiosCoordinator, $axiosSeq } from "@/lib";
+import { Mina, PrivateKey, PublicKey, Field, UInt64, Signature } from 'snarkyjs';
+import { $axiosProofGenerator, $axiosDepositProcessor } from "@/lib";
 import { getConnection } from "typeorm";
 import { syncAcctInfo } from "@anomix/utils";
 import { getLogger } from "@/lib/logUtils";
+import fs from "fs";
+
 const logger = getLogger('ProofScheduler');
 
 export class ProofScheduler {
@@ -63,7 +65,7 @@ export class ProofScheduler {
             })
 
             innerRollupBatch.inputParam = JSON.stringify(innerRollupBatchParamList);
-            innerRollupBatchRepo.save(innerRollupBatch);
+            await queryRunner.manager.save(innerRollupBatch);
         }
 
         // send to proof-generator, construct proofTaskDto
@@ -76,6 +78,7 @@ export class ProofScheduler {
                 data: innerRollupBatchParamList
             }
         }
+        fs.writeFileSync('./ROLLUP_TX_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
 
         // send to proof-generator for exec 'InnerRollupProver.proveTxBatch(*) && merge(*)'
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
@@ -145,6 +148,8 @@ export class ProofScheduler {
                 }
             }
         }
+        fs.writeFileSync('./BLOCK_PROVE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
         // send to proof-generator to exec BlockProver
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {
@@ -169,18 +174,17 @@ export class ProofScheduler {
         const queryRunner = connection.createQueryRunner();
         await queryRunner.startTransaction();
 
-        const blockRepo = connection.getRepository(Block);
-        const block = (await blockRepo.findOne({ where: { id: blockId } }))!;
+        let block: Block = undefined as any;
         try {
+            block = (await queryRunner.manager.findOne(Block, { where: { id: blockId } }))!;
 
             block.status = BlockStatus.PROVED;
-            blockRepo.save(block);
+            await queryRunner.manager.save(block);
 
-            const blockProverOutputRepo = connection.getRepository(BlockProverOutput);
             const blockProverOutput = new BlockProverOutput();
             blockProverOutput.blockId = blockId;
             blockProverOutput.output = JSON.stringify(blockProvedResult);
-            blockProverOutputRepo.save(blockProverOutput);
+            await queryRunner.manager.save(blockProverOutput);
 
             await queryRunner.commitTransaction();
 
@@ -232,7 +236,7 @@ export class ProofScheduler {
         const rollupProof = RollupProof.fromJSON(JSON.parse(blockProvedResultStr));
         const output = rollupProof.publicOutput;
         const signMessage = BlockProveOutput.toFields(output);
-        const operatorSign = Signature.create(PrivateKey.fromBase58(config.sequencerPrivateKey), signMessage);
+        const operatorSign = Signature.create(PrivateKey.fromBase58(config.rollupContractPrivateKey), signMessage);
         const entryDepositRoot = block.depositRoot;
         // send to proof-generator for 'AnomixRollupContract.updateRollupState'
         // construct proofTaskDto
@@ -249,6 +253,8 @@ export class ProofScheduler {
                 }
             }
         }
+        fs.writeFileSync('./ROLLUP_CONTRACT_CALL_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
         // send to proof-generator to trigger ROLLUP_CONTRACT
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {
@@ -260,7 +266,7 @@ export class ProofScheduler {
     async whenL1TxComeback(data: { blockId: number, tx: any }) {
         // sign and broadcast it.
         const l1Tx = Mina.Transaction.fromJSON(data.tx);
-        await l1Tx.sign([PrivateKey.fromBase58(config.sequencerPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
+        await l1Tx.sign([PrivateKey.fromBase58(config.rollupContractPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
             const txHash0 = txHash.hash()!;
 
             // insert L1 tx into db, underlying 
@@ -277,7 +283,7 @@ export class ProofScheduler {
                 task.status = TaskStatus.PENDING;
                 task.taskType = TaskType.ROLLUP;
                 task.txHash = txHash0;
-                taskRepo.save(task);
+                await queryRunner.manager.save(task);
 
                 await queryRunner.commitTransaction();
             } catch (error) {

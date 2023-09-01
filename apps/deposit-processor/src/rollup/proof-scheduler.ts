@@ -11,6 +11,7 @@ import { FlowTask, FlowTaskType } from "@anomix/types";
 import { getConnection } from "typeorm";
 import { Mina, PrivateKey } from 'snarkyjs';
 import { getLogger } from "@/lib/logUtils";
+import fs from "fs";
 
 const logger = getLogger('proof-scheduler');
 
@@ -18,7 +19,7 @@ const logger = getLogger('proof-scheduler');
  * deposit_processor rollup proof-gen flow at 'deposit_tree'
  */
 export class ProofScheduler {
-    constructor(private flowId: string, private worldState: WorldState, private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) { }
+    constructor(private worldState: WorldState, private worldStateDB: WorldStateDB, private rollupDB: RollupDB, private indexDB: IndexDB) { }
 
     /**
     * update all related status and send to trigger 'AnomixEntryContract.updateDepositState'.
@@ -31,17 +32,18 @@ export class ProofScheduler {
         const queryRunner = connection.createQueryRunner();
         await queryRunner.startTransaction();
         try {
-            const depositProverOutputRepo = connection.getRepository(DepositProverOutput);
-            await depositProverOutputRepo.save({
-                output: proof,
-                transId
-            } as DepositProverOutput);
+            const depositProverOutput = new DepositProverOutput();
+            depositProverOutput.output = JSON.stringify(proof);
+            depositProverOutput.transId = transId;
+            await queryRunner.manager.save(depositProverOutput);
 
             // change status to Proved
             const depositTreeTransRepo = connection.getRepository(DepositTreeTrans);
-            await depositTreeTransRepo.findOne({ where: { id: transId } }).then(depositTreeTrans => {
+            await depositTreeTransRepo.findOne({ where: { id: transId } }).then(async depositTreeTrans => {
                 depositTreeTrans!.status = DepositTreeTransStatus.PROVED;
+                await queryRunner.manager.save(depositTreeTrans);
             })
+
             await queryRunner.commitTransaction();
 
             /*
@@ -82,6 +84,7 @@ export class ProofScheduler {
             */
         } catch (error) {
             logger.error(error);
+            console.error(error);
             await queryRunner.rollbackTransaction();
 
             throw error;
@@ -104,12 +107,13 @@ export class ProofScheduler {
                 taskType: FlowTaskType.DEPOSIT_UPDATESTATE,
                 data: {
                     transId,
-                    feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toBase58(),
+                    feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toPublicKey().toBase58(),
                     fee: 200_000_000,// 0.2 Mina as fee
-                    data
+                    data: JSON.parse(data)
                 }
             } as FlowTask<any>
         } as ProofTaskDto<any, FlowTask<any>>;
+        fs.writeFileSync('./DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
 
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {
@@ -118,25 +122,33 @@ export class ProofScheduler {
         });
     }
 
-    async whenRollupL1TxComeBack(result: { transId: number, data: any }) {
+    async whenDepositRollupL1TxComeBack(result: { transId: number, data: any }) {
         const { transId, data: tx } = result;
 
+        // store into file for test
+        fs.writeFileSync('./AnomixEntryContract_DEPOSIT_UPDATESTATE_tx.json', tx);
+
         // sign and broadcast it.
-        const l1Tx = Mina.Transaction.fromJSON(tx);
+        const l1Tx = Mina.Transaction.fromJSON(JSON.parse(tx));
+        l1Tx.transaction.feePayer.lazyAuthorization = { kind: 'lazy-signature' };
+        await l1Tx.sign([PrivateKey.fromBase58(config.txFeePayerPrivateKey)]);
 
-        await l1Tx.sign([PrivateKey.fromBase58(config.txFeePayerPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
-            await getConnection().getRepository(DepositTreeTrans).findOne({ where: { id: transId } }).then(async dt => {
-                // insert L1 tx into db, underlying also save to task for 'Tracer-Watcher'
-                dt!.txHash = txHash.hash()!;
-                await this.rollupDB.updateTreeTransAndAddWatchTask(dt!);
-            });
+        /* send L1Tx fail by endpoint will not throw error */
+        await l1Tx.send().then(async txHash => {// TODO what if it fails currently!
+            if (txHash.hash()) {
+                logger.error('whenDepositRollupL1TxComeBack: send L1 Tx succeed! txHash:', txHash.hash());
 
+                await getConnection().getRepository(DepositTreeTrans).findOne({ where: { id: transId } }).then(async dt => {
+                    // insert L1 tx into db, underlying also save to task for 'Tracer-Watcher'
+                    dt!.txHash = txHash.hash()!;
+                    await this.rollupDB.updateTreeTransAndAddWatchTask(dt!);
+                });
+            } else {
+                logger.error('whenDepositRollupL1TxComeBack: send L1 Tx failed!');
+            }
         }).catch(reason => {
-            // TODO log it
-            logger.info(tx, ' failed!', 'reason: ', JSON.stringify(reason));
+            logger.error('whenDepositRollupL1TxComeBack: error occurs: ', JSON.stringify(reason));
         });
-
-        this.worldState.reset();
     }
 
 }

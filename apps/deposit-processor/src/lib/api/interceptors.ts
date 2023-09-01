@@ -1,4 +1,4 @@
-import type { AxiosResponse } from 'axios';
+import type { AxiosResponse, AxiosRequestConfig } from 'axios';
 import { timeout } from '@anomix/utils';
 import { $axiosProofGenerator, $axiosCoordinator } from './client';
 import type { ResponseError } from './response-error';
@@ -15,6 +15,14 @@ const callbackTrigger: CallbackTrigger = {
     responseSuccess: (null as any) as ResponseSuccessCallback,
     responseError: (null as any) as ResponseErrorCallback
 };
+
+$axiosProofGenerator.interceptors.request.use(function (config) {
+    // 在发送请求之前做些什么
+    return config;
+}, function (error) {
+    // 对请求错误做些什么
+    return Promise.reject(error);
+})
 
 $axiosProofGenerator.interceptors.response.use(
     (response: AxiosResponse) => {

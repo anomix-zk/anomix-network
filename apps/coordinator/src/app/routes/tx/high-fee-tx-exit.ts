@@ -3,6 +3,7 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse } from "@anomix/types";
+import { parentPort } from "worker_threads";
 
 /**
  * when recieving a high-fee L2tx at 'sequencer', notify 'coordinator' to trigger seq
@@ -26,9 +27,15 @@ export const handler: RequestHandler<null, null> = async function (
     res
 ): Promise<BaseResponse<string>> {
     try {
-
-        this.workerMap.get('MempoolWatcher')!.postMessage('');// notify worker to seq.
-
+        // notify worker to seq.
+        process.send ?? ({// when it's a subProcess 
+            type: 'seq',
+            data: ''
+        });
+        parentPort?.postMessage({// when it's a subThread
+            type: 'seq',
+            data: ''
+        });
         return { code: 0, data: '', msg: '' };
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")

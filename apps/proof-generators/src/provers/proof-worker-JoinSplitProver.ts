@@ -17,7 +17,7 @@ function processMsgFromMaster() {
 
             case `${ProofTaskType[ProofTaskType.DEPOSIT_JOIN_SPLIT]}`:
                 execCircuit(message, async () => {
-                    let params = message.payload as JoinSplitDepositInput
+                    let params = new JoinSplitDepositInput(JoinSplitDepositInput.fromJSON(message.payload))
                     return await JoinSplitProver.deposit(params)
                 });
                 break;
@@ -48,13 +48,26 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             },
         });
     } catch (error) {
-        logger.info(error);
+        logger.error(error);
+
+        console.error(error);
+
+        process.send!({
+            type: 'error',
+            messageType: message.type,
+            id: process.pid,
+            payload: {},
+        });
     }
 }
 
 const initWorker = async () => {
     // init 
     await activeMinaInstance();
+
+    process.send!({
+        type: 'online',
+    });
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 

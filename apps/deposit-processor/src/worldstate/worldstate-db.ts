@@ -1,5 +1,5 @@
 
-import { AppendOnlyTree, newTree, loadTree, StandardTree, StandardIndexedTree } from "@anomix/merkle-tree";
+import { AppendOnlyTree, newTree, loadTree, StandardTree, StandardIndexedTree, INITIAL_LEAF } from "@anomix/merkle-tree";
 import { MerkleTreeId } from "@anomix/types";
 import { PoseidonHasher } from '@anomix/types';
 import { NULLIFIER_TREE_HEIGHT, DEPOSIT_TREE_HEIGHT } from "@anomix/circuits";
@@ -25,6 +25,10 @@ export class WorldStateDB {
         const depositTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`, DEPOSIT_TREE_HEIGHT)
 
         this.trees.set(MerkleTreeId.DEPOSIT_TREE, depositTree);
+
+        // !! to align with the AnomixEntryContract, pre-insert a INITIAL_LEAF to make the action's index start from 1 rather than 0 !!
+        await this.appendLeaf(MerkleTreeId.DEPOSIT_TREE, INITIAL_LEAF);
+        await this.commit();
     }
 
     /**

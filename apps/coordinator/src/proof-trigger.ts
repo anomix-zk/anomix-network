@@ -1,14 +1,39 @@
 import { $axiosDeposit, $axiosSeq } from "./lib/api";
-import { getConnection, In } from 'typeorm';
-import { Block, DepositProverOutput, DepositTreeTrans, L2Tx, SeqStatus } from '@anomix/dao';
-import { ActionType } from '@anomix/circuits';
-import { BaseResponse, BlockStatus, DepositTreeTransStatus, FlowTask, FlowTaskType, ProofTaskDto, ProofTaskType, RollupTaskDto, RollupTaskType, SequencerStatus } from '@anomix/types';
+import { getConnection, In, QueryRunner } from 'typeorm';
+import { Block, DepositTreeTrans, SeqStatus } from '@anomix/dao';
+import { BaseResponse, BlockStatus, DepositTreeTransStatus, RollupTaskDto, RollupTaskType, SequencerStatus } from '@anomix/types';
 import { getLogger } from "./lib/logUtils";
+import { initORM } from "./lib/orm";
+import { parentPort } from "worker_threads";
+
+process.send ?? ({// when it's a primary process, process.send == undefined. 
+    type: 'status',
+    data: 'online'
+});
+parentPort?.postMessage({// when it's not a subThread, parentPort == null. 
+    type: 'status',
+    data: 'online'
+});
 
 const logger = getLogger('proof-trigger');
+logger.info('hi, I am proof-trigger!');
+
+await initORM();
+
+process.send ?? ({// if it's a subProcess
+    type: 'status',
+    data: 'isReady'
+});
+parentPort?.postMessage({// if it's a subThread
+    type: 'status',
+    data: 'isReady'
+});
+
+logger.info('proof-trigger is ready!');
 
 const periodRange = 5 * 60 * 1000
 
+await proofTrigger();
 setInterval(proofTrigger, periodRange); // exec/5mins
 
 /**
@@ -16,10 +41,12 @@ setInterval(proofTrigger, periodRange); // exec/5mins
  * * this is the uniform point to decide if could Broadcasting DepositRollupProof as L1Tx
  */
 async function proofTrigger() {
+    const connection = getConnection();
+    const queryRunner = connection.createQueryRunner();
+    await queryRunner.startTransaction();
     try {
-        const connection = getConnection();
-        const blockRepo = connection.getRepository(Block);
-        const blockList = await blockRepo.find(
+
+        const blockList = await queryRunner.manager.find(Block,
             {
                 where: { status: In([BlockStatus.PENDING, BlockStatus.PROVED]) },
                 order: { id: 'ASC' }
@@ -36,12 +63,10 @@ async function proofTrigger() {
 
         if (couldTriggerDepositContact) {// if there is no depositTx inside the blockList above, then could Broadcast DepositRollupProof as L1Tx !!
             // update db status to SeqStatus.NotAtRollup
-            await setSeqProofStatus(SequencerStatus.NotAtRollup);
+            await setSeqProofStatus(queryRunner, SequencerStatus.NotAtRollup);
 
             // obtain the first DepositTreeTrans and trigger deposit-contract-call
-            const connection = getConnection();
-            const transRepo = connection.getRepository(DepositTreeTrans);
-            const dTran = await transRepo.findOne({// one is enough among the period range(5mins).
+            const dTran = await queryRunner.manager.findOne(DepositTreeTrans, {// one is enough among the period range(5mins).
                 where: {
                     status: In([DepositTreeTransStatus.PROVED])
                 },
@@ -66,7 +91,7 @@ async function proofTrigger() {
 
         } else {//ie. has depositL2Tx
             // update db status to SeqStatus.ATROLLUP
-            await setSeqProofStatus(SequencerStatus.AtRollup);
+            await setSeqProofStatus(queryRunner, SequencerStatus.AtRollup);
         }
 
         blockList!.forEach(async (block, indx) => {
@@ -136,14 +161,19 @@ async function proofTrigger() {
 
     } catch (error) {
         logger.error(error);
+        console.error(error);
+
+        await queryRunner.rollbackTransaction();
+
+    } finally {
+        await queryRunner.release();
     }
 }
 
-async function setSeqProofStatus(s: SequencerStatus) {
-    const connection = getConnection();
-    const seqStatusReposity = connection.getRepository(SeqStatus);
-    const seqStatus = (await seqStatusReposity.findOne({ where: { id: 1 } }))!;
-    seqStatus.status = s;
-
-    seqStatusReposity.save(seqStatus);
+async function setSeqProofStatus(queryRunner: QueryRunner, s: SequencerStatus) {
+    const seqStatus = (await queryRunner.manager.findOne(SeqStatus, { where: { id: 1 } }))!;
+    if (seqStatus.status != s) {
+        seqStatus.status = s;
+        await queryRunner.manager.save(seqStatus);
+    }
 }

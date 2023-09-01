@@ -8,14 +8,16 @@ import { $axiosCoordinator, $axiosProofGenerator } from "@/lib";
 import { getConnection } from "typeorm";
 import { L2Tx } from "@anomix/dao";
 import { ProofScheduler } from "@/rollup/proof-scheduler";
+import fs from "fs";
 
 export * from './worldstate-db'
 export class WorldState {
     private flow: RollupFlow;
     private proofScheduler: ProofScheduler;
-    depositTreeRootOnchain: any;
 
-    constructor(public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) { }
+    constructor(public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) {
+        this.proofScheduler = new ProofScheduler(this, worldStateDB, rollupDB, indexDB);
+    }
 
     get ongingFlow() {
         return this.flow;
@@ -47,15 +49,18 @@ export class WorldState {
 
         if (taskType == ProofTaskType.DEPOSIT_JOIN_SPLIT) {
             await this.whenDepositL2TxListComeBack(payload);
+            fs.writeFileSync('./DEPOSIT_JOIN_SPLIT_proofTaskDto_proofResult' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
 
         } else {// deposit rollup proof flow
             const { flowId, taskType, data } = payload as FlowTask<any>;
 
             if (taskType == FlowTaskType.DEPOSIT_BATCH_MERGE) {
                 await this.proofScheduler.whenMergedResultComeBack(data);
+                fs.writeFileSync('./DEPOSIT_BATCH_MERGE_proofTaskDto_proofResult' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
 
             } else if (taskType == FlowTaskType.DEPOSIT_UPDATESTATE) {
-                await this.proofScheduler.whenRollupL1TxComeBack(data);
+                await this.proofScheduler.whenDepositRollupL1TxComeBack(data);
+                fs.writeFileSync('./DEPOSIT_UPDATESTATE_proofTaskDto_proofResult' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
             }
         }
     }

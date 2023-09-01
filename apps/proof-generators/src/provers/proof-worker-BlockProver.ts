@@ -19,11 +19,11 @@ function processMsgFromMaster() {
 
             case `${FlowTaskType[FlowTaskType.BLOCK_PROVE]}`:
                 execCircuit(message, async () => {
-                    let params = message.payload as {
-                        innerRollupProof1: BlockProveInput,
-                        innerRollupProof2: InnerRollupProof
+                    let params = {
+                        blockProveInput: new BlockProveInput(BlockProveInput.fromJSON(message.payload.blockProveInput)),
+                        innerRollupProof: InnerRollupProof.fromJSON(message.payload.innerRollupProof)
                     }
-                    return await BlockProver.prove(params.innerRollupProof1, params.innerRollupProof2);
+                    return await BlockProver.prove(params.blockProveInput, params.innerRollupProof);
                 });
                 break;
 
@@ -53,13 +53,26 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             },
         });
     } catch (error) {
-        logger.info(error);
+        logger.error(error);
+
+        console.error(error);
+
+        process.send!({
+            type: 'error',
+            messageType: message.type,
+            id: process.pid,
+            payload: {},
+        });
     }
 }
 
 const initWorker = async () => {
     // init 
     await activeMinaInstance();
+
+    process.send!({
+        type: 'online',
+    });
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 

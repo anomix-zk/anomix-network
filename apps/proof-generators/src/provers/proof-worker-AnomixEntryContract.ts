@@ -19,10 +19,10 @@ function processMsgFromMaster() {
 
             case `${FlowTaskType[FlowTaskType.DEPOSIT_UPDATESTATE]}`:
                 execCircuit(message, async () => {
-                    const params = message.payload as {
-                        feePayer: PublicKey,
-                        fee: number,
-                        depositRollupProof: DepositRollupProof
+                    const params = {
+                        feePayer: PublicKey.fromBase58(message.payload.feePayer),
+                        fee: message.payload.fee,
+                        depositRollupProof: DepositRollupProof.fromJSON(message.payload.depositRollupProof)
                     }
                     const addr = PublicKey.fromBase58(config.entryContractAddress);
                     await syncAcctInfo(addr);// fetch account.
@@ -31,6 +31,7 @@ function processMsgFromMaster() {
                     let tx = await Mina.transaction({ sender: params.feePayer, fee: params.fee }, () => {
                         entryContract.updateDepositState(params.depositRollupProof);
                     });
+                    await tx.prove();
 
                     return tx;
                 });
@@ -62,13 +63,26 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             },
         });
     } catch (error) {
-        logger.info(error);
+        logger.error(error);
+
+        console.error(error);
+
+        process.send!({
+            type: 'error',
+            messageType: message.type,
+            id: process.pid,
+            payload: {},
+        });
     }
 }
 
 const initWorker = async () => {
     // init 
     await activeMinaInstance();
+
+    process.send!({
+        type: 'online',
+    });
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 

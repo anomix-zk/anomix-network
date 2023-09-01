@@ -2,17 +2,16 @@ import config from '../config';
 import axios from 'axios';
 
 export const $axiosDeposit = axios.create({
-    baseURL: `${config.depositProcessorHost}:${config.depositProcessorPort}`,
+    baseURL: `${config.httpProtocol}://${config.depositProcessorHost}:${config.depositProcessorPort}`,
     withCredentials: true,
 });
 
 export const $axiosProofGenerator = axios.create({
-    baseURL: `${config.proofGeneratorHost}:${config.proofGeneratorPort}`,
-    withCredentials: true,
+    baseURL: `${config.httpProtocol}://${config.proofGeneratorHost}:${config.proofGeneratorPort}`,
 });
 
 export const $axiosCoordinator = axios.create({
-    baseURL: `${config.proofGeneratorHost}:${config.proofGeneratorPort}`,
+    baseURL: `${config.httpProtocol}://${config.coordinatorHost}:${config.coordinatorPort}`,
     withCredentials: true,
 });
 

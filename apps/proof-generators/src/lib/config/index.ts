@@ -23,7 +23,7 @@ const config = {
     },
     swagger: {
         info: {
-            title: "Anomix Network - rollup-sequencer api documentation",
+            title: "Anomix Network - proof-generators api documentation",
             version: "0.1.0"
         },
         host: <string>process.env.SWAGGER_HOST ? (<string>process.env.SWAGGER_HOST).concat(':').concat(<string>process.env.PROOF_GENERATOR_PORT) : 'localhost:'.concat(<string>process.env.PROOF_GENERATOR_PORT),
@@ -51,6 +51,7 @@ const config = {
     rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
 
     subProcessCnt: <number>Number(<string>process.env.PROOR_GENERATOR_SUB_PROCESSOR_COUNT ?? 1),
+    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http'
 }
 
 export default config
