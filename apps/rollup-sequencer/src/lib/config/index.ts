@@ -59,13 +59,15 @@ const config = {
         }
     },
     sequencerHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
-    sequencerPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
+    sequencerPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8080),
     depositProcessorHost: <string>process.env.DEPOSIT_PROCESSOR_HOST || '127.0.0.1',
     depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT ?? 8082),
     proofGeneratorHost: <string>process.env.PROOF_GENERATOR_HOST || '127.0.0.1',
     proofGeneratorPort: <number>Number(<string>process.env.PROOF_GENERATOR_PORT ?? 8081),
+
     joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx ?? JoinsplitProofDummyTx)),// TODO
     withdrawAccountVK: VerificationKey.fromJSON(JSON.parse(WithdrawAccountVK)),
+
     innerRollup: {
         txCount: <number>Number(<string>process.env.InnerRollupTxCount ?? 2),
     },
