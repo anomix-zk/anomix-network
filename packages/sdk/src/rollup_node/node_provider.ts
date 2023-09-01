@@ -7,6 +7,7 @@ import {
   MerkleProofDto,
   NetworkStatusDto,
   TxFeeSuggestionDto,
+  WithdrawalWitnessDto,
   WithdrawAssetReqDto,
   WithdrawInfoDto,
   WorldStateRespDto,
@@ -69,41 +70,13 @@ export class NodeProvider implements AnomixNode {
     }
   }
 
-  public async sendWithdrawTx(tx: WithdrawAssetReqDto): Promise<boolean> {
-    const url = `${this.host}/tx/withdraw`;
-    this.log.info(`Sending withdraw tx at ${url}`);
+  public async getFundsClaimInfo(
+    withdrawNoteCommitment: string
+  ): Promise<WithdrawalWitnessDto> {
+    const url = `${this.host}/merklewitness/withdraw-commitment/${withdrawNoteCommitment}`;
+    this.log.info(`Getting funds claim info at ${url}`);
 
-    const body = JSON.stringify(tx);
-    const res = await this.makeRequest<string>(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    });
-    if (res.code === 0) {
-      return true;
-    }
-
-    throw new Error(res.msg);
-  }
-
-  public async getWithdrawProvedTx(
-    l1addr: string,
-    noteCommitments: string[]
-  ): Promise<WithdrawInfoDto[]> {
-    const url = `${this.host}/tx/withdraw/${l1addr}`;
-    this.log.info(
-      `Getting withdraw proved tx at ${url}, l1addr: ${l1addr}, noteCommitments: ${noteCommitments}`
-    );
-
-    const body = JSON.stringify({
-      noteCommitments,
-    });
-    const res = await this.makeRequest<WithdrawInfoDto[]>(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-    });
-
+    const res = await this.makeRequest<WithdrawalWitnessDto>(url);
     if (res.code === 0) {
       return res.data!;
     }
@@ -111,7 +84,7 @@ export class NodeProvider implements AnomixNode {
     throw new Error(res.msg);
   }
 
-  async isReady(): Promise<boolean> {
+  public async isReady(): Promise<boolean> {
     const url = `${this.host}/network/isready`;
     this.log.info(`Checking if node is ready at ${url}`);
 
@@ -281,28 +254,26 @@ export class NodeProvider implements AnomixNode {
     );
 
     const res = await this.makeRequest<string[]>(url);
-    if (res.code == 0) {
+    if (res.code === 0) {
       return res.data!;
     }
 
     throw new Error(res.msg);
   }
 
-  public async getAliasHashByAccountPublicKey(
+  public async getAliasByAccountPublicKey(
     accountPk: string
-  ): Promise<string | undefined> {
+  ): Promise<{ alias: string; aliasInfo: string } | undefined> {
     const url = `${this.host}/account/alias/${accountPk}`;
     this.log.info(
       'Getting alias hash by account public key at ${url}, accountPk: ${accountPk}'
     );
 
-    const res = await this.makeRequest<string>(url);
+    const res = await this.makeRequest<{ alias: string; aliasInfo: string }>(
+      url
+    );
     if (res.code === 0) {
-      if (res.data === '') {
-        return undefined;
-      } else {
-        return res.data;
-      }
+      return res.data;
     }
 
     throw new Error(res.msg);

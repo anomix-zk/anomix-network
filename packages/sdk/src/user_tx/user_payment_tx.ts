@@ -14,6 +14,7 @@ export class UserPaymentTx {
     public readonly depositIndex: number,
     public readonly privateValue: string,
     public readonly privateValueAssetId: string,
+    public readonly withdrawNoteCommitment: string | undefined,
     public readonly sender: string,
     public readonly receiver: string,
     public readonly isSender: boolean,
@@ -34,6 +35,7 @@ export class UserPaymentTx {
     depositIndex: number;
     privateValue: string;
     privateValueAssetId: string;
+    withdrawNoteCommitment: string | undefined;
     sender: string;
     receiver: string;
     isSender: boolean;
@@ -53,6 +55,7 @@ export class UserPaymentTx {
       value.depositIndex,
       value.privateValue,
       value.privateValueAssetId,
+      value.withdrawNoteCommitment,
       value.sender,
       value.receiver,
       value.isSender,
@@ -67,7 +70,8 @@ export class UserPaymentTx {
     privateValue: string,
     privateValueAssetId: string,
     sender: string,
-    receiver: string
+    receiver: string,
+    withdrawNoteCommitment?: string
   ): UserPaymentTx {
     return new UserPaymentTx(
       output.hash().toString(),
@@ -84,6 +88,7 @@ export class UserPaymentTx {
       Number(output.depositIndex.toString()),
       privateValue,
       privateValueAssetId,
+      withdrawNoteCommitment,
       sender,
       receiver,
       true,

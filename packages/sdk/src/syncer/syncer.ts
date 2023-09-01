@@ -6,7 +6,8 @@ import { NoteProcessor } from '../note_processor/note_processor';
 import { AnomixNode } from '../rollup_node/anomix_node';
 import { InterruptableSleep } from '../utils/sleep';
 import isNode from 'detect-node';
-import { SdkEventType, SDK_BROADCAST_CHANNNEL_NAME } from '../constants';
+import { SdkEventType } from '../constants';
+import { LogEvent } from '../types/types';
 
 export class Syncer {
   private runningPromise?: Promise<void>;
@@ -18,18 +19,30 @@ export class Syncer {
   private log: ConsolaInstance;
   private noteProcessorsToCatchUp: NoteProcessor[] = [];
   private broadcastChannel: BroadcastChannel | undefined;
+  private logChannel: BroadcastChannel | undefined;
 
   constructor(
     private node: AnomixNode,
     private db: Database,
     private keyStore: KeyStore,
+    broadcastChannelName?: string,
+    logChannelName?: string,
     logSuffix = ''
   ) {
     this.log = consola.withTag(
       logSuffix ? `anomix:syncer_${logSuffix}` : 'anomix:syncer'
     );
-    if (!isNode) {
-      this.broadcastChannel = new BroadcastChannel(SDK_BROADCAST_CHANNNEL_NAME);
+    if (!isNode && broadcastChannelName) {
+      this.broadcastChannel = new BroadcastChannel(broadcastChannelName);
+    }
+    if (!isNode && logChannelName) {
+      this.logChannel = new BroadcastChannel(logChannelName);
+    }
+  }
+
+  private chanLog(message: string | Error) {
+    if (this.logChannel) {
+      this.logChannel.postMessage({ label: 'syncer', message } as LogEvent);
     }
   }
 
@@ -42,13 +55,20 @@ export class Syncer {
     this.running = true;
 
     if (from < this.synchedToBlock + 1) {
-      throw new Error(
+      const err = new Error(
         `From block ${from} is smaller than the currently synched block ${this.synchedToBlock}`
       );
+      this.chanLog(err);
+      throw err;
     }
     this.synchedToBlock = from - 1;
 
-    await this.initialSync();
+    try {
+      await this.initialSync();
+    } catch (err: any) {
+      this.chanLog(err);
+      throw err;
+    }
 
     const run = async () => {
       while (this.running) {
@@ -63,7 +83,8 @@ export class Syncer {
     };
 
     this.runningPromise = run();
-    this.log.info('Started');
+    this.log.info('Syncer started');
+    this.chanLog('Syncer started');
   }
 
   protected async initialSync() {
@@ -75,6 +96,7 @@ export class Syncer {
   protected async work(limit = 1, retryInterval = 1000): Promise<void> {
     const from = this.synchedToBlock + 1;
     this.log.info(`Syncing from block ${from}`);
+    this.chanLog(`Syncing from block ${from}`);
 
     try {
       const blocks = await this.node.getBlocks(from, limit);
@@ -101,8 +123,9 @@ export class Syncer {
         eventType: SdkEventType.UPDATED_SYNCER_STATE,
         data: this.getSyncStatus(),
       });
-    } catch (err) {
+    } catch (err: any) {
       this.log.error(err);
+      this.chanLog(err);
       await this.interruptableSleep.sleep(retryInterval);
     }
   }
@@ -125,9 +148,16 @@ export class Syncer {
     this.log.info(
       `Syncing from block ${from} for note processor ${noteProcessor.accountPublicKey.toBase58()},limit: ${limit}`
     );
+    this.chanLog(
+      `Syncing from block ${from} for note processor ${noteProcessor.accountPublicKey.toBase58()},limit: ${limit}`
+    );
 
     if (limit < 1) {
-      throw new Error(`Unexpected limit ${limit} for note processor catch up`);
+      const err = new Error(
+        `Unexpected limit ${limit} for note processor catch up`
+      );
+      this.chanLog(err);
+      throw err;
     }
 
     try {
@@ -135,7 +165,9 @@ export class Syncer {
       if (!blocks.length) {
         // This should never happen because this function should only be called when the note processor is lagging
         // behind main sync.
-        throw new Error('No blocks in processor catch up mode');
+        const err = new Error('No blocks in processor catch up mode');
+        this.chanLog(err);
+        throw err;
       }
 
       await noteProcessor.process(blocks);
@@ -153,8 +185,9 @@ export class Syncer {
         this.noteProcessorsToCatchUp.shift();
         this.noteProcessors.push(noteProcessor);
       }
-    } catch (err) {
+    } catch (err: any) {
       this.log.error(err);
+      this.chanLog(err);
       await this.interruptableSleep.sleep(retryInterval);
     }
   }
@@ -163,7 +196,8 @@ export class Syncer {
     this.running = false;
     this.interruptableSleep.interrupt();
     await this.runningPromise;
-    this.log.info('Stopped');
+    this.log.info('Syncer stopped');
+    this.chanLog('Syncer stopped');
   }
 
   public addAccount(accountPublicKey: PublicKey) {

@@ -1,4 +1,6 @@
-export const SDK_BROADCAST_CHANNNEL_NAME = 'anomix_sdk';
+import { MINA } from '@anomix/circuits';
+
+export const DEFAULT_L1_TX_FEE = 0.03 * MINA;
 
 export enum SdkEventType {
   // An account's state has changed.

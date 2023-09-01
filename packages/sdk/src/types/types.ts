@@ -12,3 +12,8 @@ export interface Tx {
     alias?: string;
   };
 }
+
+export interface LogEvent {
+  label: string;
+  message: string | Error;
+}
