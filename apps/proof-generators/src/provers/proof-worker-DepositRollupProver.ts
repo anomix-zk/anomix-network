@@ -3,6 +3,7 @@ import { DepositRollupProver, DepositActionBatch, DepositRollupState, DepositRol
 import { activeMinaInstance } from '@anomix/utils';
 import { FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
+import { commitActionBatch, merge } from "./circuits/deposit_rollup_prover";
 
 const logger = getLogger('pWorker-DepositRollupProver');
 
@@ -20,18 +21,17 @@ function processMsgFromMaster() {
                     let params = {
                         depositRollupState: new DepositRollupState(DepositRollupState.fromJSON(message.payload.depositRollupState)),
                         depositActionBatch: new DepositActionBatch(DepositActionBatch.fromJSON(message.payload.depositActionBatch))
-                    }
+                    };
+
+                    // for test before
+                    commitActionBatch(params.depositRollupState, params.depositActionBatch)
+
                     return await DepositRollupProver.commitActionBatch(params.depositRollupState, params.depositActionBatch)
                 });
                 break;
 
             case `${FlowTaskType[FlowTaskType.DEPOSIT_MERGE]}`:
                 await execCircuit(message, async () => {
-                    // let params = message.payload as {
-                    //     depositRollupProof1: DepositRollupProof,
-                    //     depositRollupProof2: DepositRollupProof
-                    // }
-
                     let params = {
                         depositRollupProof1: DepositRollupProof.fromJSON(message.payload.depositRollupProof1),
                         depositRollupProof2: DepositRollupProof.fromJSON(message.payload.depositRollupProof2)
@@ -39,6 +39,9 @@ function processMsgFromMaster() {
 
                     const depositRollupProof1 = params.depositRollupProof1;
                     const depositRollupProof2 = params.depositRollupProof2;
+
+                    merge(depositRollupProof1, depositRollupProof2);
+
                     return await DepositRollupProver.merge(depositRollupProof1, depositRollupProof2)
                 });
                 break;
