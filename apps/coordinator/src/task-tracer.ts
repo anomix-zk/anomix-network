@@ -6,10 +6,34 @@ import { ActionType, DUMMY_FIELD } from '@anomix/circuits';
 import { getLogger } from "./lib/logUtils";
 import { $axiosSeq } from './lib/api';
 import { initORM } from './lib/orm';
+import { parentPort } from 'worker_threads';
+
+process.send ?? ({// when it's a primary process, process.send == undefined. 
+    type: 'status',
+    data: 'online'
+});
+parentPort?.postMessage({// when it's not a subThread, parentPort == null. 
+    type: 'status',
+    data: 'online'
+});
+
 
 const logger = getLogger('task-tracer');
+logger.info('hi, I am task-tracer!');
 
 await initORM();
+
+process.send ?? ({// if it's a subProcess
+    type: 'status',
+    data: 'isReady'
+});
+parentPort?.postMessage({// if it's a subThread
+    type: 'status',
+    data: 'isReady'
+});
+
+
+logger.info('task-tracer is ready!');
 
 await traceTasks();
 
