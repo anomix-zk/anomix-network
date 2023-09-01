@@ -17,16 +17,14 @@ export class RollupDB {
 
         await queryRunner.startTransaction();
         try {
-            const depositTreeTransRepo = connection.getRepository(DepositTreeTrans);
-            await depositTreeTransRepo.save(depositTreeTrans);
+            await queryRunner.manager.save(depositTreeTrans);
 
-            const taskRepo = connection.getRepository(Task);
             const task = new Task();
             task.txHash = depositTreeTrans.txHash;
             task.taskType = TaskType.DEPOSIT;
             task.targetId = depositTreeTrans.id;
             task.status = TaskStatus.PENDING;
-            await taskRepo.save(task);
+            await queryRunner.manager.save(task);
 
             await queryRunner.commitTransaction();
         } catch (error) {

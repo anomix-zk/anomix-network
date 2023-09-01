@@ -65,7 +65,7 @@ export class ProofScheduler {
             })
 
             innerRollupBatch.inputParam = JSON.stringify(innerRollupBatchParamList);
-            innerRollupBatchRepo.save(innerRollupBatch);
+            await queryRunner.manager.save(innerRollupBatch);
         }
 
         // send to proof-generator, construct proofTaskDto
@@ -174,18 +174,17 @@ export class ProofScheduler {
         const queryRunner = connection.createQueryRunner();
         await queryRunner.startTransaction();
 
-        const blockRepo = connection.getRepository(Block);
-        const block = (await blockRepo.findOne({ where: { id: blockId } }))!;
+        let block: Block = undefined as any;
         try {
+            block = (await queryRunner.manager.findOne(Block, { where: { id: blockId } }))!;
 
             block.status = BlockStatus.PROVED;
-            blockRepo.save(block);
+            await queryRunner.manager.save(block);
 
-            const blockProverOutputRepo = connection.getRepository(BlockProverOutput);
             const blockProverOutput = new BlockProverOutput();
             blockProverOutput.blockId = blockId;
             blockProverOutput.output = JSON.stringify(blockProvedResult);
-            blockProverOutputRepo.save(blockProverOutput);
+            await queryRunner.manager.save(blockProverOutput);
 
             await queryRunner.commitTransaction();
 
@@ -284,7 +283,7 @@ export class ProofScheduler {
                 task.status = TaskStatus.PENDING;
                 task.taskType = TaskType.ROLLUP;
                 task.txHash = txHash0;
-                taskRepo.save(task);
+                await queryRunner.manager.save(task);
 
                 await queryRunner.commitTransaction();
             } catch (error) {

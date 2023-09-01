@@ -117,10 +117,11 @@ async function fetchActionsAndEvents() {
             depositActionEventFetchRecord1.nextActionHash = nextActionHash.toString();
             depositActionEventFetchRecord1.startActionIndex = startIdx.toString(); //
             depositActionEventFetchRecord1.nextActionIndex = endIdx.toString();
-            depositActionEventFetchRecordRepo.save(depositActionEventFetchRecord1);
+            await queryRunner.manager.save(depositActionEventFetchRecord1);
+
             // save all depositNoteCommitments
-            const depositCommitmentRepo = connection.getRepository(DepositCommitment);
-            depositCommitmentRepo.save(dcList);
+            await queryRunner.manager.save(dcList);
+
             await queryRunner.commitTransaction();
         } catch (error) {
             logger.error(error);
