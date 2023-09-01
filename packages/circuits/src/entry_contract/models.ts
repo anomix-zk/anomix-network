@@ -26,7 +26,7 @@ export class DepositActionBatch extends Struct({
 
 export class DepositRollupState extends Struct({
   depositRoot: Field,
-  handledActionsNum: Field,
+  currentIndex: Field,
   currentActionsHash: Field,
 }) {
   assertEquals(other: DepositRollupState) {
@@ -36,7 +36,7 @@ export class DepositRollupState extends Struct({
   toPretty(): any {
     return {
       depositRoot: this.depositRoot.toString(),
-      handledActionsNum: this.handledActionsNum.toString(),
+      currentIndex: this.currentIndex.toString(),
       currentActionsHash: this.currentActionsHash.toString(),
     };
   }

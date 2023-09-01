@@ -82,6 +82,24 @@ export class UserLowLeafWitnessData extends Struct({
     });
   }
 
+  static fromDTO(dto: {
+    leafData: {
+      value: string;
+      nextValue: string;
+      nextIndex: string;
+    };
+    siblingPath: string[];
+    index: string;
+  }) {
+    const leafData = LeafData.fromJSON(dto.leafData) as LeafData;
+    const siblingPath = UserNullifierMerkleWitness.fromJSON({
+      path: dto.siblingPath,
+    });
+    const index = Field(dto.index);
+
+    return new UserLowLeafWitnessData({ leafData, siblingPath, index });
+  }
+
   public checkMembershipAndAssert(root: Field, msg?: string) {
     const leaf = this.leafData.commitment();
     this.siblingPath.calculateRoot(leaf, this.index).assertEquals(root, msg);

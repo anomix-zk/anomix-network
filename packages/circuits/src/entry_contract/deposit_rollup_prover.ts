@@ -1,17 +1,26 @@
 import { INITIAL_LEAF } from '@anomix/merkle-tree';
 import {
   AccountUpdate,
+  Bool,
   Empty,
   Experimental,
+  Field,
   Provable,
   SelfProof,
+  Struct,
 } from 'snarkyjs';
 import {
   DepositActionBatch,
   DepositRollupState,
   DepositRollupStateTransition,
 } from './models';
-import { checkMembershipAndAssert } from '../utils/utils';
+import { checkMembership } from '../utils/utils';
+
+class TempParams extends Struct({
+  isActionNonExist: Bool,
+  depositRoot: Field,
+  currentIndex: Field,
+}) {}
 
 let DepositRollupProver = Experimental.ZkProgram({
   publicOutput: DepositRollupStateTransition,
@@ -22,7 +31,7 @@ let DepositRollupProver = Experimental.ZkProgram({
 
       method(state: DepositRollupState, actionBatch: DepositActionBatch) {
         let currDepositTreeRoot = state.depositRoot;
-        let currHandledActionsNum = state.handledActionsNum;
+        let currIndex = state.currentIndex;
         let currActionsHash = state.currentActionsHash;
 
         // Process each action in the batch
@@ -42,32 +51,43 @@ let DepositRollupProver = Experimental.ZkProgram({
             )
           );
 
-          currHandledActionsNum = Provable.if(
-            isDummyData,
-            currHandledActionsNum,
-            currHandledActionsNum.add(1)
-          );
-          Provable.log('currHandledActionsNum: ', currHandledActionsNum);
-          // check leaf is exist
-          checkMembershipAndAssert(
+          // check non-membership
+          const isNonExist = checkMembership(
             INITIAL_LEAF,
-            currHandledActionsNum,
+            currIndex,
             currWitness,
-            currDepositTreeRoot,
-            'leaf is already exist'
+            currDepositTreeRoot
           );
-          // calculate new deposit tree root
-          currDepositTreeRoot = currWitness.calculateRoot(
-            currAction,
-            currHandledActionsNum
+
+          let temp = Provable.if(
+            isDummyData,
+            TempParams,
+            new TempParams({
+              isActionNonExist: Bool(true),
+              depositRoot: currDepositTreeRoot,
+              currentIndex: currIndex,
+            }),
+            new TempParams({
+              isActionNonExist: isNonExist,
+              depositRoot: currWitness.calculateRoot(currAction, currIndex),
+              currentIndex: currIndex.add(1),
+            })
           );
+
+          temp.isActionNonExist.assertTrue(
+            'action is already exist in current index'
+          );
+          currDepositTreeRoot = temp.depositRoot;
+          currIndex = temp.currentIndex;
+
+          Provable.log('currIndex: ', currIndex);
         }
 
         return new DepositRollupStateTransition({
           source: state,
           target: new DepositRollupState({
             depositRoot: currDepositTreeRoot,
-            handledActionsNum: currHandledActionsNum,
+            currentIndex: currIndex,
             currentActionsHash: currActionsHash,
           }),
         });
@@ -99,4 +119,4 @@ class DepositRollupProof extends Experimental.ZkProgram.Proof(
   DepositRollupProver
 ) {}
 
-export {DepositRollupProver, DepositRollupProof};
+export { DepositRollupProver, DepositRollupProof };
