@@ -10,7 +10,7 @@
     "apps/*"
   ],
   "scripts": {
-    "libs:build": "npm run lib:build -w @anomix/types && npm run lib:build -w @anomix/merkle-tree && npm run lib:build -w @anomix/utils && npm run lib:build -w @anomix/circuits && npm run lib:build -w @anomix/dao && npm run lib:build -w @anomix/sdk",
+    "libs:build": "npm run lib:build -w @anomix/types && npm run lib:build -w @anomix/utils && npm run lib:build -w @anomix/merkle-tree && npm run lib:build -w @anomix/circuits && npm run lib:build -w @anomix/dao && npm run lib:build -w @anomix/sdk",
     "depositProcessor:dev": "npm run serve -w @anomix/deposit-processor",
     "rollupSequencer:dev": "npm run serve -w @anomix/rollup-sequencer",
     "proofGenerators:dev": "npm run serve -w @anomix/proof-generators",
