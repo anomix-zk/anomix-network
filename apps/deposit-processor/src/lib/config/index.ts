@@ -66,7 +66,7 @@ const config = {
     joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx ?? JoinsplitProofDummyTx)),// TODO
 
     txFeePayerPrivateKey: <string>process.env.L1_TX_FEE_PAYER_PRIVATE_KEY,
-    sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
+    rollupContractPrivateKey: <string>process.env.ROLLUP_CONTRACT_PRIVATE_KEY,
 
     depositWorldStateDBPath: <string>process.env.LEVELDB_DEPOSIT_ROLLUP_STATE_DB_PATH || './anomix_deposit_rollup_state_db',
     depositIndexedDBPath: <string>process.env.LEVELDB_DEPOSIT_INDEX_DB_PATH || './anomix_deposit_index_db',

@@ -232,7 +232,7 @@ export class ProofScheduler {
         const rollupProof = RollupProof.fromJSON(JSON.parse(blockProvedResultStr));
         const output = rollupProof.publicOutput;
         const signMessage = BlockProveOutput.toFields(output);
-        const operatorSign = Signature.create(PrivateKey.fromBase58(config.sequencerPrivateKey), signMessage);
+        const operatorSign = Signature.create(PrivateKey.fromBase58(config.rollupContractPrivateKey), signMessage);
         const entryDepositRoot = block.depositRoot;
         // send to proof-generator for 'AnomixRollupContract.updateRollupState'
         // construct proofTaskDto
@@ -260,7 +260,7 @@ export class ProofScheduler {
     async whenL1TxComeback(data: { blockId: number, tx: any }) {
         // sign and broadcast it.
         const l1Tx = Mina.Transaction.fromJSON(data.tx);
-        await l1Tx.sign([PrivateKey.fromBase58(config.sequencerPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
+        await l1Tx.sign([PrivateKey.fromBase58(config.rollupContractPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
             const txHash0 = txHash.hash()!;
 
             // insert L1 tx into db, underlying 

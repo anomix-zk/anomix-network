@@ -117,7 +117,7 @@ export class FlowScheduler {
         // prepare txFee valueNote
         const feeValueNote = new ValueNote({
             secret: Poseidon.hash([Field.random()]),
-            ownerPk: PrivateKey.fromBase58(config.sequencerPrivateKey).toPublicKey(),
+            ownerPk: PrivateKey.fromBase58(config.rollupContractPrivateKey).toPublicKey(),
             accountRequired: Field(1),
             creatorPk: PublicKey.empty(),
             value: new UInt64(nonDummyTxList.reduce((p, c, i) => {

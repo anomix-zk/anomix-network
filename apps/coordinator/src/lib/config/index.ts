@@ -68,7 +68,7 @@ const config = {
         innerBatchesCount: <number>Number(<string>process.env.OuterRollupInnerBatchesCount) || 12,
     },
 
-    sequencerPrivateKey: <string>process.env.SEQUENCER_PRIVATE_KEY,
+    rollupContractPrivateKey: <string>process.env.ROLLUP_CONTRACT_PRIVATE_KEY,
 
     networkInit: <number>Number(<string>process.env.NETWORK_INIT) || 1,
     worldStateDBPath: <string>process.env.LEVELDB_WORLDSTATE_DB_PATH || '/var/leveldb/anomix_world_state_db',
