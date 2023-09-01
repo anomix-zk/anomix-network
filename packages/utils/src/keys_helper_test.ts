@@ -10,13 +10,16 @@ import { genNewKeyPairBySignature, getHDpath, reverse } from "./keys_helper";
 //import * as bip32 from "bip32";
 import { HDKey } from "@scure/bip32";
 import { Buffer } from "buffer";
-import bs58check from "bs58check";
 import {
     bufferToInt256,
     int256ToBuffer,
     stringToUint8Array,
     stringToUtf8Array,
 } from "./binary";
+import { sha256 } from "@noble/hashes/sha256";
+import { base58check as base58checker } from "@scure/base";
+
+const base58check = base58checker(sha256);
 
 const prKey = PrivateKey.random();
 console.log("priKey: ", prKey.toBase58());
@@ -74,7 +77,7 @@ child0.privateKey[0] &= 0x3f;
 // const childPrivateKey = reverse(child0.privateKey!);
 const childPrivateKey = reverse(Buffer.from(child0.privateKey!));
 const privateKeyHex = `5a01${childPrivateKey.toString("hex")}`;
-const privateKey = bs58check.encode(Buffer.from(privateKeyHex, "hex"));
+const privateKey = base58check.encode(Buffer.from(privateKeyHex, "hex"));
 
 const priKey = PrivateKey.fromBase58(privateKey);
 const pubKey = priKey.toPublicKey();

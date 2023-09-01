@@ -2,7 +2,10 @@ import { Field, Poseidon, PrivateKey, PublicKey, Signature } from "snarkyjs";
 import { int256ToBuffer } from "./binary";
 import { HDKey } from "@scure/bip32";
 import { Buffer } from "buffer";
-import bs58check from "bs58check";
+import { sha256 } from "@noble/hashes/sha256";
+import { base58check as base58checker } from "@scure/base";
+
+const base58check = base58checker(sha256);
 
 export function reverse(bytes: Buffer) {
     const reversed = Buffer.alloc(bytes.length);
@@ -65,7 +68,7 @@ export function genNewKeyPairBySeed(
     //const childPrivateKey = reverse(child0.privateKey!);
     const childPrivateKey = reverse(Buffer.from(child0.privateKey!));
     const privateKeyHex = `5a01${childPrivateKey.toString("hex")}`;
-    const privateKey58 = bs58check.encode(Buffer.from(privateKeyHex, "hex"));
+    const privateKey58 = base58check.encode(Buffer.from(privateKeyHex, "hex"));
 
     const privateKey = PrivateKey.fromBase58(privateKey58);
     return { privateKey, publicKey: privateKey.toPublicKey() };
