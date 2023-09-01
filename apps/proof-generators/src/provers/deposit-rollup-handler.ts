@@ -31,31 +31,37 @@ export const depositRollupBatchAndMerge = async (subProcessCordinator: SubProces
         return proofPayLoadList;
     };
 
-    let queue = new TaskStack<ProofPayload<any>>(filterStep, reducerStep);
+    if (proofPayloads.length >= 2) {
 
-    logger.info(`beginning work of ${proofPayloads.length} depositRollupBatchAndMerge cases`);
+        let queue = new TaskStack<ProofPayload<any>>(filterStep, reducerStep);
 
-    queue.prepare(
-        ...proofPayloads
-    );
-    let totalComputationalSeconds = Date.now();
+        logger.info(`beginning work of ${proofPayloads.length} depositRollupBatchAndMerge cases`);
 
-    logger.info('starting work, generating proofs in parallel');
+        queue.prepare(
+            ...proofPayloads
+        );
+        let totalComputationalSeconds = Date.now();
 
-    console.time('duration');
-    let res = await queue.work();
-    console.timeEnd('duration');
+        logger.info('starting work, generating proofs in parallel');
 
-    logger.info('result: ', res);
+        console.time('duration');
+        let res = await queue.work();
+        console.timeEnd('duration');
 
-    logger.info(
-        'totalComputationalSeconds',
-        (Date.now() - totalComputationalSeconds) / 1000
-    );
+        logger.info('result: ', res);
 
-    // send back to deposit-processor
-    if (sendCallBack) {
-        await sendCallBack(res.payload);
+        logger.info(
+            'totalComputationalSeconds',
+            (Date.now() - totalComputationalSeconds) / 1000
+        );
+
+        // send back to deposit-processor
+        if (sendCallBack) {
+            await sendCallBack(res.payload);
+        }
+
+    } else {
+        await subProcessCordinator.depositRollup_commitActionBatch(proofPayloads[0], sendCallBack);
     }
 
 };
