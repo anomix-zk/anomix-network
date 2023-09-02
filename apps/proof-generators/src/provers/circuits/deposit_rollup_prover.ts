@@ -5,19 +5,26 @@ import {
     Experimental,
     Provable,
     SelfProof,
-    Field
+    Field,
+    Struct,
+    Bool
 } from 'snarkyjs';
 import {
     DepositActionBatch,
     DepositRollupState,
     DepositRollupStateTransition,
 } from '@anomix/circuits';
-import { checkMembershipAndAssert } from '@anomix/circuits';
+import { checkMembership } from '@anomix/circuits';
 
+class TempParams extends Struct({
+    isActionNonExist: Bool,
+    depositRoot: Field,
+    currentIndex: Field,
+}) { }
 // for test before circuit
 export const commitActionBatch = (state: DepositRollupState, actionBatch: DepositActionBatch) => {
     let currDepositTreeRoot = state.depositRoot;
-    let currHandledActionsNum = state.handledActionsNum;
+    let currIndex = state.currentIndex;
     let currActionsHash = state.currentActionsHash;
 
     // Process each action in the batch
@@ -37,32 +44,43 @@ export const commitActionBatch = (state: DepositRollupState, actionBatch: Deposi
             )
         );
 
-        currHandledActionsNum = Provable.if(
-            isDummyData,
-            currHandledActionsNum,
-            currHandledActionsNum.add(1)
-        );
-        Provable.log('currHandledActionsNum: ', currHandledActionsNum);
-        // check leaf is exist
-        checkMembershipAndAssert(
-            Field(0),
-            currHandledActionsNum,
+        // check non-membership
+        const isNonExist = checkMembership(
+            INITIAL_LEAF,
+            currIndex,
             currWitness,
-            currDepositTreeRoot,
-            'leaf is already exist'
+            currDepositTreeRoot
         );
-        // calculate new deposit tree root
-        currDepositTreeRoot = currWitness.calculateRoot(
-            currAction,
-            currHandledActionsNum
+
+        let temp = Provable.if(
+            isDummyData,
+            TempParams,
+            new TempParams({
+                isActionNonExist: Bool(true),
+                depositRoot: currDepositTreeRoot,
+                currentIndex: currIndex,
+            }),
+            new TempParams({
+                isActionNonExist: isNonExist,
+                depositRoot: currWitness.calculateRoot(currAction, currIndex),
+                currentIndex: currIndex.add(1),
+            })
         );
+
+        temp.isActionNonExist.assertTrue(
+            'action is already exist in current index'
+        );
+        currDepositTreeRoot = temp.depositRoot;
+        currIndex = temp.currentIndex;
+
+        Provable.log('currIndex: ', currIndex);
     }
 
     return new DepositRollupStateTransition({
         source: state,
         target: new DepositRollupState({
             depositRoot: currDepositTreeRoot,
-            handledActionsNum: currHandledActionsNum,
+            currentIndex: currIndex,
             currentActionsHash: currActionsHash,
         }),
     });

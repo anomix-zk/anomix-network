@@ -22,8 +22,8 @@ const logger = getLogger('flow-scheduler');
  * deposit_processor rollup flow at 'deposit_tree'
  */
 export class FlowScheduler {
-    private currentHandledActionsNumOnchain: Field
-    private currentTreeRootOnchain: Field
+    private currentIndexOnchain: Field
+    private currentDepositRootOnchain: Field
     private currentActionsHashOnchain: Field
 
     private depositStartIndexInBatch: Field
@@ -43,14 +43,14 @@ export class FlowScheduler {
         const entryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
         await syncAcctInfo(entryContractAddr);
         const entryContract = new AnomixEntryContract(entryContractAddr);
-        this.currentHandledActionsNumOnchain = entryContract.depositState.get().handledActionsNum;
-        this.currentTreeRootOnchain = entryContract.depositState.get().depositRoot;
+        this.currentIndexOnchain = entryContract.depositState.get().currentIndex;
+        this.currentDepositRootOnchain = entryContract.depositState.get().depositRoot;
         this.currentActionsHashOnchain = entryContract.depositState.get().currentActionsHash;
 
-        this.depositStartIndexInBatch = this.currentHandledActionsNumOnchain.add(1);
+        this.depositStartIndexInBatch = this.currentIndexOnchain;
 
         console.assert(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false) == this.depositStartIndexInBatch.toBigInt());
-        console.assert(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false).equals(this.currentTreeRootOnchain).toBoolean());
+        console.assert(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false).equals(this.currentDepositRootOnchain).toBoolean());
     }
 
     async start() {
@@ -86,8 +86,8 @@ export class FlowScheduler {
             }
             // preinsert into tree cache,
             const batchParamList: { depositRollupState: DepositRollupState, depositActionBatch: DepositActionBatch }[] = [];
-            let depositRootX = this.currentTreeRootOnchain;
-            let handledActionsNumX = this.currentHandledActionsNumOnchain;
+            let depositRootX = this.currentDepositRootOnchain;
+            let currentIndexX = this.currentIndexOnchain;
             let currentActionsHashX = this.currentActionsHashOnchain;
             const batchCnt = depositCommitmentList.length / DEPOSIT_ACTION_BATCH_SIZE;
             for (let i = 0; i < batchCnt; i++) {
@@ -96,7 +96,7 @@ export class FlowScheduler {
                 let param = {
                     depositRollupState: new DepositRollupState({
                         depositRoot: depositRootX,
-                        handledActionsNum: handledActionsNumX,
+                        currentIndex: currentIndexX,
                         currentActionsHash: currentActionsHashX
                     }),
                     depositActionBatch: new DepositActionBatch({
@@ -114,12 +114,12 @@ export class FlowScheduler {
                     const leafIndex = this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, includeUnCommit);
                     const merkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DEPOSIT_TREE, leafIndex, includeUnCommit);
                     // assert for test
-                    checkMembershipAndAssert(INITIAL_LEAF, Field(leafIndex), merkleWitness, this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, includeUnCommit));
+                    checkMembershipAndAssert(DUMMY_ACTION, Field(leafIndex), merkleWitness, this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, includeUnCommit));
 
                     param.depositActionBatch.actions.push(targetAction);
                     param.depositActionBatch.merkleWitnesses.push(merkleWitness);
 
-                    if (targetAction.equals(INITIAL_LEAF).not().toBoolean()) {// skip dummy ones
+                    if (targetAction.equals(DUMMY_ACTION).not().toBoolean()) {// skip dummy ones
                         await this.worldStateDB.appendLeaf(MerkleTreeId.DEPOSIT_TREE, targetAction);
 
                         currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
@@ -131,11 +131,11 @@ export class FlowScheduler {
                 }
 
                 depositRootX = this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, includeUnCommit);
-                handledActionsNumX = Field(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, includeUnCommit) - 1n);// exclude the leafIndex-0 INIT_LEAF
+                currentIndexX = Field(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, includeUnCommit));
             }
             this.targetActionsHash = currentActionsHashX;
             this.targetDepositRoot = depositRootX;
-            this.targetHandledActionsNum = handledActionsNumX;
+            this.targetHandledActionsNum = currentIndexX;
 
             // get the (startBlock, endBlock) of depositTreeTrans
             const recordIds = new Set(originDcList.map(dc => {
