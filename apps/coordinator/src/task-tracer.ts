@@ -95,24 +95,23 @@ async function traceTasks() {
                                 const vDepositTxList: MemPlL2Tx[] = [];
                                 const dcList = await queryRunner.manager.find(DepositCommitment, { where: { depositTreeTransId: depositTrans!.id } });
                                 dcList!.forEach(dc => {
+                                    const memPlL2Tx = new MemPlL2Tx();
+                                    memPlL2Tx.actionType = ActionType.DEPOSIT.toString();
+                                    memPlL2Tx.nullifier1 = DUMMY_FIELD.toString();
+                                    memPlL2Tx.nullifier2 = DUMMY_FIELD.toString();
+                                    memPlL2Tx.outputNoteCommitment1 = dc.depositNoteCommitment;
+                                    memPlL2Tx.outputNoteCommitment2 = DUMMY_FIELD.toString();
+                                    memPlL2Tx.publicValue = dc.depositValue;
+                                    memPlL2Tx.publicOwner = dc.sender;
+                                    memPlL2Tx.publicAssetId = dc.assetId;
+                                    memPlL2Tx.depositIndex = dc.depositNoteIndex;
+                                    memPlL2Tx.txFee = '0';
+                                    memPlL2Tx.txFeeAssetId = dc.assetId;
+                                    memPlL2Tx.encryptedData1 = dc.encryptedNote;
+                                    memPlL2Tx.status = L2TxStatus.PENDING
                                     // pre-construct depositTx
-                                    vDepositTxList.push({
-                                        actionType: ActionType.DEPOSIT.toString(),
-                                        nullifier1: DUMMY_FIELD.toString(),
-                                        nullifier2: DUMMY_FIELD.toString(),
-                                        outputNoteCommitment1: dc.depositNoteCommitment,
-                                        outputNoteCommitment2: DUMMY_FIELD.toString(),
-                                        publicValue: dc.depositValue,
-                                        publicOwner: dc.sender,
-                                        publicAssetId: dc.assetId,
-                                        depositIndex: dc.depositNoteIndex,
-                                        txFee: '0',
-                                        txFeeAssetId: dc.assetId,
-                                        encryptedData1: dc.encryptedNote,
-                                        status: L2TxStatus.PENDING
-                                    } as MemPlL2Tx);
+                                    vDepositTxList.push(memPlL2Tx);
                                 });
-                                await queryRunner.manager.save(dcList);
 
                                 // insert depositTx into memorypool
                                 await queryRunner.manager.save(vDepositTxList);
