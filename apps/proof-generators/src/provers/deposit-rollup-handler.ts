@@ -61,7 +61,7 @@ export const depositRollupBatchAndMerge = async (subProcessCordinator: SubProces
         }
 
     } else {
-        await subProcessCordinator.depositRollup_commitActionBatch(proofPayloads[0], sendCallBack);
+        subProcessCordinator.depositRollup_commitActionBatch(proofPayloads[0], sendCallBack);
     }
 
 };
