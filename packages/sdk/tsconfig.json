@@ -3,7 +3,7 @@
     "target": "es2020",
     "module": "es2022",
     "outDir": "./dist",
-    "lib": ["dom", "esnext", "webworker"],
+    "lib": ["dom", "esnext"],
     "rootDir": ".",
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,

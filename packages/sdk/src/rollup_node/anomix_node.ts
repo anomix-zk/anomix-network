@@ -6,6 +6,7 @@ import {
   MerkleProofDto,
   NetworkStatusDto,
   TxFeeSuggestionDto,
+  WithdrawalWitnessDto,
   WithdrawAssetReqDto,
   WithdrawInfoDto,
   WorldStateRespDto,
@@ -23,18 +24,12 @@ export interface AnomixNode {
   getWorldState(): Promise<WorldStateRespDto>;
   getNetworkStatus(): Promise<NetworkStatusDto>;
   getAccountPublicKeysByAliasHash(aliasHash: string): Promise<string[]>;
-  getAliasHashByAccountPublicKey(
+  getAliasByAccountPublicKey(
     accountPk: string
-  ): Promise<string | undefined>;
+  ): Promise<{ alias: string; aliasInfo: string } | undefined>;
   getMerkleWitnessesByCommitments(
     commitments: string[]
   ): Promise<MerkleProofDto[]>;
-  // let node help to construct the L1 withdraw tx
-  sendWithdrawTx(tx: WithdrawAssetReqDto): Promise<boolean>;
-  getWithdrawProvedTx(
-    l1addr: string,
-    noteCommitments: string[]
-  ): Promise<WithdrawInfoDto[]>;
   isAliasRegistered(
     aliasHash: string,
     includePending: boolean
@@ -48,4 +43,7 @@ export interface AnomixNode {
     accountPk: string,
     includePending: boolean
   ): Promise<boolean>;
+  getFundsClaimInfo(
+    withdrawNoteCommitment: string
+  ): Promise<WithdrawalWitnessDto>;
 }

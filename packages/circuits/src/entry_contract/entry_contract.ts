@@ -42,7 +42,7 @@ export class AnomixEntryContract extends SmartContract {
     this.depositState.set(
       new DepositRollupState({
         depositRoot: DEPOSIT_TREE_INIT_ROOT,
-        handledActionsNum: Field(0),
+        currentIndex: Field(0),
         currentActionsHash: Reducer.initialActionState,
       })
     );

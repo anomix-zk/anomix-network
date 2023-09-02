@@ -95,7 +95,8 @@ class DexiePaymentTx implements DexieUserTx {
     public isSender: boolean,
     public createdTs: number,
     public finalizedTs: number,
-    public publicOwner?: string
+    public publicOwner?: string,
+    public withdrawNoteCommitment?: string
   ) {}
 }
 
@@ -113,6 +114,7 @@ function fromDexiePaymentTx(tx: DexiePaymentTx): UserPaymentTx {
     tx.depositIndex,
     tx.privateValue,
     tx.privateValueAssetId,
+    tx.withdrawNoteCommitment,
     tx.sender,
     tx.receiver,
     tx.isSender,
@@ -139,7 +141,8 @@ function toDexiePaymentTx(tx: UserPaymentTx): DexiePaymentTx {
     tx.isSender,
     tx.createdTs,
     tx.finalizedTs,
-    tx.publicOwner
+    tx.publicOwner,
+    tx.withdrawNoteCommitment
   );
 }
 

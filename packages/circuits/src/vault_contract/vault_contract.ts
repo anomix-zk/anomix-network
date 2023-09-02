@@ -15,7 +15,7 @@ import {
   UInt64,
   Struct,
 } from 'snarkyjs';
-import { USER_NULLIFIER_TREE_INIT_ROOT } from '../constants';
+import { MINA, USER_NULLIFIER_TREE_INIT_ROOT } from '../constants';
 import { AssetId, DUMMY_FIELD, NoteType } from '../models/constants';
 import {
   UserLowLeafWitnessData,
@@ -123,13 +123,15 @@ export class AnomixVaultContract extends SmartContract {
     return AnomixVaultContract.withdrawAccountVkHash;
   }
 
-  // only mina deposit
+  // Note: only mina deposit
+  // TODO: support other token deposit, set deposit permission and amount limit
   @method deposit(payerAddress: PublicKey, amount: UInt64) {
     let payerAccUpdate = AccountUpdate.createSigned(payerAddress);
     payerAccUpdate.balance.subInPlace(amount);
     this.balance.addInPlace(amount);
   }
 
+  // TODO: add eploy account event
   @method deployAccount(
     verificationKey: VerificationKey,
     userAddress: PublicKey

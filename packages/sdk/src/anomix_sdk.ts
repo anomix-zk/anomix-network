@@ -13,8 +13,13 @@ import {
   JoinSplitSendInput,
   NoteType,
   ValueNote,
+  AnomixVaultContract,
+  WithdrawAccount,
+  WithdrawNoteWitnessData,
+  UserLowLeafWitnessData,
+  UserNullifierMerkleWitness,
 } from '@anomix/circuits';
-import { EncryptedNote, L2TxReqDto, WithdrawAssetReqDto } from '@anomix/types';
+import { EncryptedNote, L2TxReqDto } from '@anomix/types';
 import {
   calculateShareSecret,
   derivePublicKeyBigInt,
@@ -25,8 +30,10 @@ import {
 } from '@anomix/utils';
 import consola, { ConsolaInstance } from 'consola';
 import {
+  AccountUpdate,
   Bool,
   Encoding,
+  fetchAccount,
   Field,
   Mina,
   Poseidon,
@@ -54,37 +61,44 @@ import { Tx } from './types/types';
 import { UserAccountTx } from './user_tx/user_account_tx';
 
 import type { SyncerWrapper } from './syncer/syncer_worker';
-import { Worker as NodeWorker } from 'worker_threads';
+// import { Worker as NodeWorker } from 'worker_threads';
 import isNode from 'detect-node';
 import { Remote, wrap } from 'comlink';
 import nodeEndpoint from 'comlink/dist/esm/node-adapter';
-import { SdkEventType, SDK_BROADCAST_CHANNNEL_NAME } from './constants';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { DEFAULT_L1_TX_FEE, SdkEventType } from './constants';
+import { decryptAlias } from './note_decryptor/alias_util';
+// import { dirname } from 'path';
+// import { fileURLToPath } from 'url';
 
-let _filename;
-let _dirname;
-if (isNode) {
-  _filename = fileURLToPath(import.meta.url);
-  _dirname = dirname(_filename);
-}
+// let _filename;
+// let _dirname;
+// if (isNode) {
+//   _filename = fileURLToPath(import.meta.url);
+//   _dirname = dirname(_filename);
+// }
 
 export class AnomixSdk {
   private entryContract: AnomixEntryContract;
+  private isEntryContractCompiled: boolean = false;
+
+  private vaultContract: AnomixVaultContract;
+  private isVaultContractCompiled: boolean = false;
+
   private keyStore: KeyStore;
   private syncer: Syncer;
   private log: ConsolaInstance;
   private node: AnomixNode;
   private useSyncerWorker: boolean = true;
-  private syncerWorker: Worker | NodeWorker;
+  private syncerWorker: Worker;
   private remoteSyncer: Remote<SyncerWrapper>;
-  private isEntryContractCompiled: boolean = false;
+
   private isPrivateCircuitCompiled: boolean = false;
   private broadcastChannel: BroadcastChannel | undefined;
 
   constructor(
     private db: Database,
     private entryContractAddress: PublicKey,
+    private vaultContractAddress: PublicKey,
     private options: SdkOptions
   ) {
     this.log = consola.withTag('anomix:sdk');
@@ -100,10 +114,19 @@ export class AnomixSdk {
     );
 
     this.keyStore = new PasswordKeyStore(db);
-    this.syncer = new Syncer(this.node, db, this.keyStore);
-    this.entryContract = new AnomixEntryContract(this.entryContractAddress);
-    if (!isNode) {
-      this.broadcastChannel = new BroadcastChannel(SDK_BROADCAST_CHANNNEL_NAME);
+    this.syncer = new Syncer(
+      this.node,
+      db,
+      this.keyStore,
+      options.broadcastChannelName,
+      options.logChannelName
+    );
+    this.entryContract = new AnomixEntryContract(entryContractAddress);
+    this.vaultContract = new AnomixVaultContract(vaultContractAddress);
+    if (!isNode && options.broadcastChannelName) {
+      this.broadcastChannel = new BroadcastChannel(
+        options.broadcastChannelName
+      );
     }
 
     this.log.info('Endpoint-mina: ', options.minaEndpoint);
@@ -111,13 +134,30 @@ export class AnomixSdk {
     Mina.setActiveInstance(blockchain);
   }
 
-  public async compileEntryContract() {
-    this.log.info('Compile EntryContract Circuits...');
-    console.time('compile entry contract');
+  public async compileEntryVaultContract() {
+    this.log.info('Compile EntryContract and VaultContract Circuits...');
+
+    console.time('compile withdrawAccount');
+    await WithdrawAccount.compile();
+    console.timeEnd('compile withdrawAccount');
+
+    console.time('compile vaultContract');
+    AnomixVaultContract.withdrawAccountVkHash =
+      WithdrawAccount._verificationKey!.hash;
+    await AnomixVaultContract.compile();
+    this.isVaultContractCompiled = true;
+    console.timeEnd('compile vaultContract');
+
+    console.time('compile depositRollupProver');
     await DepositRollupProver.compile();
+    console.timeEnd('compile depositRollupProver');
+
+    console.time('compile anomixEntryContract');
     await AnomixEntryContract.compile();
     this.isEntryContractCompiled = true;
-    console.timeEnd('compile entry contract');
+    console.timeEnd('compile anomixEntryContract');
+
+    this.log.info('Compile EntryContract and VaultContract Circuits done!');
   }
 
   public async compilePrivateCircuit() {
@@ -128,31 +168,31 @@ export class AnomixSdk {
     console.timeEnd('compile private circuit');
   }
 
-  public async start(useSyncerWorker = true) {
+  public async start(useSyncerWorker = false) {
     this.useSyncerWorker = useSyncerWorker;
     if (this.useSyncerWorker) {
       this.log.info('Use syncer worker to start');
       this.log.info('current env - isNode: ', isNode);
       if (isNode) {
-        // throw new Error('Syncer worker is not supported in nodejs environment');
-        this.syncerWorker = new NodeWorker(
-          _dirname.concat('/syncer/syncer_worker.js'),
-          {
-            workerData: {
-              memory: new WebAssembly.Memory({
-                initial: 20,
-                maximum: 5000,
-                shared: true,
-              }),
-            },
-          }
-        );
-        this.remoteSyncer = wrap<SyncerWrapper>(
-          nodeEndpoint(this.syncerWorker)
-        );
+        throw new Error('Syncer worker is not supported in nodejs environment');
+        // this.syncerWorker = new NodeWorker(
+        //   _dirname.concat('/syncer/syncer_worker.js'),
+        //   {
+        //     workerData: {
+        //       memory: new WebAssembly.Memory({
+        //         initial: 20,
+        //         maximum: 5000,
+        //         shared: true,
+        //       }),
+        //     },
+        //   }
+        // );
+        // this.remoteSyncer = wrap<SyncerWrapper>(
+        //   nodeEndpoint(this.syncerWorker)
+        // );
       } else {
         this.syncerWorker = new Worker(
-          new URL('./syncer/syncer_worker.ts', import.meta.url),
+          new URL('./syncer/syncer_worker.js', import.meta.url),
           {
             type: 'module',
           }
@@ -162,10 +202,10 @@ export class AnomixSdk {
       this.log.debug('worker init done');
       try {
         await this.remoteSyncer.create(this.options);
-        this.log.debug('remoe syncer created');
         await this.remoteSyncer.start();
       } catch (err) {
         this.log.error(err);
+        throw err;
       }
     } else {
       await this.syncer.start(
@@ -185,6 +225,7 @@ export class AnomixSdk {
   public async stop() {
     if (this.useSyncerWorker) {
       await this.remoteSyncer.stop();
+      // @ts-ignore
       await this.syncerWorker.terminate();
     } else {
       await this.syncer.stop();
@@ -243,23 +284,32 @@ export class AnomixSdk {
     );
   }
 
-  public generateKeyPair(sign: Signature): {
+  public generateKeyPair(
+    sign: Signature,
+    accountIndex = 0
+  ): {
     privateKey: PrivateKey;
     publicKey: PublicKey;
   } {
-    return genNewKeyPairBySignature(sign);
+    return genNewKeyPairBySignature(sign, accountIndex);
   }
 
-  public generateKeyPairByProviderSignature(sign: ProviderSignature) {
+  public generateKeyPairByProviderSignature(
+    sign: ProviderSignature,
+    accountIndex = 0
+  ) {
     const signature = convertProviderSignatureToSignature(sign);
-    return this.generateKeyPair(signature);
+    return this.generateKeyPair(signature, accountIndex);
   }
 
   public getAccountKeySigningData(): string {
     return 'Sign this message to generate your Anomix Account Key. This key lets the application decrypt your balance on Anomix.\n\nIMPORTANT: Only sign this message if you trust the application.';
   }
 
-  public async generateAccountKeyPair(signer: MinaSignerProvider) {
+  public async generateAccountKeyPair(
+    signer: MinaSignerProvider,
+    accountIndex = 0
+  ) {
     const signingData = this.getAccountKeySigningData();
     const signedData = await signer.signMessage({ message: signingData });
     const sign = Signature.fromObject({
@@ -267,14 +317,17 @@ export class AnomixSdk {
       s: Scalar.fromJSON(signedData.signature.scalar),
     });
 
-    return this.generateKeyPair(sign);
+    return this.generateKeyPair(sign, accountIndex);
   }
 
   public getSigningKeySigningData() {
     return 'Sign this message to generate your Anomix Signing Key. This key lets the application spend your funds on Anomix.\n\nIMPORTANT: Only sign this message if you trust the application.';
   }
 
-  public async generateSigningKeyPair(signer: MinaSignerProvider) {
+  public async generateSigningKeyPair(
+    signer: MinaSignerProvider,
+    accountIndex = 0
+  ) {
     const signingData = this.getSigningKeySigningData();
     const signedData = await signer.signMessage({ message: signingData });
     const sign = Signature.fromObject({
@@ -282,7 +335,7 @@ export class AnomixSdk {
       s: Scalar.fromJSON(signedData.signature.scalar),
     });
 
-    return this.generateKeyPair(sign);
+    return this.generateKeyPair(sign, accountIndex);
   }
 
   public async unlockKeyStore(cachePubKeys: string[], pwd: string) {
@@ -306,6 +359,22 @@ export class AnomixSdk {
     pwd: string
   ): Promise<PrivateKey | undefined> {
     return await this.keyStore.getAccountPrivateKey(publicKey, pwd);
+  }
+
+  public async getAliasByAccountPublicKey(
+    accountPk: string,
+    accountPrivateKey: PrivateKey
+  ) {
+    try {
+      const res = await this.node.getAliasByAccountPublicKey(accountPk);
+      if (res) {
+        const alias = decryptAlias(res.aliasInfo, res.alias, accountPrivateKey);
+        return alias;
+      }
+    } catch (err) {
+      this.log.error(err);
+      throw err;
+    }
   }
 
   public async isAccountRegistered(
@@ -376,6 +445,32 @@ export class AnomixSdk {
     }
 
     return false;
+  }
+
+  public async withdrawAccountExists(userAddress: string) {
+    const res = await fetchAccount({
+      publicKey: userAddress,
+      tokenId: this.vaultContract.token.id,
+    });
+
+    if (res.account) {
+      return true;
+    }
+
+    return false;
+  }
+
+  public async getL1Account(address: string, tokenId?: string) {
+    const res = await fetchAccount({
+      publicKey: address,
+      tokenId,
+    });
+
+    if (res.account) {
+      return res.account;
+    }
+
+    return undefined;
   }
 
   public async getAccounts() {
@@ -494,6 +589,97 @@ export class AnomixSdk {
     }
   }
 
+  public async createDeployWithdrawAccountTx({
+    userAddress,
+    feePayerAddress,
+    suggestedTxFee,
+  }: {
+    userAddress: PublicKey;
+    feePayerAddress: PublicKey;
+    suggestedTxFee?: UInt64;
+  }) {
+    this.log.info('create withdraw account...');
+    if (!this.isVaultContractCompiled) {
+      throw new Error('Vault contract is not compiled');
+    }
+
+    let txFee = suggestedTxFee
+      ? suggestedTxFee
+      : UInt64.from(DEFAULT_L1_TX_FEE);
+    let transaction = await Mina.transaction(
+      { sender: feePayerAddress, fee: txFee },
+      () => {
+        AccountUpdate.fundNewAccount(feePayerAddress);
+        this.vaultContract.deployAccount(
+          AnomixVaultContract._verificationKey!,
+          userAddress
+        );
+      }
+    );
+
+    this.log.info(`prove deploy withdraw account tx...`);
+    await transaction.prove();
+    return transaction.toJSON();
+  }
+
+  public async createClaimFundsTx({
+    withdrawNoteCommitment,
+    feePayerAddress,
+    suggestedTxFee,
+  }: {
+    withdrawNoteCommitment: string;
+    feePayerAddress: PublicKey;
+    suggestedTxFee?: UInt64;
+  }) {
+    this.log.info('create claim funds tx...');
+    if (!this.isVaultContractCompiled) {
+      throw new Error('Vault contract is not compiled');
+    }
+
+    const claimInfo = await this.node.getFundsClaimInfo(withdrawNoteCommitment);
+    const withdrawNoteWitnessData = WithdrawNoteWitnessData.fromDTO(
+      claimInfo.withdrawNoteWitnessData
+    );
+    const lowLeafWitness = UserLowLeafWitnessData.fromDTO(
+      claimInfo.lowLeafWitness
+    );
+    const oldNullWitness = UserNullifierMerkleWitness.fromJSON({
+      path: claimInfo.oldNullWitness,
+    });
+    const rollupDataRoot = Field(claimInfo.rollupDataRoot);
+    const fundsReceiver = withdrawNoteWitnessData.withdrawNote.ownerPk;
+
+    let txFee = suggestedTxFee
+      ? suggestedTxFee
+      : UInt64.from(DEFAULT_L1_TX_FEE);
+
+    // cache account for contract execution
+    await fetchAccount({ publicKey: this.vaultContract.address });
+    await fetchAccount({
+      publicKey: fundsReceiver,
+    });
+    await fetchAccount({
+      publicKey: fundsReceiver,
+      tokenId: this.vaultContract.token.id,
+    });
+
+    let transaction = await Mina.transaction(
+      { sender: feePayerAddress, fee: txFee },
+      () => {
+        this.vaultContract.withdraw(
+          withdrawNoteWitnessData,
+          lowLeafWitness,
+          oldNullWitness,
+          rollupDataRoot
+        );
+      }
+    );
+
+    this.log.info(`prove deploy withdraw account tx...`);
+    await transaction.prove();
+    return transaction.toJSON();
+  }
+
   public async createDepositTx({
     payerAddress,
     receiverAddress,
@@ -536,11 +722,18 @@ export class AnomixSdk {
       noteEncryptPrivateKey
     );
 
-    let txFee = suggestedTxFee ? suggestedTxFee : UInt64.from(0.02 * 1e9);
+    let txFee = suggestedTxFee
+      ? suggestedTxFee
+      : UInt64.from(DEFAULT_L1_TX_FEE);
+    const entryContract = this.entryContract;
+
+    // cache account for run circuit
+    await fetchAccount({ publicKey: this.vaultContract.address });
+    await fetchAccount({ publicKey: entryContract.address });
     let transaction = await Mina.transaction(
       { sender: feePayerAddress, fee: txFee },
       () => {
-        this.entryContract.deposit(payerAddress, note, noteFieldData);
+        entryContract.deposit(payerAddress, note, noteFieldData);
       }
     );
 
@@ -908,7 +1101,6 @@ export class AnomixSdk {
       },
     } as L2TxReqDto;
 
-    // add pending note2
     const txHash = proof.publicOutput.hash().toString();
     const originTx = UserPaymentTx.from({
       txHash: txHash,
@@ -923,6 +1115,9 @@ export class AnomixSdk {
       depositIndex: Number(proof.publicOutput.depositIndex.toString()),
       privateValue: payAmount.toString(),
       privateValueAssetId: payAssetId.toString(),
+      withdrawNoteCommitment: isWithdraw
+        ? proof.publicOutput.outputNoteCommitment1.toString()
+        : undefined,
       sender: accountPk58,
       receiver: receiver.toBase58(),
       isSender: true,
@@ -1035,20 +1230,5 @@ export class AnomixSdk {
         alias,
       },
     } as Tx;
-  }
-
-  public async withdrawToL1(tx: WithdrawAssetReqDto) {
-    return await this.node.sendWithdrawTx(tx);
-  }
-
-  public async getWithdrawProvedL1Tx(l1addr: string, noteCommitment: string) {
-    const results = await this.node.getWithdrawProvedTx(l1addr, [
-      noteCommitment,
-    ]);
-    if (results.length === 0) {
-      throw new Error('Related withdraw note not found');
-    }
-
-    return results[0].l1TxBody;
   }
 }

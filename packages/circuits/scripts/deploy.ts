@@ -8,11 +8,16 @@ import {
   JoinSplitProver,
 } from '../src';
 import { getTestContext } from '../src/test_utils';
-import { AnomixVaultContract } from '../src/vault_contract/vault_contract';
-import KeyConfig from './keys.json' assert { type: 'json' };
+import {
+  AnomixVaultContract,
+  WithdrawAccount,
+} from '../src/vault_contract/vault_contract';
+import KeyConfig from './keys-private.json' assert { type: 'json' };
 
 const feePayerAddress = PublicKey.fromBase58(KeyConfig.feePayer.publicKey);
 const feePayerKey = PrivateKey.fromBase58(KeyConfig.feePayer.privateKey);
+const operatorAddress = PublicKey.fromBase58(KeyConfig.operator.publicKey);
+const operatorKey = PrivateKey.fromBase58(KeyConfig.operator.privateKey);
 
 const rollupContractAddress = PublicKey.fromBase58(
   KeyConfig.rollupContract.publicKey
@@ -97,7 +102,7 @@ async function deployRollupContract() {
 
       rollupContract.deployRollup(
         { zkappKey: rollupContractKey },
-        feePayerAddress
+        operatorAddress
       );
     }
   );
@@ -111,7 +116,17 @@ async function deployRollupContract() {
 }
 
 async function deployEntryVaultContract() {
+  console.time('compile withdrawAccount');
+  const { verificationKey: withdrawAccountVerifyKey } =
+    await WithdrawAccount.compile();
+  console.timeEnd('compile withdrawAccount');
+  console.log(
+    'vaultContractVerifyKey: ',
+    JSON.stringify(withdrawAccountVerifyKey)
+  );
+
   console.time('compile vaultContract');
+  AnomixVaultContract.withdrawAccountVkHash = withdrawAccountVerifyKey.hash;
   const { verificationKey: vaultContractVerifyKey } =
     await AnomixVaultContract.compile();
   console.timeEnd('compile vaultContract');
@@ -151,7 +166,7 @@ async function deployEntryVaultContract() {
       memo: 'Deploy entryvault contract',
     },
     () => {
-      AccountUpdate.fundNewAccount(feePayerAddress);
+      AccountUpdate.fundNewAccount(feePayerAddress, 2);
 
       vaultContract.deployVaultContract(
         { zkappKey: vaultContractKey },
