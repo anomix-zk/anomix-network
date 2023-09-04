@@ -5,6 +5,8 @@ import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, A
 import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
 import { ProofTaskType, FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
+import { proveTxBatch } from './circuits/inner_rollup_prover';
+import { merge } from './circuits/deposit_rollup_prover';
 
 const logger = getLogger('pWorker-InnerRollupProver');
 
@@ -25,6 +27,8 @@ function processMsgFromMaster() {
                         joinSplitProof2: JoinSplitProof.fromJSON(message.payload.joinSplitProof2)
                     }
 
+                    const proof = proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
+
                     return await InnerRollupProver.proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
                 });
                 break;
@@ -35,6 +39,8 @@ function processMsgFromMaster() {
                         innerRollupProof1: InnerRollupProof.fromJSON(message.payload.innerRollupProof1),
                         innerRollupProof2: InnerRollupProof.fromJSON(message.payload.innerRollupProof2)
                     }
+
+                    // const proof = merge(params.innerRollupProof1, params.innerRollupProof2);
                     return await InnerRollupProver.merge(params.innerRollupProof1, params.innerRollupProof2);
                 });
                 break;

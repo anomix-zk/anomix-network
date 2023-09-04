@@ -71,7 +71,7 @@ const initWorker = async () => {
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    await JoinSplitProver.compile();
+    // await JoinSplitProver.compile();
 
     // recieve message from main process...
     processMsgFromMaster();
