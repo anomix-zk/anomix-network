@@ -135,12 +135,13 @@ export class ProofScheduler {
 
         /* send L1Tx fail by endpoint will not throw error */
         await l1Tx.send().then(async txHash => {// TODO what if it fails currently!
-            if (txHash.hash()) {
-                logger.error('whenDepositRollupL1TxComeBack: send L1 Tx succeed! txHash:', txHash.hash());
+            const l1TxHash = txHash.hash()
+            if (l1TxHash) {
+                logger.info(`whenDepositRollupL1TxComeBack: send L1 Tx succeed! txHash:${l1TxHash}`);
 
                 await getConnection().getRepository(DepositTreeTrans).findOne({ where: { id: transId } }).then(async dt => {
                     // insert L1 tx into db, underlying also save to task for 'Tracer-Watcher'
-                    dt!.txHash = txHash.hash()!;
+                    dt!.txHash = l1TxHash!;
                     await this.rollupDB.updateTreeTransAndAddWatchTask(dt!);
                 });
             } else {

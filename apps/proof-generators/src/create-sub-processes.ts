@@ -69,14 +69,15 @@ export const createSubProcesses = async (n: number) => {
         [CircuitName_BlockProver, []],
         [CircuitName_AnomixRollupContract, []]
     ]);
-
+    const cnt_DepositRollupProver = 1;
+    /*     
     const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_AnomixEntryContract = 1;// consider L1Tx execution one by one
     const cnt_JoinSplitProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_InnerRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_BlockProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_AnomixRollupContract = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);// consider withdrawal scene in parallel
-
+    */
     const createCircuitProcessor = (proverCnt: number, circuitName: string) => {
         const createFn = (proverCnt: number, circuitName: string) => {
             let worker = cp.fork(__dirname.concat('/provers/proof-worker-').concat(circuitName).concat('.js'), [circuitName]);
@@ -114,9 +115,9 @@ export const createSubProcesses = async (n: number) => {
         }
     }
 
-    // createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
+    createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
 
-    createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
+    // createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
 
     // createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
 

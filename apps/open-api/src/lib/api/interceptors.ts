@@ -1,5 +1,4 @@
 import type { AxiosResponse } from 'axios';
-import { timeout } from '@anomix/utils';
 import { $axiosSeq, $axiosCoordinator } from './client';
 import type { ResponseError } from './response-error';
 
@@ -25,14 +24,14 @@ $axiosSeq.interceptors.response.use(
     async (error: ResponseError) => {
         if (error.response && error.response.status !== 0) {
             error.isNetworkError = false;
-            if (callbackTrigger.responseError) callbackTrigger.responseError(error);
-            return Promise.reject(error);
         } else {
             error.isNetworkError = true;
-            if (callbackTrigger.responseError) callbackTrigger.responseError(error);
-            await timeout(5000);
-            return await $axiosSeq.request(error.config);
         }
+
+        if (callbackTrigger.responseError) {
+            callbackTrigger.responseError(error);
+        }
+        return Promise.reject(error);
     }
 );
 
@@ -45,14 +44,14 @@ $axiosCoordinator.interceptors.response.use(
     async (error: ResponseError) => {
         if (error.response && error.response.status !== 0) {
             error.isNetworkError = false;
-            if (callbackTrigger.responseError) callbackTrigger.responseError(error);
-            return Promise.reject(error);
         } else {
             error.isNetworkError = true;
-            if (callbackTrigger.responseError) callbackTrigger.responseError(error);
-            await timeout(5000);
-            return await $axiosCoordinator.request(error.config);
         }
+
+        if (callbackTrigger.responseError) {
+            callbackTrigger.responseError(error);
+        }
+        return Promise.reject(error);
     }
 );
 export function onResponseSuccess(callback: ResponseSuccessCallback): void {

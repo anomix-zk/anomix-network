@@ -31,33 +31,38 @@ export const innerRollupBatchAndMerge = async (subProcessCordinator: SubProcessC
         return proofPayLoadList;
     };
 
-    let queue = new TaskStack<ProofPayload<any>>(filterStep, reducerStep);
+    if (proofPayloads.length >= 2) {
 
-    logger.info(`beginning work of ${proofPayloads.length} innerRollupBatchAndMerge cases`);
+        let queue = new TaskStack<ProofPayload<any>>(filterStep, reducerStep);
 
-    queue.prepare(
-        ...proofPayloads
-    );
-    let totalComputationalSeconds = Date.now();
+        logger.info(`beginning work of ${proofPayloads.length} innerRollupBatchAndMerge cases`);
 
-    logger.info('starting work, generating proofs in parallel');
+        queue.prepare(
+            ...proofPayloads
+        );
+        let totalComputationalSeconds = Date.now();
 
-    console.time('duration');
-    let res = await queue.work();
-    console.timeEnd('duration');
+        logger.info('starting work, generating proofs in parallel');
 
-    logger.info('result: ', res);
+        console.time('duration');
+        let res = await queue.work();
+        console.timeEnd('duration');
 
-    logger.info(
-        'totalComputationalSeconds',
-        (Date.now() - totalComputationalSeconds) / 1000
-    );
+        logger.info('result: ', res);
 
-    // send back to sequencer
-    if (sendCallBack) {
-        await sendCallBack(res);
+        logger.info(
+            'totalComputationalSeconds',
+            (Date.now() - totalComputationalSeconds) / 1000
+        );
+
+        // send back to sequencer
+        if (sendCallBack) {
+            await sendCallBack(res);
+        }
+
+    } else {
+        subProcessCordinator.innerRollup_proveTxBatch(proofPayloads[0]);
     }
-
 };
 
 
