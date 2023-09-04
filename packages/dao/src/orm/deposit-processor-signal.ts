@@ -6,17 +6,20 @@ import {
     UpdateDateColumn
 } from 'typeorm'
 
-@Entity("tb_seq_status")
-export class SeqStatus {
+@Entity("tb_deposit_processor_signal")
+export class DepositProcessorSignal {
     @PrimaryGeneratedColumn("increment")
     id: number
 
     /**
-     * * NotAtRollup = 0,
-     * * AtRollup = 1
+     * * DepositProcessorSignal.CAN_TRIGGER_CONTRACT,
+     * * DepositProcessorSignal.CAN_NOT_TRIGGER_CONTRACT,
      */
     @Column()
-    status: number
+    signal: number
+
+    @Column()
+    type: number
 
     @UpdateDateColumn({
         default: () => 'CURRENT_TIMESTAMP',
