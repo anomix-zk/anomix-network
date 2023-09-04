@@ -67,6 +67,11 @@ export class LowLeafWitnessData extends Struct({
     const leaf = this.leafData.commitment();
     this.siblingPath.calculateRoot(leaf, this.index).assertEquals(root, msg);
   }
+
+  public checkMembership(root: Field) {
+    const leaf = this.leafData.commitment();
+    return this.siblingPath.calculateRoot(leaf, this.index).equals(root);
+  }
 }
 
 export class UserLowLeafWitnessData extends Struct({
