@@ -120,6 +120,11 @@ export enum DepositTreeTransStatus {
     CONFIRMED
 }
 
+export enum DepositProcessingSignal {
+    CAN_TRIGGER_CONTRACT,
+    CAN_NOT_TRIGGER_CONTRACT
+}
+
 export enum SequencerStatus {
     NotAtRollup = 0,
     AtRollup = 1
