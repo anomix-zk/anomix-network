@@ -33,7 +33,7 @@ export const handler: RequestHandler<null, AcctvkParam> = async function (
     const { acctvk: p_acctvk } = req.params
     const accountRepository = getConnection().getRepository(Account)
     try {
-        const account = await accountRepository.findOne({ where: { acctViewKey: p_acctvk } });
+        const account = await accountRepository.findOne({ where: { acctPk: p_acctvk } });
         return {
             code: 0, data: {
                 alias: (account?.aliasHash) ?? '',
