@@ -139,11 +139,9 @@ export class ProofScheduler {
 
         // compose BlockProveInput
         const blockProveInput = new BlockProveInput({
-            depositRoot,
             txFeeReceiverNote,
             oldDataWitness,
             dataStartIndex,
-            oldDataRootsRoot,
             rootStartIndex,
             oldRootWitness
         });
