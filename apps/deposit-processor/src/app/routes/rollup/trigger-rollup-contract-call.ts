@@ -2,9 +2,9 @@
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
-import { BaseResponse, FlowTask, FlowTaskType, MerkleTreeId, ProofTaskDto, ProofTaskType } from "@anomix/types";
+import { BaseResponse, DepositProcessingSignal, FlowTask, FlowTaskType, MerkleTreeId, ProofTaskDto, ProofTaskType } from "@anomix/types";
 import { getConnection } from "typeorm";
-import { DepositProverOutput } from "@anomix/dao";
+import { DepositProcessorSignal, DepositProverOutput } from "@anomix/dao";
 import config from "@/lib/config";
 import { PrivateKey } from "snarkyjs";
 import { $axiosProofGenerator } from "@/lib";
@@ -34,32 +34,39 @@ export const handler: RequestHandler<null, { transId: number }> = async function
     try {
         const transId = req.params.transId;
 
-        const depositProverOutputRepo = getConnection().getRepository(DepositProverOutput);
-        const depositProverOutput = await depositProverOutputRepo.findOne({ where: { transId } });
-        const proofTaskDto = {
-            taskType: ProofTaskType.ROLLUP_FLOW,
-            index: undefined,
-            payload: {
-                flowId: undefined as any,
-                taskType: FlowTaskType.DEPOSIT_UPDATESTATE,
-                data: {
-                    transId,
-                    feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toPublicKey().toBase58(),
-                    fee: 200_000_000,// 0.2 Mina as fee
-                    data: JSON.parse(depositProverOutput!.output)
-                }
-            } as FlowTask<any>
-        } as ProofTaskDto<any, FlowTask<any>>;
-        fs.writeFileSync('./DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+        const connection = getConnection();
+        const depositProcessorSignalRepo = connection.getRepository(DepositProcessorSignal);
+        const depositProcessorSignal = (await depositProcessorSignalRepo.findOne({ where: { type: 0 } }))!;
 
-        // trigger directly
-        await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
-            if (r.data.code == 1) {
-                throw new Error(r.data.msg);
-            }
-        }).catch(reason => {
-            console.log(reason);
-        });
+        if (depositProcessorSignal.signal == DepositProcessingSignal.CAN_TRIGGER_CONTRACT) {
+            const depositProverOutputRepo = connection.getRepository(DepositProverOutput);
+            const depositProverOutput = await depositProverOutputRepo.findOne({ where: { transId } });
+            const proofTaskDto = {
+                taskType: ProofTaskType.ROLLUP_FLOW,
+                index: undefined,
+                payload: {
+                    flowId: undefined as any,
+                    taskType: FlowTaskType.DEPOSIT_UPDATESTATE,
+                    data: {
+                        transId,
+                        feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toPublicKey().toBase58(),
+                        fee: 200_000_000,// 0.2 Mina as fee
+                        data: JSON.parse(depositProverOutput!.output)
+                    }
+                } as FlowTask<any>
+            } as ProofTaskDto<any, FlowTask<any>>;
+            fs.writeFileSync('./DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
+            // trigger directly
+            await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
+                if (r.data.code == 1) {
+                    throw new Error(r.data.msg);
+                }
+            }).catch(reason => {
+                console.log(reason);
+            });
+        }
+
         return {
             code: 0, data: '', msg: ''
         };
