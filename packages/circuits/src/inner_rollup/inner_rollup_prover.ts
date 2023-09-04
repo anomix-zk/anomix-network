@@ -6,6 +6,7 @@ import {
   Field,
   Provable,
   SelfProof,
+  Struct,
 } from 'snarkyjs';
 import {
   DataRootWitnessData,
@@ -15,7 +16,7 @@ import {
 } from './models';
 import { JoinSplitProof } from '../join_split/join_split_prover';
 import { ActionType, AssetId, DUMMY_FIELD } from '../models/constants';
-import { checkMembershipAndAssert } from '../utils/utils';
+import { checkMembership } from '../utils/utils';
 import {
   DataMerkleWitness,
   LowLeafWitnessData,
@@ -23,6 +24,21 @@ import {
 } from '../models/merkle_witness';
 
 export { InnerRollupProver, InnerRollupProof };
+
+class TempStruct extends Struct({
+  checkDataRootValid: Bool,
+  txValid: Bool,
+  currDataRoot: Field,
+  currDataIndex: Field,
+  currNullRoot: Field,
+  currNullIndex: Field,
+}) {}
+
+class TempStruct2 extends Struct({
+  checkWitnessValid: Bool,
+  currRoot: Field,
+  currIndex: Field,
+}) {}
 
 let InnerRollupProver = Experimental.ZkProgram({
   publicOutput: InnerRollupOutput,
@@ -73,7 +89,7 @@ let InnerRollupProver = Experimental.ZkProgram({
         let currentDepositCount = Field(0);
 
         depositRoot.assertNotEquals(DUMMY_FIELD, 'Deposit root is illegal');
-        let firstDepositIndex = DUMMY_FIELD;
+        let firstDepositIndex = currentDepositStartIndex;
         Provable.if(
           tx1IsDeposit.and(tx2IsDeposit),
           Bool,
@@ -82,13 +98,13 @@ let InnerRollupProver = Experimental.ZkProgram({
         ).assertTrue('Deposit index should be consecutive');
         // find first deposit index if exists deposit tx
         firstDepositIndex = Provable.if(
-          firstDepositIndex.equals(DUMMY_FIELD).and(tx1IsDeposit),
+          tx1IsDeposit,
           Field,
           txOutput1.depositIndex,
           firstDepositIndex
         );
         firstDepositIndex = Provable.if(
-          firstDepositIndex.equals(DUMMY_FIELD).and(tx2IsDeposit),
+          tx1IsDeposit.not().and(tx2IsDeposit),
           Field,
           txOutput2.depositIndex,
           firstDepositIndex
@@ -305,9 +321,14 @@ function processTx({
   const nullifier1 = txOutput.nullifier1;
   const nullifier2 = txOutput.nullifier2;
   const txIsDeposit = txOutput.actionType.equals(ActionType.DEPOSIT);
+  const txIsDummy = txOutput.actionType.equals(ActionType.DUMMY);
+  const originDataRoot = currentDataRoot;
+  const originDataIndex = currentDataIndex;
+  const originNullRoot = currentNullRoot;
+  const originNullIndex = currentNullIndex;
 
   currentRollupSize = Provable.if(
-    txOutput.actionType.equals(ActionType.DUMMY),
+    txIsDummy,
     currentRollupSize,
     currentRollupSize.add(1)
   );
@@ -330,108 +351,208 @@ function processTx({
   );
 
   // check tx data root validity
-  checkMembershipAndAssert(
+  const checkDataRootValid = checkMembership(
     txOutput.dataRoot,
     rootWitnessData.dataRootIndex,
     rootWitnessData.witness,
-    dataRootsRoot,
-    'tx data root should be valid'
+    dataRootsRoot
   );
-  // check index and witness of outputNoteCommitment1
-  checkMembershipAndAssert(
+
+  // process outputNoteCommitment1
+  const checkWitnessOfCommitment1Valid = checkMembership(
     DUMMY_FIELD,
     currentDataIndex,
     oldDataWitness1,
-    currentDataRoot,
-    'oldDataWitness1 illegal'
+    currentDataRoot
   );
-  // use index, witness and new note commitment to update data root
   currentDataRoot = oldDataWitness1.calculateRoot(
     outputNoteCommitment1,
     currentDataIndex
   );
   currentDataIndex = currentDataIndex.add(1);
+  //------------------------------------------------------------------------------
 
-  // check index and witness of outputNoteCommitment2
-  checkMembershipAndAssert(
-    DUMMY_FIELD,
-    currentDataIndex,
-    oldDataWitness2,
-    currentDataRoot,
-    'oldDataWitness2 illegal'
+  // processs outputNoteCommitment2
+  const {
+    checkWitnessValid: checkWitnessOfCommitment2Valid,
+    currRoot,
+    currIndex,
+  } = Provable.if(
+    outputNoteCommitment2.equals(DUMMY_FIELD),
+    TempStruct2,
+    new TempStruct2({
+      checkWitnessValid: Bool(true),
+      currRoot: currentDataRoot,
+      currIndex: currentDataIndex,
+    }),
+    new TempStruct2({
+      // check index and witness of outputNoteCommitment2
+      checkWitnessValid: checkMembership(
+        DUMMY_FIELD,
+        currentDataIndex,
+        oldDataWitness2,
+        currentDataRoot
+      ),
+      // use index, witness and new note commitment to update data root
+      currRoot: oldDataWitness2.calculateRoot(
+        outputNoteCommitment2,
+        currentDataIndex
+      ),
+      currIndex: currentDataIndex.add(1),
+    })
   );
-  // use index, witness and new note commitment to update data root
-  currentDataRoot = oldDataWitness2.calculateRoot(
-    outputNoteCommitment2,
-    currentDataIndex
-  );
-  currentDataIndex = currentDataIndex.add(1);
+  currentDataRoot = currRoot;
+  currentDataIndex = currIndex;
+  //------------------------------------------------------------------------------
 
-  // check nullifier1 nonMembership
-  lowLeafWitness1.checkMembershipAndAssert(
-    currentNullRoot,
-    'lowLeafWitness1 illegal'
-  );
+  // process nullifier1
+  // nullifier1 can not be empty when tx is not deposit
   const null1IsDummy = nullifier1.equals(DUMMY_FIELD);
-  Provable.if(
-    null1IsDummy,
+  const checkNullifier1Valid = Provable.if(
+    txIsDeposit,
     Bool,
-    Bool(true),
-    nullifier1.greaterThan(lowLeafWitness1.leafData.value)
-  ).assertTrue('Nullifier1 should not exist in null tree');
+    null1IsDummy,
+    null1IsDummy.not()
+  );
 
+  const checkLowLeafMembership =
+    lowLeafWitness1.checkMembership(currentNullRoot);
+  const checkNullifier1GreaterThanLowLeafValue = nullifier1.greaterThan(
+    lowLeafWitness1.leafData.value
+  );
   const lowLeafNextValue1 = lowLeafWitness1.leafData.nextValue;
-  Provable.if(
-    null1IsDummy.not().and(lowLeafNextValue1.equals(DUMMY_FIELD).not()),
+  const checkNullifier1LeassThanLowLeafNextValue = Provable.if(
+    lowLeafNextValue1.equals(DUMMY_FIELD).not(),
     Bool,
     nullifier1.lessThan(lowLeafNextValue1),
     Bool(true)
-  ).assertTrue('Nullifier1 should not exist in null tree');
-
-  // check index and witness of nullifier1
-  checkMembershipAndAssert(
+  );
+  const checkWitnessOfNullifier1Valid = checkMembership(
     DUMMY_FIELD,
     currentNullIndex,
     oldNullWitness1,
-    currentNullRoot,
-    'oldNullWitness1 illegal'
+    currentNullRoot
   );
-  // use index, witness and new nullifier to update null root
-  currentNullRoot = oldNullWitness1.calculateRoot(nullifier1, currentNullIndex);
-  currentNullIndex = currentNullIndex.add(1);
 
-  // check nullifier2 nonMembership
-  lowLeafWitness2.checkMembershipAndAssert(
-    currentNullRoot,
-    'LowLeafWitness2 illegal'
+  const {
+    checkWitnessValid: nullifier1Valid,
+    currRoot: currRoot2,
+    currIndex: currIndex2,
+  } = Provable.if(
+    null1IsDummy,
+    TempStruct2,
+    new TempStruct2({
+      checkWitnessValid: Bool(true),
+      currRoot: currentNullRoot,
+      currIndex: currentNullIndex,
+    }),
+    new TempStruct2({
+      checkWitnessValid: checkNullifier1Valid
+        .and(checkLowLeafMembership)
+        .and(checkNullifier1GreaterThanLowLeafValue)
+        .and(checkNullifier1LeassThanLowLeafNextValue)
+        .and(checkWitnessOfNullifier1Valid),
+      currRoot: oldNullWitness1.calculateRoot(nullifier1, currentNullIndex),
+      currIndex: currentNullIndex.add(1),
+    })
   );
+  currentNullRoot = currRoot2;
+  currentNullIndex = currIndex2;
+  //-----------------------------------------------------------------------------
+
+  // process nullifier2
   const null2IsDummy = nullifier2.equals(DUMMY_FIELD);
-  Provable.if(
-    null2IsDummy,
+  const checkNullifier2Valid = Provable.if(
+    txIsDeposit,
     Bool,
-    Bool(true),
-    nullifier2.greaterThan(lowLeafWitness2.leafData.value)
-  ).assertTrue('Nullifier2 should not exist in null tree');
+    null2IsDummy,
+    Bool(true)
+  );
 
+  const checkLowLeafMembership2 =
+    lowLeafWitness2.checkMembership(currentNullRoot);
+  const checkNullifier2GreaterThanLowLeafValue = nullifier2.greaterThan(
+    lowLeafWitness2.leafData.value
+  );
   const lowLeafNextValue2 = lowLeafWitness2.leafData.nextValue;
-  Provable.if(
-    null2IsDummy.not().and(lowLeafNextValue2.equals(DUMMY_FIELD).not()),
+  const checkNullifier2LeassThanLowLeafNextValue = Provable.if(
+    lowLeafNextValue2.equals(DUMMY_FIELD).not(),
     Bool,
     nullifier2.lessThan(lowLeafNextValue2),
     Bool(true)
-  ).assertTrue('Nullifier2 should not exist in null tree');
-
-  // check index and witness of nullifier2
-  checkMembershipAndAssert(
+  );
+  const checkWitnessOfNullifier2Valid = checkMembership(
     DUMMY_FIELD,
     currentNullIndex,
     oldNullWitness2,
-    currentNullRoot,
-    'oldNullWitness2 illegal'
+    currentNullRoot
   );
-  // use index, witness and new nullifier to update null root
-  currentNullRoot = oldNullWitness2.calculateRoot(nullifier2, currentNullIndex);
-  currentNullIndex = currentNullIndex.add(1);
+
+  const {
+    checkWitnessValid: nullifier2Valid,
+    currRoot: currRoot3,
+    currIndex: currIndex3,
+  } = Provable.if(
+    null2IsDummy,
+    TempStruct2,
+    new TempStruct2({
+      checkWitnessValid: Bool(true),
+      currRoot: currentNullRoot,
+      currIndex: currentNullIndex,
+    }),
+    new TempStruct2({
+      checkWitnessValid: checkNullifier2Valid
+        .and(checkLowLeafMembership2)
+        .and(checkNullifier2GreaterThanLowLeafValue)
+        .and(checkNullifier2LeassThanLowLeafNextValue)
+        .and(checkWitnessOfNullifier2Valid),
+      currRoot: oldNullWitness2.calculateRoot(nullifier2, currentNullIndex),
+      currIndex: currentNullIndex.add(1),
+    })
+  );
+  currentNullRoot = currRoot3;
+  currentNullIndex = currIndex3;
+  //-----------------------------------------------------------------------------
+
+  // process dummy and non-dummy
+  const {
+    checkDataRootValid: rootValid,
+    txValid,
+    currDataRoot,
+    currDataIndex,
+    currNullRoot,
+    currNullIndex,
+  } = Provable.if(
+    txIsDummy,
+    TempStruct,
+    new TempStruct({
+      checkDataRootValid: Bool(true),
+      txValid: Bool(true),
+      currDataRoot: originDataRoot,
+      currDataIndex: originDataIndex,
+      currNullRoot: originNullRoot,
+      currNullIndex: originNullIndex,
+    }),
+
+    new TempStruct({
+      checkDataRootValid,
+      txValid: checkWitnessOfCommitment1Valid
+        .and(checkWitnessOfCommitment2Valid)
+        .and(nullifier1Valid)
+        .and(nullifier2Valid),
+      currDataRoot: currentDataRoot,
+      currDataIndex: currentDataIndex,
+      currNullRoot: currentNullRoot,
+      currNullIndex: currentNullIndex,
+    })
+  );
+
+  rootValid.assertTrue('data roots root is not valid');
+  txValid.assertTrue('tx is not valid');
+  currentDataRoot = currDataRoot;
+  currentDataIndex = currDataIndex;
+  currentNullRoot = currNullRoot;
+  currentNullIndex = currNullIndex;
 
   return {
     currentDataRoot,

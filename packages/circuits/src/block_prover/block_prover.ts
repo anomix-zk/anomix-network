@@ -27,16 +27,6 @@ let BlockProver = Experimental.ZkProgram({
           'assetId should match'
         );
 
-        input.depositRoot.assertEquals(
-          rollupOutput.depositRoot,
-          'depositRoot should match'
-        );
-
-        input.oldDataRootsRoot.assertEquals(
-          rollupOutput.dataRootsRoot,
-          'dataRootsRoot should match'
-        );
-
         // update data tree
         const oldDataRoot = rollupOutput.newDataRoot;
         // check index and witness of old data root
@@ -58,7 +48,7 @@ let BlockProver = Experimental.ZkProgram({
           DUMMY_FIELD,
           input.rootStartIndex,
           input.oldRootWitness,
-          input.oldDataRootsRoot,
+          rollupOutput.dataRootsRoot,
           'rootStartIndex and oldRootWitness should be valid'
         );
 
@@ -75,7 +65,7 @@ let BlockProver = Experimental.ZkProgram({
             source: new RollupState({
               dataRoot: rollupOutput.oldDataRoot,
               nullifierRoot: rollupOutput.oldNullRoot,
-              dataRootsRoot: input.oldDataRootsRoot,
+              dataRootsRoot: rollupOutput.dataRootsRoot,
               depositStartIndex: rollupOutput.oldDepositStartIndex,
             }),
             target: new RollupState({

@@ -18,6 +18,7 @@
     "genkeys": "tsc -p tsconfig.json --module esnext && node --experimental-specifier-resolution=node ./dist/scripts/genkeys.js",
     "deploy:rollup": "tsc -p tsconfig.json --module esnext && cross-env TEST_ON_BERKELEY=true DEPLOY_CONTRACT=rollup node  --stack-trace-limit=1000 --experimental-wasm-memory64 --experimental-specifier-resolution=node ./dist/scripts/deploy.js",
     "deploy:entry": "tsc -p tsconfig.json --module esnext && cross-env TEST_ON_BERKELEY=true DEPLOY_CONTRACT=entry node --stack-trace-limit=1000 --experimental-wasm-memory64 --experimental-specifier-resolution=node ./dist/scripts/deploy.js",
+    "deploy:all": "tsc -p tsconfig.json --module esnext && cross-env TEST_ON_BERKELEY=true DEPLOY_CONTRACT=all node --stack-trace-limit=1000 --experimental-wasm-memory64 --experimental-specifier-resolution=node ./dist/scripts/deploy.js",
     "token": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/scripts/token.js",
     "encrypt": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/scripts/encrypt.js",
     "demo": "tsc -p tsconfig.json && node --stack-trace-limit=1000 --experimental-specifier-resolution=node ./dist/scripts/demo.js",

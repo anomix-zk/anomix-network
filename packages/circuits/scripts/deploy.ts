@@ -16,6 +16,10 @@ import KeyConfig from './keys-private.json' assert { type: 'json' };
 
 const feePayerAddress = PublicKey.fromBase58(KeyConfig.feePayer.publicKey);
 const feePayerKey = PrivateKey.fromBase58(KeyConfig.feePayer.privateKey);
+
+const feePayer2Address = PublicKey.fromBase58(KeyConfig.feePayer2.publicKey);
+const feePayer2Key = PrivateKey.fromBase58(KeyConfig.feePayer2.privateKey);
+
 const operatorAddress = PublicKey.fromBase58(KeyConfig.operator.publicKey);
 const operatorKey = PrivateKey.fromBase58(KeyConfig.operator.privateKey);
 
@@ -93,12 +97,12 @@ async function deployRollupContract() {
 
   let tx = await Mina.transaction(
     {
-      sender: feePayerAddress,
+      sender: feePayer2Address,
       fee: ctx.txFee,
       memo: 'Deploy rollup contract',
     },
     () => {
-      AccountUpdate.fundNewAccount(feePayerAddress);
+      AccountUpdate.fundNewAccount(feePayer2Address);
 
       rollupContract.deployRollup(
         { zkappKey: rollupContractKey },
@@ -108,7 +112,7 @@ async function deployRollupContract() {
   );
 
   await ctx.submitTx(tx, {
-    feePayerKey,
+    feePayerKey: feePayer2Key,
     logLabel: 'deploy anomix rollup contract',
   });
 
@@ -191,6 +195,9 @@ async function run() {
   if (process.env.DEPLOY_CONTRACT === 'entry') {
     await deployEntryVaultContract();
   } else if (process.env.DEPLOY_CONTRACT === 'rollup') {
+    await deployRollupContract();
+  } else if (process.env.DEPLOY_CONTRACT === 'all') {
+    await deployEntryVaultContract();
     await deployRollupContract();
   } else {
     console.log('Please specify which contract to deploy: entry or rollup');

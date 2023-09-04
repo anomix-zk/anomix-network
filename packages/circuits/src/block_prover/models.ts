@@ -26,12 +26,10 @@ export class BlockProveOutput extends Struct({
 }
 
 export class BlockProveInput extends Struct({
-  depositRoot: Field,
   txFeeReceiverNote: ValueNote,
   oldDataWitness: DataMerkleWitness,
   dataStartIndex: Field,
 
-  oldDataRootsRoot: Field,
   rootStartIndex: Field,
   oldRootWitness: RootMerkleWitness,
 }) {}
