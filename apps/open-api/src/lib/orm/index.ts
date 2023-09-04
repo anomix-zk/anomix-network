@@ -4,7 +4,7 @@ import "reflect-metadata"
 import { createConnection } from 'typeorm'
 import { MysqlConnectionOptions } from "typeorm/driver/mysql/MysqlConnectionOptions";
 import { getLogger } from "@/lib/logUtils";
-import { DepositActionEventFetchRecord, SeqStatus, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockProverOutput, InnerRollupBatch } from '@anomix/dao';
+import { DepositActionEventFetchRecord, DepositProcessorSignal, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockProverOutput, InnerRollupBatch } from '@anomix/dao';
 
 const logger = getLogger('orm');
 export const initORM = async (connectionOverrides?: Partial<MysqlConnectionOptions>) => {
@@ -14,7 +14,7 @@ export const initORM = async (connectionOverrides?: Partial<MysqlConnectionOptio
             ...config.typeORM,
             // 【error1】 ...entities
             // 【error2】 entities: [...entities]
-            entities: [DepositActionEventFetchRecord, SeqStatus, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockProverOutput, InnerRollupBatch],
+            entities: [DepositActionEventFetchRecord, DepositProcessorSignal, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockProverOutput, InnerRollupBatch],
             ...connectionOverrides,
         });
         logger.info('### INFO: Connection Established')
