@@ -8,7 +8,7 @@ import { $axiosSeq } from './lib/api';
 import { initORM } from './lib/orm';
 import { parentPort } from 'worker_threads';
 
-process.send ?? ({// when it's a primary process, process.send == undefined. 
+(process.send as any)({// when it's a primary process, process.send == undefined. 
     type: 'status',
     data: 'online'
 });
@@ -23,7 +23,7 @@ logger.info('hi, I am task-tracer!');
 
 await initORM();
 
-process.send ?? ({// if it's a subProcess
+(process.send as any)({// if it's a subProcess
     type: 'status',
     data: 'isReady'
 });
@@ -104,6 +104,8 @@ async function traceTasks() {
                                     memPlL2Tx.publicValue = dc.depositValue;
                                     memPlL2Tx.publicOwner = dc.sender;
                                     memPlL2Tx.publicAssetId = dc.assetId;
+                                    memPlL2Tx.dataRoot = '0';
+                                    memPlL2Tx.depositRoot = '0';
                                     memPlL2Tx.depositIndex = dc.depositNoteIndex;
                                     memPlL2Tx.txFee = '0';
                                     memPlL2Tx.txFeeAssetId = dc.assetId;

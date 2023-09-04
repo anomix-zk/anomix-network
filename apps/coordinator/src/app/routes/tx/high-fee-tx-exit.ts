@@ -28,7 +28,7 @@ export const handler: RequestHandler<null, null> = async function (
 ): Promise<BaseResponse<string>> {
     try {
         // notify worker to seq.
-        process.send ?? ({// when it's a subProcess 
+        (process.send as any)({// when it's a subProcess 
             type: 'seq',
             data: ''
         });

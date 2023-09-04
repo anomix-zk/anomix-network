@@ -5,7 +5,7 @@ import { getLogger } from "./lib/logUtils";
 const logger = getLogger('web-server');
 logger.info('hi, I am web-server!');
 
-process.send ?? ({// when it's a primary process, process.send == undefined. 
+(process.send as any)({// when it's a primary process, process.send == undefined. 
     type: 'status',
     data: 'online'
 });
@@ -16,7 +16,7 @@ parentPort?.postMessage({// when it's not a subThread, parentPort == null.
 
 const app = new FastifyCore();
 
-process.send ?? ({// if it's a subProcess
+(process.send as any)({// if it's a subProcess
     type: 'status',
     data: 'isReady'
 });
