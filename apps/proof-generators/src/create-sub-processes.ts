@@ -70,6 +70,9 @@ export const createSubProcesses = async (n: number) => {
         [CircuitName_AnomixRollupContract, []]
     ]);
     const cnt_DepositRollupProver = 1;
+    const cnt_AnomixEntryContract = 1;// consider L1Tx execution one by one
+    const cnt_JoinSplitProver = 1;
+
     /*     
     const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_AnomixEntryContract = 1;// consider L1Tx execution one by one
@@ -115,11 +118,11 @@ export const createSubProcesses = async (n: number) => {
         }
     }
 
-    createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
+    // createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
 
     // createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
 
-    // createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
+    createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
 
     // createCircuitProcessor(cnt_InnerRollupProver, CircuitName_InnerRollupProver);
 
@@ -138,7 +141,13 @@ export const createSubProcesses = async (n: number) => {
                     resolve: (payload: ProofPayload<any>) => any,
                     reject: (err: any) => any | any
                 ) => {
-                    const data = (proofPayload.payload as { blockId: number, data: { txId: number, data: JoinSplitDepositInput }[] }).data;
+                    const data = (proofPayload.payload as {
+                        blockId: number,
+                        data: {
+                            txId: number,
+                            data: string //???
+                        }[]
+                    }).data;
 
                     const workers = workerMap.get(CircuitName_JoinSplitProver)!;
                     let sum = 0;
