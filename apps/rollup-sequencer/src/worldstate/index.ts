@@ -30,7 +30,7 @@ export class WorldState {
      * reset
      */
     async reset() {
-        await this.seqFlow.end();
+        await this.seqFlow?.end();
 
         this.seqFlow = undefined as any as SequenceFlow;
     }
