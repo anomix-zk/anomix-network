@@ -6,7 +6,7 @@ import { JoinSplitDepositInput } from "@anomix/circuits";
 import { BaseResponse, FlowTask, FlowTaskType, ProofTaskDto, ProofTaskType, RollupTaskDto, RollupTaskType, MerkleTreeId } from "@anomix/types";
 import { $axiosCoordinator, $axiosProofGenerator } from "@/lib";
 import { getConnection } from "typeorm";
-import { L2Tx } from "@anomix/dao";
+import { L2Tx, MemPlL2Tx } from "@anomix/dao";
 import { ProofScheduler } from "@/rollup/proof-scheduler";
 import fs from "fs";
 
@@ -75,13 +75,13 @@ export class WorldState {
         // compose JoinSplitDepositInput
         // asyncly send to 'Proof-Generator' to exec 'join_split_prover.deposit()'
         const connection = getConnection();
-        const l2txRepo = connection.getRepository(L2Tx);
-        const depositL2TxList = await l2txRepo.find({ where: { blockId }, order: { depositIndex: 'ASC' } }) ?? [];
-        if (depositL2TxList.length == 0) {
+        const mpl2txRepo = connection.getRepository(MemPlL2Tx);
+        const depositMpL2TxList = await mpl2txRepo.find({ where: { blockId }, order: { depositIndex: 'ASC' } }) ?? [];
+        if (depositMpL2TxList.length == 0) {
             return;
         }
 
-        const txIdJoinSplitDepositInputList = await Promise.all(await depositL2TxList.map(async tx => {
+        const txIdJoinSplitDepositInputList = await Promise.all(await depositMpL2TxList.map(async tx => {
             return {
                 txId: tx.id,
                 data: JoinSplitDepositInput.fromJSON({
@@ -97,13 +97,15 @@ export class WorldState {
             };
         }))
 
+        const proofTaskDto = {
+            taskType: ProofTaskType.DEPOSIT_JOIN_SPLIT,
+            index: undefined,
+            payload: { blockId, data: txIdJoinSplitDepositInputList }
+        } as ProofTaskDto<any, any>;
+        fs.writeFileSync('./DEPOSIT_JOIN_SPLIT_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
         // send to proof-generator for 'JoinSplitProver.deposit(*)'
-        await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen',
-            {
-                taskType: ProofTaskType.DEPOSIT_JOIN_SPLIT,
-                index: undefined,
-                payload: { blockId, data: txIdJoinSplitDepositInputList }
-            } as ProofTaskDto<any, any>);
+        await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto);
     }
 
     /**
@@ -132,11 +134,13 @@ export class WorldState {
             index: undefined,
             payload: { blockId }
         }
+        fs.writeFileSync('./DEPOSIT_JOINSPLIT_rollupTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(rollupTaskDto));
+
         // notify coordinator
         await $axiosCoordinator.post<BaseResponse<string>>('/rollup/proof-notify', rollupTaskDto).then(r => {
             if (r.data.code == 1) {
                 throw new Error(r.data.msg);
             }
-        });// TODO future: could improve when fail by 'timeout' after retry
+        });
     }
 }
