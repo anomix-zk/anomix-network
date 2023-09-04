@@ -131,7 +131,7 @@ export class WithdrawInfo {
         ownerPk: PublicKey.fromBase58(this.ownerPk),
         accountRequired: Field(this.accountRequired),
         creatorPk: PublicKey.fromBase58(this.creatorPk),
-        value: new UInt64(this.value),
+        value: UInt64.from(this.value),
         assetId: Field(this.assetId),
         inputNullifier: Field(this.inputNullifier),
         noteType: Field(this.noteType)

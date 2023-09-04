@@ -123,7 +123,7 @@ export class ProofScheduler {
             ownerPk: PublicKey.fromBase58(txFeeWInfo.ownerPk),
             accountRequired: Field(txFeeWInfo.accountRequired),
             creatorPk: PublicKey.fromBase58(txFeeWInfo.creatorPk),
-            value: new UInt64(txFeeWInfo.value),
+            value: UInt64.from(txFeeWInfo.value),
             assetId: Field(txFeeWInfo.assetId),
             inputNullifier: Field(txFeeWInfo.inputNullifier),
             noteType: Field(txFeeWInfo.noteType)
