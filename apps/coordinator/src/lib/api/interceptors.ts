@@ -19,7 +19,7 @@ const callbackTrigger: CallbackTrigger = {
 $axiosSeq.interceptors.response.use(
     (response: AxiosResponse) => {
         if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
-        return response.data;
+        return response;
     },
 
     async (error: ResponseError) => {
@@ -39,7 +39,7 @@ $axiosSeq.interceptors.response.use(
 $axiosDeposit.interceptors.response.use(
     (response: AxiosResponse) => {
         if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
-        return response.data;
+        return response;
     },
 
     async (error: ResponseError) => {

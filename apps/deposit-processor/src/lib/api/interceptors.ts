@@ -27,7 +27,7 @@ $axiosProofGenerator.interceptors.request.use(function (config) {
 $axiosProofGenerator.interceptors.response.use(
     (response: AxiosResponse) => {
         if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
-        return response.data;
+        return response;
     },
 
     async (error: ResponseError) => {
@@ -47,7 +47,7 @@ $axiosProofGenerator.interceptors.response.use(
 $axiosCoordinator.interceptors.response.use(
     (response: AxiosResponse) => {
         if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
-        return response.data;
+        return response;
     },
 
     async (error: ResponseError) => {
