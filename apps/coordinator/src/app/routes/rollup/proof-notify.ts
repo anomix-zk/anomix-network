@@ -2,14 +2,8 @@
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
-import { BaseResponse, RollupTaskDto, RollupTaskDtoSchma, RollupTaskType, SequencerStatus } from "@anomix/types";
-import { $axiosDeposit, $axiosSeq } from "@/lib/api";
-import { Field, PublicKey } from 'snarkyjs';
-import { AnomixEntryContract, AnomixRollupContract } from "@anomix/circuits";
-import { syncAcctInfo } from "@anomix/utils";
-import config from "@/lib/config";
-import { getConnection } from "typeorm";
-import { Block, DepositTreeTrans, SeqStatus } from "@anomix/dao";
+import { BaseResponse, RollupTaskDto, RollupTaskDtoSchma, RollupTaskType } from "@anomix/types";
+import { $axiosSeq } from "@/lib/api";
 
 /**
  * * when join-split_deposit done, notify coordinator;
@@ -46,7 +40,7 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
 
         }
 
-        /* no need this. since 'proof-trigger.ts' will decide if trigger 'DEPOSIT_CONTRACT_CALL'
+        /* no need this. since 'mempool-watcher.ts' will decide if trigger 'DEPOSIT_CONTRACT_CALL'
 
         else if (dto.taskType == RollupTaskType.DEPOSIT_BATCH_MERGE) {// when DEPOSIT_BATCH_MERGE done, then need check if bother seq-rollup-proof
             // check if bother seq-rollup-proof 
