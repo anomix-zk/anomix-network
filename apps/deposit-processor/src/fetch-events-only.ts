@@ -82,8 +82,6 @@ async function fetchActionsAndEvents() {
                     continue;
                 }
 
-                endIdx++;
-
                 const txHash = e.event.transactionInfo.transactionHash;
                 const sender = (e.event.data as any).sender;
                 const commitment = (e.event.data as any).noteCommitment;
@@ -94,7 +92,7 @@ async function fetchActionsAndEvents() {
                 const dc = new DepositCommitment();
                 dc.sender = sender.toBase58();
                 dc.depositNoteCommitment = commitment.toString();
-                dc.depositNoteIndex = endIdx.toString();
+                dc.depositNoteIndex = endIdx.toString();// start from 0
                 //dc.depositActionEventFetchRecordId = recordId;
                 dc.assetId = assetId.toString();
                 dc.userDepositL1TxHash = txHash;
@@ -109,6 +107,8 @@ async function fetchActionsAndEvents() {
                     nextActionHash,
                     hashX
                 );
+
+                endIdx++;
             }
 
             let depositActionEventFetchRecord = new DepositActionEventFetchRecord();
@@ -117,7 +117,7 @@ async function fetchActionsAndEvents() {
             depositActionEventFetchRecord.startActionHash = startActionHash.toString(); //
             depositActionEventFetchRecord.nextActionHash = nextActionHash.toString();
             depositActionEventFetchRecord.startActionIndex = startIdx.toString(); //
-            depositActionEventFetchRecord.nextActionIndex = endIdx.toString();
+            depositActionEventFetchRecord.nextActionIndex = endIdx.toString();//!!
             depositActionEventFetchRecord = await queryRunner.manager.save(depositActionEventFetchRecord);
 
             // save all depositNoteCommitments
