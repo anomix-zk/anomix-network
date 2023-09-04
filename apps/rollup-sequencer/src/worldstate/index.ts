@@ -4,6 +4,7 @@ import { SequenceFlow } from "@/rollup";
 import { WorldStateDB } from "./worldstate-db";
 import { IndexDB } from "./index-db";
 import { RollupDB } from "./rollup-db";
+import { MerkleTreeId } from "@anomix/types";
 
 export * from './index-db'
 export * from './rollup-db'
@@ -12,7 +13,10 @@ export * from './worldstate-db'
 export class WorldState {
     private seqFlow: SequenceFlow
 
-    constructor(public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) { }
+    constructor(public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) {
+
+
+    }
 
     /**
      * start a new Flow

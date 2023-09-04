@@ -1,13 +1,11 @@
 
-import { AppendOnlyTree, LeafData, newTree, loadTree, StandardTree, StandardIndexedTree, IndexedTree, TreeBase } from "@anomix/merkle-tree";
+import { AppendOnlyTree, LeafData, newTree, loadTree, StandardTree, StandardIndexedTree, IndexedTree } from "@anomix/merkle-tree";
 import { MerkleTreeId } from "@anomix/types";
 import { PoseidonHasher } from '@anomix/types';
 import { DATA_TREE_HEIGHT, ROOT_TREE_HEIGHT, NULLIFIER_TREE_HEIGHT, LowLeafWitnessData } from "@anomix/circuits";
 import { Field } from "snarkyjs";
 import levelup, { LevelUp } from 'levelup';
 import leveldown from "leveldown";
-
-let INIT_NULLIFIER_TREE_HEIGHT = NULLIFIER_TREE_HEIGHT;
 
 export class WorldStateDB {
     private readonly db: LevelUp
@@ -24,7 +22,7 @@ export class WorldStateDB {
         let poseidonHasher = new PoseidonHasher();
         const dataTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE]}`, DATA_TREE_HEIGHT)
         const syncDataTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.SYNC_DATA_TREE]}`, DATA_TREE_HEIGHT)
-        const nullifierTree = await newTree(StandardIndexedTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}`, NULLIFIER_TREE_HEIGHT, INIT_NULLIFIER_TREE_HEIGHT)
+        const nullifierTree = await newTree(StandardIndexedTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}`, NULLIFIER_TREE_HEIGHT)
         const dataTreeRootsTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}`, ROOT_TREE_HEIGHT)
 
         this.trees.set(MerkleTreeId.DATA_TREE, dataTree);
