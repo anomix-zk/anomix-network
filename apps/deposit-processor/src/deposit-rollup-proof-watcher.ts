@@ -58,7 +58,7 @@ async function depositRollupProofWatch() {
                 if (r.data.code == 1) {
                     throw new Error(r.data.msg);
                 }
-            });// TODO future: could improve when fail by 'timeout' after retry
+            });
         } catch (error) {
             logger.error(error);
         }
