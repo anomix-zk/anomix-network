@@ -2,7 +2,7 @@
 
 import { IndexDB, RollupDB, RollupFlow } from "@/rollup";
 import { WorldStateDB } from "./worldstate-db";
-import { JoinSplitDepositInput } from "@anomix/circuits";
+import { JoinSplitDepositInput, ActionType } from "@anomix/circuits";
 import { BaseResponse, FlowTask, FlowTaskType, ProofTaskDto, ProofTaskType, RollupTaskDto, RollupTaskType, MerkleTreeId } from "@anomix/types";
 import { $axiosCoordinator, $axiosProofGenerator } from "@/lib";
 import { getConnection } from "typeorm";
@@ -76,7 +76,7 @@ export class WorldState {
         // asyncly send to 'Proof-Generator' to exec 'join_split_prover.deposit()'
         const connection = getConnection();
         const mpl2txRepo = connection.getRepository(MemPlL2Tx);
-        const depositMpL2TxList = await mpl2txRepo.find({ where: { blockId }, order: { depositIndex: 'ASC' } }) ?? [];
+        const depositMpL2TxList = await mpl2txRepo.find({ where: { blockId, actionType: ActionType.DEPOSIT.toString() }, order: { depositIndex: 'ASC' } }) ?? [];
         if (depositMpL2TxList.length == 0) {
             return;
         }
