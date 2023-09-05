@@ -1,6 +1,6 @@
 import { $axiosDeposit, $axiosSeq } from "./lib/api";
 import { getConnection, In, QueryRunner } from 'typeorm';
-import { Block, DepositProcessorSignal, DepositTreeTrans, SeqStatus } from '@anomix/dao';
+import { Block, DepositProcessorSignal, DepositTreeTrans } from '@anomix/dao';
 import { BaseResponse, BlockStatus, DepositProcessingSignal, DepositTreeTransStatus, RollupTaskDto, RollupTaskType, SequencerStatus } from '@anomix/types';
 import { getLogger } from "./lib/logUtils";
 import { initORM } from "./lib/orm";
@@ -52,7 +52,7 @@ async function proofTrigger() {
                 const rollupTaskDto = {
                     taskType: RollupTaskType.ROLLUP_CONTRACT_CALL,
                     index: undefined,
-                    payload: block.id
+                    payload: { blockId: block.id }
                 } as RollupTaskDto<any, any>;
 
                 await $axiosSeq.post<BaseResponse<string>>('/rollup/proof-trigger', rollupTaskDto).then(r => {
@@ -73,11 +73,11 @@ async function proofTrigger() {
 
                 // ======== to here, means this block was created after last triggger-round or its proving journey was interrupted unexpectedly. ========
 
-                if (block.depositCount != 0) {
+                if (Number(block.depositCount) != 0) {
                     const rollupTaskDto = {
                         taskType: RollupTaskType.DEPOSIT_JOINSPLIT,
                         index: undefined,
-                        payload: block.id
+                        payload: { blockId: block.id }
                     } as RollupTaskDto<any, any>;
 
                     await $axiosDeposit.post<BaseResponse<string>>('/rollup/joint-split-deposit', rollupTaskDto).then(r => {
@@ -92,7 +92,7 @@ async function proofTrigger() {
                     const rollupTaskDto = {
                         taskType: RollupTaskType.ROLLUP_PROCESS,
                         index: undefined,
-                        payload: block.id
+                        payload: { blockId: block.id }
                     } as RollupTaskDto<any, any>;
 
                     await $axiosSeq.post<BaseResponse<string>>('/rollup/proof-trigger', rollupTaskDto).then(r => {
