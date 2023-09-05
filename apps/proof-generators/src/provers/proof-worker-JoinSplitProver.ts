@@ -3,6 +3,7 @@ import { JoinSplitProver, JoinSplitDepositInput } from "@anomix/circuits";
 import { activeMinaInstance } from '@anomix/utils';
 import { ProofTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
+import { deposit } from "./circuits/join-split-prover";
 
 const logger = getLogger('pWorker-JoinSplitProver');
 
@@ -18,6 +19,9 @@ function processMsgFromMaster() {
             case `${ProofTaskType[ProofTaskType.DEPOSIT_JOIN_SPLIT]}`:
                 execCircuit(message, async () => {
                     let params = new JoinSplitDepositInput(JoinSplitDepositInput.fromJSON(message.payload))
+
+                    let proof = deposit(params);
+
                     return await JoinSplitProver.deposit(params)
                 });
                 break;
@@ -77,8 +81,7 @@ const initWorker = async () => {
     processMsgFromMaster();
 
     process.send!({
-        status: 'isReady',
-        type: process.argv[0]
+        type: 'isReady'
     });
     logger.info(`[WORKER ${process.pid}] new worker ready`);
 };
