@@ -12,6 +12,5 @@ export * from './l2-tx'
 export * from './l2-tx-memorypool'
 export * from './withdraw-info'
 export * from './task'
-export * from './sequencer-status'
 export * from './inner-rollup-batch'
 
