@@ -94,8 +94,8 @@ const initWorker = async () => {
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    await JoinSplitProver.compile();
-    await InnerRollupProver.compile();
+    // await JoinSplitProver.compile();
+    // await InnerRollupProver.compile();
 
     // recieve message from main process...
     processMsgFromMaster();
