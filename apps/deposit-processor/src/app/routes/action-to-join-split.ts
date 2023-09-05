@@ -26,7 +26,7 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
     req,
     res
 ): Promise<BaseResponse<boolean>> {
-    const { blockId } = req.body.payload;
+    const { blockId } = req.body.payload.blockId;
     try {
         /**
          * collect all 'Pending' actions(within depositTx list) and exec 'JoinSplitProver.deposit'

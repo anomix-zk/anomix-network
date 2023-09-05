@@ -53,7 +53,7 @@ async function mempoolWatch() {
         const rollupTaskDto = {
             taskType: RollupTaskType.SEQUENCE,
             index: undefined,
-            payload: undefined
+            payload: {}
         } as RollupTaskDto<any, any>;
 
         // when there exists a highFee L2Tx, then trigger seq directly
