@@ -314,38 +314,50 @@ export class FlowScheduler {
                  * * DataTree:{comitment} -> leafIndex
                  * * NullifierTree:{nullifier} -> leafIndex
                  */
-                batch = batch.concat([
-                    // L2TX part:
-                    {
-                        key: `L2TX:${tx.outputNoteCommitment1}`,
+
+                if (tx.outputNoteCommitment1 != '0') {
+                    batch.push({
+                        key: `L2TX:${tx.outputNoteCommitment1}`,// no 0
                         value: tx.txHash
-                    }, {
+                    });
+                    batch.push({
+                        key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${tx.outputNoteCommitment1}`,// no 0
+                        value: tx.outputNoteCommitmentIdx1
+                    });
+                }
+                if (tx.outputNoteCommitment2 != '0') {
+                    batch.push({
                         key: `L2TX:${tx.outputNoteCommitment2}`,// no 0
                         value: tx.txHash
-                    }, {
-                        key: `L2TX:${tx.nullifier1}`,// no 0
-                        value: tx.txHash
-                    }, {
-                        key: `L2TX:${tx.nullifier2}`,// no 0
-                        value: tx.txHash
-                    },
-                    // DataTree part:
-                    {
-                        key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${tx.outputNoteCommitment1}`,
-                        value: tx.outputNoteCommitmentIdx1
-                    }, {
+                    });
+                    batch.push({
                         key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${tx.outputNoteCommitment2}`,// no 0
                         value: tx.outputNoteCommitmentIdx2
-                    },
-                    // NullifierTree part:
-                    {
+                    })
+                }
+
+                if (tx.nullifier1 != '0') {
+                    batch.push({
+                        key: `L2TX:${tx.nullifier1}`,// no 0
+                        value: tx.txHash
+                    });
+                    batch.push({
                         key: `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${tx.nullifier1}`,// no 0
                         value: tx.nullifierIdx1
-                    }, {
+                    })
+                }
+                if (tx.nullifier2 != '0') {
+                    batch.push({
+                        key: `L2TX:${tx.nullifier2}`,// no 0
+                        value: tx.txHash
+                    });
+                    batch.push({
                         key: `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${tx.nullifier2}`,// no 0
                         value: tx.nullifierIdx2
-                    }]);
+                    })
+                }
             });
+
             batch.push({
                 key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${txFeeCommitment.toString()}`,
                 value: txFeeCommitmentIdx
