@@ -27,8 +27,8 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
     res
 ): Promise<BaseResponse<boolean>> {
     try {
-        // forward it to main thread, and will further forward it to Rollup threads.
-        parentPort?.postMessage(req.body)
+        // forward it to main process, and will further forward it to Rollup processes.
+        process.send!(req.body)
 
         return { code: 0, data: true, msg: '' };
     } catch (err) {
