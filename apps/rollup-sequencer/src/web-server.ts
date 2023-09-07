@@ -5,6 +5,8 @@ import { activeMinaInstance } from "@anomix/utils";
 import { WithdrawDB } from './worldstate/withdraw-db';
 import fs from "fs";
 import { MerkleTreeId } from '@anomix/types';
+import { DataRootWitnessData } from '@anomix/circuits';
+import { Field } from "snarkyjs";
 
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
@@ -25,11 +27,11 @@ if (!existDB) {
     const dataTreeRoot = worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false);
     const index = worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, false);// 0n
     await worldStateDB.appendLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, [dataTreeRoot]);
-    await indexDB.put(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${dataTreeRoot.toString()}`, `${index}`);// '0'
+    await worldStateDB.commit();
+    await indexDB.put(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${dataTreeRoot.toString()}`, `${index.toString()}`);// '0'
 
 } else {
     await worldStateDB.loadTrees();
-
 }
 
 // construct WorldState
