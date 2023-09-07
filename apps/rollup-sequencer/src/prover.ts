@@ -5,9 +5,13 @@ import { activeMinaInstance } from "@anomix/utils";
 import { ProofScheduler } from "./rollup/proof-scheduler";
 import { ProofTaskDto, RollupTaskDto, RollupTaskType, FlowTask, FlowTaskType } from '@anomix/types';
 import { getLogger } from "@/lib/logUtils";
+import { initORM } from "./lib";
 const logger = getLogger('prover');
+
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
+
+await initORM();
 
 // init leveldb
 // const worldStateDB = new WorldStateDB(config.worldStateDBPath);
