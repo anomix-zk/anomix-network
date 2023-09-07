@@ -17,37 +17,49 @@ export class ProofScheduler {
 
     constructor(private worldStateDB?: WorldStateDB, private rollupDB?: RollupDB, private indexDB?: IndexDB) { }
 
-    async startBatchMerge(blockId: number) {
+    async startBatchMerge(payload: { blockId: number }) {
         const connection = getConnection();
         const queryRunner = connection.createQueryRunner();
 
         await queryRunner.startTransaction();
 
+        const blockId = payload.blockId;
         try {
             const txList = await queryRunner.manager.find(L2Tx, { where: { blockId } });
             const hasDeposit = txList!.some(tx => {
                 return tx.actionType == ActionType.DEPOSIT.toString();
             });
 
+            /* No need. 
+            // if there are depositTx, then each depositTx has already obtained the latest depositTree root at seq section! and coordinator has already stopped Broadcasting DepositRollupProof as L1Tx.
+            // if no depositTx, then constract circuit will not check if it's latest depositTree root.
+
             let latestDepositTreeRoot: string = undefined as any as string;
             if (hasDeposit) {
                 //  coordinator has already stopped Broadcasting DepositRollupProof as L1Tx.
-                await $axiosDepositProcessor.post<BaseResponse<string>>('/rollup/deposit-tree-root').then(r => {
+                await $axiosDepositProcessor.get<BaseResponse<string>>('/rollup/deposit-tree-root').then(r => {
                     if (r.data.code == 1) {
                         throw new Error(`could not obtain latest DEPOSIT_TREE root: ${r.data.msg}`);
                     }
                     latestDepositTreeRoot = r.data.data!;
                 });
             }
+            */
 
             // query related InnerRollupBatch regarding 'blockId'
             const innerRollupBatch = await queryRunner.manager.findOne(InnerRollupBatch, { where: { blockId } });
             if (!innerRollupBatch) {
                 throw new Error(`cannot find innerRollupBatch by blockId:${blockId}`);
             }
-            const innerRollupBatchParamList = JSON.parse(innerRollupBatch.inputParam);
+            const innerRollupBatchParamList: {
+                txId1: number,
+                txId2: number,
+                innerRollupInput: any,
+                joinSplitProof1: any,
+                joinSplitProof2: any
+            }[] = JSON.parse(innerRollupBatch.inputParam);
 
-            if (hasDeposit) {// ie. has depositL2tx, then need change to latestDepositTreeRoot
+            if (hasDeposit) {
                 const map = new Map<number, string>();
                 txList.forEach(tx => {
                     map.set(tx.id, tx.proof);
@@ -55,15 +67,18 @@ export class ProofScheduler {
 
                 // change to latest deposit tree root
                 innerRollupBatchParamList.forEach(param => {
-                    const paramJson = JSON.parse(param) as { txId1: number, txId2: number, innerRollupInput: string, joinSplitProof1: string, joinSplitProof2: string };
-
-                    const innerRollupInput = JSON.parse(paramJson.innerRollupInput);
-                    innerRollupInput.depositRoot = latestDepositTreeRoot;
-                    paramJson.innerRollupInput = JSON.stringify(innerRollupInput);
-
+                    /*
+                    const innerRollupInput = JSON.parse(param.innerRollupInput);
+                    innerRollupInput.tx1RootWitnessData = JSON.parse('{"dataRootIndex":"0","witness":{"path":["10798256833514586784794049377907159296211331399581827811000634052637031259199","21565680844461314807147611702860246336805372493508489110556896454939225549736","2447983280988565496525732146838829227220882878955914181821218085513143393976","544619463418997333856881110951498501703454628897449993518845662251180546746"]}}');
+                    innerRollupInput.tx2RootWitnessData = JSON.parse('{"dataRootIndex":"0","witness":{"path":["10798256833514586784794049377907159296211331399581827811000634052637031259199","21565680844461314807147611702860246336805372493508489110556896454939225549736","2447983280988565496525732146838829227220882878955914181821218085513143393976","544619463418997333856881110951498501703454628897449993518845662251180546746"]}}');
+                    param.innerRollupInput = JSON.stringify(innerRollupInput);
+                    */
                     // sync proof into paramJson
-                    paramJson.joinSplitProof1 = map.get(paramJson.txId1)!;
-                    paramJson.joinSplitProof2 = map.get(paramJson.txId2)!;
+                    param.joinSplitProof1 = map.get(param.txId1)!;
+                    if (param.txId2) {// if dummyTx, param.txId2 == undefined, should skip!
+                        param.joinSplitProof2 = map.get(param.txId2)!;
+                    }
+
                 })
 
                 innerRollupBatch.inputParam = JSON.stringify(innerRollupBatchParamList);
@@ -89,6 +104,7 @@ export class ProofScheduler {
                 }
             });
 
+            await queryRunner.commitTransaction();
         } catch (error) {
             logger.error(error);
             console.error(error);
