@@ -12,6 +12,7 @@ import { ProofTaskType, FlowTaskType } from '@anomix/types';
 import { getLogger } from "./lib/logUtils";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { randomUUID } from 'crypto';
 
 
 const logger = getLogger('create-sub-processes');
@@ -81,6 +82,7 @@ export const createSubProcesses = async (n: number) => {
     const cnt_BlockProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_AnomixRollupContract = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);// consider withdrawal scene in parallel
     */
+
     const createCircuitProcessor = (proverCnt: number, circuitName: string) => {
         const createFn = (proverCnt: number, circuitName: string) => {
             let worker = cp.fork(__dirname.concat('/provers/proof-worker-').concat(circuitName).concat('.js'), [circuitName]);
@@ -122,7 +124,7 @@ export const createSubProcesses = async (n: number) => {
 
     // createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
 
-    createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
+    // createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
 
     createCircuitProcessor(cnt_InnerRollupProver, CircuitName_InnerRollupProver);
 
@@ -163,37 +165,44 @@ export const createSubProcesses = async (n: number) => {
                         }).then(workerEntity => {
                             let worker = workerEntity as { worker: Worker, status: WorkerStatus, type: string };
 
-                            // send for exec circuit
-                            worker?.worker!.send(msg1);
-
-                            worker?.worker!.on('message', (message: any) => {
+                            const handler = (message: any) => {
                                 workerMap.get(CircuitName_JoinSplitProver)!.find(
                                     // (w) => w.worker.process.pid == worker!.worker.process.pid
                                     (w) => w.worker.pid == worker!.worker.pid
-                                )!.status = 'IsReady';
+                                )!.status = 'IsReady'
+                                worker.worker!.removeListener('message', handler);// must rm it here to avoid listener accumulation.
 
                                 if (message.type == 'done') {
                                     try {
+
                                         d.data = message.payload as any;// replace the original to the proof result
+
                                         sum++;
                                         logger.info(`jointSplit_deposit: sum: ${sum}`);
 
-                                        if (sum + 1 == data.length) {// when the proof count is equals to the target, then send the whole results to deposit_processor
+                                        if (sum == data.length) {// when the proof count is equals to the target, then send the whole results to deposit_processor
                                             // send back to deposit_processor
                                             if (sendCallBack) {
                                                 sendCallBack(proofPayload.payload)
+                                                sum = 0;
                                             }
                                             resolve({
                                                 isProof: true,
                                                 payload: data,
                                             });
+
                                         }
                                     } catch (error) {
                                         reject(error);
                                     }
                                 }
 
-                            });
+                            };
+
+                            worker?.worker!.on('message', handler);
+
+                            // send for exec circuit
+                            worker?.worker!.send(msg1);
                         })
 
 
@@ -212,9 +221,9 @@ export const createSubProcesses = async (n: number) => {
                     const msg = {
                         type: `${FlowTaskType[FlowTaskType.ROLLUP_TX_BATCH]}`,
                         payload: proofPayload.payload as {
-                            innerRollupInput: InnerRollupInput,
-                            joinSplitProof1: JoinSplitProof,
-                            joinSplitProof2: JoinSplitProof
+                            innerRollupInput: string,
+                            joinSplitProof1: string,
+                            joinSplitProof2: string
                         },
                     };
 
@@ -483,12 +492,15 @@ function generateProof(
         getFreeWorker(workers, s, j);
 
     }).then(workerEntity => {
+
         let worker = workerEntity as { worker: Worker, status: WorkerStatus, type: string };
-        worker.worker!.on('message', (message: any) => {
+
+        const handler = (message: any) => {
             workers.find(
                 //(w) => w.worker.process.pid == worker!.worker.process.pid
                 (w) => w.worker.pid == worker!.worker.pid
             )!.status = 'IsReady';
+            worker.worker!.removeListener('message', handler);// must rm it here to avoid listener accumulation.
 
             if (message.type == 'done') {
                 try {
@@ -506,7 +518,9 @@ function generateProof(
                     reject(error);
                 }
             }
-        });
+
+        }
+        worker.worker!.on('message', handler);
 
         // async exec
         worker.worker!.send(msg);
