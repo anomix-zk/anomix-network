@@ -3,11 +3,11 @@ import config from "@/lib/config";
 import { DepositStatus, MerkleTreeId, L2TxStatus, PoseidonHasher, MerkleProofDto, BlockCacheType, BaseResponse, BlockStatus } from "@anomix/types";
 import {
     DataMerkleWitness, DataRootWitnessData, LowLeafWitnessData, NullifierMerkleWitness,
-    DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, NoteType, ValueNote, Commitment
+    DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, NoteType, ValueNote, Commitment, RollupState, RollupStateTransition, BlockProveOutput, TxFee, FEE_ASSET_ID_SUPPORT_NUM
 } from "@anomix/circuits";
 import { WorldStateDB, WorldState, IndexDB, RollupDB } from "@/worldstate";
 import { Block, BlockCache, DepositCommitment, InnerRollupBatch, L2Tx, MemPlL2Tx, WithdrawInfo } from "@anomix/dao";
-import { Field, PublicKey, PrivateKey, Poseidon, UInt64 } from 'snarkyjs';
+import { Field, PublicKey, PrivateKey, Poseidon, UInt64, Provable } from 'snarkyjs';
 import { syncAcctInfo, uint8ArrayToBase64String } from "@anomix/utils";
 import { getConnection, In } from "typeorm";
 import { assert } from "console";
@@ -211,7 +211,6 @@ export class FlowScheduler {
 
             // create a new block
             let block = new Block();
-            block.blockHash = '';// TODO
             block.status = BlockStatus.PENDING;
             block.rollupSize = rollupSize;// TODO non-dummy?
             block.rootTreeRoot0 = this.currentRootTreeRoot.toString();
@@ -228,6 +227,35 @@ export class FlowScheduler {
             block.totalTxFees = totalTxFee.toString();
             block.txFeeCommitment = txFeeCommitment.toString();
             block.txFeeReceiver = feeValueNote.ownerPk.toBase58();
+            const sourceRollupState = new RollupState({
+                dataRoot: Field(block.dataTreeRoot0),
+                nullifierRoot: Field(block.nullifierTreeRoot0),
+                dataRootsRoot: Field(block.rootTreeRoot0),
+                depositStartIndex: Field(block.depositStartIndex0),
+            });
+            const targetRollupState = new RollupState({
+                dataRoot: Field(block.dataTreeRoot1),
+                nullifierRoot: Field(block.nullifierTreeRoot1),
+                dataRootsRoot: Field(block.rootTreeRoot1),
+                depositStartIndex: Field(block.depositStartIndex1),
+            });
+            const rollupStateTransition = new RollupStateTransition({
+                source: sourceRollupState,
+                target: targetRollupState
+            });
+            block.blockHash = new BlockProveOutput({
+                blockHash: Field.random(),
+                rollupSize: Field(block.rollupSize),
+                stateTransition: rollupStateTransition,
+                depositRoot: Field(block.depositRoot),
+                depositCount: Field(block.depositCount),
+                totalTxFees: [new TxFee({
+                    assetId: Field('0'),
+                    fee: UInt64.from(block.totalTxFees)
+                })],
+                txFeeReceiver: PublicKey.fromBase58(block.txFeeReceiver),
+            }).generateBlockHash().toString();
+
             block = await queryRunner.manager.save(block);// save it
 
             const cachedUpdates = this.worldStateDB.exportCacheUpdates(MerkleTreeId.DATA_TREE);
@@ -271,17 +299,19 @@ export class FlowScheduler {
             await queryRunner.manager.delete(MemPlL2Tx, mpL2TxIds);
 
             // update L2Tx and move to L2Tx table
-            nonDummyTxList.forEach((tx, i) => {
-                if (tx.actionType == ActionType.DEPOSIT.toString()) {
-                    tx.dataRoot = this.currentDataRoot.toString();
-                }
-                tx.id = undefined as any;// TODO Need check if could insert!
-                tx.status = L2TxStatus.CONFIRMED;
-                tx.blockId = block.id;
-                tx.blockHash = block.blockHash;
-                tx.indexInBlock = i;
+            const l2TxList = nonDummyTxList.map((mpL2Tx, i) => {
+                // transfer value from mpL2Tx to L2Tx
+                mpL2Tx.status = L2TxStatus.CONFIRMED;
+                mpL2Tx.blockId = block.id;
+                mpL2Tx.blockHash = block.blockHash;
+                mpL2Tx.indexInBlock = i;
+
+                const l2tx = new L2Tx();
+                Object.assign(l2tx, mpL2Tx); //????
+
+                return l2tx;
             })
-            await queryRunner.manager.save(nonDummyTxList as L2Tx[]);// insert all!
+            await queryRunner.manager.save(l2TxList);// insert all!
 
             // save innerRollupBatch
             const innerRollupBatch = new InnerRollupBatch();
@@ -390,9 +420,6 @@ export class FlowScheduler {
         for (let i = 0; i < txList.length; i += 2) {
             const tx1 = txList[i];// if txList's length is uneven, tx1 would be the last one, ie. this.leftNonDepositTx .
             const tx2 = txList[i + 1];
-            if (!tx2) {// if txList's length is uneven, tx2 would be 'undefined'.
-                break;
-            }
 
             const dataStartIndex: Field = Field(this.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE, true));
             const oldDataRoot: Field = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, true);
@@ -405,30 +432,31 @@ export class FlowScheduler {
             let dataTreeCursor = this.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE, true);
 
             const tx1OldDataWitness1: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
-            tx1.outputNoteCommitmentIdx1 = dataTreeCursor.toString();
             if (Field(tx1.outputNoteCommitment1).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
+                tx1.outputNoteCommitmentIdx1 = dataTreeCursor.toString();
                 this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx1.outputNoteCommitment1));
                 dataTreeCursor += 1n;
             }
 
             const tx1OldDataWitness2: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
-            tx1.outputNoteCommitmentIdx2 = dataTreeCursor.toString();
             if (Field(tx1.outputNoteCommitment2).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
+                tx1.outputNoteCommitmentIdx2 = dataTreeCursor.toString();
                 this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx1.outputNoteCommitment2));
                 dataTreeCursor += 1n;
             }
 
             // ================ tx2 commitment parts ============
             const tx2OldDataWitness1: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
-            tx2.outputNoteCommitmentIdx1 = dataTreeCursor.toString();
             if (Field(tx2.outputNoteCommitment1).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
+                tx2.outputNoteCommitmentIdx1 = dataTreeCursor.toString();
                 this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx2.outputNoteCommitment1));
                 dataTreeCursor += 1n;
             }
 
             const tx2OldDataWitness2: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
-            tx2.outputNoteCommitmentIdx2 = dataTreeCursor.toString();
             if (Field(tx2.outputNoteCommitment2).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
+                tx2.outputNoteCommitmentIdx2 = dataTreeCursor.toString();
+
                 this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx2.outputNoteCommitment2));
                 dataTreeCursor += 1n;
             }
@@ -487,12 +515,12 @@ export class FlowScheduler {
 
 
             // ================ root tree parts ============
-            const tx1DataTreeRootIndex: string = await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx1.dataRoot}`);//TODO
+            const tx1DataTreeRootIndex: string = (await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx1.dataRoot}`)).toString();
             const tx1RootWitnessData: DataRootWitnessData = {
                 dataRootIndex: Field(tx1DataTreeRootIndex),
                 witness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, BigInt(tx1DataTreeRootIndex), false)
             };
-            const tx2DataTreeRootIndex: string = await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx2.dataRoot}`);//TODO
+            const tx2DataTreeRootIndex: string = (await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx2.dataRoot}`)).toString();
             const tx2RootWitnessData: DataRootWitnessData = {
                 dataRootIndex: Field(tx2DataTreeRootIndex),
                 witness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, BigInt(tx2DataTreeRootIndex), false)
@@ -514,6 +542,7 @@ export class FlowScheduler {
                 depositNewStartIndexTmp = depositNewStartIndexTmp.add(1);
             }
 
+            // TODO no need stringfy it!
             const innerRollupInputStr = JSON.stringify({
                 dataStartIndex,
                 oldDataRoot,
