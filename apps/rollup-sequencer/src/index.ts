@@ -17,7 +17,7 @@ class ProofSchedulerWorkers extends Array<{ status: number, worker: cp.ChildProc
     private cursor: number
 
     constructor(num: number) {
-        super(num);
+        super();
 
         // start proof-scheduler in worker thread
         while (num > 0) {
