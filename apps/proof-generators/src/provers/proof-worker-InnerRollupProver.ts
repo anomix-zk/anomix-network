@@ -20,11 +20,11 @@ function processMsgFromMaster() {
         switch (message.type) {
 
             case `${FlowTaskType[FlowTaskType.ROLLUP_TX_BATCH]}`:
-                execCircuit(message, async () => {
+                await execCircuit(message, async () => {
                     const params = {
-                        innerRollupInput: new InnerRollupInput(InnerRollupInput.fromJSON(message.payload.innerRollupInput)),
-                        joinSplitProof1: JoinSplitProof.fromJSON(message.payload.joinSplitProof1),
-                        joinSplitProof2: JoinSplitProof.fromJSON(message.payload.joinSplitProof2)
+                        innerRollupInput: new InnerRollupInput(InnerRollupInput.fromJSON(JSON.parse(message.payload.innerRollupInput))),// TODO no need JSON.parse in later version.
+                        joinSplitProof1: JoinSplitProof.fromJSON(JSON.parse(message.payload.joinSplitProof1)),// TODO no need JSON.parse in later version.
+                        joinSplitProof2: JoinSplitProof.fromJSON(JSON.parse(message.payload.joinSplitProof2)) // TODO no need JSON.parse in later version.
                     }
 
                     const proof = proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
@@ -34,7 +34,7 @@ function processMsgFromMaster() {
                 break;
 
             case `${FlowTaskType[FlowTaskType.ROLLUP_MERGE]}`:
-                execCircuit(message, async () => {
+                await execCircuit(message, async () => {
                     let params = {
                         innerRollupProof1: InnerRollupProof.fromJSON(message.payload.innerRollupProof1),
                         innerRollupProof2: InnerRollupProof.fromJSON(message.payload.innerRollupProof2)
@@ -94,8 +94,8 @@ const initWorker = async () => {
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    // await JoinSplitProver.compile();
-    // await InnerRollupProver.compile();
+    await JoinSplitProver.compile();
+    await InnerRollupProver.compile();
 
     // recieve message from main process...
     processMsgFromMaster();
