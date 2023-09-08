@@ -5,6 +5,8 @@ import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, A
 import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
 import { ProofTaskType, FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
+import { proveTxBatch } from './circuits/inner_rollup_prover';
+import { merge } from './circuits/deposit_rollup_prover';
 
 const logger = getLogger('pWorker-InnerRollupProver');
 
@@ -18,23 +20,27 @@ function processMsgFromMaster() {
         switch (message.type) {
 
             case `${FlowTaskType[FlowTaskType.ROLLUP_TX_BATCH]}`:
-                execCircuit(message, async () => {
+                await execCircuit(message, async () => {
                     const params = {
-                        innerRollupInput: new InnerRollupInput(InnerRollupInput.fromJSON(message.payload.innerRollupInput)),
-                        joinSplitProof1: JoinSplitProof.fromJSON(message.payload.joinSplitProof1),
-                        joinSplitProof2: JoinSplitProof.fromJSON(message.payload.joinSplitProof2)
+                        innerRollupInput: new InnerRollupInput(InnerRollupInput.fromJSON(JSON.parse(message.payload.innerRollupInput))),// TODO no need JSON.parse in later version.
+                        joinSplitProof1: JoinSplitProof.fromJSON(JSON.parse(message.payload.joinSplitProof1)),// TODO no need JSON.parse in later version.
+                        joinSplitProof2: JoinSplitProof.fromJSON(JSON.parse(message.payload.joinSplitProof2)) // TODO no need JSON.parse in later version.
                     }
+
+                    const proof = proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
 
                     return await InnerRollupProver.proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
                 });
                 break;
 
             case `${FlowTaskType[FlowTaskType.ROLLUP_MERGE]}`:
-                execCircuit(message, async () => {
+                await execCircuit(message, async () => {
                     let params = {
                         innerRollupProof1: InnerRollupProof.fromJSON(message.payload.innerRollupProof1),
                         innerRollupProof2: InnerRollupProof.fromJSON(message.payload.innerRollupProof2)
                     }
+
+                    // const proof = merge(params.innerRollupProof1, params.innerRollupProof2);
                     return await InnerRollupProver.merge(params.innerRollupProof1, params.innerRollupProof2);
                 });
                 break;

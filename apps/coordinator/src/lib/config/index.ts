@@ -41,7 +41,7 @@ const config = {
             title: "Anomix Network - rollup-sequencer api documentation",
             version: "0.1.0"
         },
-        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost').concat(':').concat(<string>process.env.ROLLUP_SEQUENCER_PORT),
+        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost').concat(':').concat(<string>process.env.COORDINATOR_PORT),
         schemes: ["http"],
         consumes: ["application/json"],
         produces: ["application/json"],
@@ -54,7 +54,7 @@ const config = {
             }
         }
     },
-    sequencerHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
+    sequencerHost: <string>process.env.ROLLUP_SEQUENCER_HOST || '127.0.0.1',
     sequencerPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8080),
     depositProcessorHost: <string>process.env.DEPOSIT_PROCESSOR_HOST || '127.0.0.1',
     depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT ?? 8082),

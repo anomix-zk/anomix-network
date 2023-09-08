@@ -84,3 +84,5 @@ anomix_world_state_db/
 
 anomix_deposit_index_db/
 anomix_deposit_rollup_state_db/
+
+*_proofTaskDto_*.json

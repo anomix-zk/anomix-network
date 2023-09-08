@@ -76,7 +76,7 @@ export class ProofScheduler {
                         //  if [this depositTreeTrans aligns with AnomixEntryContract's onchain states] and [dont bother seq-rollup-proof], coordinator would further command triggerring 'callRollupContract'
                         await this.callRollupContract(transId, proof);
                     }
-                });// TODO future: could improve when fail by 'timeout' after retry
+                });
 
             } catch (error) {
                 logger.error(error);

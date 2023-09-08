@@ -30,7 +30,7 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
         // if (worldState.ongingFlow) {// single thread for 'seq', no need check!
         //     return;
         // }
-        this.worldState.startNewFlow();
+        await this.worldState.startNewFlow();
 
         return { code: 0, data: true, msg: '' };
     } catch (err) {

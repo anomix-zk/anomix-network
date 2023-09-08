@@ -1,16 +1,18 @@
 
 import config from './lib/config';
 import { AccountUpdate, Field, PublicKey, UInt32, Reducer } from 'snarkyjs';
-import { getConnection } from 'typeorm';
+import { Column, getConnection } from 'typeorm';
 import { DepositActionEventFetchRecord, DepositCommitment } from '@anomix/dao';
-import { AnomixEntryContract } from '@anomix/circuits';
-import { activeMinaInstance, syncActions } from "@anomix/utils";
+import { AnomixEntryContract, EncryptedNoteFieldData, getEncryptedNoteFromFieldData } from '@anomix/circuits';
+import { activeMinaInstance, syncActions, syncNetworkStatus } from "@anomix/utils";
 import { getLogger } from "@/lib/logUtils";
 import { initORM } from './lib';
+import fs from 'fs';
+import { DepositStatus } from '@anomix/types';
 
-const logger = getLogger('fetch-actions-events');
+const logger = getLogger('fetch-events-only');
 
-logger.info('hi, I am fetch-actions-events');
+logger.info('hi, I am fetch-events-only');
 
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
@@ -30,25 +32,24 @@ await initORM();
 
 await fetchActionsAndEvents();
 
-setInterval(fetchActionsAndEvents, 2 * 60 * 1000);// exec/1mins
+setInterval(fetchActionsAndEvents, 5 * 60 * 1000);// exec/5mins
 
 async function fetchActionsAndEvents() {
-    logger.info('start fetching Actions And Events...');
+    logger.info('... a new ROUND to fetchActionsAndEvents ...');
+
     try {
         const connection = getConnection();
         const queryRunner = connection.createQueryRunner();
 
         const depositActionEventFetchRecordRepo = connection.getRepository(DepositActionEventFetchRecord);
         const depositActionEventFetchRecord0 = await depositActionEventFetchRecordRepo.findOne({ order: { id: 'DESC' } });
-        let startBlockHeight = 0;
+        let startBlockHeight = config.entryContractDeploymentBlockHeight;
         let startActionHash = Reducer.initialActionState;
         let startIdx = 0n;
-        let recordId = 0;
         if (depositActionEventFetchRecord0) { // if not the first time to fetch
             startActionHash = Field(depositActionEventFetchRecord0.nextActionHash);
             startIdx = BigInt(depositActionEventFetchRecord0.nextActionIndex);
-            startBlockHeight = depositActionEventFetchRecord0.endBlock;
-            recordId = depositActionEventFetchRecord0.id + 1;
+            startBlockHeight = depositActionEventFetchRecord0.endBlock + 1;
         }
 
         let anomixEntryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
@@ -56,70 +57,84 @@ async function fetchActionsAndEvents() {
         const anomixEntryContract = new AnomixEntryContract(anomixEntryContractAddr);
 
         // fetch pending actions
-        const newActionList = await syncActions(anomixEntryContractAddr, startActionHash);
+        const newActionList: { actions: Array<string>[], hash: string }[] = await syncActions(anomixEntryContractAddr, startActionHash);
         if (newActionList == undefined || newActionList == null) {
             throw new Error("no new actions..."); // end
         }
 
-        const dcList: DepositCommitment[] = [];
-        let endIdx = startIdx;
-        let nextActionHash = startActionHash;
-        for (let i = 0; i < newActionList.length; i++, endIdx++) {
-            const commitment = newActionList[i][0];
+        const dcList: DepositCommitment[] = newActionList.map((a, i) => {
             const dc = new DepositCommitment();
-            dc.depositNoteCommitment = commitment.toString();
-            dc.depositNoteIndex = endIdx.toString();
-            dc.depositActionEventFetchRecordId = recordId;
-            dcList.push(dc);
+            dc.depositNoteCommitment = a.actions[0][0];
+            dc.depositNoteIndex = i.toString();
+            return dc;
+        });
 
-            const hashX = AccountUpdate.Actions.hash([commitment.toFields()]);
-            nextActionHash = AccountUpdate.Actions.updateSequenceState(
-                nextActionHash,
-                hashX
-            );
+        let nextActionHash = newActionList[newActionList.length - 1].hash;
+        let latestAction = newActionList[newActionList.length - 1].actions[0][0];
+
+        // !! the events we process must keep aligned with actionList !! 
+        // extreme case: after fetchActions, then a new block is gen, then fetchEvent will cover the new block. Apparently this would cause unconsistence between actions & events.
+        logger.info('start fetching Events...');
+        let endBlockHeight = (await syncNetworkStatus()).blockchainLength;
+        if (endBlockHeight.equals(UInt32.from(startBlockHeight)).toBoolean()) {// to avoid restart at a short time.
+            console.log('endBlockHeight == startBlockHeight, cancel this round!');
+            return;
+        }
+        // fetch pending events
+        const eventList = await anomixEntryContract.fetchEvents(UInt32.from(startBlockHeight), endBlockHeight);
+        if (eventList.length == 0) {
+            console.log('fetch back no events!');
+            return;
         }
 
-        let endBlockHeight = 0;
-        // fetch pending events
-        const eventList = await anomixEntryContract.fetchEvents(new UInt32(startBlockHeight)); // Attention: eventList might contain duplicated/exceptional 'events' from GraphQL.
-        eventList.filter(e => {
-            return e.type = 'deposit';
-        }).forEach(e => {
-            const blockHeight = e.blockHeight;
-            const txHash = e.event.transactionInfo.transactionHash;
-            const commitment = (e.event.data as any).noteCommitment;
-            const assetId = (e.event.data as any).assetId;
-            const depositValue = (e.event.data as any).depositValue;
-            const encryptedNoteData = (e.event.data as any).encryptedNoteData;
+        await queryRunner.startTransaction(); // save them inside a Mysql.Transaction
+        try {
+            for (let i = 0; i < eventList.length; i++) {
+                let e = eventList[i];
+                if (e.type != 'deposit') {
+                    continue;
+                }
 
-            const dc = dcList.filter(dc => {
-                return dc.depositNoteCommitment == commitment;
-            })[0];
-            if (dc) {
+                const txHash = e.event.transactionInfo.transactionHash;
+                const sender = (e.event.data as any).sender;
+                const commitment = (e.event.data as any).noteCommitment;
+                const assetId = (e.event.data as any).assetId;
+                const depositValue = (e.event.data as any).depositValue;
+                const encryptedNoteData = (e.event.data as any).encryptedNoteData;
+
+                const dc = dcList.filter(d => {
+                    return d.depositNoteCommitment == commitment;
+                })[0];
+                if (!dc) {
+                    continue;
+                }
+                dc.sender = sender.toBase58();
+                dc.depositNoteCommitment = commitment.toString();
                 dc.assetId = assetId.toString();
                 dc.userDepositL1TxHash = txHash;
                 dc.depositNoteCommitment = commitment.toString();
                 dc.depositValue = depositValue.toString();
-                dc.encryptedNote = encryptedNoteData.toString(); // TODO should decode it from Field-Array to ordinary truncated txt
+                dc.status = DepositStatus.PENDING;
+                dc.encryptedNote = JSON.stringify(getEncryptedNoteFromFieldData(encryptedNoteData)); // decode it from Field-Array to ordinary truncated txt
 
-                endBlockHeight = Number(blockHeight.toString());
+                if (latestAction == dc.depositNoteCommitment) {
+                    endBlockHeight = e.blockHeight; // !! the events we process must keep aligned with actionList !! 
+                }
             }
-        });
 
-        await queryRunner.startTransaction(); // save them inside a Mysql.Transaction
-
-        try {
-            let depositActionEventFetchRecord1 = new DepositActionEventFetchRecord();
-            depositActionEventFetchRecord1.id = recordId;
-            depositActionEventFetchRecord1.startBlock = startBlockHeight; //
-            depositActionEventFetchRecord1.endBlock = endBlockHeight;
-            depositActionEventFetchRecord1.startActionHash = startActionHash.toString(); //
-            depositActionEventFetchRecord1.nextActionHash = nextActionHash.toString();
-            depositActionEventFetchRecord1.startActionIndex = startIdx.toString(); //
-            depositActionEventFetchRecord1.nextActionIndex = endIdx.toString();
-            await queryRunner.manager.save(depositActionEventFetchRecord1);
+            let depositActionEventFetchRecord = new DepositActionEventFetchRecord();
+            depositActionEventFetchRecord.startBlock = startBlockHeight; //
+            depositActionEventFetchRecord.endBlock = Number(endBlockHeight.toString());
+            depositActionEventFetchRecord.startActionHash = startActionHash.toString(); //
+            depositActionEventFetchRecord.nextActionHash = nextActionHash.toString();
+            depositActionEventFetchRecord.startActionIndex = startIdx.toString(); //
+            depositActionEventFetchRecord.nextActionIndex = (startIdx + BigInt(dcList.length)).toString();//!!
+            depositActionEventFetchRecord = await queryRunner.manager.save(depositActionEventFetchRecord);
 
             // save all depositNoteCommitments
+            dcList.forEach(dc => {
+                dc.depositActionEventFetchRecordId = depositActionEventFetchRecord.id;
+            })
             await queryRunner.manager.save(dcList);
 
             await queryRunner.commitTransaction();
@@ -131,6 +146,6 @@ async function fetchActionsAndEvents() {
             await queryRunner.release();
         }
     } catch (error) {
-        logger.error(error);
+        console.error(error);
     }
 }

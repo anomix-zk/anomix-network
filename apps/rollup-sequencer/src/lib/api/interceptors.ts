@@ -19,60 +19,60 @@ const callbackTrigger: CallbackTrigger = {
 $axiosProofGenerator.interceptors.response.use(
     (response: AxiosResponse) => {
         if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
-        return response.data;
+        return response;
     },
 
     async (error: ResponseError) => {
         if (error.response && error.response.status !== 0) {
             error.isNetworkError = false;
-            if (callbackTrigger.responseError) callbackTrigger.responseError(error);
-            return Promise.reject(error);
         } else {
             error.isNetworkError = true;
-            if (callbackTrigger.responseError) callbackTrigger.responseError(error);
-            await timeout(5000);
-            return await $axiosProofGenerator.request(error.config);
         }
+
+        if (callbackTrigger.responseError) {
+            callbackTrigger.responseError(error);
+        }
+        return Promise.reject(error);
     }
 );
 
 $axiosDepositProcessor.interceptors.response.use(
     (response: AxiosResponse) => {
         if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
-        return response.data;
+        return response;
     },
 
     async (error: ResponseError) => {
         if (error.response && error.response.status !== 0) {
             error.isNetworkError = false;
-            if (callbackTrigger.responseError) callbackTrigger.responseError(error);
-            return Promise.reject(error);
         } else {
             error.isNetworkError = true;
-            if (callbackTrigger.responseError) callbackTrigger.responseError(error);
-            await timeout(5 * 60 * 1000);
-            return await $axiosDepositProcessor.request(error.config);
         }
+
+        if (callbackTrigger.responseError) {
+            callbackTrigger.responseError(error);
+        }
+        return Promise.reject(error);
     }
 );
 
 $axiosCoordinator.interceptors.response.use(
     (response: AxiosResponse) => {
         if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
-        return response.data;
+        return response;
     },
 
     async (error: ResponseError) => {
         if (error.response && error.response.status !== 0) {
             error.isNetworkError = false;
-            if (callbackTrigger.responseError) callbackTrigger.responseError(error);
-            return Promise.reject(error);
         } else {
             error.isNetworkError = true;
-            if (callbackTrigger.responseError) callbackTrigger.responseError(error);
-            await timeout(1 * 60 * 1000);
-            return await $axiosCoordinator.request(error.config);
         }
+
+        if (callbackTrigger.responseError) {
+            callbackTrigger.responseError(error);
+        }
+        return Promise.reject(error);
     }
 );
 

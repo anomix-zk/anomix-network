@@ -189,7 +189,7 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                     {
                         let payload = {
                             isProof: false,
-                            payload: proofTaskDto.payload as { blockId: number, data: { txId: number, data: JoinSplitDepositInput }[] }
+                            payload: proofTaskDto.payload
                         } as ProofPayload<any>;
 
                         subProcessCordinator.jointSplit_deposit(payload, sendResultDepositJoinSplitCallback);

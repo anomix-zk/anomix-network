@@ -2,13 +2,14 @@
 import { getConnection } from 'typeorm';
 import { Block, DepositCommitment, DepositTreeTrans, MemPlL2Tx, Task, TaskStatus, TaskType, WithdrawInfo } from '@anomix/dao';
 import { L1TxStatus, BlockStatus, WithdrawNoteStatus, DepositStatus, L2TxStatus, DepositTreeTransStatus, BaseResponse } from "@anomix/types";
-import { ActionType, DUMMY_FIELD } from '@anomix/circuits';
+import { ActionType, DUMMY_FIELD, JoinSplitOutput } from '@anomix/circuits';
 import { getLogger } from "./lib/logUtils";
 import { $axiosSeq } from './lib/api';
 import { initORM } from './lib/orm';
 import { parentPort } from 'worker_threads';
+import { UInt64, PublicKey, Field } from "snarkyjs";
 
-process.send ?? ({// when it's a primary process, process.send == undefined. 
+(process.send as any)({// when it's a primary process, process.send == undefined. 
     type: 'status',
     data: 'online'
 });
@@ -23,7 +24,7 @@ logger.info('hi, I am task-tracer!');
 
 await initORM();
 
-process.send ?? ({// if it's a subProcess
+(process.send as any)({// if it's a subProcess
     type: 'status',
     data: 'isReady'
 });
@@ -104,11 +105,29 @@ async function traceTasks() {
                                     memPlL2Tx.publicValue = dc.depositValue;
                                     memPlL2Tx.publicOwner = dc.sender;
                                     memPlL2Tx.publicAssetId = dc.assetId;
+                                    memPlL2Tx.dataRoot = '0';
+                                    memPlL2Tx.depositRoot = '0';
                                     memPlL2Tx.depositIndex = dc.depositNoteIndex;
                                     memPlL2Tx.txFee = '0';
                                     memPlL2Tx.txFeeAssetId = dc.assetId;
                                     memPlL2Tx.encryptedData1 = dc.encryptedNote;
                                     memPlL2Tx.status = L2TxStatus.PENDING
+                                    memPlL2Tx.txHash = new JoinSplitOutput({
+                                        actionType: ActionType.DEPOSIT,
+                                        outputNoteCommitment1: Field(memPlL2Tx.outputNoteCommitment1),
+                                        outputNoteCommitment2: DUMMY_FIELD,
+                                        nullifier1: DUMMY_FIELD,
+                                        nullifier2: DUMMY_FIELD,
+                                        publicValue: UInt64.zero,
+                                        publicOwner: PublicKey.fromBase58(memPlL2Tx.publicOwner),
+                                        publicAssetId: Field(memPlL2Tx.publicAssetId),
+                                        dataRoot: DUMMY_FIELD,
+                                        txFee: UInt64.zero,
+                                        txFeeAssetId: Field(memPlL2Tx.txFeeAssetId),
+                                        depositRoot: DUMMY_FIELD,
+                                        depositIndex: Field(memPlL2Tx.depositIndex),
+                                    }).hash().toString();
+
                                     // pre-construct depositTx
                                     vDepositTxList.push(memPlL2Tx);
                                 });

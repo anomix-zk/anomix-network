@@ -55,7 +55,7 @@ export async function syncActions(targetAddr: PublicKey, startActionHash: Field,
                 console.error(error);
 
                 console.log(`wait for a block and fetchActions again...`);
-                await waitBlockHeightToGrow((new UInt32(1)));
+                await waitBlockHeightToGrow((UInt32.from(1)));
             }
 
             if (i == 4 && !(actionsList instanceof Array)) {
