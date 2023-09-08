@@ -57,7 +57,7 @@ export const innerRollupBatchAndMerge = async (subProcessCordinator: SubProcessC
 
         // send back to sequencer
         if (sendCallBack) {
-            await sendCallBack(res);
+            await sendCallBack(res.payload.payload);
         }
 
     } else {

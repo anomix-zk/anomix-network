@@ -47,7 +47,10 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             type: 'done',
             messageType: message.type,
             id: process.pid,
-            payload: proof.toJSON(),
+            payload: {
+                isProof: true,
+                payload: proof.toJSON(),
+            },
         });
     } catch (error) {
         logger.error(error);
