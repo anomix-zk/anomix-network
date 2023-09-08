@@ -48,13 +48,13 @@ parentPort!.on('message', async dto => {
     const flowTask = (proofTaskDto.payload) as FlowTask<any>;
     switch (flowTask.taskType) {
         case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
-            await proofScheduler.whenMergedResultComeBack(proofTaskDto.index, flowTask.data);
+            await proofScheduler.whenMergedResultComeBack(proofTaskDto.index.blockId, flowTask.data.payload);
             break;
         case FlowTaskType.BLOCK_PROVE:
-            await proofScheduler.whenL2BlockComeback(flowTask.data);
+            await proofScheduler.whenL2BlockComeback(proofTaskDto.index.blockId, flowTask.data.payload);
             break;
         case FlowTaskType.ROLLUP_CONTRACT_CALL:
-            await proofScheduler.whenL1TxComeback(flowTask.data);
+            await proofScheduler.whenL1TxComeback(proofTaskDto.index.blockId, flowTask.data.payload);
             break;
         default: // rid it
             logger.info('rid FlowTask', JSON.stringify(flowTask));
