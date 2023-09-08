@@ -77,7 +77,9 @@ export class ProofScheduler {
                     param.joinSplitProof1 = map.get(param.txId1)!;
                     if (param.txId2) {// if dummyTx, param.txId2 == undefined, should skip!
                         param.joinSplitProof2 = map.get(param.txId2)!;
-                    }
+                    }/* else {
+                        param.joinSplitProof2 = JSON.stringify(config.joinsplitProofDummyTx.toJSON());
+                    }*/
 
                 })
 
@@ -122,9 +124,6 @@ export class ProofScheduler {
      * @param innerRollupProofList 
      */
     async whenMergedResultComeBack(blockId: number, innerRollupProof1: any) {
-        // verify proof??
-        //
-
         const connection = getConnection();
         const block = (await connection.getRepository(Block).findOne({ where: { id: blockId } }))!;
         const txFeeCommitment = block.txFeeCommitment;
