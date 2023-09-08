@@ -188,12 +188,8 @@ export class ProofScheduler {
      * update all related status and send to trigger ROLLUP_CONTRACT
      * @param block 
      */
-    async whenL2BlockComeback(data: { blockId: number, blockProvedResult: any }) {
-        // verify proof??
-        //
-
-        const { blockId, blockProvedResult } = data;
-
+    async whenL2BlockComeback(blockId: number, blockProvedResult: any) {
+        const blockProvedResultStr: string = JSON.stringify(blockProvedResult);
         // update all related status : BlockStatus.Proved, 
         // save it into db 
         const connection = getConnection();
@@ -209,7 +205,7 @@ export class ProofScheduler {
 
             const blockProverOutput = new BlockProverOutput();
             blockProverOutput.blockId = blockId;
-            blockProverOutput.output = JSON.stringify(blockProvedResult);
+            blockProverOutput.output = blockProvedResultStr;
             await queryRunner.manager.save(blockProverOutput);
 
             await queryRunner.commitTransaction();
@@ -227,7 +223,7 @@ export class ProofScheduler {
         await syncAcctInfo(rollupContractAddr);
         const rollupContract = new AnomixRollupContract(rollupContractAddr);
         if (block?.dataTreeRoot0 == rollupContract.state.get().dataRoot.toString()) { // check here
-            this.callRollupContract(blockId, blockProvedResult);
+            this.callRollupContract(blockId, blockProvedResultStr);
         }
 
         /*
@@ -247,7 +243,7 @@ export class ProofScheduler {
         */
     }
 
-    async callRollupContract(blockId: number, blockProvedResultStr?: any) {
+    async callRollupContract(blockId: number, blockProvedResultStr?: string) {
         // load BlockProvedResult regarding 'blockId' from db
         const connection = getConnection();
         const blockRepo = connection.getRepository(Block);
@@ -255,7 +251,7 @@ export class ProofScheduler {
 
         const blockProverOutputRepo = connection.getRepository(BlockProverOutput);
         if (!blockProvedResultStr) {
-            const blockProvedResult = (await blockProverOutputRepo.findOne({ where: { blockId } }))!;
+            const blockProvedResult = (await blockProverOutputRepo.findOne({ where: { blockId }, order: { createdAt: 'DESC' } }))!;
             blockProvedResultStr = blockProvedResult.output;
         }
 
@@ -273,9 +269,10 @@ export class ProofScheduler {
                 flowId: undefined,
                 taskType: FlowTaskType.ROLLUP_CONTRACT_CALL,
                 data: {
-                    proof: blockProvedResultStr,
+                    feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toPublicKey().toBase58(),
                     operatorSign,
-                    entryDepositRoot
+                    entryDepositRoot,
+                    proof: blockProvedResultStr
                 }
             }
         }
@@ -289,9 +286,9 @@ export class ProofScheduler {
         });
     }
 
-    async whenL1TxComeback(data: { blockId: number, tx: any }) {
+    async whenL1TxComeback(blockId: number, tx: any) {
         // sign and broadcast it.
-        const l1Tx = Mina.Transaction.fromJSON(data.tx);
+        const l1Tx = Mina.Transaction.fromJSON(tx);
         await l1Tx.sign([PrivateKey.fromBase58(config.rollupContractPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
             const txHash0 = txHash.hash()!;
 
@@ -301,7 +298,7 @@ export class ProofScheduler {
             await queryRunner.startTransaction();
             try {
                 const blockRepo = connection.getRepository(Block);
-                blockRepo.update({ id: data.blockId }, { l1TxHash: txHash0 });
+                blockRepo.update({ id: blockId }, { l1TxHash: txHash0 });
 
                 // save task for 'Tracer-Watcher' and also save to task for 'Tracer-Watcher'
                 const taskRepo = connection.getRepository(Task);
@@ -321,7 +318,7 @@ export class ProofScheduler {
 
         }).catch(reason => {
             // TODO log it
-            logger.info(data.tx, ' failed!', 'reason: ', JSON.stringify(reason));
+            logger.info(tx, ' failed!', 'reason: ', JSON.stringify(reason));
         });
     }
 

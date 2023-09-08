@@ -58,11 +58,11 @@ process!.on('message', async dto => {
             break;
         case FlowTaskType.BLOCK_PROVE:
             fs.writeFileSync(`./BLOCK_PROVE_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
-            await proofScheduler.whenL2BlockComeback(flowTask.data);
+            await proofScheduler.whenL2BlockComeback(proofTaskDto.index.blockId, flowTask.data);
             break;
         case FlowTaskType.ROLLUP_CONTRACT_CALL:
             fs.writeFileSync(`./ROLLUP_CONTRACT_CALL_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
-            await proofScheduler.whenL1TxComeback(flowTask.data);
+            await proofScheduler.whenL1TxComeback(proofTaskDto.index.blockId, flowTask.data);
             break;
         default: // rid it
             logger.info('rid FlowTask', JSON.stringify(flowTask));
