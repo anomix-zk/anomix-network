@@ -50,7 +50,7 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                 });
             }
             const sendResultSeqCallback = async (p: any) => {
-                (proofTaskDto.payload as FlowTask<any>).data = p.payload;
+                (proofTaskDto.payload as FlowTask<any>).data = p;
                 fs.writeFileSync(`./proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
 
                 await $axiosSeq.post('/proof-result', proofTaskDto).then(value => {

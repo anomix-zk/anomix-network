@@ -74,6 +74,8 @@ export const createSubProcesses = async (n: number) => {
     const cnt_AnomixEntryContract = 1;// consider L1Tx execution one by one
     const cnt_JoinSplitProver = 1;
     const cnt_InnerRollupProver = 1;
+    const cnt_BlockProver = 1;
+    const cnt_AnomixRollupContract = 1;
     /*     
     const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
     const cnt_AnomixEntryContract = 1;// consider L1Tx execution one by one
@@ -126,11 +128,11 @@ export const createSubProcesses = async (n: number) => {
 
     // createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
 
-    createCircuitProcessor(cnt_InnerRollupProver, CircuitName_InnerRollupProver);
+    // createCircuitProcessor(cnt_InnerRollupProver, CircuitName_InnerRollupProver);
 
     // createCircuitProcessor(cnt_BlockProver, CircuitName_BlockProver);
 
-    // createCircuitProcessor(cnt_AnomixRollupContract, CircuitName_AnomixRollupContract);
+    createCircuitProcessor(cnt_AnomixRollupContract, CircuitName_AnomixRollupContract);
 
     await waitForAllWorkersReady(workerMap);
 
@@ -296,10 +298,10 @@ export const createSubProcesses = async (n: number) => {
                             operatorSign: proofPayload.payload.operatorSign,
                             entryDepositRoot: proofPayload.payload.entryDepositRoot
                         } as {
-                            feePayer: PublicKey,
-                            proof: RollupProof,
-                            operatorSign: Signature
-                            entryDepositRoot: Field
+                            feePayer: string,
+                            proof: string,
+                            operatorSign: any
+                            entryDepositRoot: string
                         }
                     };
 

@@ -1,4 +1,4 @@
-import { Field, PublicKey, Mina, Signature } from 'snarkyjs';
+import { Field, PublicKey, Mina, Signature, fetchAccount } from 'snarkyjs';
 import config from "../lib/config";
 
 import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, AnomixRollupContract, WithdrawAccount, AnomixEntryContract, RollupProof } from "@anomix/circuits";
@@ -19,19 +19,22 @@ function processMsgFromMaster() {
 
             case `${FlowTaskType[FlowTaskType.ROLLUP_CONTRACT_CALL]}`:
                 execCircuit(message, async () => {
-                    let params = message.payload as {
-                        feePayer: PublicKey,
-                        proof: RollupProof,
-                        operatorSign: Signature,
-                        entryDepositRoot: Field
+                    let params = {
+                        feePayer: PublicKey.fromBase58(message.payload.feePayer),
+                        proof: RollupProof.fromJSON(JSON.parse(message.payload.proof)),
+                        operatorSign: Signature.fromJSON(message.payload.operatorSign),
+                        entryDepositRoot: Field(message.payload.entryDepositRoot)
                     }
 
                     const addr = PublicKey.fromBase58(config.rollupContractAddress);
                     await syncAcctInfo(addr);// fetch account.
                     const rollupContract = new AnomixRollupContract(addr);
+
                     let tx = await Mina.transaction(params.feePayer, () => {
                         rollupContract.updateRollupState(params.proof, params.operatorSign, params.entryDepositRoot)
                     });
+                    await tx.prove();
+
                     return tx;
                 });
                 break;
@@ -56,7 +59,10 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             type: 'done',
             messageType: message.type,
             id: process.pid,
-            payload: proof.toJSON(),
+            payload: {
+                isProof: true,
+                payload: proof.toJSON(),
+            },
         });
     } catch (error) {
         logger.error(error);
@@ -82,11 +88,12 @@ const initWorker = async () => {
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    await JoinSplitProver.compile();
-    await InnerRollupProver.compile();
-    await BlockProver.compile();
-    await WithdrawAccount.compile();
-    await AnomixRollupContract.compile();
+    // await JoinSplitProver.compile();
+    // await InnerRollupProver.compile();
+    // await BlockProver.compile();
+    // await WithdrawAccount.compile();
+    AnomixRollupContract.entryContractAddress = PublicKey.fromBase58(config.entryContractAddress);
+    // await AnomixRollupContract.compile();
 
     // recieve message from main process...
     processMsgFromMaster();
