@@ -12,6 +12,7 @@ import { getLogger } from "./lib/logUtils";
 import { $axiosDeposit, $axiosSeq } from "./lib";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -49,7 +50,9 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                 });
             }
             const sendResultSeqCallback = async (p: any) => {
-                (proofTaskDto.payload as FlowTask<any>).data = p;
+                (proofTaskDto.payload as FlowTask<any>).data = p.payload;
+                fs.writeFileSync(`./proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+
                 await $axiosSeq.post('/proof-result', proofTaskDto).then(value => {
                     console.log('$axiosSeq.post to /proof-result, response:', value);
                 }).catch(reason => {
