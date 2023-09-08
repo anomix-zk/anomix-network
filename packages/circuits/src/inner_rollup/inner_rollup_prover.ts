@@ -51,6 +51,7 @@ let InnerRollupProver = Experimental.ZkProgram({
         txProof1: JoinSplitProof,
         txProof2: JoinSplitProof
       ) {
+        Provable.log('innerRollupInput: ', input);
         const dataStartIndex = input.dataStartIndex;
         const nullStartIndex = input.nullStartIndex;
         const oldDataRoot = input.oldDataRoot;
@@ -78,8 +79,10 @@ let InnerRollupProver = Experimental.ZkProgram({
 
         const txOutput1 = txProof1.publicOutput;
         const tx1IsDeposit = txOutput1.actionType.equals(ActionType.DEPOSIT);
+        Provable.log('tx1IsDeposit: ', tx1IsDeposit);
         const txOutput2 = txProof2.publicOutput;
         const tx2IsDeposit = txOutput2.actionType.equals(ActionType.DEPOSIT);
+        Provable.log('tx2IsDeposit: ', tx2IsDeposit);
 
         let currentDataRoot = oldDataRoot;
         let currentDataIndex = dataStartIndex;
@@ -88,8 +91,12 @@ let InnerRollupProver = Experimental.ZkProgram({
         let currentDepositStartIndex = input.oldDepositStartIndex;
         let currentDepositCount = Field(0);
 
+        Provable.log('depositRoot: ', depositRoot);
         depositRoot.assertNotEquals(DUMMY_FIELD, 'Deposit root is illegal');
         let firstDepositIndex = currentDepositStartIndex;
+
+        Provable.log('txOutput1 depositIndex: ', txOutput1.depositIndex);
+        Provable.log('txOutput2 depositIndex: ', txOutput2.depositIndex);
         Provable.if(
           tx1IsDeposit.and(tx2IsDeposit),
           Bool,
@@ -109,6 +116,9 @@ let InnerRollupProver = Experimental.ZkProgram({
           txOutput2.depositIndex,
           firstDepositIndex
         );
+
+        Provable.log('firstDepositIndex: ', firstDepositIndex);
+        Provable.log('currentDepositStartIndex: ', currentDepositStartIndex);
         firstDepositIndex.assertEquals(
           currentDepositStartIndex,
           'First deposit index should be equal to current deposit start index'
@@ -116,6 +126,7 @@ let InnerRollupProver = Experimental.ZkProgram({
 
         let currentRollupSize = Field(0);
         // process tx1
+        Provable.log('Process tx1');
         let {
           currentDataRoot: currentDataRoot1,
           currentDataIndex: currentDataIndex1,
@@ -147,6 +158,7 @@ let InnerRollupProver = Experimental.ZkProgram({
         });
 
         // process tx2
+        Provable.log('Process tx2');
         let {
           currentDataRoot: currentDataRoot2,
           // currentDataIndex: currentDataIndex2,
@@ -327,6 +339,7 @@ function processTx({
   const originNullRoot = currentNullRoot;
   const originNullIndex = currentNullIndex;
 
+  Provable.log('txIsDummy: ', txIsDummy);
   currentRollupSize = Provable.if(
     txIsDummy,
     currentRollupSize,
@@ -349,6 +362,8 @@ function processTx({
     [currentDepositStartIndex.add(1), currentDepositCount.add(1)],
     [currentDepositStartIndex, currentDepositCount]
   );
+  Provable.log('depositStartIndex: ', depositStartIndex);
+  Provable.log('depositCount: ', depositCount);
 
   // check tx data root validity
   const checkDataRootValid = checkMembership(
@@ -357,6 +372,7 @@ function processTx({
     rootWitnessData.witness,
     dataRootsRoot
   );
+  Provable.log('checkDataRootValid: ', checkDataRootValid);
 
   // process outputNoteCommitment1
   const checkWitnessOfCommitment1Valid = checkMembership(
@@ -365,11 +381,17 @@ function processTx({
     oldDataWitness1,
     currentDataRoot
   );
+  Provable.log(
+    'checkWitnessOfCommitment1Valid: ',
+    checkWitnessOfCommitment1Valid
+  );
   currentDataRoot = oldDataWitness1.calculateRoot(
     outputNoteCommitment1,
     currentDataIndex
   );
+  Provable.log('currentDataRoot: ', currentDataRoot);
   currentDataIndex = currentDataIndex.add(1);
+  Provable.log('currentDataIndex: ', currentDataIndex);
   //------------------------------------------------------------------------------
 
   // processs outputNoteCommitment2
@@ -403,35 +425,61 @@ function processTx({
   );
   currentDataRoot = currRoot;
   currentDataIndex = currIndex;
+  Provable.log(
+    'checkWitnessOfCommitment2Valid: ',
+    checkWitnessOfCommitment2Valid
+  );
+  Provable.log('currentDataRoot: ', currentDataRoot);
+  Provable.log('currentDataIndex: ', currentDataIndex);
   //------------------------------------------------------------------------------
 
   // process nullifier1
   // nullifier1 can not be empty when tx is not deposit
   const null1IsDummy = nullifier1.equals(DUMMY_FIELD);
+  Provable.log('null1IsDummy: ', null1IsDummy);
   const checkNullifier1Valid = Provable.if(
     txIsDeposit,
     Bool,
     null1IsDummy,
     null1IsDummy.not()
   );
+  Provable.log('checkNullifier1Valid: ', checkNullifier1Valid);
 
   const checkLowLeafMembership =
     lowLeafWitness1.checkMembership(currentNullRoot);
+  Provable.log('checkLowLeafMembership: ', checkLowLeafMembership);
+
   const checkNullifier1GreaterThanLowLeafValue = nullifier1.greaterThan(
     lowLeafWitness1.leafData.value
   );
+  Provable.log(
+    'checkNullifier1GreaterThanLowLeafValue: ',
+    checkNullifier1GreaterThanLowLeafValue
+  );
+
   const lowLeafNextValue1 = lowLeafWitness1.leafData.nextValue;
+  Provable.log('lowLeafNextValue1: ', lowLeafNextValue1);
+
   const checkNullifier1LeassThanLowLeafNextValue = Provable.if(
     lowLeafNextValue1.equals(DUMMY_FIELD).not(),
     Bool,
     nullifier1.lessThan(lowLeafNextValue1),
     Bool(true)
   );
+  Provable.log(
+    'checkNullifier1LeassThanLowLeafNextValue: ',
+    checkNullifier1LeassThanLowLeafNextValue
+  );
+
   const checkWitnessOfNullifier1Valid = checkMembership(
     DUMMY_FIELD,
     currentNullIndex,
     oldNullWitness1,
     currentNullRoot
+  );
+  Provable.log(
+    'checkWitnessOfNullifier1Valid: ',
+    checkWitnessOfNullifier1Valid
   );
 
   const {
@@ -458,34 +506,58 @@ function processTx({
   );
   currentNullRoot = currRoot2;
   currentNullIndex = currIndex2;
+  Provable.log('nullifier1Valid: ', nullifier1Valid);
+  Provable.log('currentNullRoot: ', currentNullRoot);
+  Provable.log('currentNullIndex: ', currentNullIndex);
   //-----------------------------------------------------------------------------
 
   // process nullifier2
   const null2IsDummy = nullifier2.equals(DUMMY_FIELD);
+  Provable.log('null2IsDummy: ', null2IsDummy);
+
   const checkNullifier2Valid = Provable.if(
     txIsDeposit,
     Bool,
     null2IsDummy,
     Bool(true)
   );
+  Provable.log('checkNullifier2Valid: ', checkNullifier2Valid);
 
   const checkLowLeafMembership2 =
     lowLeafWitness2.checkMembership(currentNullRoot);
+  Provable.log('checkLowLeafMembership2: ', checkLowLeafMembership2);
+
   const checkNullifier2GreaterThanLowLeafValue = nullifier2.greaterThan(
     lowLeafWitness2.leafData.value
   );
+  Provable.log(
+    'checkNullifier2GreaterThanLowLeafValue: ',
+    checkNullifier2GreaterThanLowLeafValue
+  );
+
   const lowLeafNextValue2 = lowLeafWitness2.leafData.nextValue;
+  Provable.log('lowLeafNextValue2: ', lowLeafNextValue2);
+
   const checkNullifier2LeassThanLowLeafNextValue = Provable.if(
     lowLeafNextValue2.equals(DUMMY_FIELD).not(),
     Bool,
     nullifier2.lessThan(lowLeafNextValue2),
     Bool(true)
   );
+  Provable.log(
+    'checkNullifier2LeassThanLowLeafNextValue: ',
+    checkNullifier2LeassThanLowLeafNextValue
+  );
+
   const checkWitnessOfNullifier2Valid = checkMembership(
     DUMMY_FIELD,
     currentNullIndex,
     oldNullWitness2,
     currentNullRoot
+  );
+  Provable.log(
+    'checkWitnessOfNullifier2Valid: ',
+    checkWitnessOfNullifier2Valid
   );
 
   const {
@@ -512,6 +584,9 @@ function processTx({
   );
   currentNullRoot = currRoot3;
   currentNullIndex = currIndex3;
+  Provable.log('nullifier2Valid: ', nullifier2Valid);
+  Provable.log('currentNullRoot: ', currentNullRoot);
+  Provable.log('currentNullIndex: ', currentNullIndex);
   //-----------------------------------------------------------------------------
 
   // process dummy and non-dummy

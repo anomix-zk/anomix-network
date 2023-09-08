@@ -1,5 +1,5 @@
 import { InnerRollupProof } from '../inner_rollup/inner_rollup_prover';
-import { Experimental } from 'snarkyjs';
+import { Experimental, Provable } from 'snarkyjs';
 import { BlockProveInput, BlockProveOutput } from './models';
 import { checkMembershipAndAssert } from '../utils/utils';
 import { DUMMY_FIELD } from '../models/constants';
@@ -16,8 +16,11 @@ let BlockProver = Experimental.ZkProgram({
       method(input: BlockProveInput, rollupProof: InnerRollupProof) {
         rollupProof.verify();
 
+        Provable.log('input: ', input);
         const rollupOutput = rollupProof.publicOutput;
         const txFeeReceiverNote = input.txFeeReceiverNote;
+
+        Provable.log('txFeeReceiverNote', txFeeReceiverNote);
         txFeeReceiverNote.ownerPk
           .isEmpty()
           .assertFalse('txFeeReceiver should not be empty');
@@ -41,6 +44,7 @@ let BlockProver = Experimental.ZkProgram({
           txFeeReceiverNote.commitment(),
           input.dataStartIndex
         );
+        Provable.log('newDataRoot', newDataRoot);
 
         // update root root tree
         // check index and witness of old data roots root
@@ -57,6 +61,7 @@ let BlockProver = Experimental.ZkProgram({
           newDataRoot,
           input.rootStartIndex
         );
+        Provable.log('newDataRootsRoot', newDataRootsRoot);
 
         let output = new BlockProveOutput({
           blockHash: DUMMY_FIELD,

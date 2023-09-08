@@ -68,18 +68,31 @@ export class AnomixRollupContract extends SmartContract {
     operatorSign: Signature,
     entryDepositRoot: Field
   ) {
+    Provable.log('updateRollupState...');
+    Provable.log('entryDepositRoot: ', entryDepositRoot);
     proof.verify();
 
     const globalSlots = this.network.globalSlotSinceGenesis.get();
+    Provable.log('globalSlots: ', globalSlots);
     this.network.globalSlotSinceGenesis.assertBetween(
       globalSlots,
       globalSlots.add(1)
     );
 
     const output = proof.publicOutput;
+    Provable.log('proof output: ', output);
     const signMessage = BlockProveOutput.toFields(output);
     const operatorAddress = this.operatorAddress.getAndAssertEquals();
+    Provable.log('operatorAddress: ', operatorAddress);
 
+    Provable.log(
+      'AnomixRollupContract.escapeIntervalSlots: ',
+      AnomixRollupContract.escapeIntervalSlots
+    );
+    Provable.log(
+      'AnomixRollupContract.escapeSlots: ',
+      AnomixRollupContract.escapeSlots
+    );
     Provable.if(
       globalSlots
         .mod(AnomixRollupContract.escapeIntervalSlots)
@@ -105,6 +118,7 @@ export class AnomixRollupContract extends SmartContract {
     ).assertTrue('depositRoot is not equal to entry contract depositRoot');
 
     const state = this.state.getAndAssertEquals();
+    Provable.log('state: ', state);
     Provable.equal(
       RollupState,
       state,
@@ -113,6 +127,8 @@ export class AnomixRollupContract extends SmartContract {
     this.state.set(output.stateTransition.target);
 
     let currentBlockNumber = this.blockHeight.getAndAssertEquals();
+    Provable.log('currentBlockNumber: ', currentBlockNumber);
+
     this.blockHeight.set(currentBlockNumber.add(1));
     this.emitEvent(
       'blockEvent',

@@ -45,6 +45,8 @@ let JoinSplitProver = Experimental.ZkProgram({
       privateInputs: [JoinSplitDepositInput],
 
       method(depositInput: JoinSplitDepositInput) {
+        Provable.log('depositInput: ', depositInput);
+
         const actionType = ActionType.DEPOSIT;
         const nullifier1 = DUMMY_FIELD;
         const nullifier2 = DUMMY_FIELD;
@@ -100,14 +102,20 @@ let JoinSplitProver = Experimental.ZkProgram({
       privateInputs: [JoinSplitSendInput],
 
       method(sendInput: JoinSplitSendInput) {
+        Provable.log('sendInput: ', sendInput);
         const actionType = sendInput.actionType;
 
         const actionTypeIsSend = actionType.equals(ActionType.SEND);
+        Provable.log('actionTypeIsSend: ', actionTypeIsSend);
+
         const actionTypeIsWithdraw = actionType.equals(ActionType.WITHDRAW);
+        Provable.log('actionTypeIsWithdraw: ', actionTypeIsWithdraw);
+
         actionTypeIsSend
           .or(actionTypeIsWithdraw)
           .assertTrue('Invalid actionType');
         const publicAssetId = sendInput.assetId;
+        Provable.log('publicAssetId: ', publicAssetId);
 
         Provable.if(
           actionTypeIsWithdraw,
@@ -138,13 +146,24 @@ let JoinSplitProver = Experimental.ZkProgram({
 
         // TODO no check account membership
 
+        Provable.log('InputNote1 noteType: ', inputNote1.noteType);
         inputNote1.noteType.assertEquals(NoteType.NORMAL);
+        Provable.log('InputNote2 noteType: ', inputNote2.noteType);
         inputNote2.noteType.assertEquals(NoteType.NORMAL);
 
         const isPublicOwnerEmpty = publicOwner.isEmpty();
+        Provable.log('isPublicOwnerEmpty: ', isPublicOwnerEmpty);
 
-        sendInput.assetId.assertEquals(inputNote1.assetId);
-        sendInput.assetId.assertEquals(outputNote1.assetId);
+        sendInput.assetId.assertEquals(
+          inputNote1.assetId,
+          'SendInput assetId not equal to inputNote1 assetId'
+        );
+        sendInput.assetId.assertEquals(
+          outputNote1.assetId,
+          'SendInput assetId not equal to ouputNote1 assetId'
+        );
+
+        Provable.log('OutputNote2 assetId: ', outputNote2.assetId);
         Provable.if(
           outputNote2.value.equals(UInt64.zero),
           Bool,
@@ -211,32 +230,46 @@ let JoinSplitProver = Experimental.ZkProgram({
         const inputNote1Commitment = inputNote1.commitment();
         const inputNote2Commitment = inputNote2.commitment();
         const outputNote1Commitment = outputNote1.commitment();
+        Provable.log('OutputNote1Commitment: ', outputNote1Commitment);
+
         const outputNote2Commitment = Provable.if(
           outputNote2.value.equals(UInt64.zero),
           Field,
           outputNote2.commitment(),
           DUMMY_FIELD
         );
+        Provable.log('OutputNote2Commitment: ', outputNote2Commitment);
 
-        inputNote1Commitment.assertNotEquals(inputNote2Commitment);
+        inputNote1Commitment.assertNotEquals(
+          inputNote2Commitment,
+          'InputNote1Commitment can not equal to inputNote2Commitment'
+        );
 
         const accountPk = sendInput.accountPrivateKey.toPublicKey();
 
         const isAccountRequired = sendInput.accountRequired.equals(
           AccountRequired.REQUIRED
         );
+        Provable.log('isAccountRequired: ', isAccountRequired);
+
         const signerPk = Provable.if(
           isAccountRequired,
           PublicKey,
           sendInput.signingPk,
           accountPk
         );
+        Provable.log('signerPk: ', signerPk);
+
         const accountNote = new AccountNote({
           aliasHash: sendInput.aliasHash,
           acctPk: accountPk,
           signingPk: signerPk,
         });
+        Provable.log('accountNote: ', accountNote);
+
         const accountNoteCommitment = accountNote.commitment();
+        Provable.log('accountNoteCommitment: ', accountNoteCommitment);
+
         // verify account membership
         Provable.if(
           isAccountRequired,
@@ -252,10 +285,13 @@ let JoinSplitProver = Experimental.ZkProgram({
           'AccountNote commitment check membership failed when accountRequired is true'
         );
 
+        Provable.log('accountPk: ', accountPk);
+        Provable.log('inputNote1.ownerPk: ', inputNote1.ownerPk);
         accountPk.assertEquals(inputNote1.ownerPk);
         //accountPk.assertEquals(inputNote2.ownerPk);
 
         const inputNoteNumIs2 = sendInput.inputNotesNum.equals(2);
+        Provable.log('inputNoteNumIs2: ', inputNoteNumIs2);
 
         const checkInputNote1AccountRequired = Provable.if(
           isAccountRequired,
@@ -308,16 +344,21 @@ let JoinSplitProver = Experimental.ZkProgram({
         ).assertTrue('The creatorPk of outputNote2 does not match');
 
         const totalInValue = inputNote1.value.add(inputNote2.value);
+        Provable.log('totalInValue: ', totalInValue);
         const totalOutValue = outputNote1.value.add(outputNote2.value);
+        Provable.log('totalOutValue: ', totalOutValue);
 
         totalInValue.assertGreaterThan(
           totalOutValue,
           'totalInValue is less than or equal totalOutValue'
         );
         const txFee = totalInValue.sub(totalOutValue);
+        Provable.log('txFee: ', txFee);
 
         const inputNote1InUse = sendInput.inputNotesNum.greaterThanOrEqual(1);
+        Provable.log('inputNote1InUse: ', inputNote1InUse);
         const inputNote2InUse = inputNoteNumIs2;
+        Provable.log('inputNote2InUse: ', inputNote2InUse);
 
         Provable.if(
           inputNote1InUse,
@@ -352,14 +393,23 @@ let JoinSplitProver = Experimental.ZkProgram({
           sendInput.accountPrivateKey,
           inputNote1InUse
         );
+        Provable.log('nullifier1: ', nullifier1);
+
         const nullifier2 = calculateNoteNullifier(
           inputNote2Commitment,
           sendInput.accountPrivateKey,
           inputNote2InUse
         );
+        Provable.log('nullifier2: ', nullifier2);
 
-        outputNote1.inputNullifier.assertEquals(nullifier1);
-        outputNote2.inputNullifier.assertEquals(nullifier2);
+        outputNote1.inputNullifier.assertEquals(
+          nullifier1,
+          'outputNote1.inputNullifier not equal to nullifier1'
+        );
+        outputNote2.inputNullifier.assertEquals(
+          nullifier2,
+          'outputNote2.inputNullifier not equal to nullifier2'
+        );
 
         const message = [
           outputNote1Commitment,
@@ -396,6 +446,8 @@ let JoinSplitProver = Experimental.ZkProgram({
       privateInputs: [JoinSplitAccountInput],
 
       method(input: JoinSplitAccountInput) {
+        Provable.log('operateAccount input: ', input);
+
         const operationType = input.operationType;
         operationType.assertLessThan(4, 'operationType is greater than 3');
 
@@ -411,9 +463,13 @@ let JoinSplitProver = Experimental.ZkProgram({
         const operationTypeIsCreate = operationType.equals(
           AccountOperationType.CREATE
         );
+        Provable.log('operationTypeIsCreate: ', operationTypeIsCreate);
+
         const operationTypeIsMigrate = operationType.equals(
           AccountOperationType.MIGRATE
         );
+        Provable.log('operationTypeIsMigrate: ', operationTypeIsMigrate);
+
         Provable.if(
           operationTypeIsMigrate.not(),
           Bool,
@@ -427,33 +483,46 @@ let JoinSplitProver = Experimental.ZkProgram({
           Poseidon.hash([input.aliasHash]),
           DUMMY_FIELD
         );
+        Provable.log('nullifier1: ', nullifier1);
+
         const nullifier2 = Provable.if(
           operationTypeIsCreate.or(operationTypeIsMigrate),
           Field,
           Poseidon.hash(input.newAccountPk.toFields()),
           DUMMY_FIELD
         );
+        Provable.log('nullifier2: ', nullifier2);
 
         let signer = input.signingPk;
+        Provable.log('signer: ', signer);
+
         const accountNote = new AccountNote({
           aliasHash: input.aliasHash,
           acctPk: input.accountPk,
           signingPk: signer,
         });
+        Provable.log('accountNote: ', accountNote);
+
         const accountNoteCommitment = accountNote.commitment();
+        Provable.log('accountNoteCommitment: ', accountNoteCommitment);
 
         const outputNote1 = new AccountNote({
           aliasHash: input.aliasHash,
           acctPk: input.newAccountPk,
           signingPk: input.newSigningPk1,
         });
+        Provable.log('outputNote1: ', outputNote1);
         const outputNoteCommitment1 = outputNote1.commitment();
+        Provable.log('outputNoteCommitment1: ', outputNoteCommitment1);
+
         const outputNote2 = new AccountNote({
           aliasHash: input.aliasHash,
           acctPk: input.newAccountPk,
           signingPk: input.newSigningPk2,
         });
+        Provable.log('outputNote2: ', outputNote2);
         const outputNoteCommitment2 = outputNote2.commitment();
+        Provable.log('outputNoteCommitment2: ', outputNoteCommitment2);
 
         const message = [
           input.aliasHash,

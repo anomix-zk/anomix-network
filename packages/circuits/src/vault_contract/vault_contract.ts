@@ -176,6 +176,10 @@ export class AnomixVaultContract extends SmartContract {
     oldNullWitness: UserNullifierMerkleWitness,
     rollupDataRoot: Field
   ) {
+    Provable.log('withdrawNoteWitnessData', withdrawNoteWitnessData);
+    Provable.log('lowLeafWitness', lowLeafWitness);
+    Provable.log('oldNullWitness', oldNullWitness);
+    Provable.log('rollupDataRoot', rollupDataRoot);
     // check rollup data root
     const rollupContractAddress =
       this.rollupContractAddress.getAndAssertEquals();
@@ -205,6 +209,8 @@ export class AnomixVaultContract extends SmartContract {
 
     // check commitment exists in data tree
     const commitment = withdrawNote.commitment();
+    Provable.log('withdrawNote commitment: ', commitment);
+
     checkMembershipAndAssert(
       commitment,
       withdrawNoteWitnessData.index,
@@ -217,7 +223,9 @@ export class AnomixVaultContract extends SmartContract {
     const userAccount = new WithdrawAccount(userAddress, tokenId);
     const userState = userAccount.getUserState();
     const userNulliferRoot = userState.nullifierRoot;
+    Provable.log('userNulliferRoot', userNulliferRoot);
     const userNullStartIndex = userState.nullStartIndex;
+    Provable.log('userNullStartIndex', userNullStartIndex);
 
     const { nullifierRoot, nullStartIndex } =
       updateNullifierRootAndNullStartIndex(
