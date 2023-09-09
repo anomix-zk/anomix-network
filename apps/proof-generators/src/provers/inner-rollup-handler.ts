@@ -57,11 +57,11 @@ export const innerRollupBatchAndMerge = async (subProcessCordinator: SubProcessC
 
         // send back to sequencer
         if (sendCallBack) {
-            await sendCallBack(res.payload.payload);
+            await sendCallBack(res.payload);
         }
 
     } else {
-        subProcessCordinator.innerRollup_proveTxBatch(proofPayloads[0]);
+        subProcessCordinator.innerRollup_proveTxBatch(proofPayloads[0], sendCallBack);
     }
 };
 
