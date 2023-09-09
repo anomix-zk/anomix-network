@@ -1,117 +1,89 @@
-export class BlockStatus {
+export enum BlockStatus {
     /**
      * before BlockProver.prove(*)
      */
-    static get PENDING(): number {
-        return 1;
-    }
+    PENDING,
 
     /**
      * after BlockProver.prove(*) && before L1Tx is confirmed
      */
-    static get PROVED(): number {
-        return 2;
-    }
+    PROVED,
 
     /**
      * after L1Tx is confirmed
      */
-    static get CONFIRMED(): number {
-        return 3;
-    }
+    CONFIRMED
 }
 
-export class DepositStatus {
+export enum DepositStatus {
     /**
      * initial status
      */
-    static get PENDING(): number {
-        return 0;
-    }
+    PENDING,
+
     /**
      * marked on deposit_tree
      */
-    static get MARKED(): number {
-        return 1;
-    }
+    MARKED,
+
     /**
      * during join-split or inner-rollup progress
      */
-    static get PROCESSING(): number {
-        return 2;
-    }
+    PROCESSING,
+
     /**
      * already on data_tree
      */
-    static get CONFIRMED(): number {
-        return 3;
-    }
+    CONFIRMED
 }
 
-export class L2TxStatus {
+export enum L2TxStatus {
 
     /**
      * when there is another tx in memory pool with the same nullifier1 or nullifier2. Pending txs will be checked and update to 'FAILED' during sequencer rollup.
      */
-    static get FAILED(): number {
-        return -1;
-    }
+    FAILED = -1,
+
 
     /**
      * initial
      */
-    static get PENDING(): number {
-        return 0;
-    }
+    PENDING,
+
 
     /**
      * before L2Block where l2tx is included is created
      */
-    static get PROCESSING(): number {
-        return 1;
-    }
+    PROCESSING,
 
     /**
      * L2Block where l2tx is included is created
      */
-    static get CONFIRMED(): number {
-        return 2;
-    }
+    CONFIRMED
 }
 
-export class WithdrawNoteStatus {
+export enum WithdrawNoteStatus {
     /**
      * its initial status
      */
-    static get PENDING() {
-        return 0;
-    }
+    PENDING,
 
     /**
      * when it's claimed
      */
-    static get PROCESSING() {
-        return 1;
-    }
+    PROCESSING,
 
     /**
      * when L1Tx is confirmed
      */
-    static get DONE() {
-        return 2;
-    }
+    DONE
+
 }
 
-export class L1TxStatus {
-    static get FAILED(): number {
-        return -1;
-    }
-    static get PROCESSING(): number {
-        return 1;
-    }
-    static get CONFIRMED(): number {
-        return 2;
-    }
+export enum L1TxStatus {
+    FAILED = -1,
+    PROCESSING = 1,
+    CONFIRMED = 2
 }
 
 export enum DepositTreeTransStatus {
