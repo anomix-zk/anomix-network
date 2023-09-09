@@ -300,11 +300,13 @@ export const createSubProcesses = async (n: number) => {
                     const msg = {
                         type: `${FlowTaskType[FlowTaskType.ROLLUP_CONTRACT_CALL]}`,
                         payload: {
+                            fee: proofPayload.payload.fee,
                             feePayer: proofPayload.payload.feePayer,
                             proof: proofPayload.payload.proof,
                             operatorSign: proofPayload.payload.operatorSign,
                             entryDepositRoot: proofPayload.payload.entryDepositRoot
                         } as {
+                            fee: number,
                             feePayer: string,
                             proof: string,
                             operatorSign: any
