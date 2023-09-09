@@ -161,6 +161,7 @@ export const createSubProcesses = async (n: number) => {
                             payload: d.data,// ie. JoinSplitDepositInput
                         };
 
+                        // never await this promise
                         new Promise((s, j) => {
                             getFreeWorker(workers, s, j);
 
@@ -235,7 +236,9 @@ export const createSubProcesses = async (n: number) => {
 
                     generateProof(workerMap.get(CircuitName_InnerRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
                 }
-            );
+            )/* .catch(e => {
+                console.error(e);
+            }) */;
         },
         innerRollup_merge: async (x: ProofPayload<any>, y: ProofPayload<any>, sendCallBack?: any) => {
             return await new Promise(
@@ -258,7 +261,9 @@ export const createSubProcesses = async (n: number) => {
 
                     generateProof(workerMap.get(CircuitName_InnerRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
                 }
-            );
+            )/* .catch(e => {
+                console.error(e);
+            }) */;
         },
         blockProve: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {
             return await new Promise(
@@ -281,7 +286,9 @@ export const createSubProcesses = async (n: number) => {
 
                     generateProof(workerMap.get(CircuitName_BlockProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
                 }
-            );
+            ).catch(e => {
+                console.error(e);
+            });
         },
         rollupContract_updateRollupState: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {
             return await new Promise(
@@ -311,7 +318,9 @@ export const createSubProcesses = async (n: number) => {
 
                     generateProof(workerMap.get(CircuitName_AnomixRollupContract)!, msg, fromJsonFn, resolve, reject, sendCallBack);
                 }
-            );
+            ).catch(e => {
+                console.error(e);
+            });
         },
 
         depositRollup_commitActionBatch: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {// TODO!
@@ -335,7 +344,9 @@ export const createSubProcesses = async (n: number) => {
 
                     generateProof(workerMap.get(CircuitName_DepositRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
                 }
-            );
+            ).catch(e => {
+                console.error(e);
+            });
         },
         depositRollup_merge: async (x: ProofPayload<any>, y: ProofPayload<any>, sendCallBack?: any) => {
             return await new Promise(
@@ -366,7 +377,9 @@ export const createSubProcesses = async (n: number) => {
                     generateProof(workerMap.get(CircuitName_DepositRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
 
                 }
-            );
+            ).catch(e => {
+                console.error(e);
+            });
         },
         depositContract_updateDepositState: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {
             return await new Promise(
@@ -390,7 +403,9 @@ export const createSubProcesses = async (n: number) => {
 
                     generateProof(workerMap.get(CircuitName_AnomixEntryContract)!, msg, fromJsonFn, resolve, reject, sendCallBack);
                 }
-            );
+            ).catch(e => {
+                console.error(e);
+            });
         },
 
         rollupContract_firstWithdraw: async (proofPayload: ProofPayload<any>, sendCallBack?: any) => {
