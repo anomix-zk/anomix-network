@@ -1,58 +1,57 @@
 <template>
-  <div class="up-app">
-    <div class="page" style="justify-content: flex-start;">
-      <div class="ano-header">
-        <div class="left" @click="toBack">
-          <van-icon name="arrow-left" size="24" />
-          <!-- <div class="title">Deposit</div> -->
+  <div style="justify-content: flex-start;">
+    <div class="ano-header">
+      <div class="left" @click="toBack">
+        <van-icon name="arrow-left" size="24" />
+        <!-- <div class="title">Deposit</div> -->
+      </div>
+
+    </div>
+
+    <div class="operation-title">Withdraw Assets</div>
+
+
+    <div class="send-form">
+
+      <div class="form-main">
+
+        <div class="ano-token">
+
+          <div class="token-icon">
+            <van-icon :name="minaIcon" size="40" />
+          </div>
+
+          <div class="token-info">
+            <div class="token-name">MINA</div>
+            <div class="token-balance">Balance 0.0 MINA</div>
+          </div>
+
+        </div>
+
+        <div class="amount">
+          <n-input-number placeholder="Send amount" size="large" clearable :show-button="false"
+            :validator="checkPositiveNumber" v-model:value="sendAmount">
+            <template #suffix>
+              <div class="max-btn" @click="maxInputAmount">MAX</div>
+            </template>
+          </n-input-number>
+        </div>
+
+        <div class="sendTo">
+
+          <div class="label">To</div>
+
+          <div class="to-input">
+            <n-input placeholder="Mina address (B62)" size="large" clearable :allow-input="checkNoSideSpace"
+              v-model:value="receiver">
+
+            </n-input>
+          </div>
+
         </div>
 
       </div>
-
-      <div class="operation-title">Withdraw Assets</div>
-
-
-      <div class="send-form">
-
-        <div class="form-main">
-
-          <div class="ano-token">
-
-            <div class="token-icon">
-              <van-icon :name="minaIcon" size="40" />
-            </div>
-
-            <div class="token-info">
-              <div class="token-name">MINA</div>
-              <div class="token-balance">Balance 0.0 MINA</div>
-            </div>
-
-          </div>
-
-          <div class="amount">
-            <n-input-number placeholder="Send amount" size="large" clearable :show-button="false"
-              :validator="checkPositiveNumber" v-model:value="sendAmount">
-              <template #suffix>
-                <div class="max-btn" @click="maxInputAmount">MAX</div>
-              </template>
-            </n-input-number>
-          </div>
-
-          <div class="sendTo">
-
-            <div class="label">To</div>
-
-            <div class="to-input">
-              <n-input placeholder="Mina address (B62)" size="large" clearable :allow-input="checkNoSideSpace"
-                v-model:value="receiver">
-
-              </n-input>
-            </div>
-
-          </div>
-
-        </div>
-        <!-- 
+      <!-- 
         <div class="tips">
           <div class="full-tips">
             Exchanges do not automatically detect native token deposits, so
@@ -60,31 +59,30 @@
           </div>
         </div> -->
 
-        <div class="fee-box">
-          <div class="title">Tx Fee</div>
-          <n-radio-group v-model:value="feeValue" name="radiogroup" style="width: 100%;">
-            <div v-for="fee in fees" class="radio-item">
-              <div class="left">{{ fee.kind }}</div>
+      <div class="fee-box">
+        <div class="title">Tx Fee</div>
+        <n-radio-group v-model:value="feeValue" name="radiogroup" style="width: 100%;">
+          <div v-for="fee in fees" class="radio-item">
+            <div class="left">{{ fee.kind }}</div>
 
-              <div class="right">
-                <div class="price">{{ fee.value }} MINA</div>
-                <!-- <n-radio v-if="fee.kind === 'Normal'" default-checked :key="fee.kind" :value="fee.value" size="large" /> -->
-                <n-radio :key="fee.kind" :value="fee.value" size="large" />
-              </div>
-
+            <div class="right">
+              <div class="price">{{ fee.value }} MINA</div>
+              <!-- <n-radio v-if="fee.kind === 'Normal'" default-checked :key="fee.kind" :value="fee.value" size="large" /> -->
+              <n-radio :key="fee.kind" :value="fee.value" size="large" />
             </div>
-          </n-radio-group>
-        </div>
 
-        <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="toConfirm">
-          Next Step
-        </n-button>
-
-
+          </div>
+        </n-radio-group>
       </div>
+
+      <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="toConfirm">
+        Next Step
+      </n-button>
 
 
     </div>
+
+
   </div>
 </template>
 
@@ -121,7 +119,7 @@ const maxInputAmount = () => {
   sendAmount.value = 100;
 };
 
-const toBack = () => history.back();
+const toBack = () => router.back();
 
 const toConfirm = () => {
   router.push("/operation/confirm");

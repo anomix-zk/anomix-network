@@ -57,7 +57,7 @@ import { convertProviderSignatureToSignature } from './utils/convert';
 import { retryUntil } from './utils/retry';
 import { NotePicker } from './note_picker/note_picker';
 import { UserPaymentTx } from './user_tx/user_payment_tx';
-import { Tx } from './types/types';
+import { SdkEvent, Tx } from './types/types';
 import { UserAccountTx } from './user_tx/user_account_tx';
 
 import type { SyncerWrapper } from './syncer/syncer_worker';
@@ -88,7 +88,7 @@ export class AnomixSdk {
   private syncer: Syncer;
   private log: ConsolaInstance;
   private node: AnomixNode;
-  private useSyncerWorker: boolean = true;
+  private useSyncerWorker: boolean = false;
   private syncerWorker: Worker;
   private remoteSyncer: Remote<SyncerWrapper>;
 
@@ -134,38 +134,75 @@ export class AnomixSdk {
     Mina.setActiveInstance(blockchain);
   }
 
+  public getWithdrawAccountTokenId() {
+    return this.vaultContract.token.id;
+  }
+
   public async compileEntryVaultContract() {
     this.log.info('Compile EntryContract and VaultContract Circuits...');
 
-    console.time('compile withdrawAccount');
-    await WithdrawAccount.compile();
-    console.timeEnd('compile withdrawAccount');
+    if (!this.isVaultContractCompiled) {
+      console.time('compile withdrawAccount');
+      await WithdrawAccount.compile();
+      console.timeEnd('compile withdrawAccount');
 
-    console.time('compile vaultContract');
-    AnomixVaultContract.withdrawAccountVkHash =
-      WithdrawAccount._verificationKey!.hash;
-    await AnomixVaultContract.compile();
-    this.isVaultContractCompiled = true;
-    console.timeEnd('compile vaultContract');
+      console.time('compile vaultContract');
+      AnomixVaultContract.withdrawAccountVkHash =
+        WithdrawAccount._verificationKey!.hash;
+      await AnomixVaultContract.compile();
+      this.isVaultContractCompiled = true;
 
-    console.time('compile depositRollupProver');
-    await DepositRollupProver.compile();
-    console.timeEnd('compile depositRollupProver');
+      this.broadcastChannel?.postMessage({
+        eventType: SdkEventType.VAULT_CONTRACT_COMPILED_DONE,
+      } as SdkEvent);
+      console.timeEnd('compile vaultContract');
+    }
 
-    console.time('compile anomixEntryContract');
-    await AnomixEntryContract.compile();
-    this.isEntryContractCompiled = true;
-    console.timeEnd('compile anomixEntryContract');
+    if (!this.isEntryContractCompiled) {
+      console.time('compile depositRollupProver');
+      await DepositRollupProver.compile();
+      console.timeEnd('compile depositRollupProver');
+
+      console.time('compile anomixEntryContract');
+      await AnomixEntryContract.compile();
+      this.isEntryContractCompiled = true;
+
+      this.broadcastChannel?.postMessage({
+        eventType: SdkEventType.ENTRY_CONTRACT_COMPILED_DONE,
+      } as SdkEvent);
+      console.timeEnd('compile anomixEntryContract');
+    }
 
     this.log.info('Compile EntryContract and VaultContract Circuits done!');
   }
 
   public async compilePrivateCircuit() {
     this.log.info('Compile Private Circuit...');
-    console.time('compile private circuit');
-    await JoinSplitProver.compile();
-    this.isPrivateCircuitCompiled = true;
-    console.timeEnd('compile private circuit');
+
+    if (!this.isPrivateCircuitCompiled) {
+      console.time('compile private circuit');
+      await JoinSplitProver.compile();
+      this.isPrivateCircuitCompiled = true;
+
+      this.broadcastChannel?.postMessage({
+        eventType: SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE,
+      } as SdkEvent);
+      console.timeEnd('compile private circuit');
+    }
+
+    this.log.info('Compile Private Circuit= done');
+  }
+
+  public privateCircuitCompiled() {
+    return this.isPrivateCircuitCompiled;
+  }
+
+  public entryContractCompiled() {
+    return this.isEntryContractCompiled;
+  }
+
+  public vaultContractCompiled() {
+    return this.isVaultContractCompiled;
   }
 
   public async start(useSyncerWorker = false) {
@@ -217,7 +254,9 @@ export class AnomixSdk {
       );
     }
 
-    this.broadcastChannel?.postMessage({ eventType: SdkEventType.STARTED });
+    this.broadcastChannel?.postMessage({
+      eventType: SdkEventType.STARTED,
+    } as SdkEvent);
     const host = this.node.getHost();
     this.log.info(`Started, using node at ${host}`);
   }
@@ -234,7 +273,9 @@ export class AnomixSdk {
     await this.db.close();
     await this.keyStore.lock();
 
-    this.broadcastChannel?.postMessage({ eventType: SdkEventType.STOPPED });
+    this.broadcastChannel?.postMessage({
+      eventType: SdkEventType.STOPPED,
+    } as SdkEvent);
     this.log.info('Stopped');
   }
 
@@ -385,9 +426,11 @@ export class AnomixSdk {
   }
 
   public async isAliasRegistered(
-    aliasHash: string,
+    alias: string,
     includePending: boolean
   ): Promise<boolean> {
+    const aliasFields = Encoding.Bijective.Fp.fromString(alias);
+    const aliasHash = Poseidon.hash(aliasFields).toString();
     return await this.node.isAliasRegistered(aliasHash, includePending);
   }
 
@@ -438,6 +481,10 @@ export class AnomixSdk {
     return await this.node.getTxFee();
   }
 
+  public async getClaimableNotes(l1address: string, commitments: string[]) {
+    return await this.node.getClaimableNotes(l1address, commitments);
+  }
+
   public async localAccountExists(accountPk: string) {
     const userState = await this.db.getUserState(accountPk);
     if (userState) {
@@ -478,21 +525,28 @@ export class AnomixSdk {
     return userStates;
   }
 
+  public async getSigningKeys(accountPk: string) {
+    return await this.db.getSigningKeys(accountPk);
+  }
+
+  public async updateAliasForUserState(accountPk: string, alias: string) {
+    await this.db.updateUserState(accountPk, alias);
+  }
+
   public async addAccount(
     accountPrivateKey: PrivateKey,
     pwd: string,
-    alias?: string,
     signingPrivateKey1?: PrivateKey,
-    signingPrivateKey2?: PrivateKey
+    signingPrivateKey2?: PrivateKey,
+    alias?: string
   ) {
     const accountPk = accountPrivateKey.toPublicKey();
     const accountPk58 = accountPk.toBase58();
 
-    const isAccountExist = await this.localAccountExists(accountPk58);
-    if (isAccountExist) {
-      throw new Error('Account already exists');
+    const us = await this.db.getUserState(accountPk58);
+    if (!us) {
+      await this.db.upsertUserState(new UserState(accountPk58, 0, alias));
     }
-    await this.db.upsertUserState(new UserState(accountPk58, 0, alias));
     await this.keyStore.addAccount(accountPrivateKey, pwd, true);
 
     if (signingPrivateKey1) {

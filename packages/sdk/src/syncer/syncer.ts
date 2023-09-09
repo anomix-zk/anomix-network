@@ -7,7 +7,7 @@ import { AnomixNode } from '../rollup_node/anomix_node';
 import { InterruptableSleep } from '../utils/sleep';
 import isNode from 'detect-node';
 import { SdkEventType } from '../constants';
-import { LogEvent } from '../types/types';
+import { LogEvent, SdkEvent } from '../types/types';
 
 export class Syncer {
   private runningPromise?: Promise<void>;
@@ -115,14 +115,14 @@ export class Syncer {
             accountPk: noteProcessor.accountPublicKey.toBase58(),
             synchedToBlock: noteProcessor.status.syncedToBlock,
           },
-        });
+        } as SdkEvent);
       }
 
       this.synchedToBlock = latestBlock.blockHeight;
       this.broadcastChannel?.postMessage({
         eventType: SdkEventType.UPDATED_SYNCER_STATE,
         data: this.getSyncStatus(),
-      });
+      } as SdkEvent);
     } catch (err: any) {
       this.log.error(err);
       this.chanLog(err);
@@ -178,7 +178,7 @@ export class Syncer {
           accountPk: noteProcessor.accountPublicKey.toBase58(),
           synchedToBlock: noteProcessor.status.syncedToBlock,
         },
-      });
+      } as SdkEvent);
 
       if (noteProcessor.status.syncedToBlock === this.synchedToBlock) {
         // Note processor caught up, move it to `noteProcessors` from `noteProcessorsToCatchUp`.

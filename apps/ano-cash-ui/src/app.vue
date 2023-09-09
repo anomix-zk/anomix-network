@@ -1,13 +1,16 @@
 <template>
   <n-config-provider :theme-overrides="themeOverrides">
     <n-message-provider>
-      <NuxtPage />
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
+
     </n-message-provider>
   </n-config-provider>
 </template>
 
 <script lang="ts" setup>
-import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui'
+import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui';
 
 const themeOverrides: GlobalThemeOverrides = {
   Input: {
@@ -30,10 +33,59 @@ const themeOverrides: GlobalThemeOverrides = {
   Switch: {
     railColorActive: '#4098fc',
     loadingColor: '#4098fc',
+  },
+  Spin: {
+    fontSize: '20px',
+    textColor: '#fff',
+    color: '#fff',
+    sizeLarge: '46px',
   }
 };
 
-onMounted(() => {
-  console.log('app vue mounted');
+onMounted(async () => {
+  console.log('App mounted');
+  const { getSupportStatus } = useClientUtils();
+  const support = await getSupportStatus();
+  console.log('support', support);
+
+
+  const { createRemoteSdk, createRemoteApi, startRemoteSyncer } = useSdk();
+
+  // await createRemoteSdk({
+  //   entryContractAddress:
+  //     'B62qj6vA7ogcWaHWFCynqGYxneL3xjFcSuvfPKtEVnS7w9VpAqjnCtA',
+  //   vaultContractAddress:
+  //     'B62qri8P5LWArpGWS4WnhP82H3JDHEhiWGnUUA34CRqdD5DWFQoSZ6c',
+  //   options: {
+  //     nodeUrl: 'http://198.135.49.102',
+  //     minaEndpoint: 'https://berkeley.minascan.io/graphql',
+  //     debug: true,
+  //   },
+  // });
+
+  await createRemoteApi({
+    entryContractAddress:
+      'B62qj6vA7ogcWaHWFCynqGYxneL3xjFcSuvfPKtEVnS7w9VpAqjnCtA',
+    vaultContractAddress:
+      'B62qri8P5LWArpGWS4WnhP82H3JDHEhiWGnUUA34CRqdD5DWFQoSZ6c',
+    options: {
+      nodeUrl: 'http://198.135.49.102',
+      minaEndpoint: 'https://berkeley.minascan.io/graphql',
+      debug: true,
+    },
+  });
+
+  // await startRemoteSyncer({
+  //   entryContractAddress:
+  //     'B62qj6vA7ogcWaHWFCynqGYxneL3xjFcSuvfPKtEVnS7w9VpAqjnCtA',
+  //   vaultContractAddress:
+  //     'B62qri8P5LWArpGWS4WnhP82H3JDHEhiWGnUUA34CRqdD5DWFQoSZ6c',
+  //   options: {
+  //     nodeUrl: 'http://198.135.49.102',
+  //     minaEndpoint: 'https://berkeley.minascan.io/graphql',
+  //     debug: true,
+  //   },
+  // });
+
 });
 </script>

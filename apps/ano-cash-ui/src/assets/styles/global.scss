@@ -149,7 +149,22 @@ h6 {
     padding: 24px;
     //text-align: center;
     background-color: var(--up-background);
-    position: relative
+    position: relative;
+
+    .ano-mask {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
   }
 
   .main-container {
@@ -176,7 +191,11 @@ h6 {
       min-height: 800px;
       border-radius: 28px;
       padding-left: 40px;
-      padding-right: 40px
+      padding-right: 40px;
+
+      .ano-mask {
+        border-radius: 28px;
+      }
   }
 
   html.dark .up-app {
@@ -193,7 +212,11 @@ h6 {
   .up-app > .page {
       max-width: 100%;
       border-radius: 0;
-      min-height: 100vh
+      min-height: 100vh;
+
+      .ano-mask {
+        border-radius: 0;
+      }
   }
 }
 

@@ -1,6 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import Components from "unplugin-vue-components/vite";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
+
 export default defineNuxtConfig({
     devtools: { enabled: false },
     typescript: {
@@ -33,12 +34,30 @@ export default defineNuxtConfig({
     //             : ["@juggle/resize-observer"],
     // },
     modules: ["@vant/nuxt"],
+    nitro: {
+        esbuild: {
+            options: {
+                target: "esnext",
+            },
+        },
+    },
     vite: {
-        build: { target: "esnext" },
+        worker: {
+            format: "es",
+        },
+        build: {
+            target: "esnext",
+        },
 
         optimizeDeps: {
-            esbuildOptions: { target: "esnext" },
+            esbuildOptions: {
+                target: "esnext",
+                define: {
+                    global: "globalThis",
+                },
+            },
             include:
+                // development: ["naive-ui", "vueuc", "date-fns-tz/esm/formatInTimeZone"]
                 process.env.NODE_ENV === "development"
                     ? ["naive-ui", "vueuc", "date-fns-tz/esm/formatInTimeZone"]
                     : [],
@@ -57,6 +76,16 @@ export default defineNuxtConfig({
                 resolvers: [NaiveUiResolver()], // Automatically register all components in the `components` directory
             }),
         ],
+
+        resolve: {
+            alias: {
+                //crypto: "crypto-browserify",
+                util: "util",
+                // buffer: "buffer",
+                // stream: "stream-browserify",
+                // path: "path-browserify",
+            },
+        },
     },
     css: ["@/assets/styles/global.scss"],
 

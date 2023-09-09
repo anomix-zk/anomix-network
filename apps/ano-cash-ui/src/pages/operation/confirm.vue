@@ -1,76 +1,74 @@
 <template>
-  <div class="up-app">
-    <div class="page" style="justify-content: flex-start;">
-      <div class="ano-header">
-        <div class="left" @click="toBack">
-          <van-icon name="arrow-left" size="24" />
-          <!-- <div class="title">Deposit</div> -->
+  <div style="justify-content: flex-start;">
+    <div class="ano-header">
+      <div class="left" @click="toBack">
+        <van-icon name="arrow-left" size="24" />
+        <!-- <div class="title">Deposit</div> -->
+      </div>
+
+    </div>
+
+    <div class="operation-title">Confirm Transaction</div>
+
+
+    <div class="send-form">
+
+      <div class="form-main">
+
+        <div class="title">Send Assets</div>
+
+        <div class="ano-token">
+
+          <div class="token-info">
+            <van-icon :name="minaIcon" size="40" />
+            <div class="token-name">MINA</div>
+          </div>
+
+          <div class="token-balance">
+            0.0 MINA
+          </div>
+
+        </div>
+
+
+        <div class="sendTo">
+
+          <div class="label">To</div>
+
+          <div class="to-item">
+            B62qkT3U75QVgmWjgfpcgT9Yc3ni6frTprX6cP1KRjmvVoFf8Wz8L1b <span style="font-weight: 600;">(Alice.ano)</span>
+          </div>
+
         </div>
 
       </div>
 
-      <div class="operation-title">Confirm Transaction</div>
 
+      <div class="fee-box">
+        <div class="title">Tx Fee</div>
 
-      <div class="send-form">
+        <div class="ano-token">
 
-        <div class="form-main">
-
-          <div class="title">Send Assets</div>
-
-          <div class="ano-token">
-
-            <div class="token-info">
-              <van-icon :name="minaIcon" size="40" />
-              <div class="token-name">MINA</div>
-            </div>
-
-            <div class="token-balance">
-              0.0 MINA
-            </div>
-
+          <div class="token-info">
+            <van-icon :name="minaIcon" size="40" />
+            <div class="token-name">MINA</div>
           </div>
 
-
-          <div class="sendTo">
-
-            <div class="label">To</div>
-
-            <div class="to-item">
-              B62qkT3U75QVgmWjgfpcgT9Yc3ni6frTprX6cP1KRjmvVoFf8Wz8L1b <span style="font-weight: 600;">(Alice.ano)</span>
-            </div>
-
+          <div class="token-balance">
+            0.0 MINA
           </div>
 
         </div>
-
-
-        <div class="fee-box">
-          <div class="title">Tx Fee</div>
-
-          <div class="ano-token">
-
-            <div class="token-info">
-              <van-icon :name="minaIcon" size="40" />
-              <div class="token-name">MINA</div>
-            </div>
-
-            <div class="token-balance">
-              0.0 MINA
-            </div>
-
-          </div>
-        </div>
-
-        <n-button type="info" class="form-btn" style="margin-bottom: 20px;">
-          Confirm
-        </n-button>
-
-
       </div>
+
+      <n-button type="info" class="form-btn" style="margin-bottom: 20px;">
+        Confirm
+      </n-button>
 
 
     </div>
+
+
   </div>
 </template>
 
@@ -84,7 +82,7 @@ const message = useMessage();
 
 
 
-const toBack = () => history.back();
+const toBack = () => router.back();
 </script>
 
 <style lang="scss" scoped>

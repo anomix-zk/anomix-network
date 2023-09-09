@@ -1,182 +1,239 @@
 <template>
-  <div class="up-app">
-    <div class="page" style="justify-content: flex-start;">
-      <div class="ano-header">
-        <div class="left" @click="toBack">
-          <van-icon name="arrow-left" size="24" />
-          <!-- <div class="title">Deposit</div> -->
+  <div style="justify-content: flex-start;">
+    <div class="ano-header">
+      <div class="left" @click="toBack">
+        <van-icon name="arrow-left" size="24" />
+        <!-- <div class="title">Deposit</div> -->
+      </div>
+
+    </div>
+
+    <div class="operation-title">Deposit Funds</div>
+
+    <div v-if="connectedWallet !== null" class="connected-wallet">
+      <div style="display: flex; align-items: center;">
+        <img :src="auroLogo" alt="" style="width: 25px; height: 25px;" />
+        <span style="color:black; padding-left: 10px; font-size: 16px;">{{ connectedWallet }}</span>
+      </div>
+
+      <van-icon name="cross" size="20" @click="disconnect" />
+    </div>
+
+
+    <div class="send-form">
+
+      <div class="form-main">
+
+        <div class="ano-token">
+
+          <div class="token-icon">
+            <van-icon :name="minaIcon" size="40" />
+          </div>
+
+          <div class="token-info">
+            <div class="token-name">{{
+              L1TokenBalance?.token }}</div>
+            <div class="token-balance">Balance <template v-if="balanceLoading"><n-spin :size="14"
+                  stroke="#97989d" /></template><template v-else>{{ L1TokenBalance?.balance }}</template> {{
+                    L1TokenBalance?.token }}</div>
+          </div>
+
+        </div>
+
+        <div class="amount">
+          <n-input-number placeholder="Deposit amount" size="large" clearable :show-button="false"
+            :validator="checkPositiveNumber" v-model:value="depositAmount">
+            <template #suffix>
+              <div class="max-btn" @click="maxInputAmount">MAX</div>
+            </template>
+          </n-input-number>
+        </div>
+
+        <div class="sendTo">
+
+          <div class="label">To</div>
+
+          <div class="to-input">
+            <n-input placeholder="Alias (xxx.ano) or address (B62)" size="large" clearable :allow-input="checkNoSideSpace"
+              v-model:value="receiver">
+
+            </n-input>
+          </div>
+
         </div>
 
       </div>
 
-      <div class="operation-title">Deposit Funds</div>
+      <n-button v-if="connectedWallet !== null" type="info" class="form-btn" style="margin-bottom: 20px;"
+        @click="deposit">
+        Deposit
+      </n-button>
 
-      <div v-if="connectedWallet" class="connected-wallet">
-        <div style="display: flex; align-items: center;">
-          <img :src="auroLogo" alt="" style="width: 25px; height: 25px;" />
-          <span style="color:black; padding-left: 10px; font-size: 16px;">{{ connectedWallet }}</span>
-        </div>
-
-        <van-icon name="cross" size="20" @click="disconnect" />
-      </div>
-
-
-      <div class="send-form">
-
-        <div class="form-main">
-
-          <div class="ano-token">
-
-            <div class="token-icon">
-              <van-icon :name="minaIcon" size="40" />
+      <div v-if="connectedWallet === null" class="oauth-box">
+        <div class="auth-item">
+          <n-button color="#f4f4f4" block type="primary" class="auth-btn" @click="connect">
+            <div style="display:flex; align-items: center;">
+              <img :src="auroLogo" alt="" style="width: 30px; height: 30px;" />
+              <span style="color:#1f202a">Connect Wallet</span>
             </div>
-
-            <div class="token-info">
-              <div class="token-name">MINA</div>
-              <div class="token-balance">Balance 0.0 MINA</div>
-            </div>
-
-          </div>
-
-          <div class="amount">
-            <n-input-number placeholder="Deposit amount" size="large" clearable :show-button="false"
-              :validator="checkPositiveNumber" v-model:value="depositAmount">
-              <template #suffix>
-                <div class="max-btn" @click="maxInputAmount">MAX</div>
-              </template>
-            </n-input-number>
-          </div>
-
-          <div class="sendTo">
-
-            <div class="label">To</div>
-
-            <div class="to-input">
-              <n-input placeholder="Alias (xxx.ano) or address (B62)" size="large" clearable
-                :allow-input="checkNoSideSpace" v-model:value="receiver">
-
-              </n-input>
-            </div>
-
-          </div>
-
+          </n-button>
         </div>
-        <!-- 
-        <div class="tips">
-          <div class="full-tips">
-            Exchanges do not automatically detect native token deposits, so
-            there is a risk of losing your assets
-          </div>
-        </div> -->
-
-        <n-button v-if="connectedWallet" type="info" class="form-btn" style="margin-bottom: 20px;">
-          Deposit
-        </n-button>
-
-        <div v-if="!connectedWallet" class="oauth-box">
-          <div class="auth-item">
-            <n-button color="#f4f4f4" block type="primary" class="auth-btn" @click="connect">
-              <div style="display:flex; align-items: center;">
-                <img :src="auroLogo" alt="" style="width: 30px; height: 30px;" />
-                <span style="color:#1f202a">Connect Wallet</span>
-              </div>
-            </n-button>
-          </div>
-        </div>
-
-
       </div>
 
 
     </div>
+
+
   </div>
 </template>
 
 <script lang="ts" setup>
-import { useMessage } from 'naive-ui'
+import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
 import auroLogo from "@/assets/auro.png";
+import { SdkEvent } from '../../common/types';
+import { SdkEventType } from '../../common/constants';
 
 const router = useRouter();
-const { appState, setConnectedWallet } = useStatus();
-const { omitAddress, checkNoSideSpace } = useUtils();
+const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
+const { omitAddress, checkNoSideSpace, convertToMinaUnit, convertToNanoMinaUnit } = useUtils();
 const message = useMessage();
+const { SdkState, listenSyncerChannel } = useSdk();
+const remoteApi = SdkState.remoteApi!;
+const remoteSdk = SdkState.remoteSdk!;
+
+const connectedWallet = computed(() => omitAddress(appState.value.connectedWallet58));
+const L1TokenBalance = ref<{ token: string; balance: string }>({
+  token: 'MINA',
+  balance: '0.0',
+});
+const balanceLoading = ref(false);
+
+onMounted(async () => {
+  console.log('deposit page onMounted...');
+  if (appState.value.connectedWallet58 !== null) {
+    try {
+      balanceLoading.value = true;
+      const account = await remoteApi.getL1Account(appState.value.connectedWallet58!);
+      const balance = convertToMinaUnit(account.balance)!.toString();
+      L1TokenBalance.value = { token: 'MINA', balance };
+      balanceLoading.value = false;
+    } catch (err: any) {
+      console.error(err);
+      message.error(err.message);
+    }
+  }
+});
+
+const toBack = () => router.back();
+const checkPositiveNumber = (x: number) => x > 0;
 
 const depositAmount = ref<number | undefined>(undefined);
 const receiver = ref('');
+const maskId = 'deposit';
+const maskListenerSetted = ref(false);
+const deposit = async () => {
+  if (depositAmount.value === undefined || depositAmount.value <= 0) {
+    message.error('Please input deposit amount.');
+    return;
+  }
+  if (receiver.value === '') {
+    message.error('Please input receiver.');
+    return;
+  }
+  try {
+    const isContractReady = await remoteSdk.isEntryContractCompiled();
+    if (!isContractReady) {
+      showLoadingMask({ text: 'Anomix Entry Contract is not ready yet', id: maskId });
 
-const checkPositiveNumber = (x: number) => x > 0;
+      if (maskListenerSetted.value === false) {
+        listenSyncerChannel((e: SdkEvent) => {
+          if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
+            closeLoadingMask(maskId);
+          }
+        });
+        maskListenerSetted.value = true;
+      }
+
+      return;
+    }
+
+    showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
+    let receiverPk: string | undefined = undefined;
+    if (receiver.value.endsWith('.ano')) {
+      receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiver.value.replace('.ano', ''));
+    } else {
+      receiverPk = receiver.value;
+    }
+
+    const depositAmountNano = convertToNanoMinaUnit(depositAmount.value)!.toString();
+
+    const txJson = await remoteSdk.createDepositTx({
+      payerAddress: appState.value.connectedWallet58!,
+      receiverAddress: receiverPk!,
+      feePayerAddress: appState.value.connectedWallet58!,
+      amount: depositAmountNano,
+      anonymousToReceiver: false,
+    });
+
+    showLoadingMask({ id: maskId, text: 'Wait for sending transaction...', closable: false });
+    const { hash: txHash } = await window.mina.sendTransaction({
+      transaction: txJson,
+    });
+    console.log('tx send success, txHash: ', txHash);
+
+    showLoadingMask({ id: maskId, text: 'Wait for transaction confirmed...', closable: false });
+    await remoteApi.checkTx(txHash);
+    closeLoadingMask(maskId);
+    message.success('Deposit success.');
+
+  } catch (err: any) {
+    console.error(err);
+    message.error(err.message, { duration: 0, closable: true });
+    closeLoadingMask(maskId);
+  }
+};
 
 const connect = async () => {
   console.log('connect wallet...');
   if (!window.mina) {
-    message.error(
-      "Please install auro wallet browser extension first.",
-      {
-        closable: true,
-
-      }
-    );
-
-    return;
-  }
-
-  const currentNetwork = await window.mina.requestNetwork();
-  if (appState.value.minaNetwork !== currentNetwork) {
-    message.error(
-      `Please switch to the correct network (${appState.value.minaNetwork}) first.`,
-      {
-        closable: true,
-
-      }
-    );
-
+    message.error('Please install auro wallet browser extension first.');
     return;
   }
 
   try {
+    const currentNetwork = await window.mina.requestNetwork();
+    if (appState.value.minaNetwork !== currentNetwork) {
+      message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
+      return;
+    }
+
     let accounts = await window.mina.requestAccounts();
     setConnectedWallet(accounts[0]);
-    message.success(
-      "Connect wallet successfully.",
-      {
-        closable: true,
 
-      }
-    );
+    balanceLoading.value = true;
+    const account = await remoteApi.getL1Account(appState.value.connectedWallet58!);
+    const balance = convertToMinaUnit(account.balance)!.toString();
+    L1TokenBalance.value = { token: 'MINA', balance };
+    balanceLoading.value = false;
+
   } catch (err: any) {
     // if user reject, requestAccounts will throw an error with code and message filed
-    console.log(err.message, err.code);
-    message.error(
-      err.message,
-      {
-        closable: true,
-
-      }
-    );
-
+    console.error(err);
+    message.error(err.message);
   }
-
-
-  // TODO: get connected wallet balance
 };
 
-const connectedWallet = computed(() => {
-  if (appState.value.connectedWallet58) {
-    return omitAddress(appState.value.connectedWallet58);
-  }
-
-  return undefined;
-});
+const disconnect = () => {
+  setConnectedWallet(null);
+  L1TokenBalance.value = { token: 'MINA', balance: 0 };
+};
 
 const maxInputAmount = () => {
-  depositAmount.value = 100;
-};
-const disconnect = () => {
-  setConnectedWallet(undefined);
+  depositAmount.value = Number(L1TokenBalance.value?.balance);
 };
 
-const toBack = () => history.back();
+
 </script>
 
 <style lang="scss" scoped>
@@ -263,25 +320,6 @@ const toBack = () => history.back();
     border-radius: 12px;
   }
 
-}
-
-.tips {
-  text-align: left;
-  margin-top: 12px;
-
-  span {
-    color: var(--up-primary);
-    font-weight: 500;
-    font-size: 14px;
-    line-height: 20px;
-  }
-
-  .full-tips {
-    font-size: 12px;
-    line-height: 20px;
-    color: var(--up-text-third);
-    margin-top: 4px;
-  }
 }
 
 .oauth-box {

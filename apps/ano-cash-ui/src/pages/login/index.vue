@@ -1,76 +1,90 @@
 <template>
-    <div class="up-app">
-        <div class="page" style="justify-content: flex-start; align-items: flex-start;">
-            <div class="header" @click="toBack">
-                <van-icon name="arrow-left" size="24" />
-            </div>
-            <div class="page-login">
-                <!-- <div class="logo">
+    <div style="justify-content: flex-start; align-items: flex-start;">
+        <div class="header" @click="toBack">
+            <van-icon name="arrow-left" size="24" />
+        </div>
+        <div class="page-login">
+            <!-- <div class="logo">
                     <img :src="loginImage" class="arrow" alt="" />
                 </div> -->
 
-                <div class="login-title">
-                    Login Ano.Cash
-                </div>
-
-                <div class="keys-login">
-                    <n-alert type="info" style="width:100%; margin-bottom: 35px;">
-                        The keys you enter will be encrypted with your password and stored locally in the browser, and will
-                        not be sent to the AnoCash server.
-                    </n-alert>
-
-                    <n-space vertical :size="28" style="width: 100%;">
-                        <div class="form-item">
-                            <div v-show="showAccountPrivateKeyTitle" class="placeholder">{{ placeholderAccountPrivateKey }}
-                            </div>
-                            <n-input v-model:value="accountPrivateKey" class="item" type="text" size="large"
-                                :placeholder="placeholderAccountPrivateKey" @blur="blurAccountPrivateKey"
-                                @input="inputAccountPrivateKey" />
-                        </div>
-
-                        <div class="form-item">
-                            <div v-show="showAccountSigningKeyTitle" class="placeholder">{{ placeholderAccountSigningKey }}
-                            </div>
-                            <n-input v-model:value="accountSigningKey" class="item" type="text" size="large"
-                                :placeholder="placeholderAccountSigningKey" @blur="blurAccountSigningKey"
-                                @input="inputAccountSigningKey" />
-                        </div>
-
-                        <div class="form-item">
-                            <div v-show="showPwdTitle" class="placeholder">{{ placeholderPwd }}
-                            </div>
-                            <n-input v-model:value="pwd" class=" item" clearable type="password" size="large"
-                                show-password-on="mousedown" :placeholder="placeholderPwd" :maxlength="30" @blur="blurPwd"
-                                @input="inputPwd" />
-                        </div>
-
-                        <div class="form-item">
-                            <div v-show="showPwdAgainTitle" class="placeholder">{{ placeholderPwdAgain }}
-                            </div>
-                            <n-input v-model:value="pwdAgain" class=" item" clearable type="password" size="large"
-                                show-password-on="mousedown" :placeholder="placeholderPwdAgain" :maxlength="30"
-                                @blur="blurPwdAgain" @input="inputPwdAgain" />
-                        </div>
-                    </n-space>
-
-                    <n-button type="info" class="form-btn" style="margin-bottom: 20px;">
-                        Login
-                    </n-button>
-                </div>
-
-
-
-
+            <div class="login-title">
+                Login Ano.Cash
             </div>
+
+            <div class="keys-login">
+                <n-alert type="info" style="width:100%; margin-bottom: 35px;">
+                    The keys you enter will be encrypted with your password and stored locally in the browser, and will
+                    not be sent to the AnoCash server.
+                </n-alert>
+
+                <n-space vertical :size="28" style="width: 100%;">
+                    <div class="form-item">
+                        <div v-show="showAccountPrivateKeyTitle" class="placeholder">{{ placeholderAccountPrivateKey }}
+                        </div>
+                        <n-input v-model:value="accountPrivateKey" class="item" type="text" size="large"
+                            :placeholder="placeholderAccountPrivateKey" @blur="blurAccountPrivateKey"
+                            @input="inputAccountPrivateKey" />
+                    </div>
+
+                    <div class="form-item">
+                        <div v-show="showAccountSigningKeyTitle" class="placeholder">{{ placeholderAccountSigningKey }}
+                        </div>
+                        <n-input v-model:value="accountSigningKey" class="item" type="text" size="large"
+                            :placeholder="placeholderAccountSigningKey" @blur="blurAccountSigningKey"
+                            @input="inputAccountSigningKey" />
+                    </div>
+
+                    <div class="form-item">
+                        <div v-show="showPwdTitle" class="placeholder">{{ placeholderPwd }}
+                        </div>
+                        <n-input v-model:value="pwd" class=" item" clearable type="password" size="large"
+                            show-password-on="mousedown" :placeholder="placeholderPwd" :maxlength="30" @blur="blurPwd"
+                            @input="inputPwd" />
+                    </div>
+
+                    <div class="form-item">
+                        <div v-show="showPwdAgainTitle" class="placeholder">{{ placeholderPwdAgain }}
+                        </div>
+                        <n-input v-model:value="pwdAgain" class=" item" clearable type="password" size="large"
+                            show-password-on="mousedown" :placeholder="placeholderPwdAgain" :maxlength="30"
+                            @blur="blurPwdAgain" @input="inputPwdAgain" />
+                    </div>
+                </n-space>
+
+                <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="login">
+                    Login
+                </n-button>
+            </div>
+
+
+
+
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import loginImage from "@/assets/analysis.svg";
+import { useMessage } from "naive-ui";
 import { ref } from "vue";
+import { AccountStatus } from "../../common/constants";
+
+const message = useMessage();
+const { SdkState } = useSdk();
+const remoteSyncer = SdkState.remoteSyncer!;
+const remoteApi = SdkState.remoteApi!;
+const { setAlias, setAccountStatus, appState, setAccountPk58, setSigningPk1 } = useStatus();
 const router = useRouter();
-const privateKey = ref("");
+
+const toBack = () => router.back();
+
+const toRegisterAliasPage = () => {
+    router.push({ path: "/connect", query: { step: 2 } });
+};
+
+const toAccountPage = () => {
+    router.replace("/account");
+};
 
 const accountPrivateKey = ref("");
 const placeholderAccountPrivateKey = ref("Account Private Key");
@@ -130,26 +144,65 @@ const inputPwdAgain = () => {
 };
 
 
+const login = async () => {
+    if (accountPrivateKey.value.length === 0) {
+        message.error("Account Private Key is required");
+        return;
+    }
+    if (accountSigningKey.value.length === 0) {
+        message.error("Account Signing Key is required");
+        return;
+    }
+    if (pwd.value.length === 0) {
+        message.error("Password is required");
+        return;
+    }
+    if (pwdAgain.value.length === 0) {
+        message.error("Password Again is required");
+        return;
+    }
+    if (pwd.value !== pwdAgain.value) {
+        message.error("Password and Password Again must be the same");
+        return;
+    }
 
+    try {
+        // check account is registered
+        const accountPk58 = (await remoteApi.getKeypair(accountPrivateKey.value)).publicKey;
 
-const existAccount = ref(true);
-const selectedAccount = ref('');
-const options = [
-    {
-        label: "Vitalik(0xb284...65e4)",
-        value: 'song0'
-    },
-    {
-        label: "0xb299...37e9",
-        value: 'song1'
-    },
-];
+        // get alias
+        let alias = await remoteApi.getAliasByAccountPublicKey(accountPk58, accountPrivateKey.value);
+        if (alias) {
+            setAlias(alias);
+            setAccountStatus(AccountStatus.REGISTERED);
+        } else {
+            console.log('alias not found, go to register flow');
+            setAccountStatus(AccountStatus.UNREGISTERED);
+        }
 
-function formSubmit(values: any) {
-    console.log(privateKey.value);
-    router.push("/connect?step=2");
-}
-const toBack = () => history.back();
+        const accountPk = await remoteSyncer.addAccount(accountPrivateKey.value, pwd.value, accountSigningKey.value,
+            undefined, undefined);
+        if (accountPk) {
+            setAccountPk58(accountPk58);
+            setSigningPk1(accountSigningKey.value);
+            message.success('Account saved successfully');
+
+            if (appState.value.accountStatus !== AccountStatus.UNREGISTERED) {
+                toAccountPage();
+            } else {
+                toRegisterAliasPage();
+            }
+        }
+    } catch (err: any) {
+        console.log('addAccount: ', err);
+        message.error(err.message, {
+            closable: true,
+            duration: 0
+        });
+    }
+
+};
+
 </script>
 <style lang="scss" scoped>
 .page-login {

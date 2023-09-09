@@ -1,71 +1,113 @@
 <template>
     <div class="step-content">
-        <div class="h1" style="margin-bottom: 40px;">Derive Your Signing Keys</div>
+        <div class="h1" style="margin-bottom: 40px;">Set Your Alias</div>
 
-        <template v-if="!signingPubKey1">
-            <n-alert type="info" style="width:100%; margin-bottom: 15px;">
-                Clicking the button below will trigger the auro wallet extension to perform signature authorization and
-                export Signing Keys, please feel free to operate
-            </n-alert>
-            <n-button type="info" class="form-btn" @click="deriveKeys">
-                derive keys
-            </n-button>
-        </template>
-
-        <div v-if="signingPubKey1">
-            <div class="label">Signing PublicKey 1</div>
-            <div class="item">
-                <span style="color:black; padding-left: 10px; font-size: 16px;">{{ signingPubKey1 }}</span>
-            </div>
+        <div class="form-item">
+            <!-- <div class="item-label">Alias</div> -->
+            <n-input v-model:value="inputAlias" class="item" type="text" size="large" placeholder="Alias"
+                @blur="checkAliasIsRegistered">
+                <template #suffix>
+                    <van-icon v-show="canRegsiter === 1" name="passed" color="green" size="20" />
+                    <van-icon v-show="canRegsiter === 0" name="close" color="red" size="20" />
+                    <div class="name-suffix">.ano</div>
+                </template>
+            </n-input>
         </div>
 
-        <div v-if="signingPubKey2">
-            <div class="label">Signing PublicKey 2</div>
-            <div class="item">
-                <span style="color:black; padding-left: 10px; font-size: 16px;">{{ signingPubKey2 }}</span>
-            </div>
-        </div>
-
-        <n-button v-if="signingPubKey1" type="info" class="form-btn" @click="nextStep">
-            Next Step
+        <n-button type="info" class="form-btn" @click="registerAccount">
+            Register Account
         </n-button>
+
     </div>
 </template>
 
 <script lang="ts" setup>
-
-const signingPubKey1 = ref('');
-const signingPubKey2 = ref('');
-
+import { useMessage } from 'naive-ui';
+import { AccountStatus, SdkEventType } from '../../../common/constants';
+import { SdkEvent } from '../../../common/types';
 
 const emit = defineEmits<{
-    (e: 'nextStep', step: number): void;
+    (e: 'finish'): void;
 }>();
-const nextStep = () => {
-    emit('nextStep', 3);
+
+const { SdkState, listenSyncerChannel } = useSdk();
+const remoteSdk = SdkState.remoteSdk!;
+const remoteApi = SdkState.remoteApi!;
+const message = useMessage();
+const { showLoadingMask, closeLoadingMask, appState, setAlias, setAccountStatus } = useStatus();
+
+const canRegsiter = ref(-1);
+const inputAlias = ref("");
+const maskListenerSetted = ref(false);
+
+const toAccountPage = () => {
+    emit('finish');
 };
-const deriveKeys = () => {
-    signingPubKey1.value = '0x0b299...37e9';
-    signingPubKey2.value = '0x0b299...37e9';
+
+const maskId = 'registerAccount';
+
+const checkAliasIsRegistered = async () => {
+    console.log('checkAliasIsRegistered...');
+    if (inputAlias.value.length === 0) {
+        canRegsiter.value = -1;
+        return;
+    }
+    const isRegistered = await remoteApi.isAliasRegistered(inputAlias.value, true);
+    if (isRegistered) {
+        console.log('isRegistered: true');
+        canRegsiter.value = 0;
+    } else {
+        console.log('isRegistered: false');
+        canRegsiter.value = 1;
+    }
 };
 
-const alias = ref("");
-const wordkey = ref("");
-const show = ref(true);
-const isUsed = ref(false);
+const registerAccount = async () => {
+    if (canRegsiter.value === 1) {
+        message.error('The alias is already registered');
+        return;
+    }
+    if (canRegsiter.value === -1) {
+        message.error('Please enter the alias and wait for the network request to check whether it is registered');
+        return;
+    }
 
-function cancel() {
-    show.value = false;
-}
-function confirm() {
-    console.log(wordkey.value);
-    show.value = false;
+    try {
+        const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
+        if (!isPrivateCircuitReady) {
+            showLoadingMask({ text: 'Account registration circuit is not ready yet', id: maskId });
+
+            if (maskListenerSetted.value === false) {
+                listenSyncerChannel((e: SdkEvent) => {
+                    if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
+                        closeLoadingMask(maskId);
+                    }
+                });
+                maskListenerSetted.value = true;
+            }
+
+            return;
+        }
+
+        showLoadingMask({ text: 'Registering account...', id: maskId, closable: false });
+        const tx = await remoteSdk.createAccountRegisterTx(appState.value.accountPk58!, inputAlias.value, appState.value.signingPk1_58!, appState.value.signingPk2_58!);
+        console.log('tx: ', JSON.stringify(tx));
+
+        await remoteApi.sendTx(tx);
+        setAlias(inputAlias.value);
+        setAccountStatus(AccountStatus.REGISTERING);
+        closeLoadingMask(maskId);
+        message.success('Account registration tx send successful');
+
+        toAccountPage();
+    } catch (error: any) {
+        console.error('registerAccount: ', error);
+        message.error(error.message, { duration: 0, closable: true });
+    }
+
+
 }
 
-function formSubmit(values: any) {
-    console.log(alias.value);
-    emit("finish");
-}
 </script>
 <style lang="less" scoped>
 .step-content {
@@ -75,6 +117,13 @@ function formSubmit(values: any) {
     width: 100%;
     text-align: center;
 
+    .name-suffix {
+        margin-left: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 20px;
+    }
+
     .form-btn {
         margin-top: 40px;
         width: 100%;
@@ -82,31 +131,25 @@ function formSubmit(values: any) {
         border-radius: 12px;
     }
 
-    .item {
-        cursor: pointer;
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        color: #000;
-        border-radius: 12px;
-        height: 56px;
-        line-height: 56px;
-        border-width: 1px;
-        background-color: #f7f7f7;
-        padding: 0 15px;
-        font-size: 16px;
-        align-items: center;
-    }
+    .form-item {
+        text-align: left;
 
-    .label {
-        font-size: 16px;
-        padding-bottom: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-weight: 540;
-        line-height: 26px;
-        margin-top: 15px;
+        .item-label {
+            font-size: 16px;
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 510;
+            line-height: 26px;
+        }
+
+
+        .item {
+            margin-top: 10px;
+        }
+
+
     }
 
     .h1 {

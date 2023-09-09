@@ -1,145 +1,272 @@
 <template>
-  <div class="up-app">
-    <div class="page" style="justify-content: flex-start;">
-      <div class="ano-header">
-        <div class="left" @click="toBack">
-          <van-icon name="arrow-left" size="24" />
-          <!-- <div class="title">Deposit</div> -->
-        </div>
-
+  <div style="justify-content: flex-start;">
+    <div class="ano-header">
+      <div class="left" @click="toBack">
+        <van-icon name="arrow-left" size="24" />
+        <!-- <div class="title">Deposit</div> -->
       </div>
 
-      <div class="operation-title">Send Assets</div>
+    </div>
+
+    <div class="operation-title"><template v-if="currPageAction === PageAction.SEND_TOKEN">Send
+        Assets</template><template v-else>Withdraw Assets</template></div>
 
 
-      <div class="send-form">
+    <div class="send-form">
 
-        <div class="form-main">
+      <div class="form-main">
 
-          <div class="ano-token">
+        <div class="ano-token">
 
-            <div class="token-icon">
-              <van-icon :name="minaIcon" size="40" />
-            </div>
-
-            <div class="token-info">
-              <div class="token-name">MINA</div>
-              <div class="token-balance">Balance 0.0 MINA</div>
-            </div>
-
+          <div class="token-icon">
+            <van-icon :name="minaIcon" size="40" />
           </div>
 
-          <div class="amount">
-            <n-input-number placeholder="Send amount" size="large" clearable :show-button="false"
-              :validator="checkPositiveNumber" v-model:value="sendAmount">
+          <div class="token-info">
+            <div class="token-name">MINA</div>
+            <div class="token-balance">Balance <template v-if="balanceLoading"><n-spin :size="14"
+                  stroke="#97989d" /></template><template v-else>{{ tokenInfo.balance }}</template> {{
+                    tokenInfo.token }}</div>
+          </div>
+
+        </div>
+
+        <div class="amount">
+          <n-input-number :placeholder="currPageAction === PageAction.SEND_TOKEN ? 'Send amount' : 'Withdraw amount'"
+            size="large" clearable :show-button="false" :validator="checkPositiveNumber" v-model:value="sendAmount">
+            <template #suffix>
+              <div class="max-btn" @click="maxInputAmount">MAX</div>
+            </template>
+          </n-input-number>
+        </div>
+
+        <div class="sendTo">
+
+          <div class="label">To</div>
+
+          <div class="to-input">
+            <n-input
+              :placeholder="currPageAction === PageAction.SEND_TOKEN ? 'Alias (xxx.ano) or Anomix address (B62)' : 'Mina address (B62)'"
+              size="large" clearable :allow-input="checkNoSideSpace" v-model:value="receiver" @blur="checkAliasExist">
               <template #suffix>
-                <div class="max-btn" @click="maxInputAmount">MAX</div>
+                <van-icon v-show="checkAlias === 1" name="passed" color="green" size="20" />
+                <van-icon v-show="checkAlias === 0" name="close" color="red" size="20" />
               </template>
-            </n-input-number>
+            </n-input>
           </div>
 
-          <div class="sendTo">
+          <div v-if="currPageAction === PageAction.SEND_TOKEN" class="option">
+            <div class="option-label">Anonymous to receiver</div>
 
-            <div class="label">To</div>
-
-            <div class="to-input">
-              <n-input placeholder="Alias (xxx.ano) or address (B62)" size="large" clearable
-                :allow-input="checkNoSideSpace" v-model:value="receiver">
-
-              </n-input>
-            </div>
-
-            <div class="option">
-              <div class="option-label">Anonymous to receiver</div>
-
-              <n-switch :round="false">
-                <template #checked>
-                  Yes
-                </template>
-                <template #unchecked>
-                  No
-                </template>
-              </n-switch>
-            </div>
-
-
+            <n-switch :round="false" :checked-value="true" :unchecked-value="false" @update:value="handleSwitchValue">
+              <template #checked>
+                Yes
+              </template>
+              <template #unchecked>
+                No
+              </template>
+            </n-switch>
           </div>
+
 
         </div>
-        <!-- 
-        <div class="tips">
-          <div class="full-tips">
-            Exchanges do not automatically detect native token deposits, so
-            there is a risk of losing your assets
-          </div>
-        </div> -->
-
-        <div class="fee-box">
-          <div class="title">Tx Fee</div>
-          <n-radio-group v-model:value="feeValue" name="radiogroup" style="width: 100%;">
-            <div v-for="fee in fees" class="radio-item">
-              <div class="left">{{ fee.kind }}</div>
-
-              <div class="right">
-                <div class="price">{{ fee.value }} MINA</div>
-                <!-- <n-radio v-if="fee.kind === 'Normal'" default-checked :key="fee.kind" :value="fee.value" size="large" /> -->
-                <n-radio :key="fee.kind" :value="fee.value" size="large" />
-              </div>
-
-            </div>
-          </n-radio-group>
-        </div>
-
-        <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="toConfirm">
-          Next Step
-        </n-button>
-
 
       </div>
+
+      <n-alert v-if="currPageAction === PageAction.WITHDRAW_TOKEN" title="Withdraw Notice" type="info"
+        style="margin-top: 12px;">
+        After the withdrawal transaction is processed and finalized (verified by the smart contract), you need to actively
+        claim the funds before they will arrive at your mina address.
+      </n-alert>
+
+      <div class="fee-box">
+        <div class="title">Tx Fee</div>
+        <n-radio-group v-model:value="feeValue" name="radiogroup" style="width: 100%;">
+          <div v-for="fee in fees" class="radio-item">
+            <div class="left">{{ fee.kind }}</div>
+
+            <div class="right">
+              <div class="price">{{ fee.value }} MINA</div>
+              <!-- <n-radio v-if="fee.kind === 'Normal'" default-checked :key="fee.kind" :value="fee.value" size="large" /> -->
+              <n-radio :key="fee.kind" :value="fee.value" size="large" />
+            </div>
+
+          </div>
+        </n-radio-group>
+      </div>
+
+      <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="toConfirm">
+        Next Step
+      </n-button>
 
 
     </div>
+
+
   </div>
 </template>
 
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
-import auroLogo from "@/assets/auro.png";
+import { SdkEvent, TxInfo } from '../../common/types';
+import { PageAction, SdkEventType } from '../../common/constants';
 
 const router = useRouter();
-const { appState } = useStatus();
-const { omitAddress, checkNoSideSpace } = useUtils();
+const { appState, showLoadingMask, closeLoadingMask, setPageParams, clearPageParams, pageParams } = useStatus();
+const { checkNoSideSpace, convertToMinaUnit } = useUtils();
 const message = useMessage();
+const { SdkState, listenSyncerChannel } = useSdk();
+const remoteSdk = SdkState.remoteSdk!;
+const remoteApi = SdkState.remoteApi!;
+const remoteSyncer = SdkState.remoteSyncer!;
+
+const checkPositiveNumber = (x: number) => x > 0;
+const toBack = () => router.back();
+
+const currPageAction = ref(PageAction.SEND_TOKEN);
+const balanceLoading = ref(false);
+const tokenInfo = ref<{ token: string; balance: string }>({
+  token: 'MINA',
+  balance: '0.0',
+});
+
+const maxInputAmount = () => {
+  sendAmount.value = Number(tokenInfo.value.balance);
+};
+
+const anonToReceiver = ref(false);
+const handleSwitchValue = (value: boolean) => {
+  console.log('anonToReceiver-switch: ', value);
+  anonToReceiver.value = value;
+};
 
 const sendAmount = ref<number | undefined>(undefined);
 const receiver = ref('');
-
-const checkPositiveNumber = (x: number) => x > 0;
-
-const feeValue = ref<number | undefined>(undefined);
-const fees = [
-  {
-    kind: 'Normal',
-    value: 0.03
-  },
-  {
-    kind: 'Fast',
-    value: 0.09
+// -1: not alias, 0: alias not exist, 1: alias exist
+const checkAlias = ref(-1);
+const checkAliasExist = async () => {
+  console.log('checkAliasExist...');
+  if (!receiver.value.endsWith('.ano')) {
+    checkAlias.value = -1;
+    return;
   }
-];
 
-feeValue.value = fees[0].value;
-
-const maxInputAmount = () => {
-  sendAmount.value = 100;
+  const isRegistered = await remoteApi.isAliasRegistered(receiver.value, false);
+  if (isRegistered) {
+    console.log(`${receiver.value} exists`);
+    checkAlias.value = 1;
+  } else {
+    console.log(`${receiver.value} not exists`);
+    checkAlias.value = 0;
+    message.error(`${receiver.value} not exists`, { duration: 5000, closable: true });
+  }
 };
 
-const toBack = () => history.back();
 
-const toConfirm = () => {
-  router.push("/operation/confirm");
-}
+const feeValue = ref<number | undefined>(undefined);
+const fees = ref<{ kind: string; value: string }[]>([
+  {
+    kind: 'Normal',
+    value: '0.03'
+  },
+  {
+    kind: 'Faster',
+    value: '0.09'
+  }
+]);
+
+feeValue.value = Number(fees.value[0].value);
+const maskId = 'send';
+const maskListenerSetted = ref(false);
+
+const toConfirm = async () => {
+  console.log('toConfirm...');
+  if (sendAmount.value === undefined || sendAmount.value <= 0) {
+    message.error('Please input amount.');
+    return;
+  }
+  if (receiver.value === '') {
+    message.error('Please input receiver.');
+    return;
+  }
+
+  try {
+    const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
+    if (!isPrivateCircuitReady) {
+      showLoadingMask({ text: 'Private circuit is not ready yet', id: maskId });
+
+      if (maskListenerSetted.value === false) {
+        listenSyncerChannel((e: SdkEvent) => {
+          if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
+            closeLoadingMask(maskId);
+          }
+        });
+        maskListenerSetted.value = true;
+      }
+
+      return;
+    }
+
+    showLoadingMask({ id: maskId, text: 'Processing...', closable: false });
+    let receiverPk: string | undefined = undefined;
+    let receiverAlias: string | null = null;
+    if (receiver.value.endsWith('.ano')) {
+      receiverAlias = receiver.value;
+      receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiver.value.replace('.ano', ''));
+    } else {
+      receiverPk = receiver.value;
+    }
+
+    const params: TxInfo = {
+      sender: appState.value.accountPk58!,
+      senderAlias: appState.value.alias,
+      receiver: receiverPk!,
+      receiverAlias,
+      amountOfMinaUnit: sendAmount.value.toString(),
+      sendToken: tokenInfo.value.token,
+      feeOfMinaUnit: feeValue.value!.toString(),
+      feeToken: 'MINA',
+      anonToReceiver: anonToReceiver.value
+    };
+    setPageParams(PageAction.SEND_TOKEN, params);
+
+    closeLoadingMask(maskId);
+    router.push("/operation/confirm");
+  } catch (err: any) {
+    console.error(err);
+    message.error(err.message, { duration: 0, closable: true });
+    closeLoadingMask(maskId);
+  }
+};
+
+
+onMounted(async () => {
+  console.log('onMounted...');
+  currPageAction.value = pageParams.value.action!;
+  console.log('currPageAction: ', currPageAction);
+  clearPageParams();
+
+  balanceLoading.value = true;
+  const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
+  if (synced) {
+    const balance = await remoteApi.getBalance(appState.value.accountPk58!);
+    tokenInfo.value = {
+      token: 'MINA',
+      balance: balance.toString()
+    };
+    balanceLoading.value = false;
+  }
+
+  const txFees = await remoteApi.getTxFees();
+  fees.value = [{
+    kind: 'Normal',
+    value: convertToMinaUnit(txFees.normal)!.toString()
+  }, {
+    kind: 'Faster',
+    value: convertToMinaUnit(txFees.faster)!.toString()
+  }];
+});
 
 </script>
 
@@ -292,26 +419,6 @@ const toConfirm = () => {
 
 
 }
-
-.tips {
-  text-align: left;
-  margin-top: 12px;
-
-  span {
-    color: var(--up-primary);
-    font-weight: 500;
-    font-size: 14px;
-    line-height: 20px;
-  }
-
-  .full-tips {
-    font-size: 12px;
-    line-height: 20px;
-    color: var(--up-text-third);
-    margin-top: 4px;
-  }
-}
-
 
 .operation-title {
   text-align: left;
