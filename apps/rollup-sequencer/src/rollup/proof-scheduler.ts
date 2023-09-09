@@ -291,7 +291,7 @@ export class ProofScheduler {
         // sign and broadcast it.
         const l1Tx = Mina.Transaction.fromJSON(JSON.parse(tx));
         l1Tx.transaction.feePayer.lazyAuthorization = { kind: 'lazy-signature' };
-        await l1Tx.sign([PrivateKey.fromBase58(config.rollupContractPrivateKey)]);
+        await l1Tx.sign([PrivateKey.fromBase58(config.txFeePayerPrivateKey)]);
 
         await l1Tx.send().then(async txHash => {// TODO what if it fails currently!
             const txHash0 = txHash.hash()!;
