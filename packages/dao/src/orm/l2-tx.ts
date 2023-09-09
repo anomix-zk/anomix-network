@@ -6,7 +6,6 @@ import {
     PrimaryGeneratedColumn,
     UpdateDateColumn
 } from 'typeorm'
-import { MemPlL2Tx } from './l2-tx-memorypool'
 
 @Entity("tb_l2_tx")
 export class L2Tx {
@@ -142,7 +141,7 @@ export class L2Tx {
     static fromJoinSplitOutput(
         joinSplitOutput: JoinSplitOutput
     ) {
-        const tx = new MemPlL2Tx()
+        const tx = new L2Tx()
 
         tx.actionType = joinSplitOutput.actionType.toString();
         tx.outputNoteCommitment1 = joinSplitOutput.outputNoteCommitment1.toString();
