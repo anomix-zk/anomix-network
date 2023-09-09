@@ -26,12 +26,10 @@ await initORM();
 
 logger.info('mempool-watcher is ready!');
 
-let highFeeTxExit = false;
 let lastSeqTs = new Date().getTime();
 
 // if parentPort != undefined/null, then it's a subThread, else it's a process.
 (parentPort ?? process).on('message', async value => {
-    highFeeTxExit = true;
     await mempoolWatch();
 });
 
@@ -58,20 +56,6 @@ async function mempoolWatch() {
             index: undefined,
             payload: {}
         } as RollupTaskDto<any, any>;
-
-        // when there exists a highFee L2Tx, then trigger seq directly
-        if (highFeeTxExit) {
-            logger.info('highFeeTxExit == true, trigger /rollup/seq-trigger...');
-            // trigger seq
-            await $axiosSeq.post<BaseResponse<string>>('/rollup/seq-trigger', rollupTaskDto).then(r => {
-                if (r.data.code == 1) {
-                    logger.error(r.data.msg);
-                    throw new Error(r.data.msg);
-                }
-            });
-
-            return;
-        }
 
         if ((new Date().getTime() - lastSeqTs) < 1 * 60 * 1000) {// if interval event just happens sooner after highFeeTx exits
             logger.info('interval time is not enough, stop.');
@@ -214,7 +198,6 @@ async function mempoolWatch() {
     } catch (error) {
         logger.error(error);
     } finally {
-        highFeeTxExit = false;
         lastSeqTs = new Date().getTime();
     }
 }
