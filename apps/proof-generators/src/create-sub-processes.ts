@@ -178,7 +178,7 @@ export const createSubProcesses = async (n: number) => {
                                 if (message.type == 'done') {
                                     try {
 
-                                        d.data = message.payload as any;// replace the original to the proof result
+                                        d.data = message.payload.payload as any;// replace the original to the proof result
 
                                         sum++;
                                         logger.info(`jointSplit_deposit: sum: ${sum}`);
