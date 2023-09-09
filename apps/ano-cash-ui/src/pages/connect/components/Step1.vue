@@ -18,72 +18,291 @@
             <van-icon name="cross" size="20" @click="disconnect" />
         </div>
 
-        <div v-if="accountPubKey">
+        <div v-if="accountPubKey !== null">
             <div class="label">Anomix Account</div>
             <div class="item">
                 <span style="color:black; padding-left: 10px; font-size: 16px;">{{ accountPubKey }}</span>
             </div>
         </div>
 
-        <div v-if="alias">
+        <div v-if="appState.alias !== null">
             <div class="label">Registered Alias</div>
             <div class="item">
-                <span style="color:black; padding-left: 10px; font-size: 16px;">{{ alias }}</span>
+                <span style="color:black; padding-left: 10px; font-size: 16px;">{{ appState.alias }}</span>
             </div>
         </div>
 
-        <n-button v-if="!accountPubKey" type="info" class="form-btn" @click="deriveAccountPubKey">
-            Derive Account Public Key
-        </n-button>
+        <div v-if="signingPubKey1 !== null">
+            <div class="label">Signing PublicKey 1</div>
+            <div class="item">
+                <span style="color:black; padding-left: 10px; font-size: 16px;">{{ signingPubKey1 }}</span>
+            </div>
+        </div>
 
-        <n-button v-if="isRegisterFlow" type="info" class="form-btn" @click="regsiterAlias">
-            Register Your Alias
-        </n-button>
+        <div v-if="signingPubKey2 !== null">
+            <div class="label">Signing PublicKey 2</div>
+            <div class="item">
+                <span style="color:black; padding-left: 10px; font-size: 16px;">{{ signingPubKey2 }}</span>
+            </div>
+        </div>
 
-        <n-button v-if="!isRegisterFlow && accountPubKey" type="info" class="form-btn" @click="deriveAccountPubKey">
-            Next Step
-        </n-button>
+        <template v-if="accountPubKey === null">
+            <n-alert type="info" style="width:100%;" class="tips">
+                Clicking the button below will trigger the auro wallet extension to perform signature
+                authorization and export your Anomix account, please feel free to operate.
+            </n-alert>
+
+            <n-button type="info" class="form-btn" @click="deriveAccountPubKey">
+                Retrieve Anomix Account
+            </n-button>
+        </template>
+
+
+        <template v-if="signingKeypair1 === null && signingKeypair2 === null && accountPubKey !== null">
+            <n-alert type="info" style="width:100%;" class="tips">
+                Next Step: Clicking the button below will trigger the auro wallet extension to perform signature
+                authorization and export your signing keys for anomix account, please feel free to operate.
+            </n-alert>
+
+            <n-button type="info" class="form-btn" @click="deriveSigningKeys">
+                Retrieve Signing Keys
+            </n-button>
+        </template>
+
+        <template v-if="signingKeypair1 !== null && signingKeypair2 !== null">
+            <n-alert type="info" style="width:100%;" class="tips">
+                Next Step: Set a password to encrypt and save the keys related to your Anomix account to the current browser
+                locally, so that you can use the password to log in next time, and only you can access these keys, which
+                will not be uploaded to the server.
+            </n-alert>
+            <n-space vertical :size="28" style="width: 100%; margin-top: 30px;">
+                <div class="form-item">
+                    <div v-show="showPwdTitle" class="placeholder">{{ placeholderPwd }}
+                    </div>
+                    <n-input v-model:value="pwd" class=" item" clearable type="password" size="large"
+                        show-password-on="mousedown" :placeholder="placeholderPwd" :maxlength="30" @blur="blurPwd"
+                        @input="inputPwd" />
+                </div>
+
+                <div class="form-item">
+                    <div v-show="showPwdAgainTitle" class="placeholder">{{ placeholderPwdAgain }}
+                    </div>
+                    <n-input v-model:value="pwdAgain" class=" item" clearable type="password" size="large"
+                        show-password-on="mousedown" :placeholder="placeholderPwdAgain" :maxlength="30" @blur="blurPwdAgain"
+                        @input="inputPwdAgain" />
+                </div>
+
+            </n-space>
+
+            <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="addAccount">
+                Save Account
+            </n-button>
+        </template>
+
     </div>
 </template>
 
 <script lang="ts" setup>
-import step1 from "@/assets/step.jpg";
 import auroLogo from "@/assets/auro.png";
+import { useMessage } from "naive-ui";
+import { AccountStatus } from "../../../common/constants";
 
 const emit = defineEmits<{
     (e: 'nextStep', step: number): void;
 }>();
-const route = useRoute();
 const router = useRouter();
+const { appState, setConnectedWallet, setAccountPk58, setAlias, setSigningPk1, setSigningPk2, setAccountStatus } = useStatus();
+const { omitAddress } = useUtils();
+const { SdkState } = useSdk();
+const message = useMessage();
+const remoteSyncer = SdkState.remoteSyncer!;
+const remoteApi = SdkState.remoteApi!;
 
-const externWalletAddress = ref('0xb299...37e9');
-const accountPubKey = ref('');
-const alias = ref('');
-const isRegisterFlow = ref(false);
+const externWalletAddress = computed(() => omitAddress(appState.value.connectedWallet58, 8));
+const accountPubKey = computed(() => omitAddress(appState.value.accountPk58, 8));
+const accountPrivateKey = ref('');
+const signingKeypair1 = ref<{ privateKey: string; publicKey: string } | null>(null);
+const signingPubKey1 = computed(() => omitAddress(signingKeypair1.value?.publicKey, 8));
+const signingKeypair2 = ref<{ privateKey: string; publicKey: string } | null>(null);
+const signingPubKey2 = computed(() => omitAddress(signingKeypair2.value?.publicKey, 8));
+
+const pwd = ref("");
+const placeholderPwd = ref("Password");
+const showPwdTitle = ref(false);
+const blurPwd = () => {
+    if (pwd.value.length === 0) {
+        showPwdTitle.value = false;
+    }
+};
+const inputPwd = () => {
+    if (!showPwdTitle.value) {
+        showPwdTitle.value = true;
+    }
+};
+
+
+const pwdAgain = ref("");
+const placeholderPwdAgain = ref("Password Again");
+const showPwdAgainTitle = ref(false);
+const blurPwdAgain = () => {
+    if (pwdAgain.value.length === 0) {
+        showPwdAgainTitle.value = false;
+    }
+};
+const inputPwdAgain = () => {
+    if (!showPwdAgainTitle.value) {
+        showPwdAgainTitle.value = true;
+    }
+};
+
+
+onMounted(() => {
+    if (window.mina) {
+        window.mina.on('accountsChanged', (accounts: string[]) => {
+            console.log('connected account change: ', accounts);
+            if (accounts.length === 0) {
+                setConnectedWallet(null);
+                message.error('Please connect your wallet', {
+                    closable: true,
+                    duration: 0
+                });
+                router.push('/');
+            } else {
+                setConnectedWallet(accounts[0]);
+            }
+
+        });
+
+        window.mina.on('chainChanged', (chainType: string) => {
+            console.log('current chain: ', chainType);
+            if (chainType !== 'Berkeley') {
+                message.error('Please switch to Berkeley network', {
+                    closable: true,
+                    duration: 0
+                });
+            }
+        });
+    }
+});
 
 const disconnect = () => {
-    externWalletAddress.value = '';
-    router.push('/');
+    setConnectedWallet(null);
+    setAccountPk58(null);
+    accountPrivateKey.value = '';
+    signingKeypair1.value = null;
+    signingKeypair2.value = null;
+    setAccountStatus(AccountStatus.UNREGISTERED);
+    router.replace('/');
 };
 
-const deriveAccountPubKey = () => {
-    accountPubKey.value = '0x0b299...37e9';
-    alias.value = 'Alice';
-    isRegisterFlow.value = true;
-};
-
-const regsiterAlias = () => {
+const toRegisterAliasPage = () => {
     emit('nextStep', 2);
 };
 
-async function formSubmit() {
-    try {
-        emit("nextStep", 2);
+const toAccountPage = () => {
+    router.replace("/account");
+};
 
-    } catch (err) {
-        console.log(err);
+const addAccount = async () => {
+    if (pwd.value.length === 0) {
+        message.error('Please enter a password');
+        return;
     }
+    if (pwdAgain.value.length === 0) {
+        message.error('Please enter a password again');
+        return;
+    }
+    if (pwd.value !== pwdAgain.value) {
+        message.error('The two passwords are inconsistent');
+        return;
+    }
+
+    try {
+        const accountPk = await remoteSyncer.addAccount(accountPrivateKey.value, pwd.value, signingKeypair1.value?.privateKey, signingKeypair2.value?.privateKey, undefined);
+        if (accountPk) {
+            message.success('Account saved successfully');
+
+            if (appState.value.accountStatus !== AccountStatus.UNREGISTERED) {
+                toAccountPage();
+            } else {
+                toRegisterAliasPage();
+            }
+        }
+    } catch (err: any) {
+        console.log('addAccount: ', err);
+        message.error(err.message, {
+            closable: true,
+            duration: 0
+        });
+    }
+
 }
+
+const deriveSigningKeys = async () => {
+    if (!window.mina) {
+        message.error('Please install Auro wallet extension first');
+        return;
+    }
+
+    let signMessage = await remoteApi.getSigningKeySigningData();
+    try {
+        let signResult = await window.mina.signMessage({
+            message: signMessage,
+        })
+        console.log('sign result: ', signResult);
+        let sk1 = await remoteApi.generateKeyPair(signResult.signature, 0);
+        signingKeypair1.value = sk1;
+        setSigningPk1(sk1.publicKey);
+        let sk2 = await remoteApi.generateKeyPair(signResult.signature, 1);
+        signingKeypair2.value = sk2;
+        setSigningPk2(sk2.publicKey);
+
+    } catch (error: any) {
+        console.error('deriveSigningKeys: ', error);
+        message.error(error.message, {
+            closable: true,
+            duration: 0
+        });
+    }
+
+};
+
+const deriveAccountPubKey = async () => {
+    if (!window.mina) {
+        message.error('Please install Auro wallet extension first');
+        return;
+    }
+
+    let signMessage = await remoteApi.getAccountKeySigningData();
+    try {
+        let signResult = await window.mina.signMessage({
+            message: signMessage,
+        })
+        console.log('sign result: ', signResult);
+        let accountKeypair = await remoteApi.generateKeyPair(signResult.signature);
+        setAccountPk58(accountKeypair.publicKey);
+        accountPrivateKey.value = accountKeypair.privateKey;
+
+        // get alias
+        let alias = await remoteApi.getAliasByAccountPublicKey(accountKeypair.publicKey, accountKeypair.privateKey);
+        if (alias) {
+            setAlias(alias);
+            setAccountStatus(AccountStatus.REGISTERED);
+        } else {
+            console.log('alias not found, go to register flow');
+            setAccountStatus(AccountStatus.UNREGISTERED);
+        }
+
+    } catch (error: any) {
+        console.error('deriveAccountPubKey: ', error);
+        message.error(error.message, {
+            closable: true,
+            duration: 0
+        });
+    }
+
+};
+
 </script>
 <style lang="scss" scoped>
 .step-content {
@@ -93,8 +312,34 @@ async function formSubmit() {
     width: 100%;
     text-align: center;
 
-    .form-btn {
+    .form-item {
+        position: relative;
+
+        .item {
+            background-color: var(--up-bg-checked);
+        }
+
+        .placeholder {
+            position: absolute;
+            left: 16px;
+            top: -8px;
+            height: 16px;
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 16px;
+            color: #606266;
+            z-index: 999;
+            //background-color: var(--up-background);
+        }
+
+    }
+
+    .tips {
         margin-top: 40px;
+    }
+
+    .form-btn {
+        margin-top: 20px;
         width: 100%;
         height: 52px;
         border-radius: 12px;

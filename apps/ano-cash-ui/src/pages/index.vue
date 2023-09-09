@@ -1,54 +1,50 @@
 <template>
-    <div class="up-app">
-        <div class="page">
-            <div class="header">Ano.Cash</div>
-            <div class="login">
-                <div class="logo">
-                    <img :src="loginImage" class="arrow" alt="" />
-                </div>
-                <h1 class="title">Login AnoCash</h1>
-                <!---->
-                <div class="oauth-box">
-                    <div class="auth-item">
-                        <n-button color="#f4f4f4" block type="primary" class="auth-btn" @click="connectLogin">
-                            <div style="display:flex; align-items: center;">
-                                <img :src="auroLogo" alt="" style="width: 30px; height: 30px;" />
-                                <span style="color:#1f202a">Connect Wallet</span>
-                            </div>
-                        </n-button>
-                    </div>
-                    <div class="auth-item">
-                        <n-button color="#f4f4f4" block type="primary" @click="accountLogin" class="auth-btn">
-                            <div style="display:flex; align-items: center;">
-                                <img :src="keyImage" alt="" style="width: 36px; height: 36px;" />
-                                <span style="color:#1f202a">Login With Key</span>
-                            </div>
-                        </n-button>
-                    </div>
-                </div>
-
-                <div class="or-box">
-                    <div class="line"></div>
-                    <span>OR CLAIM WITHDRAWABLE ASSETS</span>
-                    <div class="line"></div>
-                </div>
-
-                <div class="oauth-box" style="margin-top: 30px;">
-                    <div class="auth-item">
-                        <n-button color="#f4f4f4" block type="primary" @click="toClaimable" class="auth-btn">
-                            <div style="display:flex; align-items: center;">
-                                <img :src="claimImage" alt="" style="width: 35px; height: 35px;" />
-                                <span style="color:#1f202a">Claim Assets</span>
-                            </div>
-                        </n-button>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="footer">© Powered By Anomix</div>
+    <div class="header">Ano.Cash</div>
+    <div class="login">
+        <div class="logo">
+            <img :src="loginImage" class="arrow" alt="" />
         </div>
+        <h1 class="title">Login AnoCash</h1>
+        <!---->
+        <div class="oauth-box">
+            <div class="auth-item">
+                <n-button color="#f4f4f4" block type="primary" class="auth-btn" @click="connectWallet('connect')">
+                    <div style="display:flex; align-items: center;">
+                        <img :src="auroLogo" alt="" style="width: 30px; height: 30px;" />
+                        <span style="color:#1f202a">Connect Wallet</span>
+                    </div>
+                </n-button>
+            </div>
+            <div class="auth-item">
+                <n-button color="#f4f4f4" block type="primary" @click="login" class="auth-btn">
+                    <div style="display:flex; align-items: center;">
+                        <img :src="keyImage" alt="" style="width: 36px; height: 36px;" />
+                        <span style="color:#1f202a">Login With Key</span>
+                    </div>
+                </n-button>
+            </div>
+        </div>
+
+        <div class="or-box">
+            <div class="line"></div>
+            <span>OR CLAIM WITHDRAWABLE ASSETS</span>
+            <div class="line"></div>
+        </div>
+
+        <div class="oauth-box" style="margin-top: 30px;">
+            <div class="auth-item">
+                <n-button color="#f4f4f4" block type="primary" @click="connectWallet('claim')" class="auth-btn">
+                    <div style="display:flex; align-items: center;">
+                        <img :src="claimImage" alt="" style="width: 35px; height: 35px;" />
+                        <span style="color:#1f202a">Claim Assets</span>
+                    </div>
+                </n-button>
+            </div>
+        </div>
+
     </div>
+
+    <div class="footer">© Powered By Anomix</div>
 </template>
 
 <script lang="ts" setup>
@@ -56,58 +52,48 @@ import loginImage from "@/assets/anomix.svg";
 import auroLogo from "@/assets/auro.png";
 import keyImage from "@/assets/key2.png";
 import claimImage from "@/assets/claim.svg";
+import { useMessage } from "naive-ui";
 
 const router = useRouter();
-
-const existAccount = ref(false);
-
-
-onMounted(async () => {
-    const { getSupportStatus } = useClientUtils();
-    const support = await getSupportStatus();
-    console.log('support', support);
+const message = useMessage();
+const { appState, setConnectedWallet, showLoadingMask } = useStatus();
 
 
-    // if (!window.anomix) {
-    //     console.log('load anomix sdk');
-    //     const { createAnomixSdk } = await import('@anomix/sdk');
-
-    //     const sdk = await createAnomixSdk('B62qmsNRd7ocmpPwpb1enJYWAxTP2pibnyMZGjUiaixV2p9irH4V6Y8', {
-    //         nodeUrl: 'http://127.0.0.1:8099',
-    //         nodeRequestTimeoutMS: 5 * 60 * 1000,
-    //         l2BlockPollingIntervalMS: 2 * 60 * 1000,
-    //         debug: true
-    //     });
-
-    //     window.anomix = sdk;
-    //     console.log('anomix sdk loaded');
-    // }
-
-});
-
-const toClaimable = () => {
-    router.push("/claim/claimable");
-}
-
-function connectLogin() {
-    // if (!window.mina) {
-    //     showDialog({
-    //         message: 'Please install auro wallet browser extension first.',
-    //         theme: 'round-button',
-    //         confirmButtonColor: '#1f202a',
-    //         confirmButtonText: 'OK',
-    //     }).then(() => {
-    //         // on close
-    //     });
-    // } else {
-    //     router.push({ path: "/connect", params: { ok: 'nihao' } });
-    // }
-    //router.push("/connect");
-    router.push({ path: "/connect", query: { ok: 'nihao' } });
-}
-function accountLogin() {
+const login = () => {
     router.push("/login");
 }
+
+const connectWallet = async (action: string) => {
+    if (!window.mina) {
+        message.error('Please install auro wallet browser extension first.');
+        return;
+    }
+
+    try {
+        const currentNetwork = await window.mina.requestNetwork();
+        if (appState.value.minaNetwork !== currentNetwork) {
+            message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
+            return;
+        }
+
+        let accounts = await window.mina.requestAccounts();
+        setConnectedWallet(accounts[0]);
+
+        if (action === 'connect') {
+            //router.push({ path: "/connect", query: { step: 1 } });
+            router.push("/connect/step-1");
+        } else {
+            router.push("/claim/claimable");
+        }
+
+    } catch (error: any) {
+        // if user reject, requestAccounts will throw an error with code and message filed
+        console.log(error.message, error.code);
+        message.error(error.message);
+    }
+    //showLoadingMask({ text: 'Account registration service is not ready yet', closable: false });
+};
+
 </script>
 <style lang="scss" scoped>
 .login {

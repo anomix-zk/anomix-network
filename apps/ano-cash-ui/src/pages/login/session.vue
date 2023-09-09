@@ -1,52 +1,92 @@
 <template>
-    <div class="up-app">
-        <div class="page" style="justify-content: flex-start; align-items: flex-start;">
+    <div style="justify-content: flex-start; align-items: flex-start;">
 
-            <div class="page-login">
+        <div class="page-login">
 
-                <div class="login-title">
-                    Login Ano.Cash
-                </div>
-
-
-                <div class="session-login">
-
-                    <n-space vertical :size="30" style="width: 100%;">
-                        <div class="form-item">
-                            <div class="item-label">Anomix Account</div>
-
-                            <n-select class="item" style="--n-height:56px !important;" v-model:value="selectedAccount"
-                                :options="options" @update:value="handleUpdateValue" />
-
-                        </div>
-
-                        <div class="form-item" style="margin-top: 10px;">
-                            <div v-show="showPwdTitle" class="placeholder">{{ placeholderPwd }}
-                            </div>
-                            <n-input v-model:value="pwd" class="item" clearable type="password" show-password-on="mousedown"
-                                size="large" :placeholder="placeholderPwd" :maxlength="30" @blur="blurPwd"
-                                @input="inputPwd" />
-                        </div>
-                    </n-space>
-
-                    <n-button type="info" class="form-btn">
-                        Login
-                    </n-button>
-                </div>
-
-
-
+            <div class="login-title">
+                Login Ano.Cash
             </div>
+
+
+            <div class="session-login">
+
+                <n-space vertical :size="30" style="width: 100%;">
+                    <div class="form-item">
+                        <div class="item-label">Anomix Account</div>
+
+                        <n-select class="item" style="--n-height:56px !important;" v-model:value="selectedAccount"
+                            :options="options" @update:value="handleUpdateValue" />
+
+                    </div>
+
+                    <div class="form-item" style="margin-top: 10px;">
+                        <div v-show="showPwdTitle" class="placeholder">{{ placeholderPwd }}
+                        </div>
+                        <n-input v-model:value="pwd" class="item" clearable type="password" show-password-on="mousedown"
+                            size="large" :placeholder="placeholderPwd" :maxlength="30" @blur="blurPwd" @input="inputPwd" />
+                    </div>
+                </n-space>
+
+                <n-button type="info" class="form-btn" @click="login">
+                    Login
+                </n-button>
+            </div>
+
+
+
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { SelectOption } from 'naive-ui';
-
+import type { SigningKey } from '@anomix/sdk';
+import { SelectOption, useMessage } from 'naive-ui';
 
 const router = useRouter();
-const privateKey = ref("");
+const { SdkState } = useSdk();
+const remoteApi = SdkState.remoteApi!;
+const remoteSyncer = SdkState.remoteSyncer!;
+const { omitAddress } = useUtils();
+const message = useMessage();
+const { showLoadingMask, closeLoadingMask } = useStatus();
+
+const maskId = 'session-login';
+let selectedAccount = ref<string | undefined>(undefined);
+let options = ref<SelectOption[]>([]);
+const handleUpdateValue = (value: string, option: SelectOption) => {
+    if (value === 'other') {
+        router.push("/");
+        return;
+    }
+};
+onMounted(async () => {
+    const localAccounts = await remoteApi.getLocalAccounts();
+    localAccounts.forEach((account) => {
+        const address = omitAddress(account.accountPk)!;
+        options.value.push({
+            label: account.alias ? account.alias + '(' + address + ')' : address,
+            value: account.accountPk,
+            style: {
+                'height': '56px',
+            }
+        });
+    });
+
+    options.value.push({
+        label: "+ Use Other Account",
+        value: 'other',
+        style: {
+            'color': '#000',
+            'font-weight': '600',
+            'align-items': 'center',
+            'align-content': 'center',
+            'justify-content': 'center',
+            'height': '60px',
+        }
+    });
+
+    selectedAccount.value = options.value[0].value ? options.value[0].value + '' : undefined;
+});
 
 const pwd = ref("");
 const placeholderPwd = ref("Password");
@@ -62,50 +102,180 @@ const inputPwd = () => {
     }
 };
 
-const existAccount = ref(true);
-const selectedAccount = ref('');
-const options = [
-    {
-        label: "Vitalik(0xb284...65e4)",
-        value: 'song0',
-        style: {
-            'height': '56px',
-        }
-    },
-    {
-        label: "0xb299...37e9",
-        value: 'song1',
-        style: {
-            'height': '56px',
-        }
-    },
-    {
-        label: "+ Use Other Account",
-        value: 'other',
-        style: {
-            'color': '#000',
-            'font-weight': '600',
-            'align-items': 'center',
-            'align-content': 'center',
-            'justify-content': 'center',
-            'height': '60px',
-        }
+const toAccountPage = () => {
+    router.replace("/account");
+};
+
+const login = async () => {
+    if (pwd.value.length === 0) {
+        message.error('Please input password');
+        return;
     }
-];
-
-selectedAccount.value = options[0].value;
-
-function handleUpdateValue(value: string, option: SelectOption) {
-    if (value === 'other') {
-        router.push("/");
+    if (!selectedAccount) {
+        message.error('Please select account');
+        return;
     }
-}
 
-function formSubmit(values: any) {
-    console.log(privateKey.value);
-    router.push("/connect?step=2");
+    try {
+        showLoadingMask({ text: 'Login...', id: maskId, closable: false });
+        const accountPk58 = selectedAccount.value!;
+        const accountPrivateKey58 = await remoteApi.getSercetKey(accountPk58, pwd.value);
+        if (!accountPrivateKey58) {
+            message.error('Password wrong');
+            return;
+        }
+        const signingPubKeys = await remoteApi.getSigningKeys(accountPk58);
+        if (signingPubKeys.length === 0) {
+            message.error('No signing key found');
+            return;
+        }
+        let signingPrivateKeys: (string | undefined)[] = [];
+        for (let i = 0; i < signingPubKeys.length; i++) {
+            const signingPk = (signingPubKeys[i] as SigningKey).signingPk;
+            const signingPrivateKey = await remoteApi.getSercetKey(signingPk, pwd.value);
+            if (!signingPrivateKey) {
+                message.error('Password wrong');
+                return;
+            }
+            signingPrivateKeys.push(signingPrivateKey);
+        }
+
+        if (signingPrivateKeys.length < 2) {
+            signingPrivateKeys.push(undefined);
+        }
+
+        const accountPk = await remoteSyncer.addAccount(accountPrivateKey58, pwd.value, signingPrivateKeys[0],
+            signingPrivateKeys[1], undefined);
+        if (accountPk) {
+            closeLoadingMask(maskId);
+            message.success('Login successfully');
+
+            toAccountPage();
+        }
+    } catch (err: any) {
+        closeLoadingMask(maskId);
+        console.error(err);
+        message.error(err.message, { duration: 0, closable: true });
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
-const toBack = () => history.back();
 </script>
 <style scoped lang="scss">
 .page-login {

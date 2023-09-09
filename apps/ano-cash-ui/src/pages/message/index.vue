@@ -1,33 +1,31 @@
 <template>
-  <div class="up-app">
-    <div class="page" style="justify-content: flex-start;">
-      <div class="ano-header">
-        <div class="left" @click="toBack">
-          <van-icon name="arrow-left" size="24" />
-          <!-- <div class="title">Deposit</div> -->
-        </div>
-
-      </div>
-
-      <div class="operation-title">Notification</div>
-
-
-
-      <div v-for="item in messages" class="message-item">
-
-        <div class="content">
-          <div class="action"> {{ item.action }} </div>
-          <div class="change-balance">{{ item.value }} {{ item.token }}</div>
-        </div>
-
-        <div class="txHash">
-          <div class="label">TX HASH</div>
-          {{ item.txHash }}
-        </div>
-
+  <div style="justify-content: flex-start;">
+    <div class="ano-header">
+      <div class="left" @click="toBack">
+        <van-icon name="arrow-left" size="24" />
+        <!-- <div class="title">Deposit</div> -->
       </div>
 
     </div>
+
+    <div class="operation-title">Notification</div>
+
+
+
+    <div v-for="item in messages" class="message-item">
+
+      <div class="content">
+        <div class="action"> {{ item.action }} </div>
+        <div class="change-balance">{{ item.value }} {{ item.token }}</div>
+      </div>
+
+      <div class="txHash">
+        <div class="label">TX HASH</div>
+        {{ item.txHash }}
+      </div>
+
+    </div>
+
   </div>
 </template>
 
@@ -65,7 +63,7 @@ const messages = [
 
 
 
-const toBack = () => history.back();
+const toBack = () => router.back();
 </script>
 
 <style lang="scss" scoped>

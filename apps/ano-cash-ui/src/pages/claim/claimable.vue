@@ -1,173 +1,129 @@
 <template>
-  <div class="up-app">
-    <div class="page" style="justify-content: flex-start;">
-      <div class="ano-header">
-        <div class="left" @click="toBack">
-          <van-icon name="arrow-left" size="24" />
-          <!-- <div class="title">Deposit</div> -->
-        </div>
-
+  <div style="justify-content: flex-start;">
+    <div class="ano-header">
+      <div class="left" @click="toBack">
+        <van-icon name="arrow-left" size="24" />
+        <!-- <div class="title">Deposit</div> -->
       </div>
-
-      <div class="operation-title">Claimable Assets</div>
-
-      <div v-if="connectedWallet" class="connected-wallet">
-        <div style="display: flex; align-items: center;">
-          <img :src="auroLogo" alt="" style="width: 25px; height: 25px;" />
-          <span style="color:black; padding-left: 10px; font-size: 16px;">{{ connectedWallet }}</span>
-        </div>
-
-        <van-icon name="cross" size="20" @click="disconnect" />
-      </div>
-
-
-      <div v-for="item in claimableNotes" class="claimable-item" @click="toClaim">
-
-        <div class="ano-token">
-          <div class="token">
-            <div class="token-info">
-              <van-icon :name="minaIcon" size="40" />
-              <div class="token-name">MINA</div>
-            </div>
-            <div class="token-balance">
-              {{ item.value }} MINA
-            </div>
-          </div>
-
-          <div class="bottom">
-            <div class="commitment">
-              <n-tag :bordered="false" type="info">
-                Note ID: {{ item.commitment }}
-              </n-tag>
-            </div>
-
-            <div class="claim">
-              <n-tag :bordered="false" type="info">
-                claim
-              </n-tag>
-            </div>
-
-          </div>
-
-
-        </div>
-
-      </div>
-
 
     </div>
+
+    <div class="operation-title">Claimable Assets</div>
+
+    <div v-if="connectedWallet !== null" class="connected-wallet">
+      <div style="display: flex; align-items: center;">
+        <img :src="auroLogo" alt="" style="width: 25px; height: 25px;" />
+        <span style="color:black; padding-left: 10px; font-size: 16px;">{{ connectedWallet }}</span>
+      </div>
+
+      <van-icon name="cross" size="20" @click="disconnect" />
+    </div>
+
+
+    <div v-for="item in claimableNotes" class="claimable-item" @click="toClaim(item.commitment)">
+
+      <div class="ano-token">
+        <div class="token">
+          <div class="token-info">
+            <van-icon :name="minaIcon" size="40" />
+            <div class="token-name">{{ item.token }}</div>
+          </div>
+          <div class="token-balance">
+            {{ item.value }} MINA
+          </div>
+        </div>
+
+        <div class="bottom">
+          <div class="commitment">
+            <n-tag :bordered="false" type="info">
+              Note ID: {{ item.commitment }}
+            </n-tag>
+          </div>
+
+          <div class="claim">
+            <n-tag :bordered="false" type="info">
+              claim
+            </n-tag>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <n-empty style="margin-top: 65px;" v-if="claimableNotes.length === 0" size="large"
+      description="No claimable notes found" />
+
   </div>
 </template>
 
 <script lang="ts" setup>
-import { useMessage } from 'naive-ui'
+import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
 import auroLogo from "@/assets/auro.png";
 
 const router = useRouter();
 const { appState, setConnectedWallet } = useStatus();
-const { omitAddress, checkNoSideSpace } = useUtils();
+const { omitAddress, convertToMinaUnit } = useUtils();
 const message = useMessage();
+const { SdkState } = useSdk();
+const remoteApi = SdkState.remoteApi!;
 
+const connectedWallet = computed(() => omitAddress(appState.value.connectedWallet58, 8));
 
-const claimableNotes = [
-  {
-    token: 'MINA',
-    value: 10.3,
-    commitment: 'wegwegwegwegwegwg',
-  },
-  {
-    token: 'MINA',
-    value: 201,
-    commitment: 'wegwegwegwegwegwg',
-  },
-  {
-    token: 'MINA',
-    value: 12.245,
-    commitment: 'wegwegwegwegwegwg',
-  },
-];
+const toBack = () => router.back();
 
-const toClaim = () => {
-  router.push("/claim/claim");
+const toClaim = (commitment: string) => {
+  router.push(`/claim/${commitment}`);
 };
 
-const depositAmount = ref<number | undefined>(undefined);
-const receiver = ref('');
-
-const checkPositiveNumber = (x: number) => x > 0;
-
-const connect = async () => {
-  console.log('connect wallet...');
-  if (!window.mina) {
-    message.error(
-      "Please install auro wallet browser extension first.",
-      {
-        closable: true,
-
-      }
-    );
-
-    return;
-  }
-
-  const currentNetwork = await window.mina.requestNetwork();
-  if (appState.value.minaNetwork !== currentNetwork) {
-    message.error(
-      `Please switch to the correct network (${appState.value.minaNetwork}) first.`,
-      {
-        closable: true,
-
-      }
-    );
-
-    return;
-  }
-
-  try {
-    let accounts = await window.mina.requestAccounts();
-    setConnectedWallet(accounts[0]);
-    message.success(
-      "Connect wallet successfully.",
-      {
-        closable: true,
-
-      }
-    );
-  } catch (err: any) {
-    // if user reject, requestAccounts will throw an error with code and message filed
-    console.log(err.message, err.code);
-    message.error(
-      err.message,
-      {
-        closable: true,
-
-      }
-    );
-
-  }
-
-
-  // TODO: get connected wallet balance
+const disconnect = () => {
+  setConnectedWallet(null);
+  router.replace("/");
 };
 
-const connectedWallet = computed(() => {
-  if (appState.value.connectedWallet58) {
-    return omitAddress(appState.value.connectedWallet58);
-  }
+let claimableNotes = ref<{ token: string; value: string; commitment: string }[]>([]);
 
-  return undefined;
+onMounted(async () => {
+  const cs = await remoteApi.getClaimableNotes(appState.value.connectedWallet58!, []);
+  cs.forEach((c) => {
+    claimableNotes.value.push({
+      token: 'MINA',
+      value: convertToMinaUnit(c.value)!.toString(),
+      commitment: c.outputNoteCommitment
+    });
+  });
+
+  if (window.mina) {
+    window.mina.on('accountsChanged', (accounts: string[]) => {
+      console.log('connected account change: ', accounts);
+      if (accounts.length === 0) {
+        setConnectedWallet(null);
+        message.error('Please connect your wallet', {
+          closable: true,
+          duration: 0
+        });
+        router.replace('/');
+      } else {
+        setConnectedWallet(accounts[0]);
+      }
+
+    });
+
+    window.mina.on('chainChanged', (chainType: string) => {
+      console.log('current chain: ', chainType);
+      if (chainType !== 'Berkeley') {
+        message.error('Please switch to Berkeley network', {
+          closable: true,
+          duration: 0
+        });
+      }
+    });
+  }
 });
 
-const maxInputAmount = () => {
-  depositAmount.value = 100;
-};
-const disconnect = () => {
-  setConnectedWallet(undefined);
-  router.push("/");
-};
 
-const toBack = () => history.back();
 </script>
 
 <style lang="scss" scoped>

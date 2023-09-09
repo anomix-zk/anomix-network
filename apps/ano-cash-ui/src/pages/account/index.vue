@@ -1,169 +1,167 @@
 <template>
-    <div class="up-app">
-        <div class="header-bg-img page home">
+    <div class="header-bg-img home">
 
-            <div class="main-container" style="margin-left: 30px; margin-right: 30px">
-                <div class="ano-home-page-header">
-                    <div class="header-content">
-                        <div class="user">
-                            <div class="left" />
-                            <div class="right">
-                                <div class="alias">{{ alias }}.ano</div>
-                                <div class="address">
-                                    <span>{{ accountPk58 }}</span>
-                                    <van-icon style="margin-left: 5px;" :name="copyIcon" size="20px" @click="copyAddress" />
-                                </div>
+        <div class="main-container" style="margin-left: 30px; margin-right: 30px">
+            <div class="ano-home-page-header">
+                <div class="header-content">
+                    <div class="user">
+                        <div class="left" />
+                        <div class="right">
+                            <div class="alias">{{ alias }}.ano</div>
+                            <div class="address">
+                                <span>{{ accountPk58 }}</span>
+                                <van-icon style="margin-left: 5px;" :name="copyIcon" size="20px" @click="copyAddress" />
                             </div>
                         </div>
-                        <div class="setting-icons">
-                            <van-icon name="comment-o" dot class="dot" @click="showNotiy" />
-                            <!-- <van-icon name="setting-o" class="dot" @click="toSetting" /> -->
-                        </div>
                     </div>
-
-                </div>
-
-                <div class="ano-sum-box">
-                    <div class="title">Asset Value</div>
-                    <div class="ano-sum">
-                        <div class="worth">
-                            <span v-show="!appState.isHideInfo">
-                                <template v-if="totalAmount">
-                                    ${{ totalAmount }}
-                                </template>
-                                <template v-else>
-                                    ---
-                                </template>
-                            </span>
-                            <span v-show="appState.isHideInfo">$*****</span>
-                            <span class="eye" @click="switchInfoHideStatus">
-                                <van-icon v-if="appState.isHideInfo" name="closed-eye" />
-                                <van-icon v-else name="eye-o" />
-                            </span>
-                        </div>
-                    </div>
-
-                    <n-tag v-if="accountCreationPending" type="warning" round strong>
-                        Account Creation Pending
-                    </n-tag>
-                </div>
-
-                <div class="operation">
-                    <div class="btn-box" @click="toDeposit">
-                        <div class="btn">
-                            <van-icon :name="depositIcon" color="#4098fc" size="30" />
-                        </div>
-                        <div>Deposit</div>
-                    </div>
-                    <div class="btn-box" @click="toSend">
-                        <div class="btn" style="box-shadow: inset 1px 1px 4px 0 var(--up-line);">
-                            <van-icon size="40" color="#4098fc" :name="transferIcon" />
-                        </div>
-                        <div>Send</div>
-                    </div>
-                    <div class="btn-box" @click="toWithdraw">
-                        <div class="btn">
-                            <van-icon :name="withdrawIcon" color="#4098fc" size="30" />
-                        </div>
-                        <div>Withdraw</div>
+                    <div class="setting-icons">
+                        <van-icon name="comment-o" dot class="dot" @click="showNotiy" />
+                        <!-- <van-icon name="setting-o" class="dot" @click="toSetting" /> -->
                     </div>
                 </div>
 
+            </div>
 
-                <div class="ano-tab">
+            <div class="ano-sum-box">
+                <div class="title">Asset Value</div>
+                <div class="ano-sum">
+                    <div class="worth">
+                        <span v-show="!appState.isHideInfo">
+                            <template v-if="totalAmount">
+                                ${{ totalAmount }}
+                            </template>
+                            <template v-else>
+                                ---
+                            </template>
+                        </span>
+                        <span v-show="appState.isHideInfo">$*****</span>
+                        <span class="eye" @click="switchInfoHideStatus">
+                            <van-icon v-if="appState.isHideInfo" name="closed-eye" />
+                            <van-icon v-else name="eye-o" />
+                        </span>
+                    </div>
+                </div>
 
-                    <n-tabs default-value="tokens" size="large" justify-content="space-evenly" :tab-style="tabStyle">
-                        <n-tab-pane name="tokens" tab="Tokens">
-                            <div v-if="tokenList.length" v-for="item in tokenList" :key="item.tokenId" class="token">
-                                <div class="token-left">
-                                    <div class="token-icon">
-                                        <van-icon :name="minaIcon" size="40" />
-                                    </div>
-                                    <div class="token-info">
-                                        <div class="token-name">
-                                            {{ item.tokenName }}
-                                        </div>
-                                        <div class="token-network">
-                                            {{ item.tokenNetwork }}
-                                        </div>
-                                    </div>
+                <n-tag v-if="accountCreationPending" type="warning" round strong>
+                    Account Creation Pending
+                </n-tag>
+            </div>
+
+            <div class="operation">
+                <div class="btn-box" @click="toDeposit">
+                    <div class="btn">
+                        <van-icon :name="depositIcon" color="#4098fc" size="30" />
+                    </div>
+                    <div>Deposit</div>
+                </div>
+                <div class="btn-box" @click="toSend">
+                    <div class="btn" style="box-shadow: inset 1px 1px 4px 0 var(--up-line);">
+                        <van-icon size="40" color="#4098fc" :name="transferIcon" />
+                    </div>
+                    <div>Send</div>
+                </div>
+                <div class="btn-box" @click="toWithdraw">
+                    <div class="btn">
+                        <van-icon :name="withdrawIcon" color="#4098fc" size="30" />
+                    </div>
+                    <div>Withdraw</div>
+                </div>
+            </div>
+
+
+            <div class="ano-tab">
+
+                <n-tabs default-value="tokens" size="large" justify-content="space-evenly" :tab-style="tabStyle">
+                    <n-tab-pane name="tokens" tab="Tokens">
+                        <div v-if="tokenList.length" v-for="item in tokenList" :key="item.tokenId" class="token">
+                            <div class="token-left">
+                                <div class="token-icon">
+                                    <van-icon :name="minaIcon" size="40" />
                                 </div>
-
-                                <div class="token-right">
-                                    <div v-show="!appState.isHideInfo" class="balance">
-                                        {{ convertToMinaUnit(item.balance) }}
+                                <div class="token-info">
+                                    <div class="token-name">
+                                        {{ item.tokenName }}
                                     </div>
-                                    <div v-show="appState.isHideInfo" class="balance">
-                                        *****
+                                    <div class="token-network">
+                                        {{ item.tokenNetwork }}
                                     </div>
-                                </div>
-
-                            </div>
-
-                            <n-empty v-else description="None tokens yet" />
-                        </n-tab-pane>
-
-                        <n-tab-pane name="history" tab="History">
-
-                            <div v-if="txList.length" v-for="item in txList" :key="item.txHash" class="tx"
-                                @click="toClaimPage(item.actionType)">
-                                <div class="tx-left">
-                                    <div class="action-icon">
-                                        <van-icon v-if="item.isSender" :name="transferOut" size="40" />
-                                        <van-icon v-else :name="transferIn" size="40" />
-                                    </div>
-
-                                    <div class="tx-info">
-                                        <div class="tx-address">
-                                            <span v-if="item.isSender">{{ item.receiver }}</span>
-                                            <span v-else>{{ item.sender }}</span>
-
-                                            <div v-if="item.actionType === '3'" class="tx-label">claim</div>
-                                        </div>
-                                        <div class="tx-time">
-                                            <n-time :time="item.createdTs" format="yyyy-MM-dd HH:mm" />
-                                        </div>
-                                    </div>
-
-                                </div>
-
-                                <div class="tx-right">
-                                    <div class="balance">
-                                        <template v-if="item.actionType === '1' || item.actionType === '3'">
-                                            <template v-if="item.isSender">-</template>{{
-                                                convertToMinaUnit(item.publicValue) }} MINA
-                                        </template>
-                                        <template v-else>
-                                            <template v-if="item.isSender">-</template>{{
-                                                convertToMinaUnit(item.privateValue) }} MINA
-                                        </template>
-
-                                    </div>
-
-                                    <div class="amount">
-                                        <template v-if="item.actionType === '1' || item.actionType === '3'">
-                                            ${{ calculateUsdAmount('MINA', convertToMinaUnit(item.publicValue)) }}
-                                        </template>
-                                        <template v-else>
-                                            ${{ calculateUsdAmount('MINA', convertToMinaUnit(item.privateValue)) }}
-                                        </template>
-                                    </div>
-
                                 </div>
                             </div>
 
-                            <n-empty v-else description="None history yet" />
-                        </n-tab-pane>
+                            <div class="token-right">
+                                <div v-show="!appState.isHideInfo" class="balance">
+                                    {{ convertToMinaUnit(item.balance) }}
+                                </div>
+                                <div v-show="appState.isHideInfo" class="balance">
+                                    *****
+                                </div>
+                            </div>
 
-                    </n-tabs>
+                        </div>
 
+                        <n-empty v-else description="None tokens yet" />
+                    </n-tab-pane>
 
-                </div>
+                    <n-tab-pane name="history" tab="History">
 
+                        <div v-if="txList.length" v-for="item in txList" :key="item.txHash" class="tx"
+                            @click="toClaimPage(item.actionType)">
+                            <div class="tx-left">
+                                <div class="action-icon">
+                                    <van-icon v-if="item.isSender" :name="transferOut" size="40" />
+                                    <van-icon v-else :name="transferIn" size="40" />
+                                </div>
 
+                                <div class="tx-info">
+                                    <div class="tx-address">
+                                        <span v-if="item.isSender">{{ item.receiver }}</span>
+                                        <span v-else>{{ item.sender }}</span>
+
+                                        <div v-if="item.actionType === '3'" class="tx-label">claim</div>
+                                    </div>
+                                    <div class="tx-time">
+                                        <n-time :time="item.createdTs" format="yyyy-MM-dd HH:mm" />
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="tx-right">
+                                <div class="balance">
+                                    <template v-if="item.actionType === '1' || item.actionType === '3'">
+                                        <template v-if="item.isSender">-</template>{{
+                                            convertToMinaUnit(item.publicValue) }} MINA
+                                    </template>
+                                    <template v-else>
+                                        <template v-if="item.isSender">-</template>{{
+                                            convertToMinaUnit(item.privateValue) }} MINA
+                                    </template>
+
+                                </div>
+
+                                <div class="amount">
+                                    <template v-if="item.actionType === '1' || item.actionType === '3'">
+                                        ${{ calculateUsdAmount('MINA', convertToMinaUnit(item.publicValue)) }}
+                                    </template>
+                                    <template v-else>
+                                        ${{ calculateUsdAmount('MINA', convertToMinaUnit(item.privateValue)) }}
+                                    </template>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <n-empty v-else description="None history yet" />
+                    </n-tab-pane>
+
+                </n-tabs>
 
 
             </div>
+
+
+
+
         </div>
     </div>
 </template>

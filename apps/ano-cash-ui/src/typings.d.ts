@@ -1,4 +1,7 @@
 interface Window {
     mina?: any;
-    anomix?: any;
+}
+
+declare module globalThis {
+    var onconnect: any;
 }

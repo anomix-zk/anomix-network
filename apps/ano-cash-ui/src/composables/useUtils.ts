@@ -15,15 +15,56 @@ export default function () {
     };
     BigNumber.config({ FORMAT: fmt });
 
-    const convertToMinaUnit = (nanomina: string | undefined) => {
-        if (!nanomina) {
-            return undefined;
+    const MINA = 1000_000_000;
+    const convertToMinaUnit = (
+        nanomina: string | number | bigint | null | undefined
+    ) => {
+        if (nanomina === undefined || nanomina === null) {
+            return null;
         }
-        if (BigInt(nanomina) === 0n) {
-            return new BigNumber(0);
+        let tempValue: string;
+        if (typeof nanomina === "bigint") {
+            if (nanomina === 0n) {
+                return new BigNumber(0);
+            }
+            tempValue = nanomina.toString();
+        } else if (typeof nanomina === "number") {
+            if (nanomina === 0) {
+                return new BigNumber(0);
+            }
+            tempValue = nanomina.toString();
+        } else {
+            tempValue = nanomina;
         }
-        const x = new BigNumber(nanomina);
-        let result = x.dividedBy(10e8);
+
+        const x = new BigNumber(tempValue);
+        let result = x.dividedBy(MINA);
+        return result;
+    };
+
+    const convertToNanoMinaUnit = (
+        mina: string | number | bigint | null | undefined
+    ) => {
+        if (mina === undefined || mina === null) {
+            return null;
+        }
+        let tempValue: string;
+        if (typeof mina === "bigint") {
+            if (mina === 0n) {
+                return new BigNumber(0);
+            }
+            tempValue = mina.toString();
+        } else if (typeof mina === "number") {
+            if (mina === 0) {
+                return new BigNumber(0);
+            }
+            tempValue = mina.toString();
+        } else {
+            tempValue = mina;
+        }
+
+        const x = new BigNumber(tempValue);
+        let result = x.multipliedBy(MINA);
         return result;
     };
 
@@ -45,7 +86,13 @@ export default function () {
             .toFormat(2);
     };
 
-    const omitAddress = (address: string, cutLength: number = 5) => {
+    const omitAddress = (
+        address: string | null | undefined,
+        cutLength: number = 5
+    ) => {
+        if (address === null || address === undefined) {
+            return null;
+        }
         let length = address.length;
         return (
             address.substring(0, cutLength) +
@@ -62,6 +109,7 @@ export default function () {
 
     return {
         convertToMinaUnit,
+        convertToNanoMinaUnit,
         calculateUsdAmount,
         omitAddress,
         checkOnlyNumber,
