@@ -167,7 +167,7 @@ async function mempoolWatch() {
                         // assert
 
                         logger.info('trigger /rollup/contract-call/', depositTreeTrans?.id);
-                        await $axiosDeposit.post<BaseResponse<string>>(`/rollup/contract-call/${depositTreeTrans.id}`).then(r => {
+                        await $axiosDeposit.get<BaseResponse<string>>(`/rollup/contract-call/${depositTreeTrans.id}`).then(r => {
                             if (r.data.code == 1) {
                                 throw new Error(r.data.msg);
                             }
