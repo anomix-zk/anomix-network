@@ -270,6 +270,7 @@ export class ProofScheduler {
                 taskType: FlowTaskType.ROLLUP_CONTRACT_CALL,
                 data: {
                     feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toPublicKey().toBase58(),
+                    fee: 200_000_000,// 0.2 Mina as fee
                     operatorSign,
                     entryDepositRoot,
                     proof: blockProvedResultStr
@@ -289,8 +290,16 @@ export class ProofScheduler {
     async whenL1TxComeback(blockId: number, tx: any) {
         // sign and broadcast it.
         const l1Tx = Mina.Transaction.fromJSON(JSON.parse(tx));
-        await l1Tx.sign([PrivateKey.fromBase58(config.rollupContractPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
+        l1Tx.transaction.feePayer.lazyAuthorization = { kind: 'lazy-signature' };
+        await l1Tx.sign([PrivateKey.fromBase58(config.rollupContractPrivateKey)]);
+
+        await l1Tx.send().then(async txHash => {// TODO what if it fails currently!
             const txHash0 = txHash.hash()!;
+
+            if ((!txHash0)) {
+                logger.warn('error: broadcast anomixRollupContract\'s l1Tx failed!!!');
+                return;
+            }
 
             // insert L1 tx into db, underlying 
             const connection = getConnection();
@@ -318,7 +327,7 @@ export class ProofScheduler {
 
         }).catch(reason => {
             // TODO log it
-            logger.info(tx, ' failed!', 'reason: ', JSON.stringify(reason));
+            logger.info('whenL1TxComeback failed!', 'reason: ', JSON.stringify(reason));
         });
     }
 
