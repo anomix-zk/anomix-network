@@ -36,7 +36,7 @@ process!.on('message', async dto => {
                 break;
 
             case RollupTaskType.ROLLUP_CONTRACT_CALL:
-                await proofScheduler.callRollupContract(rollupTask.payload);
+                await proofScheduler.callRollupContract(rollupTask.payload.blockId);
                 break;
 
             default: // rid it
