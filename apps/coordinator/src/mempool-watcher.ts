@@ -128,7 +128,7 @@ async function mempoolWatch() {
                             return b.depositCount > 0
                         });
 
-                        logger.info('blocks have depositTx, set needStopDepositProcessor = ', needStopDepositProcessor);
+                        logger.info('blocks have depositTx, set needStopDepositProcessor = ' + needStopDepositProcessor);
                     });
                 }
 
