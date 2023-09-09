@@ -18,7 +18,7 @@ function processMsgFromMaster() {
         switch (message.type) {
 
             case `${FlowTaskType[FlowTaskType.DEPOSIT_UPDATESTATE]}`:
-                execCircuit(message, async () => {
+                await execCircuit(message, async () => {
                     const params = {
                         feePayer: PublicKey.fromBase58(message.payload.feePayer),
                         fee: message.payload.fee,

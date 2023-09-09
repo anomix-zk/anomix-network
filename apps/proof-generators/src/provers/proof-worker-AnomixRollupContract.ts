@@ -18,7 +18,7 @@ function processMsgFromMaster() {
         switch (message.type) {
 
             case `${FlowTaskType[FlowTaskType.ROLLUP_CONTRACT_CALL]}`:
-                execCircuit(message, async () => {
+                await execCircuit(message, async () => {
                     let params = {
                         feePayer: PublicKey.fromBase58(message.payload.feePayer),
                         proof: RollupProof.fromJSON(JSON.parse(message.payload.proof)),
@@ -88,12 +88,12 @@ const initWorker = async () => {
 
     logger.info(`[WORKER ${process.pid}] new worker forked`);
 
-    // await JoinSplitProver.compile();
-    // await InnerRollupProver.compile();
-    // await BlockProver.compile();
-    // await WithdrawAccount.compile();
+    await JoinSplitProver.compile();
+    await InnerRollupProver.compile();
+    await BlockProver.compile();
+    await WithdrawAccount.compile();
     AnomixRollupContract.entryContractAddress = PublicKey.fromBase58(config.entryContractAddress);
-    // await AnomixRollupContract.compile();
+    await AnomixRollupContract.compile();
 
     // recieve message from main process...
     processMsgFromMaster();
