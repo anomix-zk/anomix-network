@@ -288,7 +288,7 @@ export class ProofScheduler {
 
     async whenL1TxComeback(blockId: number, tx: any) {
         // sign and broadcast it.
-        const l1Tx = Mina.Transaction.fromJSON(tx);
+        const l1Tx = Mina.Transaction.fromJSON(JSON.parse(tx));
         await l1Tx.sign([PrivateKey.fromBase58(config.rollupContractPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
             const txHash0 = txHash.hash()!;
 
