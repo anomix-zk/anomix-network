@@ -185,8 +185,6 @@ async function mempoolWatch() {
                 });
             }
 
-            logger.info('this round is done.');
-
             await queryRunner.commitTransaction();
         } catch (error) {
             logger.error(error);
@@ -201,5 +199,7 @@ async function mempoolWatch() {
         logger.error(error);
     } finally {
         lastSeqTs = new Date().getTime();
+
+        logger.info('this round is done.');
     }
 }
