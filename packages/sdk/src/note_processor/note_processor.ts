@@ -100,9 +100,8 @@ export class NoteProcessor {
 
               // update user state
               let userState = await this.db.getUserState(accountPk);
-              if (userState && userState.alias === undefined) {
-                userState.alias = alias;
-                await this.db.upsertUserState(userState);
+              if (userState) {
+                await this.db.updateUserState(accountPk, alias);
               }
             }
 

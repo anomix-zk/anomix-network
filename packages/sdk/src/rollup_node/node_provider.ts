@@ -283,7 +283,7 @@ export class NodeProvider implements AnomixNode {
     aliasHash: string,
     includePending: boolean
   ): Promise<boolean> {
-    const url = `${this.host}/account/check-alias=registered`;
+    const url = `${this.host}/account/check-alias-registered`;
     this.log.info(
       `Checking if alias is registered at ${url}, aliasHash: ${aliasHash}, includePending: ${includePending}`
     );
@@ -347,6 +347,31 @@ export class NodeProvider implements AnomixNode {
       includePending,
     });
     const res = await this.makeRequest<boolean>(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (res.code === 0) {
+      return res.data!;
+    }
+
+    throw new Error(res.msg);
+  }
+
+  public async getClaimableNotes(
+    l1address: string,
+    commitments: string[]
+  ): Promise<WithdrawInfoDto[]> {
+    const url = `${this.host}/tx/withdraw/${l1address}`;
+    this.log.info(
+      `Getting claimable notes at ${url}, l1addr: ${l1address}, commitments: ${commitments}`
+    );
+
+    const body = JSON.stringify({
+      commitments,
+    });
+    const res = await this.makeRequest<WithdrawInfoDto[]>(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body,

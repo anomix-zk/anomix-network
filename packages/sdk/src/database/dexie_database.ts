@@ -412,6 +412,9 @@ export class DexieDatabase implements Database {
   async upsertUserState(userState: UserState): Promise<void> {
     await this.userState.put(userState);
   }
+  async updateUserState(accountPk: string, alias: string): Promise<void> {
+    await this.userState.update(accountPk, { alias });
+  }
   async removeUserState(accountPk: string): Promise<void> {
     await this.userState.where({ accountPk }).delete();
     await this.userTx.where({ accountPk }).delete();
