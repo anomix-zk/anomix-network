@@ -28,7 +28,7 @@ const handler: RequestHandler<ProofTaskDto<any, any>, null> = async function (
 ): Promise<BaseResponse<string>> {
     try {
 
-        await this.worldState.processProofResult(req.body);
+        await this.worldState.processProofResult(req.body);// TODO no need to await???
 
     } catch (error) {
         return {

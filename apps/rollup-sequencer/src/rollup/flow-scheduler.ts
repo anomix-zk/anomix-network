@@ -177,7 +177,7 @@ export class FlowScheduler {
                 secret: Poseidon.hash([Field.random()]),
                 ownerPk: PrivateKey.fromBase58(config.rollupContractPrivateKey).toPublicKey(),
                 accountRequired: Field(1),
-                creatorPk: PublicKey.empty(),
+                creatorPk: PrivateKey.random().toPublicKey(), // PublicKey.empty()
                 value: UInt64.from(nonDummyTxList.reduce((p, c, i) => {
                     return Number(c.txFee) + p;
                 }, 0)),

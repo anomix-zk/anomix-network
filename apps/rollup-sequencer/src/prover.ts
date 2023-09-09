@@ -6,6 +6,7 @@ import { ProofScheduler } from "./rollup/proof-scheduler";
 import { ProofTaskDto, RollupTaskDto, RollupTaskType, FlowTask, FlowTaskType } from '@anomix/types';
 import { getLogger } from "@/lib/logUtils";
 import { initORM } from "./lib";
+import fs from "fs";
 const logger = getLogger('prover');
 
 // init Mina tool
@@ -52,13 +53,16 @@ process!.on('message', async dto => {
     const flowTask = (proofTaskDto.payload) as FlowTask<any>;
     switch (flowTask.taskType) {
         case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
-            await proofScheduler.whenMergedResultComeBack(proofTaskDto.index, flowTask.data);
+            fs.writeFileSync(`./ROLLUP_TX_BATCH_MERGE_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+            await proofScheduler.whenMergedResultComeBack(proofTaskDto.index.blockId, flowTask.data.payload);
             break;
         case FlowTaskType.BLOCK_PROVE:
-            await proofScheduler.whenL2BlockComeback(flowTask.data);
+            fs.writeFileSync(`./BLOCK_PROVE_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+            await proofScheduler.whenL2BlockComeback(proofTaskDto.index.blockId, flowTask.data);
             break;
         case FlowTaskType.ROLLUP_CONTRACT_CALL:
-            await proofScheduler.whenL1TxComeback(flowTask.data);
+            fs.writeFileSync(`./ROLLUP_CONTRACT_CALL_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+            await proofScheduler.whenL1TxComeback(proofTaskDto.index.blockId, flowTask.data);
             break;
         default: // rid it
             logger.info('rid FlowTask', JSON.stringify(flowTask));

@@ -41,6 +41,8 @@ await traceTasks();
 setInterval(traceTasks, 3 * 60 * 1000); // exec/3mins
 
 async function traceTasks() {
+    logger.info('start a new round...');
+
     try {
         const connection = getConnection();
 
@@ -50,6 +52,8 @@ async function traceTasks() {
         const taskList = await queryRunner.manager.find(Task, { where: { status: TaskStatus.PENDING } }) ?? [];
 
         taskList.forEach(async task => {
+            logger.info(`task info: ${task.id}:${task.taskType}:${task.targetId}`);
+
             // check if txHash is confirmed or failed
             const l1TxHash = task.txHash;
             // TODO need record the error!
@@ -75,6 +79,8 @@ async function traceTasks() {
             });
 
             if (rs.data.zkapp === null) { // ie. l1tx is not included into a l1Block on MINA chain
+                logger.info(`cooresponding l1tx is not included into a l1Block on MINA chain`);
+
                 return;
             }
 
@@ -82,19 +88,23 @@ async function traceTasks() {
                 // to here, means task id done, even if L1tx failed.
                 task.status = TaskStatus.DONE;
                 await queryRunner.manager.save(task);
+                logger.info('task is done, and update it into db...');
 
                 // if Confirmed, then maintain related entites' status            
                 switch (task.taskType) {
                     case TaskType.DEPOSIT:
                         {
-                            const depositTrans = await queryRunner.manager.findOne(DepositTreeTrans, { where: { id: task.targetId } });
-
                             if (!rs.data.zkapp.failureReason) {// L1TX CONFIRMED
+                                const depositTrans = await queryRunner.manager.findOne(DepositTreeTrans, { where: { id: task.targetId } });
+
+                                logger.info('update depositTrans.status = CONFIRMED...');
                                 depositTrans!.status = DepositTreeTransStatus.CONFIRMED;
                                 await queryRunner.manager.save(depositTrans!);
 
+                                logger.info('obtain related DepositCommitment list...');
                                 const vDepositTxList: MemPlL2Tx[] = [];
                                 const dcList = await queryRunner.manager.find(DepositCommitment, { where: { depositTreeTransId: depositTrans!.id } });
+
                                 dcList!.forEach(dc => {
                                     const memPlL2Tx = new MemPlL2Tx();
                                     memPlL2Tx.actionType = ActionType.DEPOSIT.toString();
@@ -132,6 +142,7 @@ async function traceTasks() {
                                     vDepositTxList.push(memPlL2Tx);
                                 });
 
+                                logger.info('transform related DepositCommitment list into MemPlL2Tx list...');
                                 // insert depositTx into memorypool
                                 await queryRunner.manager.save(vDepositTxList);
                             }
@@ -140,18 +151,26 @@ async function traceTasks() {
 
                     case TaskType.ROLLUP:
                         {
+                            logger.info('obtain related block...');
                             await queryRunner.manager.findOne(Block, { where: { id: task.targetId } }).then(async (b) => {
-                                b!.status = rs.data.zkapp.failureReason ? b!.status : BlockStatus.CONFIRMED;
-                                b!.finalizedAt = new Date(rs.data.zkapp.dateTime);
-                                await queryRunner.manager.save(b!);
-                            });
+                                if (!rs.data.zkapp.failureReason) {
+                                    logger.info('update block’ status to BlockStatus.CONFIRMED...');
+                                    b!.status = BlockStatus.CONFIRMED;
+                                    logger.info('update block’ finalizedAt to confirmed datetime...');
+                                    b!.finalizedAt = new Date(rs.data.zkapp.dateTime);
+                                    await queryRunner.manager.save(b!);
 
-                            // sync data tree
-                            await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
-                                if (rs.data.code != 0) {
-                                    throw new Error("cannot sync sync_data_tree!");
+                                    logger.info('sync data tree...');
+                                    // sync data tree
+                                    await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
+                                        if (rs.data.code != 0) {
+                                            throw new Error("cannot sync sync_data_tree!");
+                                        }
+                                    })
+                                } else {
+                                    logger.warn('ALERT: this block failed at Layer1!!!!!');// TODO extreme case, need alert operator!
                                 }
-                            })
+                            });
                         }
                         break;
 
@@ -170,6 +189,7 @@ async function traceTasks() {
                 }
 
                 await queryRunner.commitTransaction();
+
             } catch (error) {
                 console.error(error);
                 await queryRunner.rollbackTransaction();
@@ -182,6 +202,7 @@ async function traceTasks() {
     } catch (error) {
         logger.error(error);
     }
+    logger.info('this round is done.');
 }
 
 

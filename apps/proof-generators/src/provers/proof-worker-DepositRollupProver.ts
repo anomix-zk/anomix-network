@@ -76,7 +76,7 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
 
         console.error(error);
 
-        process.send!({
+        process.send!({// must notify main process to change worker's status to 'isReady'
             type: 'error',
             messageType: message.type,
             id: process.pid,

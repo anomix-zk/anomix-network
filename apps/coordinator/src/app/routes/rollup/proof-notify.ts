@@ -29,7 +29,7 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
 ): Promise<BaseResponse<any>> {
     try {
         const dto = req.body;
-        const targetId = dto.payload as number;
+        const targetId = dto.payload.blockId as number;
 
         const respondData: any = undefined;
 

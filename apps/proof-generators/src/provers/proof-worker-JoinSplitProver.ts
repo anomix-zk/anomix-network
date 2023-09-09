@@ -17,7 +17,7 @@ function processMsgFromMaster() {
         switch (message.type) {
 
             case `${ProofTaskType[ProofTaskType.DEPOSIT_JOIN_SPLIT]}`:
-                execCircuit(message, async () => {
+                await execCircuit(message, async () => {
                     let params = new JoinSplitDepositInput(JoinSplitDepositInput.fromJSON(message.payload))
 
                     let proof = deposit(params);
@@ -46,7 +46,10 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             type: 'done',
             messageType: message.type,
             id: process.pid,
-            payload: proof.toJSON(),
+            payload: {
+                isProof: true,
+                payload: proof.toJSON(),
+            },
         });
     } catch (error) {
         logger.error(error);

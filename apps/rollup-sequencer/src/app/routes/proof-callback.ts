@@ -6,7 +6,7 @@ import { RequestHandler } from '@/lib/types'
 import { Block, WithdrawInfo } from "@anomix/dao";
 import { BaseResponse, WithdrawNoteStatus, ProofTaskDto, ProofTaskType, ProofTaskDtoSchma } from "@anomix/types";
 import { PublicKey } from "snarkyjs";
-import { parentPort } from "worker_threads";
+import fs from "fs";
 
 /**
 * recieve proof result from proof-generator
@@ -34,7 +34,7 @@ const handler: RequestHandler<ProofTaskDto<any, any>, null> = async function (
 
     if (taskType == ProofTaskType.ROLLUP_FLOW) {
 
-        parentPort?.postMessage(payload);
+        process.send!(req.body);
 
     } else {// FIRST_WITHDRAW || WITHDRAW
         const connection = getConnection();

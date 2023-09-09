@@ -18,7 +18,7 @@ function processMsgFromMaster() {
         switch (message.type) {
 
             case `${FlowTaskType[FlowTaskType.BLOCK_PROVE]}`:
-                execCircuit(message, async () => {
+                await execCircuit(message, async () => {
                     let params = {
                         blockProveInput: new BlockProveInput(BlockProveInput.fromJSON(message.payload.blockProveInput)),
                         innerRollupProof: InnerRollupProof.fromJSON(message.payload.innerRollupProof)
@@ -47,7 +47,10 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             type: 'done',
             messageType: message.type,
             id: process.pid,
-            payload: proof.toJSON(),
+            payload: {
+                isProof: true,
+                payload: proof.toJSON(),
+            },
         });
     } catch (error) {
         logger.error(error);

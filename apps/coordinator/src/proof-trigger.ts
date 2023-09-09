@@ -37,6 +37,8 @@ await proofTrigger();
 setInterval(proofTrigger, periodRange); // exec/5mins
 
 async function proofTrigger() {
+    logger.info('start a new round...');
+
     const connection = getConnection();
     const queryRunner = connection.createQueryRunner();
     await queryRunner.startTransaction();
@@ -45,16 +47,26 @@ async function proofTrigger() {
             {
                 where: { status: In([BlockStatus.PENDING, BlockStatus.PROVED]) },
                 order: { id: 'ASC' }
-            });
+            }) ?? [];
+
+        if (blockList.length == 0) {
+            logger.info('fetch no blocks in [PENDING, PROVED].');
+            return;
+        }
 
         blockList!.forEach(async (block, indx) => {
+            logger.info(`begin process block[${block.id}]`);
+
             if (indx == 0 && block!.status == BlockStatus.PROVED) {// the lowest one with PROVED status, must be based on the onchain state inside AnomixRollupContract.
+                logger.info('the lowest one with PROVED status...');
+
                 const rollupTaskDto = {
                     taskType: RollupTaskType.ROLLUP_CONTRACT_CALL,
                     index: undefined,
                     payload: { blockId: block.id }
                 } as RollupTaskDto<any, any>;
 
+                logger.info('call [$axiosSeq /rollup/proof-trigger] for ROLLUP_CONTRACT_CALL...');
                 await $axiosSeq.post<BaseResponse<string>>('/rollup/proof-trigger', rollupTaskDto).then(r => {
                     if (r.data.code == 1) {
                         logger.error(r.data.msg);
@@ -65,21 +77,25 @@ async function proofTrigger() {
                 return;
 
             } else if (block.status == BlockStatus.PENDING) {
+                logger.info(`BlockStatus: PENDING`);
                 // to avoid double computation, should exclude those blocks that triggered previously but not completed
                 const timeRange = new Date().getTime() - block.createdAt.getTime();
                 if (periodRange < timeRange && timeRange < periodRange * 3) {// TODO could improve: might mistake evaluate few blocks, but no worries, they will be processed at next triggger-round!
+                    logger.info(`this block was triggered previously but not completed, skip it.`);
                     return;
                 }
 
                 // ======== to here, means this block was created after last triggger-round or its proving journey was interrupted unexpectedly. ========
 
                 if (Number(block.depositCount) != 0) {
+                    logger.info(`block.depositCount is equal to ${block.depositCount}`);
                     const rollupTaskDto = {
                         taskType: RollupTaskType.DEPOSIT_JOINSPLIT,
                         index: undefined,
                         payload: { blockId: block.id }
                     } as RollupTaskDto<any, any>;
 
+                    logger.info(`call depositProcessor to exec joint-split-deposit firstly...`);
                     await $axiosDeposit.post<BaseResponse<string>>('/rollup/joint-split-deposit', rollupTaskDto).then(r => {
                         if (r.data.code == 1) {
                             logger.error(r.data.msg);
@@ -95,6 +111,7 @@ async function proofTrigger() {
                         payload: { blockId: block.id }
                     } as RollupTaskDto<any, any>;
 
+                    logger.info(`notify rollup_processor to start innnerRollup-proof-gen...`);
                     await $axiosSeq.post<BaseResponse<string>>('/rollup/proof-trigger', rollupTaskDto).then(r => {
                         if (r.data.code == 1) {
                             logger.error(r.data.msg);
@@ -113,5 +130,7 @@ async function proofTrigger() {
 
     } finally {
         await queryRunner.release();
+
+        logger.info('this round is done.');
     }
 }
