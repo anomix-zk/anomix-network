@@ -54,7 +54,7 @@ process!.on('message', async dto => {
     switch (flowTask.taskType) {
         case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
             fs.writeFileSync(`./ROLLUP_TX_BATCH_MERGE_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
-            await proofScheduler.whenMergedResultComeBack(proofTaskDto.index.blockId, flowTask.data.payload);
+            await proofScheduler.whenMergedResultComeBack(proofTaskDto.index.blockId, flowTask.data);
             break;
         case FlowTaskType.BLOCK_PROVE:
             fs.writeFileSync(`./BLOCK_PROVE_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
