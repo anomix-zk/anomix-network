@@ -102,12 +102,14 @@ async function mempoolWatch() {
                 });
                 if (!block) {
                     logger.warn('when check maxBlockInterval, fetch no blocks!');
-                    return;
-                }
-                if (new Date().getTime() - block!.createdAt.getTime() >= config.maxBlockInterval) {
-                    logger.info('latest block.createdAt is greater than config.maxBlockInterval.');
-
                     couldSeq = true;
+
+                } else {
+                    if (new Date().getTime() - block.createdAt.getTime() >= config.maxBlockInterval) {
+                        logger.info('latest block.createdAt is greater than config.maxBlockInterval.');
+
+                        couldSeq = true;
+                    }
                 }
             }
 
