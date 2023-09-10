@@ -42,6 +42,8 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
 
         console.timeEnd(`${message.type} exec`);
 
+        logger.info(JSON.stringify(proof.toJSON()));
+
         process.send!({
             type: 'done',
             messageType: message.type,
