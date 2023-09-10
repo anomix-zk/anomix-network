@@ -47,6 +47,9 @@ export const handler: RequestHandler<ReqBody, null> = async function (
             } else if (status == L2TxStatus.PENDING) {
                 msg = 'pending';
             }
+        } else {
+            data = false;
+            msg = 'no this alias!'
         }
 
         return {
