@@ -18,6 +18,47 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const logger = getLogger('proof-generator');
 
+function saveResultDtoFile(proofTaskDto: ProofTaskDto<any, any>) {
+    let logNamePrefix = 'proofTaskDto_proofResult_';
+    switch (proofTaskDto.taskType) {
+        case ProofTaskType.ROLLUP_FLOW:
+            {
+                logNamePrefix += `ROLLUP_FLOW_`
+                const flowTask = proofTaskDto.payload as FlowTask<any>;
+
+                switch (flowTask.taskType) {
+                    case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
+                        logNamePrefix += `ROLLUP_TX_BATCH_MERGE_`
+                        break;
+                    case FlowTaskType.BLOCK_PROVE:
+                        logNamePrefix += `BLOCK_PROVE_`
+                        break;
+                    case FlowTaskType.ROLLUP_CONTRACT_CALL:
+                        logNamePrefix += `ROLLUP_CONTRACT_CALL_`
+                        break;
+                    case FlowTaskType.DEPOSIT_BATCH_MERGE:
+                        logNamePrefix += `DEPOSIT_BATCH_MERGE_`
+                        break;
+                    case FlowTaskType.DEPOSIT_UPDATESTATE:
+                        logNamePrefix += `DEPOSIT_UPDATESTATE_`
+                        break;
+                }
+            }
+            break;
+        case ProofTaskType.USER_FIRST_WITHDRAW:
+            logNamePrefix += `USER_FIRST_WITHDRAW_`
+            break;
+        case ProofTaskType.USER_WITHDRAW:
+            logNamePrefix += `USER_WITHDRAW_`
+            break;
+        case ProofTaskType.DEPOSIT_JOIN_SPLIT:
+            logNamePrefix += `DEPOSIT_JOIN_SPLIT_`
+            break;
+    }
+
+    fs.writeFileSync(`./${logNamePrefix}-${new Date().getTime()}.json`, JSON.stringify(proofTaskDto));
+}
+
 function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
     // init worker thread A
     let httpWorker = cp.fork(`${__dirname}/web-server.js`, ['child']);
@@ -35,23 +76,29 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
         try {
             const sendResultDepositCallback = async (p: any) => {
                 proofTaskDto.payload.data.data = p;
+                saveResultDtoFile(proofTaskDto);// save to file for test
+
                 await $axiosDeposit.post('/proof-result', proofTaskDto).then(value => {
                     console.log('$axiosDeposit.post to /proof-result, response:', value);
                 }).catch(reason => {
                     console.log('$axiosDeposit.post to /proof-result, error:', reason);
                 });
             }
+
             const sendResultDepositJoinSplitCallback = async (p: any) => {
                 proofTaskDto.payload = p;
+                saveResultDtoFile(proofTaskDto);// save to file for test
+
                 await $axiosDeposit.post('/proof-result', proofTaskDto).then(value => {
                     console.log('$axiosDeposit.post to /proof-result, response:', value);
                 }).catch(reason => {
                     console.log('$axiosDeposit.post to /proof-result, error:', reason);
                 });
             }
+
             const sendResultSeqCallback = async (p: any) => {
                 (proofTaskDto.payload as FlowTask<any>).data = p;
-                fs.writeFileSync(`./proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+                saveResultDtoFile(proofTaskDto);// save to file for test
 
                 await $axiosSeq.post('/proof-result', proofTaskDto).then(value => {
                     console.log('$axiosSeq.post to /proof-result, response:', value);
