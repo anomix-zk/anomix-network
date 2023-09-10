@@ -14,6 +14,7 @@ export function getLogger(name: string): Logger {
     return pino({
         name,
         level: getLogLevel(name.concat(isMainThread ? '-main-' : '-worker-').concat(`${threadId}`)),
+        timestamp: pino.stdTimeFunctions.isoTime,
         transport: {
             targets: [
                 {
