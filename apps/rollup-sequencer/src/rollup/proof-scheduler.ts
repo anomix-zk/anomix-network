@@ -2,7 +2,7 @@
 import { WorldStateDB, RollupDB, IndexDB } from "@/worldstate";
 import config from "@/lib/config";
 import { BaseResponse, BlockStatus, ProofTaskDto, ProofTaskType, FlowTaskType, BlockCacheType } from "@anomix/types";
-import { ActionType, AnomixRollupContract, BlockProveInput, BlockProveOutput, DataMerkleWitness, InnerRollupProof, RollupProof, RootMerkleWitness, ValueNote } from "@anomix/circuits";
+import { ActionType, AnomixEntryContract, AnomixRollupContract, BlockProveInput, BlockProveOutput, DataMerkleWitness, InnerRollupProof, RollupProof, RootMerkleWitness, ValueNote } from "@anomix/circuits";
 import { BlockProverOutput, Block, InnerRollupBatch, Task, TaskStatus, TaskType, L2Tx, WithdrawInfo, BlockCache } from "@anomix/dao";
 import { Mina, PrivateKey, PublicKey, Field, UInt64, Signature } from 'snarkyjs';
 import { $axiosProofGenerator, $axiosDepositProcessor } from "@/lib";
@@ -10,6 +10,7 @@ import { getConnection } from "typeorm";
 import { syncAcctInfo } from "@anomix/utils";
 import { getLogger } from "@/lib/logUtils";
 import fs from "fs";
+import assert from "assert";
 
 const logger = getLogger('ProofScheduler');
 
@@ -259,7 +260,13 @@ export class ProofScheduler {
         const output = rollupProof.publicOutput;
         const signMessage = BlockProveOutput.toFields(output);
         const operatorSign = Signature.create(PrivateKey.fromBase58(config.rollupContractPrivateKey), signMessage);
-        const entryDepositRoot = block.depositRoot;
+
+        let addr = PublicKey.fromBase58(config.entryContractAddress);
+        await syncAcctInfo(addr);// fetch account.
+        const entryContract = new AnomixEntryContract(addr);
+        const entryDepositRoot = entryContract.depositState.get().depositRoot;
+        assert(entryDepositRoot.toString() == block.depositRoot);
+
         // send to proof-generator for 'AnomixRollupContract.updateRollupState'
         // construct proofTaskDto
         const proofTaskDto: ProofTaskDto<any, any> = {
@@ -270,7 +277,7 @@ export class ProofScheduler {
                 taskType: FlowTaskType.ROLLUP_CONTRACT_CALL,
                 data: {
                     feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toPublicKey().toBase58(),
-                    fee: 200_000_000,// 0.2 Mina as fee
+                    fee: config.l1TxFee,// 0.2 Mina as fee
                     operatorSign,
                     entryDepositRoot,
                     proof: blockProvedResultStr
