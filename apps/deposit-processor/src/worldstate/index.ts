@@ -79,12 +79,13 @@ export class WorldState {
         // asyncly send to 'Proof-Generator' to exec 'join_split_prover.deposit()'
         const connection = getConnection();
         const l2txRepo = connection.getRepository(L2Tx);
-        const depositMpL2TxList = await l2txRepo.find({ where: { blockId, actionType: ActionType.DEPOSIT.toString() }, order: { depositIndex: 'ASC' } }) ?? [];
-        if (depositMpL2TxList.length == 0) {
+        const depositL2TxList = await l2txRepo.find({ where: { blockId, actionType: ActionType.DEPOSIT.toString() }, order: { depositIndex: 'ASC' } }) ?? [];
+        if (depositL2TxList.length == 0) {
+            logger.info(`fetch no depositL2TxList of [blockId = ${blockId}, ActionType == ${ActionType.DEPOSIT.toString()}]`);
             return;
         }
 
-        const txIdJoinSplitDepositInputList = await Promise.all(await depositMpL2TxList.map(async tx => {
+        const txIdJoinSplitDepositInputList = await Promise.all(await depositL2TxList.map(async tx => {
             return {
                 txId: tx.id,
                 data: {
