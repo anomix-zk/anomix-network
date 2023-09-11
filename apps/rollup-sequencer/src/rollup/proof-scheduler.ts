@@ -98,7 +98,10 @@ export class ProofScheduler {
                     data: innerRollupBatchParamList
                 }
             }
-            fs.writeFileSync('./ROLLUP_TX_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
+            const fileName = './ROLLUP_TX_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+            fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+            logger.info(`save proofTaskDto into ${fileName}`);
 
             // send to proof-generator for exec 'InnerRollupProver.proveTxBatch(*) && merge(*)'
             await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
@@ -175,7 +178,10 @@ export class ProofScheduler {
                 }
             }
         }
-        fs.writeFileSync('./BLOCK_PROVE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
+        const fileName = './BLOCK_PROVE_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+        fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+        logger.info(`save proofTaskDto into ${fileName}`);
 
         // send to proof-generator to exec BlockProver
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
@@ -284,7 +290,10 @@ export class ProofScheduler {
                 }
             }
         }
-        fs.writeFileSync('./ROLLUP_CONTRACT_CALL_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
+        const fileName = './ROLLUP_CONTRACT_CALL_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+        fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+        logger.info(`save proofTaskDto into ${fileName}`);
 
         // send to proof-generator to trigger ROLLUP_CONTRACT
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {

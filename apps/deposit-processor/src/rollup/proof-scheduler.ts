@@ -113,7 +113,10 @@ export class ProofScheduler {
                 }
             } as FlowTask<any>
         } as ProofTaskDto<any, FlowTask<any>>;
-        fs.writeFileSync('./DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
+        const fileName = './DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+        fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+        logger.info(`save proofTaskDto into ${fileName}`);
 
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
             if (r.data.code == 1) {
@@ -126,7 +129,9 @@ export class ProofScheduler {
         const { transId, data: tx } = result;
 
         // store into file for test
-        fs.writeFileSync('./AnomixEntryContract_DEPOSIT_UPDATESTATE_tx.json', tx);
+        const fileName = './AnomixEntryContract_DEPOSIT_UPDATESTATE_tx' + new Date().getTime() + '.json';
+        fs.writeFileSync(fileName, tx);
+        logger.info(`save DepositRollupL1Tx into ${fileName}`);
 
         // sign and broadcast it.
         const l1Tx = Mina.Transaction.fromJSON(JSON.parse(tx));

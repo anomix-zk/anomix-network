@@ -51,18 +51,27 @@ export class WorldState {
         const { taskType, index, payload } = proofTaskDto;
 
         if (taskType == ProofTaskType.DEPOSIT_JOIN_SPLIT) {
-            fs.writeFileSync('./DEPOSIT_JOIN_SPLIT_proofTaskDto_proofResult' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+            const fileName = './DEPOSIT_JOIN_SPLIT_proofTaskDto_proofResult' + new Date().getTime() + '.json';
+            fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+            logger.info(`save proofTaskDto into ${fileName}`);
+
             await this.whenDepositL2TxListComeBack(payload);
 
         } else {// deposit rollup proof flow
             const { flowId, taskType, data } = payload as FlowTask<any>;
 
             if (taskType == FlowTaskType.DEPOSIT_BATCH_MERGE) {
-                fs.writeFileSync('./DEPOSIT_BATCH_MERGE_proofTaskDto_proofResult' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+                const fileName = './DEPOSIT_BATCH_MERGE_proofTaskDto_proofResult' + new Date().getTime() + '.json';
+                fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+                logger.info(`save proofTaskDto into ${fileName}`);
+
                 await this.proofScheduler.whenMergedResultComeBack(data);
 
             } else if (taskType == FlowTaskType.DEPOSIT_UPDATESTATE) {
-                fs.writeFileSync('./DEPOSIT_UPDATESTATE_proofTaskDto_proofResult' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+                const fileName = './DEPOSIT_UPDATESTATE_proofTaskDto_proofResult' + new Date().getTime() + '.json';
+                fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+                logger.info(`save proofTaskDto into ${fileName}`);
+
                 await this.proofScheduler.whenDepositRollupL1TxComeBack(data);
             }
         }
@@ -156,7 +165,10 @@ export class WorldState {
             index: undefined,
             payload: { blockId }
         }
-        fs.writeFileSync('./DEPOSIT_JOINSPLIT_rollupTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(rollupTaskDto));
+
+        const fileName = './DEPOSIT_JOINSPLIT_rollupTaskDto_proofReq' + new Date().getTime() + '.json';
+        fs.writeFileSync(fileName, JSON.stringify(rollupTaskDto));
+        logger.info(`save rollupTaskDto into ${fileName}`);
 
         // notify coordinator
         await $axiosCoordinator.post<BaseResponse<string>>('/rollup/proof-notify', rollupTaskDto).then(r => {

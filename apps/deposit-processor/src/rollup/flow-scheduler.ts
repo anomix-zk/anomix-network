@@ -193,7 +193,10 @@ export class FlowScheduler {
                         }
                     }
                 } as ProofTaskDto<any, FlowTask<any>>;
-                fs.writeFileSync('./DEPOSIT_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
+                const fileName = './DEPOSIT_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+                fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+
 
                 await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
                     if (r.data.code == 1) {
