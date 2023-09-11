@@ -67,7 +67,7 @@ const config = {
 
     l1TxFee: <number>Number(<string>process.env.L1_TX_FEE ?? 200_000_000),
     txFeePayerPrivateKey: <string>process.env.L1_TX_FEE_PAYER_PRIVATE_KEY,
-    rollupContractPrivateKey: <string>process.env.ROLLUP_CONTRACT_PRIVATE_KEY,
+    operatorPrivateKey: <string>process.env.OPERATOR_PRIVATE_KEY,
 
     depositWorldStateDBPath: <string>process.env.LEVELDB_DEPOSIT_ROLLUP_STATE_DB_PATH || './anomix_deposit_rollup_state_db',
     depositIndexedDBPath: <string>process.env.LEVELDB_DEPOSIT_INDEX_DB_PATH || './anomix_deposit_index_db',

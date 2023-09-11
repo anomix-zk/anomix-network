@@ -3,7 +3,7 @@ import config from "@/lib/config";
 import { DepositStatus, MerkleTreeId, L2TxStatus, PoseidonHasher, MerkleProofDto, BlockCacheType, BaseResponse, BlockStatus } from "@anomix/types";
 import {
     DataMerkleWitness, DataRootWitnessData, LowLeafWitnessData, NullifierMerkleWitness,
-    DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, NoteType, ValueNote, Commitment, RollupState, RollupStateTransition, BlockProveOutput, TxFee, FEE_ASSET_ID_SUPPORT_NUM
+    DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, NoteType, ValueNote, Commitment, RollupState, RollupStateTransition, BlockProveOutput, TxFee, FEE_ASSET_ID_SUPPORT_NUM, AssetId
 } from "@anomix/circuits";
 import { WorldStateDB, WorldState, IndexDB, RollupDB } from "@/worldstate";
 import { Block, BlockCache, DepositCommitment, InnerRollupBatch, L2Tx, MemPlL2Tx, WithdrawInfo } from "@anomix/dao";
@@ -175,13 +175,13 @@ export class FlowScheduler {
             // prepare txFee valueNote
             const feeValueNote = new ValueNote({
                 secret: Poseidon.hash([Field.random()]),
-                ownerPk: PrivateKey.fromBase58(config.rollupContractPrivateKey).toPublicKey(),
+                ownerPk: PrivateKey.fromBase58(config.operatorPrivateKey).toPublicKey(),
                 accountRequired: Field(1),
-                creatorPk: PrivateKey.random().toPublicKey(), // PublicKey.empty()
+                creatorPk: PrivateKey.fromBase58(config.operatorPrivateKey).toPublicKey(),
                 value: UInt64.from(nonDummyTxList.reduce((p, c, i) => {
                     return Number(c.txFee) + p;
                 }, 0)),
-                assetId: Field(1),// TODO
+                assetId: AssetId.MINA,
                 inputNullifier: Poseidon.hash([Field.random()]),
                 noteType: NoteType.WITHDRAWAL
             });

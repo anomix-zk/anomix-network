@@ -259,7 +259,7 @@ export class ProofScheduler {
         const rollupProof = RollupProof.fromJSON(JSON.parse(blockProvedResultStr));
         const output = rollupProof.publicOutput;
         const signMessage = BlockProveOutput.toFields(output);
-        const operatorSign = Signature.create(PrivateKey.fromBase58(config.rollupContractPrivateKey), signMessage);
+        const operatorSign = Signature.create(PrivateKey.fromBase58(config.operatorPrivateKey), signMessage);
 
         let addr = PublicKey.fromBase58(config.entryContractAddress);
         await syncAcctInfo(addr);// fetch account.
