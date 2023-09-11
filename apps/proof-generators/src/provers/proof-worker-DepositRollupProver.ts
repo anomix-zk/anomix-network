@@ -4,6 +4,7 @@ import { activeMinaInstance } from '@anomix/utils';
 import { FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 import { commitActionBatch, merge } from "./circuits/deposit_rollup_prover";
+import fs from "fs";
 
 const logger = getLogger('pWorker-DepositRollupProver');
 
@@ -63,6 +64,8 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
         console.timeEnd(`${message.type} exec`);
 
         logger.info(JSON.stringify(proof.toJSON()));
+
+        fs.writeFileSync(`./${message.type}_proofJson_${new Date().getTime()}.txt`, JSON.stringify(proof.toJSON()));
 
         process.send!({
             type: 'done',

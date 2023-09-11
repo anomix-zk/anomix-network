@@ -2,6 +2,7 @@ import { TaskStack } from './task-stack.js';
 import { SubProcessCordinator } from '@/create-sub-processes';
 import { ProofPayload } from "../constant";
 import { getLogger } from "../lib/logUtils";
+import fs from "fs";
 
 const logger = getLogger('deposit-rollup-handler');
 
@@ -49,6 +50,7 @@ export const depositRollupBatchAndMerge = async (subProcessCordinator: SubProces
         console.timeEnd('duration');
 
         logger.info('result: ', res);
+        fs.writeFileSync(`./depositRollupBatchAndMerge_final_proofJson_${new Date().getTime()}.json`, JSON.stringify(res));
 
         logger.info(
             'totalComputationalSeconds',
