@@ -66,12 +66,6 @@ async function fetchActionsAndEvents() {
         }
         logger.info('newActionList: ' + newActionList);
 
-        // check if the order is as expected
-        for (let i = 0; i < newActionList.length; i++) {
-            const action = newActionList[i].actions[0][0];
-            const hash = newActionList[i].hash;
-        }
-
         if (newActionList[0].hash == zkAppActionStateArray![0].toString()) {// desc
             newActionList = newActionList.reverse(); // then reverse it.
         }
