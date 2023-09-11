@@ -1,6 +1,6 @@
 
 import config from './lib/config';
-import { AccountUpdate, Field, PublicKey, UInt32, Reducer } from 'snarkyjs';
+import { AccountUpdate, Field, PublicKey, UInt32, Reducer, fetchAccount } from 'snarkyjs';
 import { Column, getConnection } from 'typeorm';
 import { DepositActionEventFetchRecord, DepositCommitment } from '@anomix/dao';
 import { AnomixEntryContract, EncryptedNoteFieldData, getEncryptedNoteFromFieldData } from '@anomix/circuits';
@@ -53,13 +53,27 @@ async function fetchActionsAndEvents() {
         }
 
         let anomixEntryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
-        //await fetchAccount({ publicKey: entryContractAddr });
         const anomixEntryContract = new AnomixEntryContract(anomixEntryContractAddr);
 
+        const zkAppActionStateArray = (await fetchAccount({ publicKey: anomixEntryContractAddr })).account?.zkapp?.actionState;
+        logger.info('onchainActionStateArray: ' + zkAppActionStateArray);
+
         // fetch pending actions
-        const newActionList: { actions: Array<string>[], hash: string }[] = await syncActions(anomixEntryContractAddr, startActionHash);
+        let newActionList: { actions: Array<string>[], hash: string }[] = await syncActions(anomixEntryContractAddr, startActionHash);
+
         if (newActionList == undefined || newActionList == null) {
             throw new Error("no new actions..."); // end
+        }
+        logger.info('newActionList: ' + newActionList);
+
+        // check if the order is as expected
+        for (let i = 0; i < newActionList.length; i++) {
+            const action = newActionList[i].actions[0][0];
+            const hash = newActionList[i].hash;
+        }
+
+        if (newActionList[0].hash == zkAppActionStateArray![0].toString()) {// desc
+            newActionList = newActionList.reverse(); // then reverse it.
         }
 
         const dcList: DepositCommitment[] = newActionList.map((a, i) => {
@@ -69,7 +83,7 @@ async function fetchActionsAndEvents() {
             return dc;
         });
 
-        let nextActionHash = newActionList[newActionList.length - 1].hash;
+        let latestActionState = newActionList[newActionList.length - 1].hash;
         let latestAction = newActionList[newActionList.length - 1].actions[0][0];
 
         // !! the events we process must keep aligned with actionList !! 
@@ -126,7 +140,7 @@ async function fetchActionsAndEvents() {
             depositActionEventFetchRecord.startBlock = startBlockHeight; //
             depositActionEventFetchRecord.endBlock = Number(endBlockHeight.toString());
             depositActionEventFetchRecord.startActionHash = startActionHash.toString(); //
-            depositActionEventFetchRecord.nextActionHash = nextActionHash.toString();
+            depositActionEventFetchRecord.nextActionHash = latestActionState.toString();
             depositActionEventFetchRecord.startActionIndex = startIdx.toString(); //
             depositActionEventFetchRecord.nextActionIndex = (startIdx + BigInt(dcList.length)).toString();//!!
             depositActionEventFetchRecord = await queryRunner.manager.save(depositActionEventFetchRecord);
