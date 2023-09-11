@@ -111,6 +111,8 @@ export class ProofScheduler {
             });
 
             await queryRunner.commitTransaction();
+
+            logger.info('startBatchMerge: done');
         } catch (error) {
             logger.error(error);
             console.error(error);
@@ -189,6 +191,7 @@ export class ProofScheduler {
                 throw new Error(r.data.msg);
             }
         });
+        logger.info('whenMergedResultComeBack: done');
     }
 
     /**
@@ -232,6 +235,8 @@ export class ProofScheduler {
         if (block?.dataTreeRoot0 == rollupContract.state.get().dataRoot.toString()) { // check here
             this.callRollupContract(blockId, blockProvedResultStr);
         }
+
+        logger.info('whenL2BlockComeback: done');
 
         /*
         // notify Coordinator
@@ -301,6 +306,7 @@ export class ProofScheduler {
                 throw new Error(r.data.msg);
             }
         });
+        logger.info('callRollupContract done');
     }
 
     async whenL1TxComeback(blockId: number, tx: any) {
