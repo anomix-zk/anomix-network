@@ -58,14 +58,15 @@ async function proofTrigger() {
             logger.info(`begin process block[${block.id}]`);
 
             // to avoid double computation, should exclude those blocks that triggered previously but not completed
-            const timeRange = new Date().getTime() - block.updatedAt.getTime();
-            if (periodRange < timeRange && timeRange < periodRange * 3) {// TODO could improve: might mistake evaluate few blocks, but no worries, they will be processed at next triggger-round!
-                logger.info(`this block was triggered previously but not completed, skip it.`);
-                return;
-            }
+            const timeRange = block.triggerProofAt ? (new Date().getTime() - block.triggerProofAt.getTime()) : 0;
 
             if (indx == 0 && block!.status == BlockStatus.PROVED) {// the lowest one with PROVED status, must be based on the onchain state inside AnomixRollupContract.
                 logger.info('the lowest one with PROVED status...');
+
+                if (0 < timeRange && timeRange < periodRange * 3) {
+                    logger.info(`this block was triggered previously, might not completed, skip it.`);
+                    return;
+                }
 
                 const rollupTaskDto = {
                     taskType: RollupTaskType.ROLLUP_CONTRACT_CALL,
@@ -84,6 +85,11 @@ async function proofTrigger() {
 
             } else if (block.status == BlockStatus.PENDING) {
                 logger.info(`BlockStatus: PENDING`);
+
+                if (0 < timeRange && timeRange < periodRange * 4) {
+                    logger.info(`this block was triggered previously, might not completed, skip it.`);
+                    return;
+                }
 
                 // ======== to here, means this block was created after last triggger-round or its proving journey was interrupted unexpectedly. ========
 
@@ -123,7 +129,7 @@ async function proofTrigger() {
                 }
             }
 
-            block.updatedAt = new Date();// update
+            block.triggerProofAt = new Date();// update
         });
 
         await queryRunner.manager.save(blockList);

@@ -90,6 +90,13 @@ export class Block {
     finalizedAt: Date
 
     /**
+     * record timestamp for each proof-gen trigger
+     * * used at coordinator_proof-trigger to avoid repeatedly trigger proof-gen at a short time-window.
+     */
+    @Column()
+    triggerProofAt: Date
+
+    /**
      * just record
      */
     @UpdateDateColumn({
