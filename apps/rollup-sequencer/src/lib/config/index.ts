@@ -74,6 +74,7 @@ const config = {
     outRollup: {
         innerBatchesCount: <number>Number(<string>process.env.OuterRollupInnerBatchesCount ?? 12),
     },
+    l1TxFee: <number>Number(<string>process.env.L1_TX_FEE ?? 200_000_000),
     txFeePayerPrivateKey: <string>process.env.L1_TX_FEE_PAYER_PRIVATE_KEY,
     rollupContractPrivateKey: <string>process.env.ROLLUP_CONTRACT_PRIVATE_KEY,
     networkInit: <number>Number(<string>process.env.NETWORK_INIT ?? 1),

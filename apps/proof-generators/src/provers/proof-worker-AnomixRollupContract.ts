@@ -20,6 +20,7 @@ function processMsgFromMaster() {
             case `${FlowTaskType[FlowTaskType.ROLLUP_CONTRACT_CALL]}`:
                 await execCircuit(message, async () => {
                     let params = {
+                        fee: message.payload.fee,
                         feePayer: PublicKey.fromBase58(message.payload.feePayer),
                         proof: RollupProof.fromJSON(JSON.parse(message.payload.proof)),
                         operatorSign: Signature.fromJSON(message.payload.operatorSign),
@@ -30,7 +31,7 @@ function processMsgFromMaster() {
                     await syncAcctInfo(addr);// fetch account.
                     const rollupContract = new AnomixRollupContract(addr);
 
-                    let tx = await Mina.transaction(params.feePayer, () => {
+                    let tx = await Mina.transaction({ sender: params.feePayer, fee: params.fee }, () => {
                         rollupContract.updateRollupState(params.proof, params.operatorSign, params.entryDepositRoot)
                     });
                     await tx.prove();

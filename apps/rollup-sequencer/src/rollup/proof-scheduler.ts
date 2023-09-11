@@ -2,7 +2,7 @@
 import { WorldStateDB, RollupDB, IndexDB } from "@/worldstate";
 import config from "@/lib/config";
 import { BaseResponse, BlockStatus, ProofTaskDto, ProofTaskType, FlowTaskType, BlockCacheType } from "@anomix/types";
-import { ActionType, AnomixRollupContract, BlockProveInput, BlockProveOutput, DataMerkleWitness, InnerRollupProof, RollupProof, RootMerkleWitness, ValueNote } from "@anomix/circuits";
+import { ActionType, AnomixEntryContract, AnomixRollupContract, BlockProveInput, BlockProveOutput, DataMerkleWitness, InnerRollupProof, RollupProof, RootMerkleWitness, ValueNote } from "@anomix/circuits";
 import { BlockProverOutput, Block, InnerRollupBatch, Task, TaskStatus, TaskType, L2Tx, WithdrawInfo, BlockCache } from "@anomix/dao";
 import { Mina, PrivateKey, PublicKey, Field, UInt64, Signature } from 'snarkyjs';
 import { $axiosProofGenerator, $axiosDepositProcessor } from "@/lib";
@@ -10,6 +10,7 @@ import { getConnection } from "typeorm";
 import { syncAcctInfo } from "@anomix/utils";
 import { getLogger } from "@/lib/logUtils";
 import fs from "fs";
+import assert from "assert";
 
 const logger = getLogger('ProofScheduler');
 
@@ -259,7 +260,13 @@ export class ProofScheduler {
         const output = rollupProof.publicOutput;
         const signMessage = BlockProveOutput.toFields(output);
         const operatorSign = Signature.create(PrivateKey.fromBase58(config.rollupContractPrivateKey), signMessage);
-        const entryDepositRoot = block.depositRoot;
+
+        let addr = PublicKey.fromBase58(config.entryContractAddress);
+        await syncAcctInfo(addr);// fetch account.
+        const entryContract = new AnomixEntryContract(addr);
+        const entryDepositRoot = entryContract.depositState.get().depositRoot;
+        assert(entryDepositRoot.toString() == block.depositRoot);
+
         // send to proof-generator for 'AnomixRollupContract.updateRollupState'
         // construct proofTaskDto
         const proofTaskDto: ProofTaskDto<any, any> = {
@@ -270,6 +277,7 @@ export class ProofScheduler {
                 taskType: FlowTaskType.ROLLUP_CONTRACT_CALL,
                 data: {
                     feePayer: PrivateKey.fromBase58(config.txFeePayerPrivateKey).toPublicKey().toBase58(),
+                    fee: config.l1TxFee,// 0.2 Mina as fee
                     operatorSign,
                     entryDepositRoot,
                     proof: blockProvedResultStr
@@ -288,9 +296,17 @@ export class ProofScheduler {
 
     async whenL1TxComeback(blockId: number, tx: any) {
         // sign and broadcast it.
-        const l1Tx = Mina.Transaction.fromJSON(tx);
-        await l1Tx.sign([PrivateKey.fromBase58(config.rollupContractPrivateKey)]).send().then(async txHash => {// TODO what if it fails currently!
+        const l1Tx = Mina.Transaction.fromJSON(JSON.parse(tx));
+        l1Tx.transaction.feePayer.lazyAuthorization = { kind: 'lazy-signature' };
+        await l1Tx.sign([PrivateKey.fromBase58(config.txFeePayerPrivateKey)]);
+
+        await l1Tx.send().then(async txHash => {// TODO what if it fails currently!
             const txHash0 = txHash.hash()!;
+
+            if ((!txHash0)) {
+                logger.warn('error: broadcast anomixRollupContract\'s l1Tx failed!!!');
+                return;
+            }
 
             // insert L1 tx into db, underlying 
             const connection = getConnection();
@@ -318,7 +334,7 @@ export class ProofScheduler {
 
         }).catch(reason => {
             // TODO log it
-            logger.info(tx, ' failed!', 'reason: ', JSON.stringify(reason));
+            logger.info('whenL1TxComeback failed!', 'reason: ', JSON.stringify(reason));
         });
     }
 
