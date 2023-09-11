@@ -69,10 +69,15 @@ export class FlowScheduler {
 
         await queryRunner.startTransaction();
         try {
-            const originDcList = await queryRunner.manager.find(DepositCommitment, { where: { status: DepositStatus.PENDING }, order: { id: 'ASC' } }) ?? [];
+            let originDcList = await queryRunner.manager.find(DepositCommitment, { where: { status: DepositStatus.PENDING }, order: { id: 'ASC' } }) ?? [];
             if (originDcList.length == 0) {// if no, end.
                 return;
             }
+
+            // order: asc
+            originDcList = originDcList.sort((a, b) => {
+                return Number(a.depositNoteIndex) - Number(b.depositNoteIndex);
+            });
 
             const depositCommitmentList = [...originDcList];
             const DUMMY_ACTION = INITIAL_LEAF;
