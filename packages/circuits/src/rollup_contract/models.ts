@@ -1,8 +1,6 @@
-import { Field, Provable, PublicKey, Struct, UInt64 } from 'snarkyjs';
+import { Field, Provable, PublicKey, Struct } from 'snarkyjs';
 import { FEE_ASSET_ID_SUPPORT_NUM } from '../constants';
 import { TxFee } from '../inner_rollup/models';
-import { DataMerkleWitness } from '../models/merkle_witness';
-import { ValueNote } from '../models/value_note';
 
 export class RollupState extends Struct({
   dataRoot: Field,

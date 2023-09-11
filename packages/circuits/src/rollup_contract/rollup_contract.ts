@@ -26,7 +26,7 @@ export class AnomixRollupContract extends SmartContract {
   static entryContractAddress: PublicKey;
 
   static escapeIntervalSlots = UInt32.from(40); // default: every 40 slots, 120 minutes
-  static escapeSlots = UInt32.from(20); // default: 20 slots, 60 minutes, the period during which third parties are allowed to publish blocks
+  static escapeSlots = UInt32.from(20); // default: 20 slots(There may be redundancy for an additional 10 slots), 60 minutes, the period during which third parties are allowed to publish blocks
 
   @state(RollupState) state = State<RollupState>();
   @state(Field) blockHeight = State<Field>();
@@ -76,7 +76,7 @@ export class AnomixRollupContract extends SmartContract {
     Provable.log('globalSlots: ', globalSlots);
     this.network.globalSlotSinceGenesis.assertBetween(
       globalSlots,
-      globalSlots.add(1)
+      globalSlots.add(10)
     );
 
     const output = proof.publicOutput;
