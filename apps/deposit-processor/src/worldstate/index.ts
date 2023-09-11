@@ -106,10 +106,15 @@ export class WorldState {
             index: undefined,
             payload: { blockId, data: txIdJoinSplitDepositInputList }
         } as ProofTaskDto<any, any>;
-        fs.writeFileSync('./DEPOSIT_JOIN_SPLIT_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
+        const fileName = './DEPOSIT_JOIN_SPLIT_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+        fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+        logger.info(`save proofTaskDto into ${fileName}`);
 
         // send to proof-generator for 'JoinSplitProver.deposit(*)'
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto);
+
+        logger.info('sent to proof-generator, done.');
     }
 
     /**
