@@ -187,13 +187,6 @@ export abstract class TreeBase implements MerkleTree {
     }
 
     /**
-     * export the cache as string
-     */
-    public exportCache(): string {
-        return JSON.stringify(this.cache);
-    }
-
-    /**
      * Adds a leaf and all the hashes above it to the cache.
      * @param leaf - Leaf to add to cache.
      * @param index - Index of the leaf (used to derive the cache key).
