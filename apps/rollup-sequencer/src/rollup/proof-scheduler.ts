@@ -332,8 +332,8 @@ export class ProofScheduler {
                 blockRepo.update({ id: blockId }, { l1TxHash: txHash0 });
 
                 // save task for 'Tracer-Watcher' and also save to task for 'Tracer-Watcher'
-                const taskRepo = connection.getRepository(Task);
                 const task = new Task();
+                task.targetId = blockId;
                 task.status = TaskStatus.PENDING;
                 task.taskType = TaskType.ROLLUP;
                 task.txHash = txHash0;
