@@ -14,7 +14,7 @@ const __dirname = dirname(__filename);
 const logger = getLogger('rollup-sequencer');
 
 class ProofSchedulerWorkers extends Array<{ status: number, worker: cp.ChildProcess }> {
-    private cursor: number
+    private cursor = 0
 
     constructor(num: number) {
         super();
@@ -31,6 +31,12 @@ class ProofSchedulerWorkers extends Array<{ status: number, worker: cp.ChildProc
         const worker = cp.fork(`${__dirname}/prover.js`, ['child']);
         worker.on('online', () => {
             logger.info('proof-scheduler worker is online...');
+        })
+
+        worker.on('message', (v) => {
+            if (v == 'done') {
+                this.filter(w => w.worker == worker)[0].status = 0;
+            }
         })
 
         worker.on('exit', (exitCode: number) => {
@@ -57,7 +63,8 @@ class ProofSchedulerWorkers extends Array<{ status: number, worker: cp.ChildProc
         });
 
         if (freeWorkers.length == 0) {// if no free workers, then distribute task to subprocess as order
-            const i = (this.cursor++) % config.proofSchedulerWorkerNum;
+            const i = (this.cursor++) % this.length;
+            logger.info(`cursor: ${this.cursor}, this.length: ${this.length}, i: ${i}`);
             this[i].status = 1;
             this[i].worker.send(task);
             return;
