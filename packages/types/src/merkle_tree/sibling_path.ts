@@ -1,6 +1,6 @@
 /* eslint-disable no-prototype-builtins */
 import { PoseidonHasher } from "./poseidon_hasher";
-import { arrayProp, Bool, CircuitValue, Field, Provable } from "snarkyjs";
+import { arrayProp, Bool, CircuitValue, Field } from "o1js";
 import { Hasher } from "./hasher";
 
 export class BaseSiblingPath extends CircuitValue {
