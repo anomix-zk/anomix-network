@@ -31,9 +31,6 @@
     "ts-jest": "^27.0.7",
     "typescript": "^4.7.2"
   },
-  "peerDependencies": {
-    "snarkyjs": "0.12.*"
-  },
   "dependencies": {
     "@anomix/circuits": "^0.1.0",
     "@anomix/utils": "^0.1.0",
@@ -42,5 +39,8 @@
     "detect-node": "^2.1.0",
     "dexie": "^3.2.4",
     "isomorphic-fetch": "^3.0.0"
+  },
+  "peerDependencies": {
+    "o1js": "0.12.2"
   }
 }

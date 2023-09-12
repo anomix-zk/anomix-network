@@ -7,7 +7,7 @@ import {
   recoverReceiverBySender,
 } from '@anomix/utils';
 import { consola } from 'consola';
-import { Field, PrivateKey, PublicKey } from 'snarkyjs';
+import { Field, PrivateKey, PublicKey } from 'o1js';
 import { ValueNoteJSON } from '../note/note';
 
 export class NoteDecryptor {

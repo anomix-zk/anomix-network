@@ -47,7 +47,7 @@ const apiWrapper = {
     ) => {
         log("getAliasByAccountPublicKey: " + accountPk);
         return await tryFunc(async () => {
-            const { PrivateKey } = await import("snarkyjs");
+            const { PrivateKey } = await import("o1js");
             const priKey = PrivateKey.fromBase58(accountPrivateKey);
             return await apiSdk.getAliasByAccountPublicKey(accountPk, priKey);
         });
@@ -71,7 +71,7 @@ const apiWrapper = {
         });
     },
     getKeypair: async (privateKey58: string) => {
-        const { PrivateKey } = await import("snarkyjs");
+        const { PrivateKey } = await import("o1js");
         const privateKey = PrivateKey.fromBase58(privateKey58);
         const publicKey = privateKey.toPublicKey();
         return {
@@ -83,7 +83,7 @@ const apiWrapper = {
         return await apiSdk.getAccounts();
     },
     getSercetKey: async (accountPk58: string, pwd: string) => {
-        const { PublicKey } = await import("snarkyjs");
+        const { PublicKey } = await import("o1js");
         const sk = await apiSdk.getSecretKey(
             PublicKey.fromBase58(accountPk58),
             pwd
@@ -108,7 +108,7 @@ const apiWrapper = {
         txId: string,
         options?: { maxAttempts?: number; interval?: number }
     ) => {
-        const { Mina, checkZkappTransaction } = await import("snarkyjs");
+        const { Mina, checkZkappTransaction } = await import("o1js");
         let Blockchain = Mina.Network(minaEndpoint);
         Mina.setActiveInstance(Blockchain);
         let maxAttempts = options?.maxAttempts ?? 500;
@@ -160,6 +160,24 @@ const apiWrapper = {
     },
     getTxFees: async () => {
         return await apiSdk.getTxFees();
+    },
+    derivePublicKey: async (privateKey58: string) => {
+        const { PrivateKey } = await import("o1js");
+        return PrivateKey.fromBase58(privateKey58).toPublicKey().toBase58();
+    },
+    getTxs: async (accountPk: string) => {
+        let txs = await apiSdk.getUserTxs(accountPk);
+        let pendingTxs = await apiSdk.getPendingUserTxs(accountPk);
+        return pendingTxs.concat(txs);
+    },
+    getBlockHeight: async () => {
+        return await apiSdk.getBlockHeight();
+    },
+    getAccountSyncedToBlock: async (accountPk: string) => {
+        return await apiSdk.getAccountSyncedToBlock(accountPk);
+    },
+    isUserTxSettled: async (txId: string) => {
+        return await apiSdk.isUserTxSettled(txId);
     },
 };
 

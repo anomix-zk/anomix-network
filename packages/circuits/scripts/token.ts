@@ -18,7 +18,7 @@ import {
   Field,
   Bool,
   Provable,
-} from 'snarkyjs';
+} from 'o1js';
 
 class TokenContract extends SmartContract {
   static withDrawAccountVerifyKey: VerificationKey;

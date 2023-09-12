@@ -1,4 +1,4 @@
-import { Field } from 'snarkyjs';
+import { Field } from 'o1js';
 
 export const STANDARD_TREE_INIT_ROOT_20 = Field(
   '19489292394622142448727235211662807700126173086870669586237893953121074753278'

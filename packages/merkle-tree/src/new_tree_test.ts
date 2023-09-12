@@ -4,7 +4,7 @@ import { default as memdown, type MemDown } from 'memdown';
 import { PoseidonHasher } from '@anomix/types';
 import { StandardIndexedTree } from './standard_indexed_tree/standard_indexed_tree';
 import { IndexedTree } from './interfaces/indexed_tree';
-import { Field, Provable } from 'snarkyjs';
+import { Field, Provable } from 'o1js';
 import { StandardTree } from './standard_tree/standard_tree.js';
 
 const createMemDown = () => (memdown as any)() as MemDown<any, any>;
@@ -42,6 +42,12 @@ const tree: StandardTree = await newTree(
 );
 
 console.log('standard tree init root4: ', tree.getRoot(true).toString());
+await tree.appendLeaves([
+  Field(
+    '20468198949394563802460512965219839480612000520504690501918527632215047268421'
+  ),
+]);
+console.log('root tree init root4: ', tree.getRoot(true).toString());
 
 const tree2: StandardIndexedTree = await newTree(
   StandardIndexedTree,

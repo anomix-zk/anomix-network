@@ -1,4 +1,4 @@
-import { Field, Provable, PublicKey, Struct, UInt64 } from 'snarkyjs';
+import { Field, Provable, PublicKey, Struct, UInt64 } from 'o1js';
 import {
   DEPOSIT_ACTION_BATCH_SIZE,
   DEPOSIT_NOTE_DATA_FIELDS_LENGTH,

@@ -9,6 +9,40 @@ export default defineNuxtConfig({
     },
     srcDir: "src/",
 
+    $production: {
+        runtimeConfig: {
+            // Keys within public are also exposed client-side
+            public: {
+                entryContractAddress:
+                    "B62qmGaARHidMkLSM9GnaA8HRkFPvqAA2MRt4KkMiEC3wtXzTHJgQHp",
+                vaultContractAddress:
+                    "B62qkb11BC6xKCYK4WXxK54aMMWposCsMoxNBtGgdhwi1SE738BaueA",
+                nodeUrl: "http://198.135.49.102",
+                nodeRequestTimeoutMS: 5 * 60 * 1000,
+                l2BlockPollingIntervalMS: 10 * 1000,
+                minaEndpoint: "https://berkeley.minascan.io/graphql",
+                debug: false,
+            },
+        },
+    },
+
+    $development: {
+        runtimeConfig: {
+            // Keys within public are also exposed client-side
+            public: {
+                entryContractAddress:
+                    "B62qmGaARHidMkLSM9GnaA8HRkFPvqAA2MRt4KkMiEC3wtXzTHJgQHp",
+                vaultContractAddress:
+                    "B62qkb11BC6xKCYK4WXxK54aMMWposCsMoxNBtGgdhwi1SE738BaueA",
+                nodeUrl: "http://198.135.49.102",
+                nodeRequestTimeoutMS: 5 * 60 * 1000,
+                l2BlockPollingIntervalMS: 10 * 1000,
+                minaEndpoint: "https://berkeley.minascan.io/graphql",
+                debug: true,
+            },
+        },
+    },
+
     build: {
         transpile:
             process.env.NODE_ENV === "production"
@@ -77,15 +111,15 @@ export default defineNuxtConfig({
             }),
         ],
 
-        resolve: {
-            alias: {
-                //crypto: "crypto-browserify",
-                util: "util",
-                // buffer: "buffer",
-                // stream: "stream-browserify",
-                // path: "path-browserify",
-            },
-        },
+        // resolve: {
+        //     alias: {
+        //         crypto: "crypto-browserify",
+        //         util: "util",
+        //         buffer: "buffer",
+        //         stream: "stream-browserify",
+        //         path: "path-browserify",
+        //     },
+        // },
     },
     css: ["@/assets/styles/global.scss"],
 

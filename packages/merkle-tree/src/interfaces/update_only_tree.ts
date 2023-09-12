@@ -1,4 +1,4 @@
-import { Field } from 'snarkyjs';
+import { Field } from 'o1js';
 import { MerkleTree } from './merkle_tree';
 
 /**

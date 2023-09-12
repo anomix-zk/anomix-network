@@ -6,7 +6,7 @@ import {
   NullifierMerkleWitness,
   RootMerkleWitness,
 } from '../models/merkle_witness';
-import { Field, Poseidon, Provable, Struct, UInt64 } from 'snarkyjs';
+import { Field, Poseidon, Provable, Struct, UInt64 } from 'o1js';
 import { Commitment } from '../models/commitment';
 
 export class TxFee

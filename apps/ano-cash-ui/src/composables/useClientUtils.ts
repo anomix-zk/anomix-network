@@ -32,7 +32,8 @@ export default function () {
             db.onsuccess = () => resolve(true);
         });
 
-    const mobileEnabled = !!localStorage.getItem("enable_mobile");
+    //const mobileEnabled = !!localStorage.getItem("enable_mobile");
+    const mobileEnabled = false;
 
     const getSupportStatus = async (): Promise<SupportStatus> => {
         if (!mobileEnabled) {

@@ -3,6 +3,9 @@ export const CHANNEL_SYNCER = "syncer";
 
 export const MINA = 1000_000_000;
 
+export const EMPTY_PUBLICKEY =
+    "B62qiTKpEPjGTSHZrtM8uXiKgn8So916pLmNJKDhKeyBQL9TDb3nvBG";
+
 export enum PageAction {
     SEND_TOKEN = "SEND_TOKEN",
     WITHDRAW_TOKEN = "WITHDRAW_TOKEN",

@@ -1,4 +1,4 @@
-import { Field } from 'snarkyjs';
+import { Field } from 'o1js';
 import { UpdateOnlyTree } from '../interfaces/update_only_tree';
 import { INITIAL_LEAF, TreeBase } from '../tree_base.js';
 

@@ -43,9 +43,8 @@ import type { SigningKey } from '@anomix/sdk';
 import { SelectOption, useMessage } from 'naive-ui';
 
 const router = useRouter();
-const { SdkState } = useSdk();
+const { SdkState, addAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
-const remoteSyncer = SdkState.remoteSyncer!;
 const { omitAddress } = useUtils();
 const message = useMessage();
 const { showLoadingMask, closeLoadingMask } = useStatus();
@@ -61,9 +60,11 @@ const handleUpdateValue = (value: string, option: SelectOption) => {
 };
 onMounted(async () => {
     const localAccounts = await remoteApi.getLocalAccounts();
+
+    let acs: SelectOption[] = [];
     localAccounts.forEach((account) => {
         const address = omitAddress(account.accountPk)!;
-        options.value.push({
+        acs.push({
             label: account.alias ? account.alias + '(' + address + ')' : address,
             value: account.accountPk,
             style: {
@@ -72,7 +73,7 @@ onMounted(async () => {
         });
     });
 
-    options.value.push({
+    acs.push({
         label: "+ Use Other Account",
         value: 'other',
         style: {
@@ -84,6 +85,7 @@ onMounted(async () => {
             'height': '60px',
         }
     });
+    options.value = acs;
 
     selectedAccount.value = options.value[0].value ? options.value[0].value + '' : undefined;
 });
@@ -144,7 +146,7 @@ const login = async () => {
             signingPrivateKeys.push(undefined);
         }
 
-        const accountPk = await remoteSyncer.addAccount(accountPrivateKey58, pwd.value, signingPrivateKeys[0],
+        const accountPk = await addAccount(accountPrivateKey58, pwd.value, signingPrivateKeys[0],
             signingPrivateKeys[1], undefined);
         if (accountPk) {
             closeLoadingMask(maskId);
