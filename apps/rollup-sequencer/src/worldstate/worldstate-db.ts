@@ -116,8 +116,9 @@ export class WorldStateDB {
     /**
      * Commit pending updates to the MerkleTreeId.
      */
-    async commit() {//
+    async commit() {
         await this.trees.get(MerkleTreeId.DATA_TREE)!.commit();
+        await this.trees.get(MerkleTreeId.SYNC_DATA_TREE)!.commit();
         await this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.commit();
         await this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.commit();
 
@@ -139,6 +140,7 @@ export class WorldStateDB {
      */
     async rollback() {//
         await this.trees.get(MerkleTreeId.DATA_TREE)!.rollback();
+        await this.trees.get(MerkleTreeId.SYNC_DATA_TREE)!.rollback();
         await this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.rollback();
         await this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.rollback();
 
