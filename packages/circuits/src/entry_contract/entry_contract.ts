@@ -11,7 +11,7 @@ import {
   state,
   UInt64,
   Poseidon,
-} from 'snarkyjs';
+} from 'o1js';
 import { DepositRollupProof } from './deposit_rollup_prover';
 import { AccountRequired, AssetId, NoteType } from '../models/constants';
 import {

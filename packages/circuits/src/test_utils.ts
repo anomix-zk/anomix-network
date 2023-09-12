@@ -9,7 +9,7 @@ import {
   Types,
   isReady,
   PrivateKey,
-} from 'snarkyjs';
+} from 'o1js';
 import fs from 'fs';
 import config from '../config.json' assert { type: 'json' };
 

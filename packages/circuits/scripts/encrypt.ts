@@ -19,7 +19,7 @@ import {
   Poseidon,
   PrivateKey,
   PublicKey,
-} from 'snarkyjs';
+} from 'o1js';
 import { ValueNote } from '../src/models/value_note';
 
 // let MyProgram = Experimental.ZkProgram({

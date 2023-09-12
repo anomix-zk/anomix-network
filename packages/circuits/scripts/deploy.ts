@@ -1,4 +1,4 @@
-import { AccountUpdate, Mina, PrivateKey, PublicKey } from 'snarkyjs';
+import { AccountUpdate, Mina, PrivateKey, PublicKey } from 'o1js';
 import {
   AnomixEntryContract,
   AnomixRollupContract,

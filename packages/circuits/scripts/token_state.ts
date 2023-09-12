@@ -13,7 +13,7 @@ import {
   PrivateKey,
   Mina,
   DeployArgs,
-} from 'snarkyjs';
+} from 'o1js';
 import { getTestContext } from '../src/test_utils';
 
 export class WithdrawAccount extends SmartContract {

@@ -13,7 +13,7 @@ import {
   UInt32,
   DeployArgs,
   AccountUpdate,
-} from 'snarkyjs';
+} from 'o1js';
 import { RollupBlockEvent, RollupState } from './models';
 import { BlockProveOutput } from '../block_prover/models';
 import {

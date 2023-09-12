@@ -14,7 +14,7 @@ import {
   Experimental,
   UInt64,
   Struct,
-} from 'snarkyjs';
+} from 'o1js';
 import { MINA, USER_NULLIFIER_TREE_INIT_ROOT } from '../constants';
 import { AssetId, DUMMY_FIELD, NoteType } from '../models/constants';
 import {

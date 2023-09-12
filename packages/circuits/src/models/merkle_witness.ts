@@ -6,7 +6,7 @@ import {
   USER_NULLIFIER_TREE_HEIGHT,
 } from '../constants';
 import { MerkleProofDto, SiblingPath } from '@anomix/types';
-import { Field, Poseidon, Provable, Struct } from 'snarkyjs';
+import { Field, Poseidon, Provable, Struct } from 'o1js';
 import { DUMMY_FIELD } from './constants';
 
 export class DepositMerkleWitness extends SiblingPath(DEPOSIT_TREE_HEIGHT) {}

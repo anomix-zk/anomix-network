@@ -1,4 +1,4 @@
-import { Field, Poseidon, PublicKey, Struct } from 'snarkyjs';
+import { Field, Poseidon, PublicKey, Struct } from 'o1js';
 import { Commitment } from './commitment';
 
 export class AccountNote

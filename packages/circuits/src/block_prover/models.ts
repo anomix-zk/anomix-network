@@ -1,4 +1,4 @@
-import { Field, Poseidon, Provable, PublicKey, Struct } from 'snarkyjs';
+import { Field, Poseidon, Provable, PublicKey, Struct } from 'o1js';
 import { TxFee } from '../inner_rollup/models';
 import { FEE_ASSET_ID_SUPPORT_NUM } from '../constants';
 import { DataMerkleWitness, RootMerkleWitness } from '../models/merkle_witness';

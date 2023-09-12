@@ -1,5 +1,5 @@
 import { InnerRollupProof } from '../inner_rollup/inner_rollup_prover';
-import { Experimental, Provable } from 'snarkyjs';
+import { Experimental, Provable } from 'o1js';
 import { BlockProveInput, BlockProveOutput } from './models';
 import { checkMembershipAndAssert } from '../utils/utils';
 import { DUMMY_FIELD } from '../models/constants';

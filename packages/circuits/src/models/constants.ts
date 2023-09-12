@@ -1,4 +1,4 @@
-import { Field } from 'snarkyjs';
+import { Field } from 'o1js';
 
 export const DUMMY_FIELD = Field(0);
 

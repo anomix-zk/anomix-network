@@ -7,7 +7,7 @@ import {
   genNewKeyPairForNote,
   maskReceiverBySender,
 } from '@anomix/utils';
-import { Bool, Field, Poseidon, PrivateKey, Encoding } from 'snarkyjs';
+import { Bool, Field, Poseidon, PrivateKey, Encoding } from 'o1js';
 import { DEPOSIT_NOTE_DATA_FIELDS_LENGTH } from '../constants';
 import { EncryptedNoteFieldData } from '../entry_contract/models';
 import { ValueNote } from '../models/value_note';

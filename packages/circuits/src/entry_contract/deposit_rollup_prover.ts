@@ -8,7 +8,7 @@ import {
   Provable,
   SelfProof,
   Struct,
-} from 'snarkyjs';
+} from 'o1js';
 import {
   DepositActionBatch,
   DepositRollupState,
