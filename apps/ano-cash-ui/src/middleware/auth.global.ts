@@ -3,14 +3,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         `[route auth check] to.path: ${to.path}, from.path: ${from.path}`
     );
     //skip middleware on initial client load
-    const nuxtApp = useNuxtApp();
-    if (
-        process.client &&
-        nuxtApp.isHydrating &&
-        nuxtApp.payload.serverRendered
-    ) {
-        return;
-    }
+    // const nuxtApp = useNuxtApp();
+    // if (
+    //     process.client &&
+    //     nuxtApp.isHydrating &&
+    //     nuxtApp.payload.serverRendered
+    // ) {
+    //     return;
+    // }
 
     if (process.client) {
         const { appState } = useStatus();

@@ -17,10 +17,11 @@
 
 <script lang="ts" setup>
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui';
+import { CHANNEL_SYNCER } from './common/constants';
 
 const { createRemoteSdk, createRemoteApi, startRemoteSyncer } = useSdk();
 const runtimeConfig = useRuntimeConfig();
-const { setTokenPrices } = useStatus();
+const { setTokenPrices, showLoadingMask, closeLoadingMask } = useStatus();
 
 const themeOverrides: GlobalThemeOverrides = {
   Input: {
@@ -54,63 +55,74 @@ const themeOverrides: GlobalThemeOverrides = {
 
 const supportStatus = ref("supported");
 
+const maskId = 'appInit';
+
 onMounted(async () => {
   console.log('App mounted...');
-  const { getSupportStatus } = useClientUtils();
-  const support = await getSupportStatus();
-  console.log('support status:', support);
-  supportStatus.value = support;
+  showLoadingMask({ text: 'App Initializing...', id: maskId, closable: false });
 
-  console.log('runtimeConfig: ', runtimeConfig.public);
-
-  if (supportStatus.value !== 'supported') {
-    return;
-  }
-
-  const debug = runtimeConfig.public.debug as boolean;
-  const entryContractAddress = runtimeConfig.public.entryContractAddress as string;
-  const vaultContractAddress = runtimeConfig.public.vaultContractAddress as string;
-  const nodeUrl = runtimeConfig.public.nodeUrl as string;
-  const minaEndpoint = runtimeConfig.public.minaEndpoint as string;
-  const nodeRequestTimeoutMS = runtimeConfig.public.nodeRequestTimeoutMS as number;
-  const l2BlockPollingIntervalMS = runtimeConfig.public.l2BlockPollingIntervalMS as number;
-
-  await createRemoteSdk({
-    entryContractAddress,
-    vaultContractAddress,
-    options: {
-      nodeUrl,
-      minaEndpoint,
-      nodeRequestTimeoutMS,
-      l2BlockPollingIntervalMS,
-      debug,
-    },
-  });
-
-  await createRemoteApi({
-    entryContractAddress,
-    vaultContractAddress,
-    options: {
-      nodeUrl,
-      minaEndpoint,
-      nodeRequestTimeoutMS,
-      l2BlockPollingIntervalMS,
-      debug,
-    },
-  });
-
-  await startRemoteSyncer({
-    entryContractAddress,
-    vaultContractAddress,
-    options: {
-      nodeUrl,
-      minaEndpoint,
-      nodeRequestTimeoutMS,
-      l2BlockPollingIntervalMS,
-      debug,
-    },
-  });
   try {
+    const { getSupportStatus } = useClientUtils();
+    const support = await getSupportStatus();
+    console.log('support status:', support);
+    supportStatus.value = support;
+
+    console.log('runtimeConfig: ', runtimeConfig.public);
+
+    if (supportStatus.value !== 'supported') {
+      return;
+    }
+
+    const debug = runtimeConfig.public.debug as boolean;
+    const entryContractAddress = runtimeConfig.public.entryContractAddress as string;
+    const vaultContractAddress = runtimeConfig.public.vaultContractAddress as string;
+    const nodeUrl = runtimeConfig.public.nodeUrl as string;
+    const minaEndpoint = runtimeConfig.public.minaEndpoint as string;
+    const nodeRequestTimeoutMS = runtimeConfig.public.nodeRequestTimeoutMS as number;
+    const l2BlockPollingIntervalMS = runtimeConfig.public.l2BlockPollingIntervalMS as number;
+    const broadcastChannelName = CHANNEL_SYNCER;
+
+    await createRemoteSdk({
+      entryContractAddress,
+      vaultContractAddress,
+      options: {
+        nodeUrl,
+        minaEndpoint,
+        nodeRequestTimeoutMS,
+        l2BlockPollingIntervalMS,
+        broadcastChannelName,
+        debug,
+      },
+    });
+
+    await createRemoteApi({
+      entryContractAddress,
+      vaultContractAddress,
+      options: {
+        nodeUrl,
+        minaEndpoint,
+        nodeRequestTimeoutMS,
+        l2BlockPollingIntervalMS,
+        broadcastChannelName,
+        debug,
+      },
+    });
+
+    await startRemoteSyncer({
+      entryContractAddress,
+      vaultContractAddress,
+      options: {
+        nodeUrl,
+        minaEndpoint,
+        nodeRequestTimeoutMS,
+        l2BlockPollingIntervalMS,
+        broadcastChannelName,
+        debug,
+      },
+    });
+
+    closeLoadingMask(maskId);
+
     const { data } = await useFetch('https://api.coingecko.com/api/v3/simple/price?ids=mina-protocol&vs_currencies=usd%2Ccny');
     const price = data.value as any;
     console.log('get price info: ', price);
@@ -118,6 +130,7 @@ onMounted(async () => {
     setTokenPrices([{ tokenName: 'MINA', usd: price['mina-protocol']['usd'] + '', cny: price['mina-protocol']['cny'] + '' }]);
   } catch (err: any) {
     console.error(err);
+    closeLoadingMask(maskId);
   }
 });
 </script>

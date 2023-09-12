@@ -1,4 +1,4 @@
-import { SdkConfig, Syncer } from "@anomix/sdk";
+import { SdkConfig } from "@anomix/sdk";
 import { Remote, wrap } from "comlink";
 import { CHANNEL_LOG, CHANNEL_SYNCER } from "../common/constants";
 import { SdkEvent } from "../common/types";
@@ -35,6 +35,8 @@ export default function () {
         );
         SdkState.remoteSdk = wrap<SdkWrapper>(SdkState.sdkWorker!);
         await SdkState.remoteSdk.createSdk(config);
+        // async compile circuits
+        SdkState.remoteSdk.compileCircuits();
 
         setSdkExist(true);
         console.log("remote sdk create success");
