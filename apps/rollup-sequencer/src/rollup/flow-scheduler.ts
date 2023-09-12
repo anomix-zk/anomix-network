@@ -206,7 +206,7 @@ export class FlowScheduler {
                 commitment: DUMMY_FIELD.toString(),
                 paths: dataRootSiblingPath.map(p => p.toString())
             } as MerkleProofDto;
-            this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE_ROOTS_TREE, this.targetDataRoot);
+            await this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE_ROOTS_TREE, this.targetDataRoot);
             this.targetRootTreeRoot = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE_ROOTS_TREE, true);
 
             // create a new block
@@ -434,14 +434,14 @@ export class FlowScheduler {
             const tx1OldDataWitness1: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
             if (Field(tx1.outputNoteCommitment1).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
                 tx1.outputNoteCommitmentIdx1 = dataTreeCursor.toString();
-                this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx1.outputNoteCommitment1));
+                await this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx1.outputNoteCommitment1));
                 dataTreeCursor += 1n;
             }
 
             const tx1OldDataWitness2: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
             if (Field(tx1.outputNoteCommitment2).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
                 tx1.outputNoteCommitmentIdx2 = dataTreeCursor.toString();
-                this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx1.outputNoteCommitment2));
+                await this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx1.outputNoteCommitment2));
                 dataTreeCursor += 1n;
             }
 
@@ -449,7 +449,7 @@ export class FlowScheduler {
             const tx2OldDataWitness1: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
             if (Field(tx2.outputNoteCommitment1).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
                 tx2.outputNoteCommitmentIdx1 = dataTreeCursor.toString();
-                this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx2.outputNoteCommitment1));
+                await this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx2.outputNoteCommitment1));
                 dataTreeCursor += 1n;
             }
 
@@ -457,7 +457,7 @@ export class FlowScheduler {
             if (Field(tx2.outputNoteCommitment2).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
                 tx2.outputNoteCommitmentIdx2 = dataTreeCursor.toString();
 
-                this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx2.outputNoteCommitment2));
+                await this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx2.outputNoteCommitment2));
                 dataTreeCursor += 1n;
             }
 
