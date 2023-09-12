@@ -1,5 +1,5 @@
 import consola from 'consola';
-import { PublicKey } from 'snarkyjs';
+import { PublicKey } from 'o1js';
 import { AnomixSdk } from './anomix_sdk';
 import { getDb } from './database/get_db';
 import { SdkConfig, SdkOptions } from './sdk_options';

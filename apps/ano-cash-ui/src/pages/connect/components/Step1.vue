@@ -94,7 +94,7 @@
 
             </n-space>
 
-            <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="addAccount">
+            <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="addAnomixAccount">
                 Save Account
             </n-button>
         </template>
@@ -113,9 +113,8 @@ const emit = defineEmits<{
 const router = useRouter();
 const { appState, setConnectedWallet, setAccountPk58, setAlias, setSigningPk1, setSigningPk2, setAccountStatus } = useStatus();
 const { omitAddress } = useUtils();
-const { SdkState } = useSdk();
+const { SdkState, addAccount } = useSdk();
 const message = useMessage();
-const remoteSyncer = SdkState.remoteSyncer!;
 const remoteApi = SdkState.remoteApi!;
 
 const externWalletAddress = computed(() => omitAddress(appState.value.connectedWallet58, 8));
@@ -203,7 +202,7 @@ const toAccountPage = () => {
     router.replace("/account");
 };
 
-const addAccount = async () => {
+const addAnomixAccount = async () => {
     if (pwd.value.length === 0) {
         message.error('Please enter a password');
         return;
@@ -218,7 +217,7 @@ const addAccount = async () => {
     }
 
     try {
-        const accountPk = await remoteSyncer.addAccount(accountPrivateKey.value, pwd.value, signingKeypair1.value?.privateKey, signingKeypair2.value?.privateKey, undefined);
+        const accountPk = await addAccount(accountPrivateKey.value, pwd.value, signingKeypair1.value?.privateKey, signingKeypair2.value?.privateKey, undefined);
         if (accountPk) {
             message.success('Account saved successfully');
 
@@ -229,7 +228,7 @@ const addAccount = async () => {
             }
         }
     } catch (err: any) {
-        console.log('addAccount: ', err);
+        console.log('addAnomixAccount: ', err);
         message.error(err.message, {
             closable: true,
             duration: 0

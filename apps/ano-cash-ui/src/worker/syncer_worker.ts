@@ -36,7 +36,7 @@ const syncerWrapper = {
         alias: string | undefined
     ) => {
         return await tryFunc(async () => {
-            const { PrivateKey } = await import("snarkyjs");
+            const { PrivateKey } = await import("o1js");
             const accountPrivateKey =
                 PrivateKey.fromBase58(accountPrivateKey58);
             const signingPrivateKey1 = signingPrivateKey1_58
@@ -57,9 +57,9 @@ const syncerWrapper = {
         });
     },
 
-    // unlockKeyStore: async (cachedPubKeys: string[], pwd: string) => {
-    //     await syncerSdk.unlockKeyStore(cachedPubKeys, pwd);
-    // },
+    lockKeyStore: () => {
+        syncerSdk.lockKeyStore();
+    },
 
     isAccountSynced: async (accountPk58: string) => {
         return await syncerSdk.isAccountSynced(accountPk58);

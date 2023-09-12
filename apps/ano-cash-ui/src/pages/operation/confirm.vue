@@ -15,30 +15,33 @@
 
       <div class="form-main">
 
-        <div class="title">Send Assets</div>
+        <div class="title"><template v-if="currPageAction === PageAction.SEND_TOKEN">Send Assets</template><template
+            v-else>Withdraw Assets</template></div>
 
         <div class="ano-token">
-
           <div class="token-info">
             <van-icon :name="minaIcon" size="40" />
-            <div class="token-name">MINA</div>
+            <div class="token-name">{{ params?.sendToken }}</div>
           </div>
-
           <div class="token-balance">
-            0.0 MINA
+            {{ params?.amountOfMinaUnit }} {{ params?.sendToken }}
           </div>
-
         </div>
 
-
-        <div class="sendTo">
-
-          <div class="label">To</div>
-
-          <div class="to-item">
-            B62qkT3U75QVgmWjgfpcgT9Yc3ni6frTprX6cP1KRjmvVoFf8Wz8L1b <span style="font-weight: 600;">(Alice.ano)</span>
+        <div class="send">
+          <div class="label">From</div>
+          <div class="address-item">
+            {{ params?.sender }} <span v-if="params!.senderAlias !== null" style="font-weight: 600;">({{
+              params!.senderAlias }})</span>
           </div>
+        </div>
 
+        <div class="send">
+          <div class="label">To</div>
+          <div class="address-item">
+            {{ params?.receiver }} <span v-if="params!.receiverAlias !== null" style="font-weight: 600;">({{
+              params?.receiverAlias }})</span>
+          </div>
         </div>
 
       </div>
@@ -55,13 +58,13 @@
           </div>
 
           <div class="token-balance">
-            0.0 MINA
+            {{ params?.feeOfMinaUnit }} MINA
           </div>
 
         </div>
       </div>
 
-      <n-button type="info" class="form-btn" style="margin-bottom: 20px;">
+      <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="sendTx">
         Confirm
       </n-button>
 
@@ -75,14 +78,59 @@
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
+import { PageAction } from '../../common/constants';
+import { TxInfo } from '../../common/types';
 
 
 const router = useRouter();
 const message = useMessage();
+const { pageParams, clearPageParams, showLoadingMask, closeLoadingMask } = useStatus();
+const { SdkState } = useSdk();
+const remoteSdk = SdkState.remoteSdk!;
+const remoteApi = SdkState.remoteApi!;
 
-
+const currPageAction = ref(PageAction.SEND_TOKEN);
+const params = ref<TxInfo | null>(null);
+const maskId = 'confirm';
 
 const toBack = () => router.back();
+onMounted(() => {
+  console.log('confirm page mounted...');
+  currPageAction.value = pageParams.value.action!;
+  params.value = pageParams.value.params;
+  clearPageParams();
+});
+
+const sendTx = async () => {
+  try {
+    console.log('Prove and send tx...');
+    showLoadingMask({ id: maskId, text: 'Generating Proof...', closable: false });
+    const tx = await remoteSdk.createPaymentTx({
+      accountPk58: params.value!.sender,
+      alias: params.value!.senderAlias,
+      senderAccountRequiredBool: false,
+      receiverPk58: params.value!.receiver,
+      receiverAccountRequiredBool: params.value!.receiverAlias !== null,
+      anonToReceiver: params.value!.anonToReceiver,
+      amount: params.value!.amountOfMinaUnit,
+      txFeeAmount: params.value!.feeOfMinaUnit,
+      isWithdraw: currPageAction.value === PageAction.WITHDRAW_TOKEN,
+    });
+
+    showLoadingMask({ id: maskId, text: 'Sending Tx...', closable: false });
+    await remoteApi.sendTx(tx);
+
+    closeLoadingMask(maskId);
+    message.success('Transaction sent successfully!');
+    router.replace('/account');
+  } catch (err: any) {
+    console.error(err);
+    closeLoadingMask(maskId);
+    message.error(err.message, { duration: 0, closable: true });
+  }
+};
+
+
 </script>
 
 <style lang="scss" scoped>
@@ -132,7 +180,7 @@ const toBack = () => router.back();
   .token-balance {
     text-align: left;
     font-weight: 600;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 28px;
   }
 
@@ -160,7 +208,7 @@ const toBack = () => router.back();
     }
 
 
-    .sendTo {
+    .send {
       .label {
         text-align: left;
         margin-top: 25px;
@@ -170,7 +218,7 @@ const toBack = () => router.back();
         line-height: 20px;
       }
 
-      .to-item {
+      .address-item {
         font-size: 15px;
         font-weight: 500;
       }

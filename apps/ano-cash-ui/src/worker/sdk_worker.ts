@@ -38,7 +38,7 @@ const sdkWrapper = {
         newSigningPk2_58: string
     ) => {
         log("createAccountRegisterTx...");
-        const { PublicKey } = await import("snarkyjs");
+        const { PublicKey } = await import("o1js");
 
         return await tryFunc(async () => {
             const accountPk = PublicKey.fromBase58(accountPk58);
@@ -57,8 +57,12 @@ const sdkWrapper = {
         await sdk.unlockKeyStore(cachedPubKeys, pwd);
     },
 
+    lockKeyStore: () => {
+        sdk.lockKeyStore();
+    },
+
     getWithdrawAccountTokenId: async () => {
-        const { TokenId } = await import("snarkyjs");
+        const { TokenId } = await import("o1js");
         let tokenIdField = sdk.getWithdrawAccountTokenId();
 
         return TokenId.toBase58(tokenIdField);
@@ -68,7 +72,7 @@ const sdkWrapper = {
         feePayerPk: string,
         txFee?: string
     ) => {
-        const { PublicKey, UInt64 } = await import("snarkyjs");
+        const { PublicKey, UInt64 } = await import("o1js");
         const feePayerAddress = PublicKey.fromBase58(feePayerPk);
         const userAddress = PublicKey.fromBase58(userPk);
         const suggestedTxFee = txFee ? UInt64.from(txFee) : undefined;
@@ -83,7 +87,7 @@ const sdkWrapper = {
         feePayer: string,
         txFee?: string
     ) => {
-        const { PublicKey, UInt64 } = await import("snarkyjs");
+        const { PublicKey, UInt64 } = await import("o1js");
         const feePayerAddress = PublicKey.fromBase58(feePayer);
         const suggestedTxFee = txFee ? UInt64.from(txFee) : undefined;
         return await sdk.createClaimFundsTx({
@@ -107,9 +111,7 @@ const sdkWrapper = {
         amount: string;
         anonymousToReceiver: boolean;
     }) => {
-        const { PublicKey, PrivateKey, UInt64, Field } = await import(
-            "snarkyjs"
-        );
+        const { PublicKey, PrivateKey, UInt64, Field } = await import("o1js");
 
         return await sdk.createDepositTx({
             payerAddress: PublicKey.fromBase58(payerAddress),
@@ -123,6 +125,55 @@ const sdkWrapper = {
             assetId: Field(1), // MINA
             receiverAccountRequired: Field(2), // NOT REQUIRED
             noteEncryptPrivateKey: PrivateKey.random(),
+        });
+    },
+
+    createPaymentTx: async ({
+        accountPk58,
+        alias,
+        senderAccountRequiredBool,
+        receiverPk58,
+        receiverAccountRequiredBool,
+        anonToReceiver,
+        amount,
+        txFeeAmount,
+        isWithdraw,
+    }: {
+        accountPk58: string;
+        alias: string | null;
+        senderAccountRequiredBool: boolean;
+        receiverPk58: string;
+        receiverAccountRequiredBool: boolean;
+        anonToReceiver: boolean;
+        amount: string;
+        txFeeAmount: string;
+        isWithdraw: boolean;
+    }) => {
+        const { PublicKey, Field, UInt64 } = await import("o1js");
+        const accountPk = PublicKey.fromBase58(accountPk58);
+        const senderAccountRequired = senderAccountRequiredBool
+            ? Field(1)
+            : Field(2);
+        const receiver = PublicKey.fromBase58(receiverPk58);
+        const receiverAccountRequired = receiverAccountRequiredBool
+            ? Field(1)
+            : Field(2);
+        const anonymousToReceiver = anonToReceiver;
+        const payAmount = UInt64.from(amount);
+        const payAssetId = Field(1);
+        const txFee = UInt64.from(txFeeAmount);
+
+        return await sdk.createPaymentTx({
+            accountPk,
+            alias,
+            senderAccountRequired,
+            receiver,
+            receiverAccountRequired,
+            anonymousToReceiver,
+            payAmount,
+            payAssetId,
+            txFee,
+            isWithdraw,
         });
     },
 };

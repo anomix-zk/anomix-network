@@ -16,3 +16,17 @@ export interface TxInfo {
     feeToken: string;
     anonToReceiver: boolean;
 }
+
+export interface TxHis {
+    txHash: string;
+    actionType: string;
+    publicValue: string;
+    privateValue: string;
+    txFee: string;
+    sender: string;
+    receiver: string;
+    isSender: boolean;
+    withdrawNoteCommitment: string | null;
+    createdTs: number;
+    finalizedTs: number;
+}

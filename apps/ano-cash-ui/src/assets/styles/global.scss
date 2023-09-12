@@ -193,6 +193,13 @@ h6 {
       padding-left: 40px;
       padding-right: 40px;
 
+      .home {
+        justify-content: flex-start;
+        margin-left: -40px;
+        margin-right: -40px;
+        overflow: hidden;
+      } 
+
       .ano-mask {
         border-radius: 28px;
       }
@@ -214,9 +221,17 @@ h6 {
       border-radius: 0;
       min-height: 100vh;
 
-      .ano-mask {
-        border-radius: 0;
-      }
+      
+    .home {
+      justify-content: flex-start;
+      padding-left: 0;
+      padding-right: 0;
+      overflow: hidden;
+    }
+
+    .ano-mask {
+      border-radius: 0;
+    }
   }
 }
 

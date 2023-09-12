@@ -25,8 +25,7 @@
           <div class="token-info">
             <div class="token-name">MINA</div>
             <div class="token-balance">Balance <template v-if="balanceLoading"><n-spin :size="14"
-                  stroke="#97989d" /></template><template v-else>{{ tokenInfo.balance }}</template> {{
-                    tokenInfo.token }}</div>
+                  stroke="#97989d" /></template><template v-else>{{ totalMinaBalance }}</template> MINA</div>
           </div>
 
         </div>
@@ -113,7 +112,7 @@ import { SdkEvent, TxInfo } from '../../common/types';
 import { PageAction, SdkEventType } from '../../common/constants';
 
 const router = useRouter();
-const { appState, showLoadingMask, closeLoadingMask, setPageParams, clearPageParams, pageParams } = useStatus();
+const { appState, showLoadingMask, closeLoadingMask, setPageParams, clearPageParams, pageParams, setTotalNanoBalance } = useStatus();
 const { checkNoSideSpace, convertToMinaUnit } = useUtils();
 const message = useMessage();
 const { SdkState, listenSyncerChannel } = useSdk();
@@ -126,13 +125,14 @@ const toBack = () => router.back();
 
 const currPageAction = ref(PageAction.SEND_TOKEN);
 const balanceLoading = ref(false);
-const tokenInfo = ref<{ token: string; balance: string }>({
-  token: 'MINA',
-  balance: '0.0',
-});
+const totalMinaBalance = computed(() => convertToMinaUnit(appState.value.totalNanoBalance));
+// const tokenInfo = ref<{ token: string; balance: string }>({
+//   token: 'MINA',
+//   balance: '0.0',
+// });
 
 const maxInputAmount = () => {
-  sendAmount.value = Number(tokenInfo.value.balance);
+  sendAmount.value = totalMinaBalance.value?.toNumber();
 };
 
 const anonToReceiver = ref(false);
@@ -214,6 +214,11 @@ const toConfirm = async () => {
     if (receiver.value.endsWith('.ano')) {
       receiverAlias = receiver.value;
       receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiver.value.replace('.ano', ''));
+      if (!receiverPk) {
+        message.error(`Receiver: ${receiver.value} not exists`, { duration: 0, closable: true });
+        closeLoadingMask(maskId);
+        return;
+      }
     } else {
       receiverPk = receiver.value;
     }
@@ -224,12 +229,12 @@ const toConfirm = async () => {
       receiver: receiverPk!,
       receiverAlias,
       amountOfMinaUnit: sendAmount.value.toString(),
-      sendToken: tokenInfo.value.token,
+      sendToken: 'MINA',
       feeOfMinaUnit: feeValue.value!.toString(),
       feeToken: 'MINA',
       anonToReceiver: anonToReceiver.value
     };
-    setPageParams(PageAction.SEND_TOKEN, params);
+    setPageParams(currPageAction.value, params);
 
     closeLoadingMask(maskId);
     router.push("/operation/confirm");
@@ -251,10 +256,11 @@ onMounted(async () => {
   const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
   if (synced) {
     const balance = await remoteApi.getBalance(appState.value.accountPk58!);
-    tokenInfo.value = {
-      token: 'MINA',
-      balance: balance.toString()
-    };
+    setTotalNanoBalance(balance.toString());
+    // tokenInfo.value = {
+    //   token: 'MINA',
+    //   balance: balance.toString()
+    // };
     balanceLoading.value = false;
   }
 

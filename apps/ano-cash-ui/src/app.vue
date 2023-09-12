@@ -1,16 +1,26 @@
 <template>
-  <n-config-provider :theme-overrides="themeOverrides">
-    <n-message-provider>
-      <NuxtLayout>
-        <NuxtPage />
-      </NuxtLayout>
-
-    </n-message-provider>
+  <n-config-provider :theme-overrides="themeOverrides" v-if="supportStatus === 'supported'">
+    <n-dialog-provider>
+      <n-message-provider>
+        <NuxtLayout>
+          <NuxtPage />
+        </NuxtLayout>
+      </n-message-provider>
+    </n-dialog-provider>
   </n-config-provider>
+
+  <div v-else
+    style="display:flex;justify-content:center;align-items:center;height:100vh;font-size: 20px;font-weight: 600;">
+    Your device or browser is not supported, reason: {{ supportStatus }}
+  </div>
 </template>
 
 <script lang="ts" setup>
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui';
+
+const { createRemoteSdk, createRemoteApi, startRemoteSyncer } = useSdk();
+const runtimeConfig = useRuntimeConfig();
+const { setTokenPrices } = useStatus();
 
 const themeOverrides: GlobalThemeOverrides = {
   Input: {
@@ -42,50 +52,72 @@ const themeOverrides: GlobalThemeOverrides = {
   }
 };
 
+const supportStatus = ref("supported");
+
 onMounted(async () => {
-  console.log('App mounted');
+  console.log('App mounted...');
   const { getSupportStatus } = useClientUtils();
   const support = await getSupportStatus();
-  console.log('support', support);
+  console.log('support status:', support);
+  supportStatus.value = support;
 
+  console.log('runtimeConfig: ', runtimeConfig.public);
 
-  const { createRemoteSdk, createRemoteApi, startRemoteSyncer } = useSdk();
+  if (supportStatus.value !== 'supported') {
+    return;
+  }
 
-  // await createRemoteSdk({
-  //   entryContractAddress:
-  //     'B62qj6vA7ogcWaHWFCynqGYxneL3xjFcSuvfPKtEVnS7w9VpAqjnCtA',
-  //   vaultContractAddress:
-  //     'B62qri8P5LWArpGWS4WnhP82H3JDHEhiWGnUUA34CRqdD5DWFQoSZ6c',
-  //   options: {
-  //     nodeUrl: 'http://198.135.49.102',
-  //     minaEndpoint: 'https://berkeley.minascan.io/graphql',
-  //     debug: true,
-  //   },
-  // });
+  const debug = runtimeConfig.public.debug as boolean;
+  const entryContractAddress = runtimeConfig.public.entryContractAddress as string;
+  const vaultContractAddress = runtimeConfig.public.vaultContractAddress as string;
+  const nodeUrl = runtimeConfig.public.nodeUrl as string;
+  const minaEndpoint = runtimeConfig.public.minaEndpoint as string;
+  const nodeRequestTimeoutMS = runtimeConfig.public.nodeRequestTimeoutMS as number;
+  const l2BlockPollingIntervalMS = runtimeConfig.public.l2BlockPollingIntervalMS as number;
 
-  await createRemoteApi({
-    entryContractAddress:
-      'B62qj6vA7ogcWaHWFCynqGYxneL3xjFcSuvfPKtEVnS7w9VpAqjnCtA',
-    vaultContractAddress:
-      'B62qri8P5LWArpGWS4WnhP82H3JDHEhiWGnUUA34CRqdD5DWFQoSZ6c',
+  await createRemoteSdk({
+    entryContractAddress,
+    vaultContractAddress,
     options: {
-      nodeUrl: 'http://198.135.49.102',
-      minaEndpoint: 'https://berkeley.minascan.io/graphql',
-      debug: true,
+      nodeUrl,
+      minaEndpoint,
+      nodeRequestTimeoutMS,
+      l2BlockPollingIntervalMS,
+      debug,
     },
   });
 
-  // await startRemoteSyncer({
-  //   entryContractAddress:
-  //     'B62qj6vA7ogcWaHWFCynqGYxneL3xjFcSuvfPKtEVnS7w9VpAqjnCtA',
-  //   vaultContractAddress:
-  //     'B62qri8P5LWArpGWS4WnhP82H3JDHEhiWGnUUA34CRqdD5DWFQoSZ6c',
-  //   options: {
-  //     nodeUrl: 'http://198.135.49.102',
-  //     minaEndpoint: 'https://berkeley.minascan.io/graphql',
-  //     debug: true,
-  //   },
-  // });
+  await createRemoteApi({
+    entryContractAddress,
+    vaultContractAddress,
+    options: {
+      nodeUrl,
+      minaEndpoint,
+      nodeRequestTimeoutMS,
+      l2BlockPollingIntervalMS,
+      debug,
+    },
+  });
 
+  await startRemoteSyncer({
+    entryContractAddress,
+    vaultContractAddress,
+    options: {
+      nodeUrl,
+      minaEndpoint,
+      nodeRequestTimeoutMS,
+      l2BlockPollingIntervalMS,
+      debug,
+    },
+  });
+  try {
+    const { data } = await useFetch('https://api.coingecko.com/api/v3/simple/price?ids=mina-protocol&vs_currencies=usd%2Ccny');
+    const price = data.value as any;
+    console.log('get price info: ', price);
+
+    setTokenPrices([{ tokenName: 'MINA', usd: price['mina-protocol']['usd'] + '', cny: price['mina-protocol']['cny'] + '' }]);
+  } catch (err: any) {
+    console.error(err);
+  }
 });
 </script>

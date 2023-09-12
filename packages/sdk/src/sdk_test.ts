@@ -7,7 +7,7 @@ import {
   Signature,
   TokenId,
   UInt64,
-} from 'snarkyjs';
+} from 'o1js';
 import { createAnomixSdk } from './create_anomix_sdk';
 import 'fake-indexeddb/auto';
 import { AccountRequired, AssetId, MINA } from '@anomix/circuits';
@@ -87,9 +87,9 @@ class TestMinaProvider implements MinaProvider {
 async function run() {
   const sdk = await createAnomixSdk({
     entryContractAddress:
-      'B62qnCcrwxTRbMFUJTj3eaBQwKS42FEWe4BAxL43Stb52L9B8rF3WXP',
+      'B62qmGaARHidMkLSM9GnaA8HRkFPvqAA2MRt4KkMiEC3wtXzTHJgQHp',
     vaultContractAddress:
-      'B62qnQbFGcso3NTURwG2y6UN2XV3e9jHoca7kmNi97zRTCgWtMcsfap',
+      'B62qkb11BC6xKCYK4WXxK54aMMWposCsMoxNBtGgdhwi1SE738BaueA',
     options: {
       nodeUrl: 'http://127.0.0.1:8099',
       minaEndpoint: 'https://berkeley.minascan.io/graphql',
@@ -238,5 +238,5 @@ async function test() {
   console.log(JSON.stringify(m));
 }
 
-await test();
-//await run();
+//await test();
+await run();

@@ -1,5 +1,5 @@
 import { ValueNote } from '@anomix/circuits';
-import { Field, PrivateKey, UInt64, Struct, Provable } from 'snarkyjs';
+import { Field, PrivateKey, UInt64, Struct, Provable } from 'o1js';
 
 const note = ValueNote.zero();
 

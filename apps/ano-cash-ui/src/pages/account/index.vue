@@ -7,16 +7,17 @@
                     <div class="user">
                         <div class="left" />
                         <div class="right">
-                            <div class="alias">{{ alias }}.ano</div>
+                            <div v-if="alias !== null" class="alias">{{ alias }}</div>
                             <div class="address">
                                 <span>{{ accountPk58 }}</span>
                                 <van-icon style="margin-left: 5px;" :name="copyIcon" size="20px" @click="copyAddress" />
                             </div>
                         </div>
                     </div>
-                    <div class="setting-icons">
-                        <van-icon name="comment-o" dot class="dot" @click="showNotiy" />
-                        <!-- <van-icon name="setting-o" class="dot" @click="toSetting" /> -->
+                    <div class="right-icons">
+                        <!-- <van-icon name="comment-o" dot class="dot" @click="showNotiy" />
+                        <van-icon name="setting-o" class="dot" @click="toSetting" /> -->
+                        <van-icon :name="exitIcon" color="#5e5f6e" size="20" @click="exit" />
                     </div>
                 </div>
 
@@ -26,23 +27,27 @@
                 <div class="title">Asset Value</div>
                 <div class="ano-sum">
                     <div class="worth">
-                        <span v-show="!appState.isHideInfo">
-                            <template v-if="totalAmount">
+                        <div v-show="!appState.isHideInfo">
+                            <template v-if="totalAmount !== null">
                                 ${{ totalAmount }}
                             </template>
                             <template v-else>
-                                ---
+                                <n-spin :size="36" stroke="#97989d" />
                             </template>
-                        </span>
-                        <span v-show="appState.isHideInfo">$*****</span>
-                        <span class="eye" @click="switchInfoHideStatus">
+                        </div>
+                        <div v-show="appState.isHideInfo">$*****</div>
+                        <div v-if="totalAmount !== null" class="eye" @click="switchInfoHideStatus">
                             <van-icon v-if="appState.isHideInfo" name="closed-eye" />
                             <van-icon v-else name="eye-o" />
-                        </span>
+                        </div>
                     </div>
                 </div>
 
-                <n-tag v-if="accountCreationPending" type="warning" round strong>
+                <div>Synced / Latest Block: {{ syncedBlock }} / {{ latestBlock }}</div>
+                <div v-if="syncedBlock !== latestBlock" style="font-size: 13px;">Estimated synced: <n-time :to="toTime"
+                        type="relative" /></div>
+
+                <n-tag v-if="appState.accountStatus === AccountStatus.REGISTERING" type="warning" round strong>
                     Account Creation Pending
                 </n-tag>
             </div>
@@ -89,12 +94,19 @@
                             </div>
 
                             <div class="token-right">
-                                <div v-show="!appState.isHideInfo" class="balance">
-                                    {{ convertToMinaUnit(item.balance) }}
-                                </div>
-                                <div v-show="appState.isHideInfo" class="balance">
-                                    *****
-                                </div>
+                                <template v-if="item.balance !== null">
+                                    <div v-show="!appState.isHideInfo" class="balance">
+                                        {{ convertToMinaUnit(item.balance) }}
+                                    </div>
+                                    <div v-show="appState.isHideInfo" class="balance">
+                                        *****
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <div class="balance">
+                                        <n-spin :size="16" stroke="#97989d" />
+                                    </div>
+                                </template>
                             </div>
 
                         </div>
@@ -105,7 +117,7 @@
                     <n-tab-pane name="history" tab="History">
 
                         <div v-if="txList.length" v-for="item in txList" :key="item.txHash" class="tx"
-                            @click="toClaimPage(item.actionType)">
+                            @click="toClaimPage(item.actionType, item.finalizedTs, item.withdrawNoteCommitment)">
                             <div class="tx-left">
                                 <div class="action-icon">
                                     <van-icon v-if="item.isSender" :name="transferOut" size="40" />
@@ -117,7 +129,9 @@
                                         <span v-if="item.isSender">{{ item.receiver }}</span>
                                         <span v-else>{{ item.sender }}</span>
 
-                                        <div v-if="item.actionType === '3'" class="tx-label">claim</div>
+                                        <div v-if="item.actionType === '3' && item.finalizedTs !== 0" class="tx-label">
+                                            claimable
+                                        </div>
                                     </div>
                                     <div class="tx-time">
                                         <n-time :time="item.createdTs" format="yyyy-MM-dd HH:mm" />
@@ -167,7 +181,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useMessage } from 'naive-ui';
+import { useMessage, useDialog } from 'naive-ui';
 
 import minaIcon from "@/assets/mina.svg";
 import transferIn from '@/assets/transfer-in.svg';
@@ -176,133 +190,184 @@ import depositIcon from '@/assets/deposit.svg';
 import withdrawIcon from '@/assets/withdraw.svg';
 import transferIcon from '@/assets/round_transfer.svg';
 import copyIcon from '@/assets/copy.svg';
+import exitIcon from '@/assets/exit.svg';
+import { AccountStatus, PageAction, SdkEventType } from '../../common/constants';
+import { SdkEvent, TxHis } from '../../common/types';
 
-const { appState, switchInfoHideStatus } = useStatus();
+const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance } = useStatus();
 const { convertToMinaUnit, calculateUsdAmount, omitAddress } = useUtils();
 const router = useRouter();
 const message = useMessage();
+const dialog = useDialog();
+const { SdkState, exitAccount, listenSyncerChannel } = useSdk();
+const remoteApi = SdkState.remoteApi!;
+const remoteSyncer = SdkState.remoteSyncer!;
 
 let copyFunc: (text: string) => void;
 
-onMounted(() => {
-    const { copyText } = useClientUtils();
-    copyFunc = copyText;
+const expectSyncedSpendTime = ref(0);
+const toTime = computed(() => Date.now() - expectSyncedSpendTime.value);
+const syncedBlock = ref(0);
+const latestBlock = ref(0);
+const lastBlockProcessDoneTime = ref(Date.now());
+const syncerListenerSetted = ref(false);
+
+const tokenList = computed(() => {
+    return [
+        { tokenId: 1, tokenName: "MINA", tokenNetwork: "Anomix", balance: appState.value.totalNanoBalance },
+        //{ tokenId: 1, tokenName: "MINA", tokenNetwork: "Anomix", balance: 100.25 * 10e8 },
+    ];
 });
-
-const copyAddress = () => {
-    copyFunc(appState.value.accountPk58);
-    message.success(
-        "Copy address successfully",
-        {
-            closable: true
-        }
-    );
-};
-
-const toClaimPage = (actionType: string) => {
-    if (actionType === '3') {
-        router.push('/claim/claim');
-    }
-
-};
-const alias = ref("Alice");
+const totalAmount = computed(() => {
+    //return "101.23";
+    return calculateUsdAmount(tokenList.value[0].tokenName, convertToMinaUnit(appState.value.totalNanoBalance));
+});
+const txList = ref<TxHis[]>([]);
+const alias = computed(() => appState.value.alias !== null ? appState.value.alias + '.ano' : null);
 const accountPk58 = computed(() => omitAddress(appState.value.accountPk58));
-const accountCreationPending = ref(true);
-
-const showNoti = ref(false);
-const MINA = 1000_000_000n;
-
 const tabStyle = {
     'font-size': '20px',
     'font-weight': '500',
 };
 
-const tokenList = computed(() => {
-    return [
-        { tokenId: 1, tokenName: "MINA", tokenNetwork: "Anomix", balance: appState.value.totalBalance },
-    ];
-});
+const userTx2TxHis = (tx: any) => {
+    const txHis: TxHis = {
+        txHash: tx.txHash,
+        sender: tx.sender ? tx.sender : appState.value.accountPk58!,
+        receiver: tx.receiver ? tx.receiver : appState.value.accountPk58!,
+        publicValue: tx.publicValue ? tx.publicValue : '0',
+        privateValue: tx.privateValue ? tx.privateValue : '0',
+        actionType: tx.actionType ? tx.actionType : '4', // 4: account tx
+        txFee: tx.txFee ? tx.txFee : '0',
+        isSender: tx.isSender !== undefined ? tx.isSender : true,
+        withdrawNoteCommitment: tx.withdrawNoteCommitment ? tx.withdrawNoteCommitment : null,
+        createdTs: tx.createdTs,
+        finalizedTs: tx.finalizedTs,
+    };
+    return txHis;
+};
 
-const totalAmount = computed(() => {
-    return calculateUsdAmount(tokenList.value[0].tokenName, convertToMinaUnit(appState.value.totalBalance));
-});
+onMounted(async () => {
+    console.log('account onMounted...');
+    const { copyText } = useClientUtils();
+    copyFunc = copyText;
 
+    // get latest block
+    latestBlock.value = await remoteApi.getBlockHeight();
 
-const txList = [
-    {
-        txHash: '1',
-        actionType: '1', // deposit
-        publicValue: 23n * MINA + '',
-        privateValue: '0',
-        txFee: MINA + '',
-        sender: 'B629al...Af0FXu',
-        receiver: 'B629al...Af0FXu',
-        isSender: false,
-        createdTs: Date.now(),
-
-    },
-    {
-        txHash: '2',
-        actionType: '2', // send
-        publicValue: '0',
-        privateValue: 121n * MINA + '',
-        txFee: MINA + '',
-        sender: 'B629al...Af0FXu',
-        receiver: 'B629al...Af0FXu',
-        isSender: true,
-        createdTs: Date.now(),
-
-    },
-    {
-        txHash: '3',
-        actionType: '3', // send
-        publicValue: 15n * MINA + '',
-        privateValue: '0',
-        txFee: MINA + '',
-        sender: 'B629al...Af0FXu',
-        receiver: 'B629al...Af0FXu',
-        isSender: true,
-        createdTs: Date.now(),
-
+    // get account synced block
+    const syncedToBlock = await remoteApi.getAccountSyncedToBlock(appState.value.accountPk58!);
+    if (!syncedToBlock) {
+        syncedBlock.value = syncedToBlock!;
     }
-];
+
+    // get total balance now
+    const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
+    if (synced) {
+        const balance = await remoteApi.getBalance(appState.value.accountPk58!);
+        setTotalNanoBalance(balance.toString());
+    }
+
+    // get history
+    const txs = await remoteApi.getTxs(appState.value.accountPk58!);
+    let txHis: TxHis[] = [];
+    txs.forEach(tx => {
+        txHis.push(userTx2TxHis(tx));
+    });
+    txList.value = txHis;
+
+    // set syncer listener
+    if (!syncerListenerSetted) {
+        listenSyncerChannel(async (event: SdkEvent) => {
+            console.log('syncer event: ', event);
+            if (event.eventType === SdkEventType.UPDATED_ACCOUNT_STATE) {
+                if (event.data.accountPk === appState.value.accountPk58) {
+                    const oneBlockSpendTime = Date.now() - lastBlockProcessDoneTime.value;
+                    lastBlockProcessDoneTime.value = Date.now();
+
+                    // get latest block
+                    const blockHeight = await remoteApi.getBlockHeight();
+                    latestBlock.value = blockHeight;
+                    syncedBlock.value = event.data.syncedToBlock;
+
+                    expectSyncedSpendTime.value = oneBlockSpendTime * (blockHeight - event.data.syncedToBlock);
+
+                    // get latest balance
+                    const balance = await remoteApi.getBalance(appState.value.accountPk58!);
+                    setTotalNanoBalance(balance.toString());
+
+                    // get lastest history
+                    const txs = await remoteApi.getTxs(appState.value.accountPk58!);
+                    let txHis: TxHis[] = [];
+                    txs.forEach(tx => {
+                        txHis.push(userTx2TxHis(tx));
+                    });
+                    txList.value = txHis;
+
+                    if (appState.value.accountStatus === AccountStatus.REGISTERING) {
+                        // check if register success
+                        const registerSuccess = await remoteApi.isAliasRegistered(appState.value.alias!, false);
+                        if (registerSuccess) {
+                            appState.value.accountStatus = AccountStatus.REGISTERED;
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+
+const exit = () => {
+    dialog.warning({
+        title: 'Log Out Ano.Cash',
+        content: 'Are you sure you want to log out?',
+        positiveText: 'Log out',
+        negativeText: 'Cancel',
+        onPositiveClick: async () => {
+            await exitAccount();
+            message.success('Log out successfully');
+            router.replace("/login/session");
+        },
+        onNegativeClick: () => {
+            console.log('cancel log out');
+        }
+    })
+};
+
+const copyAddress = () => {
+    copyFunc(appState.value.accountPk58!);
+    message.success("Copy address successfully");
+};
+
+const toClaimPage = (actionType: string, finalizedTs: number, commitment: string | null) => {
+    if (actionType === '3' && finalizedTs !== 0 && commitment !== null) {
+        router.push(`/claim/${commitment}`);
+    }
+
+};
 
 const toDeposit = () => {
     router.push("/operation/deposit");
 };
 
 const toSend = () => {
+    setPageParams(PageAction.SEND_TOKEN, null);
     router.push("/operation/send");
 };
 
 const toWithdraw = () => {
-    router.push("/operation/withdraw");
+    setPageParams(PageAction.WITHDRAW_TOKEN, null);
+    router.push("/operation/send");
 };
 
-const toSetting = () => {
-    router.push("/setting");
-};
-const showNotiy = () => {
-    showNoti.value = true;
-};
-const toMessage = () => {
-    router.push("/message?id=123");
-};
 </script>
 
 <style lang="scss" scoped>
-.home {
-    justify-content: flex-start;
-    padding-left: 0;
-    padding-right: 0;
-    overflow: hidden;
-}
-
-.dot {
-    font-weight: bold;
-    font-size: 23px;
-    margin-left: 20px;
-}
+// .dot {
+//     font-weight: bold;
+//     font-size: 23px;
+//     margin-left: 20px;
+// }
 
 .ano-home-page-header {
     position: absolute;
@@ -319,6 +384,13 @@ const toMessage = () => {
         align-items: center;
         height: 50px;
         margin-bottom: 20px;
+
+
+        .right-icons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     }
 
     .user {
@@ -358,11 +430,6 @@ const toMessage = () => {
         }
     }
 
-    .setting-icons {
-        display: flex;
-        justify-content: flex-start;
-        align-items: center;
-    }
 
 }
 
@@ -373,7 +440,6 @@ const toMessage = () => {
         padding: 24px 40px 0 40px;
     }
 }
-
 
 .ano-sum-box {
     padding-top: 30px;
@@ -412,7 +478,7 @@ const toMessage = () => {
                 bottom: 0;
                 cursor: pointer;
                 padding: 10px;
-                //font-size: 18px;
+
                 color: var(--up-text-third);
             }
         }
@@ -564,6 +630,7 @@ const toMessage = () => {
     backdrop-filter: blur(8px);
     display: flex;
     justify-content: space-between;
+    align-items: center;
 
     .token-left {
         display: flex;
@@ -620,16 +687,6 @@ const toMessage = () => {
             line-height: 20px;
         }
 
-    }
-
-}
-
-
-@media screen and (min-width: 480px) {
-    .up-home-page-header {
-        left: -40px;
-        right: -40px;
-        padding: 24px 40px 0;
     }
 
 }

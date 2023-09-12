@@ -4,7 +4,7 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "cd ../../packages/sdk && npm run lib:build && cd ../../apps/ano-cash-ui && npm install && nuxt dev",
-    "updateSdk": "cd ../../packages/sdk && npm run lib:build && cd ../../apps/ano-cash-ui && npm install",
+    "sdkUpdate": "cd ../../packages/sdk && npm run lib:build && cd ../../apps/ano-cash-ui && npm install",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
@@ -30,6 +30,6 @@
     "@anomix/sdk": "^0.1.0",
     "bignumber.js": "^9.1.1",
     "comlink": "^4.4.1",
-    "snarkyjs": "^0.12.1"
+    "o1js": "0.12.2"
   }
 }

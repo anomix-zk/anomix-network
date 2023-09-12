@@ -42,7 +42,7 @@ import {
   Scalar,
   Signature,
   UInt64,
-} from 'snarkyjs';
+} from 'o1js';
 import { Database } from './database/database';
 import { KeyStore } from './key_store/key_store';
 import { PasswordKeyStore } from './key_store/password_key_store';
@@ -397,7 +397,7 @@ export class AnomixSdk {
 
   public async getSecretKey(
     publicKey: PublicKey,
-    pwd: string
+    pwd?: string
   ): Promise<PrivateKey | undefined> {
     return await this.keyStore.getAccountPrivateKey(publicKey, pwd);
   }
@@ -446,8 +446,12 @@ export class AnomixSdk {
     );
   }
 
+  private computeAliasHashField(alias: string): Field {
+    return Poseidon.hash(Encoding.Bijective.Fp.fromString(alias));
+  }
+
   private computeAliasHash(alias: string): string {
-    return Poseidon.hash(Encoding.Bijective.Fp.fromString(alias)).toString();
+    return this.computeAliasHashField(alias).toString();
   }
 
   public async getAccountPublicKeyByAlias(
@@ -462,6 +466,10 @@ export class AnomixSdk {
     }
 
     return;
+  }
+
+  public async getBlockHeight() {
+    return await this.node.getBlockHeight();
   }
 
   public async getAccountIndexByAlias(
@@ -834,20 +842,18 @@ export class AnomixSdk {
 
   public async createPaymentTx({
     accountPk,
-    accountPrivateKey,
-    aliasHash,
+    alias,
     senderAccountRequired,
     receiver,
     receiverAccountRequired,
-    anonymousToReceiver = false,
+    anonymousToReceiver,
     payAmount,
     payAssetId,
     txFee,
     isWithdraw,
   }: {
     accountPk: PublicKey;
-    accountPrivateKey: PrivateKey;
-    aliasHash: Field;
+    alias: string | null;
     senderAccountRequired: Field;
     receiver: PublicKey;
     receiverAccountRequired: Field;
@@ -885,6 +891,9 @@ export class AnomixSdk {
     let inputNote2Witness = DataMerkleWitness.zero(DUMMY_FIELD);
     let accountNoteIndex = Field(0);
     let accountNoteWitness = DataMerkleWitness.zero(DUMMY_FIELD);
+
+    const aliasHash =
+      alias !== null ? this.computeAliasHashField(alias) : Field(0);
     const aliasHashStr = aliasHash.toString();
     const aliases = await this.db.getAliasesByAliasHash(aliasHashStr);
     if (aliases.length > 0) {
@@ -898,6 +907,13 @@ export class AnomixSdk {
     }
     let signingPk = accountPk;
     const accountPk58 = accountPk.toBase58();
+
+    const accountPrivateKey = await this.keyStore.getAccountPrivateKey(
+      accountPk
+    );
+    if (accountPrivateKey === undefined) {
+      throw new Error('AccountPrivateKey cannot be found in keyStore');
+    }
 
     this.log.info('check isAccountRegistered...');
     if (
@@ -1284,5 +1300,9 @@ export class AnomixSdk {
         alias,
       },
     } as Tx;
+  }
+
+  public async isUserTxSettled(txHash: string) {
+    return await this.db.isUserTxSettled(txHash);
   }
 }

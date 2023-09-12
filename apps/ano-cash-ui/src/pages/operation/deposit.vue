@@ -55,8 +55,11 @@
 
           <div class="to-input">
             <n-input placeholder="Alias (xxx.ano) or address (B62)" size="large" clearable :allow-input="checkNoSideSpace"
-              v-model:value="receiver">
-
+              v-model:value="receiver" @blur="checkAliasExist">
+              <template #suffix>
+                <van-icon v-show="checkAlias === 1" name="passed" color="green" size="20" />
+                <van-icon v-show="checkAlias === 0" name="close" color="red" size="20" />
+              </template>
             </n-input>
           </div>
 
@@ -132,6 +135,27 @@ const depositAmount = ref<number | undefined>(undefined);
 const receiver = ref('');
 const maskId = 'deposit';
 const maskListenerSetted = ref(false);
+
+// -1: not alias, 0: alias not exist, 1: alias exist
+const checkAlias = ref(-1);
+const checkAliasExist = async () => {
+  console.log('checkAliasExist...');
+  if (!receiver.value.endsWith('.ano')) {
+    checkAlias.value = -1;
+    return;
+  }
+
+  const isRegistered = await remoteApi.isAliasRegistered(receiver.value, false);
+  if (isRegistered) {
+    console.log(`${receiver.value} exists`);
+    checkAlias.value = 1;
+  } else {
+    console.log(`${receiver.value} not exists`);
+    checkAlias.value = 0;
+    message.error(`${receiver.value} not exists`, { duration: 5000, closable: true });
+  }
+};
+
 const deposit = async () => {
   if (depositAmount.value === undefined || depositAmount.value <= 0) {
     message.error('Please input deposit amount.');
@@ -162,6 +186,11 @@ const deposit = async () => {
     let receiverPk: string | undefined = undefined;
     if (receiver.value.endsWith('.ano')) {
       receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiver.value.replace('.ano', ''));
+      if (!receiverPk) {
+        closeLoadingMask(maskId);
+        message.error(`Receiver: ${receiver.value} not found.`, { duration: 0, closable: true });
+        return;
+      }
     } else {
       receiverPk = receiver.value;
     }
@@ -193,6 +222,7 @@ const deposit = async () => {
     closeLoadingMask(maskId);
   }
 };
+
 
 const connect = async () => {
   console.log('connect wallet...');

@@ -18,7 +18,8 @@ const SdkState = {
 export type SdkStateType = typeof SdkState;
 
 export default function () {
-    const { setSdkExist, setSyncerStarted, setApiExist } = useStatus();
+    const { setSdkExist, setSyncerStarted, setApiExist, resetStatusForLogOut } =
+        useStatus();
 
     const createRemoteSdk = async (config: SdkConfig) => {
         console.log("create remote sdk...");
@@ -77,9 +78,45 @@ export default function () {
         console.log("remote syncer create success");
     };
 
-    const unlockKeyStore = async (cachedPubKeys: string[], pwd: string) => {
-        await SdkState.remoteSdk?.unlockKeyStore(cachedPubKeys, pwd);
-        await SdkState.remoteSyncer?.unlockKeyStore(cachedPubKeys, pwd);
+    const addAccount = async (
+        accountPrivateKey58: string,
+        pwd: string,
+        signingPrivateKey1_58: string | undefined,
+        signingPrivateKey2_58: string | undefined,
+        alias: string | undefined
+    ) => {
+        const accountPk = await SdkState.remoteSyncer!.addAccount(
+            accountPrivateKey58,
+            pwd,
+            signingPrivateKey1_58,
+            signingPrivateKey2_58,
+            alias
+        );
+
+        const cachedPubKeys: string[] = [accountPk];
+        if (signingPrivateKey1_58) {
+            const signingPk1 = await SdkState.remoteApi!.derivePublicKey(
+                signingPrivateKey1_58
+            );
+            cachedPubKeys.push(signingPk1);
+        }
+        if (signingPrivateKey2_58) {
+            const signingPk2 = await SdkState.remoteApi!.derivePublicKey(
+                signingPrivateKey2_58
+            );
+            cachedPubKeys.push(signingPk2);
+        }
+        await SdkState.remoteSdk!.unlockKeyStore(cachedPubKeys, pwd);
+
+        return accountPk;
+    };
+
+    const exitAccount = async () => {
+        console.log("exit account...");
+        await SdkState.remoteSdk!.lockKeyStore();
+        await SdkState.remoteSyncer!.lockKeyStore();
+        resetStatusForLogOut();
+        console.log("exit account success");
     };
 
     const listenLogChannel = () => {
@@ -95,10 +132,12 @@ export default function () {
     };
 
     const listenSyncerChannel = (func: (event: SdkEvent) => void) => {
+        console.log("set listenSyncerChannel...");
         const chan = new BroadcastChannel(CHANNEL_SYNCER);
         chan.onmessage = (ev: any) => {
             func(ev.data);
         };
+        console.log("set listenSyncerChannel success");
     };
 
     return {
@@ -108,6 +147,7 @@ export default function () {
         startRemoteSyncer,
         listenSyncerChannel,
         createRemoteApi,
-        unlockKeyStore,
+        addAccount,
+        exitAccount,
     };
 }

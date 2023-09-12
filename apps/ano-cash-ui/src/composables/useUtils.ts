@@ -70,15 +70,15 @@ export default function () {
 
     const calculateUsdAmount = (
         tokenName: string,
-        tokenBalance: BigNumber | string | undefined
+        tokenBalance: BigNumber | string | undefined | null
     ) => {
-        if (!tokenBalance) {
-            return undefined;
+        if (!tokenBalance || tokenBalance === null) {
+            return null;
         }
 
         const tokenUsdPrice = getTokenUsdPrice(tokenName);
-        if (!tokenUsdPrice) {
-            return undefined;
+        if (tokenUsdPrice === null) {
+            return null;
         }
 
         return new BigNumber(tokenUsdPrice)

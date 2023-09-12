@@ -70,8 +70,7 @@ import { ref } from "vue";
 import { AccountStatus } from "../../common/constants";
 
 const message = useMessage();
-const { SdkState } = useSdk();
-const remoteSyncer = SdkState.remoteSyncer!;
+const { SdkState, addAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const { setAlias, setAccountStatus, appState, setAccountPk58, setSigningPk1 } = useStatus();
 const router = useRouter();
@@ -180,7 +179,7 @@ const login = async () => {
             setAccountStatus(AccountStatus.UNREGISTERED);
         }
 
-        const accountPk = await remoteSyncer.addAccount(accountPrivateKey.value, pwd.value, accountSigningKey.value,
+        const accountPk = await addAccount(accountPrivateKey.value, pwd.value, accountSigningKey.value,
             undefined, undefined);
         if (accountPk) {
             setAccountPk58(accountPk58);
@@ -194,7 +193,7 @@ const login = async () => {
             }
         }
     } catch (err: any) {
-        console.log('addAccount: ', err);
+        console.log('addAnomixAccount: ', err);
         message.error(err.message, {
             closable: true,
             duration: 0

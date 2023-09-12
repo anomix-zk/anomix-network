@@ -4,7 +4,7 @@ import { PasswordKeyStore } from '../key_store/password_key_store';
 import { NodeProvider } from '../rollup_node/node_provider';
 import { SdkOptions } from '../sdk_options';
 import { Syncer } from './syncer';
-import { PublicKey } from 'snarkyjs';
+import { PublicKey } from 'o1js';
 //import { parentPort } from 'worker_threads';
 import isNode from 'detect-node';
 import { expose } from 'comlink';

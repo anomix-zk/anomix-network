@@ -1,5 +1,5 @@
 import { consola, ConsolaInstance } from 'consola';
-import { PublicKey } from 'snarkyjs';
+import { PublicKey } from 'o1js';
 import { Database } from '../database/database';
 import { KeyStore } from '../key_store/key_store';
 import { NoteProcessor } from '../note_processor/note_processor';

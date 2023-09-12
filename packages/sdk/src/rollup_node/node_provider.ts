@@ -8,7 +8,6 @@ import {
   NetworkStatusDto,
   TxFeeSuggestionDto,
   WithdrawalWitnessDto,
-  WithdrawAssetReqDto,
   WithdrawInfoDto,
   WorldStateRespDto,
 } from '@anomix/types';

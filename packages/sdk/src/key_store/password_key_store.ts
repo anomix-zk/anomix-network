@@ -1,5 +1,5 @@
 import { decrypt, encrypt } from '@anomix/utils';
-import { Poseidon, PrivateKey, PublicKey, Encoding } from 'snarkyjs';
+import { Poseidon, PrivateKey, PublicKey, Encoding } from 'o1js';
 import { Database } from '../database/database';
 import { KeyStore } from './key_store';
 

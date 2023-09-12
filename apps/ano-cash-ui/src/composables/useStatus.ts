@@ -9,12 +9,10 @@ export default function () {
 
     type AppState = {
         accountPk58: string | null;
-        signingPk1_58: string | null;
-        signingPk2_58: string | null;
         alias: string | null;
         accountStatus: AccountStatus;
         isHideInfo: boolean;
-        totalBalance: string | null;
+        totalNanoBalance: string | null;
         tokenPrices: tokenPrice[];
         connectedWallet58: string | null;
         minaNetwork: string;
@@ -34,17 +32,15 @@ export default function () {
     const appState = useState<AppState>("appState", () => {
         return {
             accountPk58: null,
-            signingPk1_58: null,
-            signingPk2_58: null,
             alias: null,
             accountStatus: AccountStatus.UNREGISTERED,
             isHideInfo: false,
-            totalBalance: 231.6 * 1000_000_000 + "",
+            totalNanoBalance: null,
             tokenPrices: [
                 {
                     tokenName: "MINA",
-                    usd: "0.462",
-                    cny: "3.34",
+                    usd: "0.374243",
+                    cny: "2.8",
                 },
             ],
             connectedWallet58: null,
@@ -83,6 +79,10 @@ export default function () {
     const clearPageParams = () => {
         pageParams.value.action = null;
         pageParams.value.params = null;
+    };
+
+    const setTokenPrices = (tokenPrices: tokenPrice[]) => {
+        appState.value.tokenPrices = tokenPrices;
     };
 
     const showLoadingMask = ({
@@ -127,7 +127,7 @@ export default function () {
             return tokenPrice["usd"];
         }
 
-        return undefined;
+        return null;
     };
 
     const setConnectedWallet = (address58: string | null) => {
@@ -150,21 +150,23 @@ export default function () {
         appState.value.accountPk58 = pk58;
     };
 
-    const setSigningPk1 = (pk58: string | null) => {
-        appState.value.signingPk1_58 = pk58;
-    };
-
-    const setSigningPk2 = (pk58: string | null) => {
-        _;
-        appState.value.signingPk2_58 = pk58;
-    };
-
     const setAlias = (alias: string | null) => {
         appState.value.alias = alias;
     };
 
     const setAccountStatus = (status: AccountStatus) => {
         appState.value.accountStatus = status;
+    };
+
+    const setTotalNanoBalance = (balance: string | null) => {
+        appState.value.totalNanoBalance = balance;
+    };
+
+    const resetStatusForLogOut = () => {
+        setAccountPk58(null);
+        setAlias(null);
+        setAccountStatus(AccountStatus.UNREGISTERED);
+        setTotalNanoBalance(null);
     };
 
     return {
@@ -180,10 +182,11 @@ export default function () {
         closeLoadingMask,
         setSyncerStarted,
         setApiExist,
-        setSigningPk1,
-        setSigningPk2,
         setAccountStatus,
         setPageParams,
         clearPageParams,
+        setTotalNanoBalance,
+        resetStatusForLogOut,
+        setTokenPrices,
     };
 }

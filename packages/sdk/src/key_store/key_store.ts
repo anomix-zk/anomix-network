@@ -1,4 +1,4 @@
-import { PrivateKey, PublicKey } from 'snarkyjs';
+import { PrivateKey, PublicKey } from 'o1js';
 
 export interface KeyStore {
   addAccount(

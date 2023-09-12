@@ -1,5 +1,5 @@
 import { decrypt, encrypt } from '@anomix/utils';
-import { Encoding, Poseidon, PrivateKey } from 'snarkyjs';
+import { Encoding, Poseidon, PrivateKey } from 'o1js';
 
 export async function decryptAlias(
   aliasInfo: string,

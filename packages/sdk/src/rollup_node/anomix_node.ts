@@ -1,13 +1,11 @@
 import {
   AssetsInBlockDto,
-  BaseResponse,
   L2TxReqDto,
   L2TxSimpleDto,
   MerkleProofDto,
   NetworkStatusDto,
   TxFeeSuggestionDto,
   WithdrawalWitnessDto,
-  WithdrawAssetReqDto,
   WithdrawInfoDto,
   WorldStateRespDto,
 } from '@anomix/types';

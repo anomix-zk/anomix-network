@@ -1,5 +1,5 @@
 import { Alias, Database } from '../database/database';
-import { Bool, Field, PrivateKey, PublicKey } from 'snarkyjs';
+import { Bool, Field, PublicKey } from 'o1js';
 import { AnomixNode } from '../rollup_node/anomix_node';
 import { consola } from 'consola';
 import { AssetsInBlockDto } from '@anomix/types';

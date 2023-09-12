@@ -9,7 +9,7 @@
 //   Provable,
 //   provablePure,
 //   Struct,
-// } from 'snarkyjs';
+// } from 'o1js';
 
 import {
   Bool,
