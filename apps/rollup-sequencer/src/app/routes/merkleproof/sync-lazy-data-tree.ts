@@ -4,7 +4,7 @@ import { FastifyPlugin } from "fastify"
 import { BaseResponse, BlockCacheType, MerkleTreeId } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 import { getConnection } from "typeorm"
-import { BlockCache } from "@anomix/dao"
+import { Block, BlockCache } from "@anomix/dao"
 import { Field } from "snarkyjs";
 
 
@@ -25,22 +25,44 @@ export const syncLazyDataTree: FastifyPlugin = async function (
     })
 }
 
-export const handler: RequestHandler<null, number> = async function (
+export const handler: RequestHandler<null, { blockId: number }> = async function (
     req,
     res
 ): Promise<BaseResponse<string>> {
-    const blockId = req.params;
+    const blockId = req.params.blockId;
 
     try {
-        const blockCacheRepo = getConnection().getRepository(BlockCache);
-        const blockCachedUpdates = (await blockCacheRepo.findOne({ where: { blockId, type: BlockCacheType.DATA_TREE_UPDATES } }))!.cache;
 
-        this.worldState.worldStateDB.appendLeaves(MerkleTreeId.SYNC_DATA_TREE, JSON.parse(blockCachedUpdates));
-        this.worldState.worldStateDB.commit(); // here only 'SYNC_DATA_TREE' commits
+        const blockRepo = getConnection().getRepository(Block);
+        const block = (await blockRepo.findOne({ where: { id: blockId } }));
 
-        return {
-            code: 0, data: '', msg: ''
-        };
+        if (!block) {
+            return {
+                code: 1, data: '', msg: 'non-exiting blockId'
+            };
+        }
+
+        // check if sync_date_tree root is aligned with 
+        // check if duplicated call
+        const syncDataTreeRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, false);
+        if (block.dataTreeRoot0 == syncDataTreeRoot.toString()) {
+            const blockCacheRepo = getConnection().getRepository(BlockCache);
+            const cachedStr = (await blockCacheRepo.findOne({ where: { blockId, type: BlockCacheType.DATA_TREE_UPDATES } }))!.cache;
+
+            const blockCachedUpdates1 = (JSON.parse(cachedStr) as Array<string>).map(i => Field(i));
+            await this.worldState.worldStateDB.appendLeaves(MerkleTreeId.SYNC_DATA_TREE, blockCachedUpdates1);
+
+            await this.worldState.worldStateDB.commit(); // here only 'SYNC_DATA_TREE' commits underlyingly           
+
+            return {
+                code: 0, data: '', msg: ''
+            };
+        } else {
+            return {
+                code: 1, data: '', msg: 'rejected duplicated call!'
+            };
+        }
+
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
