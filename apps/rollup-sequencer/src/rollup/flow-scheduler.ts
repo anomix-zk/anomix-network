@@ -261,7 +261,7 @@ export class FlowScheduler {
             const cachedUpdates = this.worldStateDB.exportCacheUpdates(MerkleTreeId.DATA_TREE);
             const blockCachedUpdates = new BlockCache();
             blockCachedUpdates.blockId = block.id;
-            blockCachedUpdates.cache = cachedUpdates;
+            blockCachedUpdates.cache = JSON.stringify(cachedUpdates);
             blockCachedUpdates.type = BlockCacheType.DATA_TREE_UPDATES;//  0
             await queryRunner.manager.save(blockCachedUpdates);
 

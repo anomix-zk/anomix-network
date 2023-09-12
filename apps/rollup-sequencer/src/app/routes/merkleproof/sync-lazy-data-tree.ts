@@ -35,13 +35,7 @@ export const handler: RequestHandler<null, number> = async function (
         const blockCacheRepo = getConnection().getRepository(BlockCache);
         const blockCachedUpdates = (await blockCacheRepo.findOne({ where: { blockId, type: BlockCacheType.DATA_TREE_UPDATES } }))!.cache;
 
-        const cached = JSON.parse(blockCachedUpdates);
-        const keys = Object.getOwnPropertyNames(cached);
-        const batch: Field[] = [];
-        for (const key of keys) {
-            batch.push(cached[key]);
-        }
-        this.worldState.worldStateDB.appendLeaves(MerkleTreeId.SYNC_DATA_TREE, batch);
+        this.worldState.worldStateDB.appendLeaves(MerkleTreeId.SYNC_DATA_TREE, JSON.parse(blockCachedUpdates));
         this.worldState.worldStateDB.commit(); // here only 'SYNC_DATA_TREE' commits
 
         return {

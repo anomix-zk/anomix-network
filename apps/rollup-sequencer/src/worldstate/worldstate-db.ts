@@ -10,6 +10,7 @@ import leveldown from "leveldown";
 export class WorldStateDB {
     private readonly db: LevelUp
     private trees = new Map<MerkleTreeId, (AppendOnlyTree | IndexedTree)>();
+    private appendedLeavesCollection = new Map<MerkleTreeId, Field[]>();
 
     constructor(dbPath: string) {
         this.db = levelup(leveldown(dbPath));
@@ -29,6 +30,11 @@ export class WorldStateDB {
         this.trees.set(MerkleTreeId.SYNC_DATA_TREE, syncDataTree);
         this.trees.set(MerkleTreeId.NULLIFIER_TREE, nullifierTree);
         this.trees.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, dataTreeRootsTree);
+
+        this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DATA_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.NULLIFIER_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, []);
     }
 
     /**
@@ -47,6 +53,11 @@ export class WorldStateDB {
 
         this.trees.set(MerkleTreeId.NULLIFIER_TREE, nullifierTree);
         this.trees.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, dataTreeRootsTree);
+
+        this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DATA_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.NULLIFIER_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, []);
     }
 
     /**
@@ -55,6 +66,7 @@ export class WorldStateDB {
      */
     async appendLeaves(treeId: MerkleTreeId, leaves: Field[]) {
         await this.trees.get(treeId)!.appendLeaves(leaves);
+        this.appendedLeavesCollection.get(treeId)?.push(...leaves);
     }
 
     /**
@@ -62,7 +74,7 @@ export class WorldStateDB {
      * @param leaf - The leaves to be appended.
      */
     async appendLeaf(treeId: MerkleTreeId, leaf: Field) {
-        return await this.appendLeaves(treeId, [leaf])[0];
+        await this.appendLeaves(treeId, [leaf]);
     }
 
     /**
@@ -94,10 +106,10 @@ export class WorldStateDB {
     }
 
     /**
-     * export cached updates as string
+     * export cached updates in order
      */
     exportCacheUpdates(treeId: MerkleTreeId) {
-        const updates = (this.trees.get(treeId)! as any as { exportCache: () => string }).exportCache();
+        const updates = this.appendedLeavesCollection.get(treeId);
         return updates;
     }
 
@@ -108,6 +120,11 @@ export class WorldStateDB {
         await this.trees.get(MerkleTreeId.DATA_TREE)!.commit();
         await this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.commit();
         await this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.commit();
+
+        this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DATA_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.NULLIFIER_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, []);
     }
 
     /**
@@ -124,6 +141,11 @@ export class WorldStateDB {
         await this.trees.get(MerkleTreeId.DATA_TREE)!.rollback();
         await this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.rollback();
         await this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.rollback();
+
+        this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DATA_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.NULLIFIER_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, []);
     }
 
     /**
