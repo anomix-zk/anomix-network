@@ -27,6 +27,9 @@ export const commitActionBatch = (state: DepositRollupState, actionBatch: Deposi
     let currIndex = state.currentIndex;
     let currActionsHash = state.currentActionsHash;
 
+    Provable.log('0currDepositTreeRoot: ', currDepositTreeRoot);
+    Provable.log('0currActionsHash: ', currActionsHash);
+
     // Process each action in the batch
     for (let i = 0, len = DepositActionBatch.batchSize; i < len; i++) {
         const currAction = actionBatch.actions[i];
@@ -73,10 +76,16 @@ export const commitActionBatch = (state: DepositRollupState, actionBatch: Deposi
         currDepositTreeRoot = temp.depositRoot;
         currIndex = temp.currentIndex;
 
-        Provable.log('currIndex: ', currIndex);
+        Provable.log('   currDepositTreeRoot: ', currDepositTreeRoot);
+        Provable.log('   currActionsHash: ', currActionsHash);
+
+        Provable.log('   currIndex: ', currIndex);
     }
 
-    return new DepositRollupStateTransition({
+    Provable.log('1currDepositTreeRoot: ', currDepositTreeRoot);
+    Provable.log('1currActionsHash: ', currActionsHash);
+
+    const x = new DepositRollupStateTransition({
         source: state,
         target: new DepositRollupState({
             depositRoot: currDepositTreeRoot,
@@ -84,6 +93,10 @@ export const commitActionBatch = (state: DepositRollupState, actionBatch: Deposi
             currentActionsHash: currActionsHash,
         }),
     });
+
+    Provable.log('x: ', x);
+
+    return x;
 }
 
 export const merge = (

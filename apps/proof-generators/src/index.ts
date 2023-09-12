@@ -1,6 +1,6 @@
 import cp from "child_process";
 import cluster from "cluster";
-import { activeMinaInstance } from "@anomix/utils";
+import { activeMinaInstance, saveProofTaskDtoFile } from "@anomix/utils";
 import { ProofTaskDto, ProofTaskType, FlowTask, FlowTaskType } from "@anomix/types";
 import config from "./lib/config";
 import { innerRollupBatchAndMerge } from "./provers/inner-rollup-handler";
@@ -17,6 +17,7 @@ import fs from "fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const logger = getLogger('proof-generator');
+
 
 function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
     // init worker thread A
@@ -35,23 +36,29 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
         try {
             const sendResultDepositCallback = async (p: any) => {
                 proofTaskDto.payload.data.data = p;
+                saveProofTaskDtoFile(proofTaskDto, '.');// save to file for test
+
                 await $axiosDeposit.post('/proof-result', proofTaskDto).then(value => {
                     console.log('$axiosDeposit.post to /proof-result, response:', value);
                 }).catch(reason => {
                     console.log('$axiosDeposit.post to /proof-result, error:', reason);
                 });
             }
+
             const sendResultDepositJoinSplitCallback = async (p: any) => {
                 proofTaskDto.payload = p;
+                saveProofTaskDtoFile(proofTaskDto, '.');// save to file for test
+
                 await $axiosDeposit.post('/proof-result', proofTaskDto).then(value => {
                     console.log('$axiosDeposit.post to /proof-result, response:', value);
                 }).catch(reason => {
                     console.log('$axiosDeposit.post to /proof-result, error:', reason);
                 });
             }
+
             const sendResultSeqCallback = async (p: any) => {
                 (proofTaskDto.payload as FlowTask<any>).data = p;
-                fs.writeFileSync(`./proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+                saveProofTaskDtoFile(proofTaskDto, '.');// save to file for test
 
                 await $axiosSeq.post('/proof-result', proofTaskDto).then(value => {
                     console.log('$axiosSeq.post to /proof-result, response:', value);

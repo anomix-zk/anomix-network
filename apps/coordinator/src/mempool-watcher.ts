@@ -42,9 +42,9 @@ parentPort?.postMessage({// if it's a subThread
     data: 'isReady'
 });
 
-// await mempoolWatch();
+await mempoolWatch();
 
-setInterval(mempoolWatch, 20 * 60 * 1000);// exec/1min
+setInterval(mempoolWatch, 1 * 60 * 1000);// exec/1min
 
 async function mempoolWatch() {
 

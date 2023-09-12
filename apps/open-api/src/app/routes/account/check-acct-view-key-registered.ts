@@ -51,6 +51,9 @@ export const handler: RequestHandler<reqBody, null> = async function (
             } else if (status == L2TxStatus.PENDING) {
                 msg = 'pending';
             }
+        } else {
+            data = false;
+            msg = 'no this account-viewing-key!'
         }
 
         return {

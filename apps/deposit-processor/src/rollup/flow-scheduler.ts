@@ -69,10 +69,15 @@ export class FlowScheduler {
 
         await queryRunner.startTransaction();
         try {
-            const originDcList = await queryRunner.manager.find(DepositCommitment, { where: { status: DepositStatus.PENDING }, order: { id: 'ASC' } }) ?? [];
+            let originDcList = await queryRunner.manager.find(DepositCommitment, { where: { status: DepositStatus.PENDING }, order: { id: 'ASC' } }) ?? [];
             if (originDcList.length == 0) {// if no, end.
                 return;
             }
+
+            // order: asc
+            originDcList = originDcList.sort((a, b) => {
+                return Number(a.depositNoteIndex) - Number(b.depositNoteIndex);
+            });
 
             const depositCommitmentList = [...originDcList];
             const DUMMY_ACTION = INITIAL_LEAF;
@@ -188,7 +193,10 @@ export class FlowScheduler {
                         }
                     }
                 } as ProofTaskDto<any, FlowTask<any>>;
-                fs.writeFileSync('./DEPOSIT_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
+                const fileName = './DEPOSIT_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+                fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+
 
                 await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
                     if (r.data.code == 1) {

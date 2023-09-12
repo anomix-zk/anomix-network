@@ -57,8 +57,16 @@ async function proofTrigger() {
         blockList!.forEach(async (block, indx) => {
             logger.info(`begin process block[${block.id}]`);
 
+            // to avoid double computation, should exclude those blocks that triggered previously but not completed
+            const timeRange = block.triggerProofAt ? (new Date().getTime() - block.triggerProofAt.getTime()) : 0;
+
             if (indx == 0 && block!.status == BlockStatus.PROVED) {// the lowest one with PROVED status, must be based on the onchain state inside AnomixRollupContract.
                 logger.info('the lowest one with PROVED status...');
+
+                if (0 < timeRange && timeRange < periodRange * 3) {
+                    logger.info(`this block was triggered previously, might not completed, skip it.`);
+                    return;
+                }
 
                 const rollupTaskDto = {
                     taskType: RollupTaskType.ROLLUP_CONTRACT_CALL,
@@ -73,15 +81,13 @@ async function proofTrigger() {
                         throw new Error(r.data.msg);
                     }
                 });
-
-                return;
+                logger.info('done.');
 
             } else if (block.status == BlockStatus.PENDING) {
                 logger.info(`BlockStatus: PENDING`);
-                // to avoid double computation, should exclude those blocks that triggered previously but not completed
-                const timeRange = new Date().getTime() - block.createdAt.getTime();
-                if (periodRange < timeRange && timeRange < periodRange * 3) {// TODO could improve: might mistake evaluate few blocks, but no worries, they will be processed at next triggger-round!
-                    logger.info(`this block was triggered previously but not completed, skip it.`);
+
+                if (0 < timeRange && timeRange < periodRange * 4) {
+                    logger.info(`this block was triggered previously, might not completed, skip it.`);
                     return;
                 }
 
@@ -102,6 +108,7 @@ async function proofTrigger() {
                             throw new Error(r.data.msg);
                         }
                     });
+                    logger.info('done.');
 
                 } else {
                     // notify rollup_processor to start innnerRollup-proof-gen
@@ -118,9 +125,16 @@ async function proofTrigger() {
                             throw new Error(r.data.msg);
                         }
                     });
+                    logger.info('done.');
                 }
             }
+
+            block.triggerProofAt = new Date();// update
         });
+
+        await queryRunner.manager.save(blockList);
+
+        await queryRunner.commitTransaction();
 
     } catch (error) {
         logger.error(error);

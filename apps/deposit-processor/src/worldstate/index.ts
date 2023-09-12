@@ -51,18 +51,27 @@ export class WorldState {
         const { taskType, index, payload } = proofTaskDto;
 
         if (taskType == ProofTaskType.DEPOSIT_JOIN_SPLIT) {
-            fs.writeFileSync('./DEPOSIT_JOIN_SPLIT_proofTaskDto_proofResult' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+            const fileName = './DEPOSIT_JOIN_SPLIT_proofTaskDto_proofResult' + new Date().getTime() + '.json';
+            fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+            logger.info(`save proofTaskDto into ${fileName}`);
+
             await this.whenDepositL2TxListComeBack(payload);
 
         } else {// deposit rollup proof flow
             const { flowId, taskType, data } = payload as FlowTask<any>;
 
             if (taskType == FlowTaskType.DEPOSIT_BATCH_MERGE) {
-                fs.writeFileSync('./DEPOSIT_BATCH_MERGE_proofTaskDto_proofResult' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+                const fileName = './DEPOSIT_BATCH_MERGE_proofTaskDto_proofResult' + new Date().getTime() + '.json';
+                fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+                logger.info(`save proofTaskDto into ${fileName}`);
+
                 await this.proofScheduler.whenMergedResultComeBack(data);
 
             } else if (taskType == FlowTaskType.DEPOSIT_UPDATESTATE) {
-                fs.writeFileSync('./DEPOSIT_UPDATESTATE_proofTaskDto_proofResult' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+                const fileName = './DEPOSIT_UPDATESTATE_proofTaskDto_proofResult' + new Date().getTime() + '.json';
+                fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+                logger.info(`save proofTaskDto into ${fileName}`);
+
                 await this.proofScheduler.whenDepositRollupL1TxComeBack(data);
             }
         }
@@ -79,12 +88,13 @@ export class WorldState {
         // asyncly send to 'Proof-Generator' to exec 'join_split_prover.deposit()'
         const connection = getConnection();
         const l2txRepo = connection.getRepository(L2Tx);
-        const depositMpL2TxList = await l2txRepo.find({ where: { blockId, actionType: ActionType.DEPOSIT.toString() }, order: { depositIndex: 'ASC' } }) ?? [];
-        if (depositMpL2TxList.length == 0) {
+        const depositL2TxList = await l2txRepo.find({ where: { blockId, actionType: ActionType.DEPOSIT.toString() }, order: { depositIndex: 'ASC' } }) ?? [];
+        if (depositL2TxList.length == 0) {
+            logger.info(`fetch no depositL2TxList of [blockId = ${blockId}, ActionType == ${ActionType.DEPOSIT.toString()}]`);
             return;
         }
 
-        const txIdJoinSplitDepositInputList = await Promise.all(await depositMpL2TxList.map(async tx => {
+        const txIdJoinSplitDepositInputList = await Promise.all(await depositL2TxList.map(async tx => {
             return {
                 txId: tx.id,
                 data: {
@@ -105,10 +115,15 @@ export class WorldState {
             index: undefined,
             payload: { blockId, data: txIdJoinSplitDepositInputList }
         } as ProofTaskDto<any, any>;
-        fs.writeFileSync('./DEPOSIT_JOIN_SPLIT_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
+        const fileName = './DEPOSIT_JOIN_SPLIT_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+        fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+        logger.info(`save proofTaskDto into ${fileName}`);
 
         // send to proof-generator for 'JoinSplitProver.deposit(*)'
         await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto);
+
+        logger.info('sent to proof-generator, done.');
     }
 
     /**
@@ -150,7 +165,10 @@ export class WorldState {
             index: undefined,
             payload: { blockId }
         }
-        fs.writeFileSync('./DEPOSIT_JOINSPLIT_rollupTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(rollupTaskDto));
+
+        const fileName = './DEPOSIT_JOINSPLIT_rollupTaskDto_proofReq' + new Date().getTime() + '.json';
+        fs.writeFileSync(fileName, JSON.stringify(rollupTaskDto));
+        logger.info(`save rollupTaskDto into ${fileName}`);
 
         // notify coordinator
         await $axiosCoordinator.post<BaseResponse<string>>('/rollup/proof-notify', rollupTaskDto).then(r => {

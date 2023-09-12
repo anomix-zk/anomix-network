@@ -9,6 +9,9 @@ import config from "@/lib/config";
 import { PrivateKey } from "snarkyjs";
 import { $axiosProofGenerator } from "@/lib";
 import fs from "fs";
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('triggerContractCall');
 
 /**
  * trigger rollup contract call
@@ -55,7 +58,10 @@ export const handler: RequestHandler<null, { transId: number }> = async function
                     }
                 } as FlowTask<any>
             } as ProofTaskDto<any, FlowTask<any>>;
-            fs.writeFileSync('./DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + new Date().getTime() + '.json', JSON.stringify(proofTaskDto));
+
+            const fileName = './DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+            fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
+            logger.info(`save proofTaskDto into ${fileName}`);
 
             // trigger directly
             await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {

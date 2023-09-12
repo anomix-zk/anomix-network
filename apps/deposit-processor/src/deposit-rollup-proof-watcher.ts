@@ -41,7 +41,7 @@ async function depositRollupProofWatch() {
     await dTranList.forEach(async dTran => {
         // MUST save the circuit's parameters for later new proof-gen tries
         const rollupBatchRepo = connection.getRepository(DepositRollupBatch);
-        const depositRollupBatch = await rollupBatchRepo.findOne({ where: { transId: dTran.id } });
+        const depositRollupBatch = await rollupBatchRepo.findOne({ where: { transId: dTran.id }, order: { createdAt: 'DESC' } });
 
         // try to send to proof-generator for exec 'InnerRollupProver.proveTxBatch(*)'
         try {
@@ -51,7 +51,7 @@ async function depositRollupProofWatch() {
                 payload: {
                     flowId: undefined as any,// no need
                     taskType: FlowTaskType.DEPOSIT_BATCH_MERGE,
-                    data: { transId: dTran.id, data: depositRollupBatch!.inputParam }
+                    data: { transId: dTran.id, data: JSON.parse(depositRollupBatch!.inputParam) }
                 } as FlowTask<any>
             } as ProofTaskDto<any, FlowTask<any>>;
             await $axiosProofGenerator.post<BaseResponse<string>>('/proof-gen', proofTaskDto).then(r => {
