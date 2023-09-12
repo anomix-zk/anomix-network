@@ -43,29 +43,29 @@ process!.on('message', async dto => {
                 logger.info('rid RollupTask', JSON.stringify(rollupTask));
                 break;
         }
-
-        return;
+    } else {
+        // ============================== below 'ProofTaskDto' from 'proof-generators' ============================== //
+        // then proof result from 'proof-generators'
+        const proofTaskDto = dto as ProofTaskDto<any, any>;
+        const flowTask = (proofTaskDto.payload) as FlowTask<any>;
+        switch (flowTask.taskType) {
+            case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
+                fs.writeFileSync(`./ROLLUP_TX_BATCH_MERGE_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+                await proofScheduler.whenMergedResultComeBack(proofTaskDto.index.blockId, flowTask.data);
+                break;
+            case FlowTaskType.BLOCK_PROVE:
+                fs.writeFileSync(`./BLOCK_PROVE_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+                await proofScheduler.whenL2BlockComeback(proofTaskDto.index.blockId, flowTask.data);
+                break;
+            case FlowTaskType.ROLLUP_CONTRACT_CALL:
+                fs.writeFileSync(`./ROLLUP_CONTRACT_CALL_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+                await proofScheduler.whenL1TxComeback(proofTaskDto.index.blockId, flowTask.data);
+                break;
+            default: // rid it
+                logger.info('rid FlowTask', JSON.stringify(flowTask));
+                break;
+        }
     }
 
-    // ============================== below 'ProofTaskDto' from 'proof-generators' ============================== //
-    // then proof result from 'proof-generators'
-    const proofTaskDto = dto as ProofTaskDto<any, any>;
-    const flowTask = (proofTaskDto.payload) as FlowTask<any>;
-    switch (flowTask.taskType) {
-        case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
-            fs.writeFileSync(`./ROLLUP_TX_BATCH_MERGE_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
-            await proofScheduler.whenMergedResultComeBack(proofTaskDto.index.blockId, flowTask.data);
-            break;
-        case FlowTaskType.BLOCK_PROVE:
-            fs.writeFileSync(`./BLOCK_PROVE_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
-            await proofScheduler.whenL2BlockComeback(proofTaskDto.index.blockId, flowTask.data);
-            break;
-        case FlowTaskType.ROLLUP_CONTRACT_CALL:
-            fs.writeFileSync(`./ROLLUP_CONTRACT_CALL_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
-            await proofScheduler.whenL1TxComeback(proofTaskDto.index.blockId, flowTask.data);
-            break;
-        default: // rid it
-            logger.info('rid FlowTask', JSON.stringify(flowTask));
-            break;
-    }
+    process.send!('done');
 });

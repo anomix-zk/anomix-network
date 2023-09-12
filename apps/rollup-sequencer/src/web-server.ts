@@ -32,6 +32,16 @@ if (!existDB) {
 
 } else {
     await worldStateDB.loadTrees();
+
+    const leaf0 = await worldStateDB.getLeafValue(MerkleTreeId.DATA_TREE_ROOTS_TREE, 0n, false);
+    console.log(`leaf0: ${leaf0}`);
+
+    const leaf1 = await worldStateDB.getLeafValue(MerkleTreeId.DATA_TREE_ROOTS_TREE, 1n, false);
+    console.log(`leaf1: ${leaf1}`);
+
+    const leaf2 = await worldStateDB.getLeafValue(MerkleTreeId.DATA_TREE_ROOTS_TREE, 2n, false);
+    console.log(`leaf2: ${leaf2}`);
+
 }
 
 // construct WorldState

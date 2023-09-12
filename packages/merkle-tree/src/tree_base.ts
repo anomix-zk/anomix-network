@@ -178,20 +178,13 @@ export abstract class TreeBase implements MerkleTree {
     return this.getLatestValueAtIndex(this.depth, index, includeUncommitted);
   }
 
-  /**
-   * Clears the cache.
-   */
-  private clearCache() {
-    this.cache = {};
-    this.cachedSize = undefined;
-  }
-
-  /**
-   * export the cache as string
-   */
-  public exportCache(): string {
-    return JSON.stringify(this.cache);
-  }
+    /**
+     * Clears the cache.
+     */
+    private clearCache() {
+        this.cache = {};
+        this.cachedSize = undefined;
+    }
 
   /**
    * Adds a leaf and all the hashes above it to the cache.

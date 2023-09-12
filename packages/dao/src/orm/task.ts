@@ -7,27 +7,22 @@ import {
 } from 'typeorm'
 import { L1TxStatus } from "@anomix/types";
 
-export class TaskType {
+export enum TaskType {
     /**
      * the L1tx for maintain deposit_tree root.
      */
-    static get DEPOSIT(): number {
-        return 0;
-    }
+    DEPOSIT,
 
     /**
      * the L1tx for user withdraw.
      */
-    static get WITHDRAW(): number {
-        return 0;
-    }
+    WITHDRAW,
 
     /**
      * the L1tx for RollupContract.
      */
-    static get ROLLUP(): number {
-        return 0;
-    }
+    ROLLUP
+
 }
 
 export enum TaskStatus {
