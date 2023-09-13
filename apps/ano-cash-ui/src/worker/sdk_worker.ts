@@ -19,6 +19,12 @@ const sdkWrapper = {
         log("sdk created");
     },
 
+    compileCircuits: async () => {
+        await sdk.compileEntryVaultContract();
+        await sdk.compilePrivateCircuit();
+        console.log("compile all circuits done");
+    },
+
     isPrivateCircuitCompiled: () => {
         return sdk.privateCircuitCompiled();
     },

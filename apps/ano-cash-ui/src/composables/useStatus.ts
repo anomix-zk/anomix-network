@@ -52,7 +52,7 @@ export default function () {
             mask: {
                 id: undefined,
                 show: false,
-                closable: true,
+                closable: true, // Users can close by clicking
                 showLoading: false,
                 loadingText: undefined,
             },
@@ -87,13 +87,19 @@ export default function () {
 
     const showLoadingMask = ({
         text,
-        id = "mask",
-        closable = true,
+        id,
+        closable,
     }: {
         text?: string;
         id?: string;
         closable?: boolean;
     }) => {
+        if (!id) {
+            id = "mask";
+        }
+        if (closable === undefined) {
+            closable = true;
+        }
         appState.value.mask = {
             id,
             show: true,
@@ -104,7 +110,7 @@ export default function () {
     };
 
     const closeLoadingMask = (id = "mask") => {
-        if (appState.value.mask.id === id && appState.value.mask.closable) {
+        if (appState.value.mask.id === id) {
             appState.value.mask = {
                 id: undefined,
                 show: false,

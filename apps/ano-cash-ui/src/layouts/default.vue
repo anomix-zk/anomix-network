@@ -17,7 +17,9 @@ const router = useRouter();
 const { appState, closeLoadingMask } = useStatus();
 
 const closeCurrentLoadingMask = () => {
-    closeLoadingMask(appState.value.mask.id);
+    if (appState.value.mask.closable) {
+        closeLoadingMask(appState.value.mask.id);
+    }
 };
 
 const toIndex = () => {
