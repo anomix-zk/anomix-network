@@ -33,6 +33,7 @@ export const handler: RequestHandler<string[], null> = async function (
         })
         return rs;
     } catch (err) {
+        console.error(err);
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
