@@ -23,12 +23,12 @@ export const queryWithdrawalNotes: FastifyPlugin = async function (
     })
 }
 
-export const handler: RequestHandler<string[], string> = async function (
+export const handler: RequestHandler<{ noteCommitments: string[] }, { l1addr: string }> = async function (
     req,
     res
 ): Promise<BaseResponse<WithdrawInfoDto[] | undefined>> {
-    const noteCommitmentList = req.body;
-    const l1addr = req.params;
+    const noteCommitmentList = req.body.noteCommitments;
+    const l1addr = req.params.l1addr;
 
     try {
         const connection = getConnection();
@@ -51,11 +51,11 @@ export const handler: RequestHandler<string[], string> = async function (
             .innerJoin(L2Tx, 'tx', 'tx.id = wi.l2TxId')
             .innerJoinAndSelect(Block, 'block', 'block.id = tx.blockId')
             .where(`block.status = ${BlockStatus.CONFIRMED}`)
-            .andWhere(`wi.ownerPk = ${l1addr}`)
-            .andWhere(`wi.assetId = ${1}`);
+            .andWhere(`wi.ownerPk = '${l1addr}'`)
+            .andWhere(`wi.assetId = '${1}'`);
 
         if (noteCommitmentList?.length > 0) {
-            queryBuilder.andWhere(`wi.outputNoteCommitment in ${noteCommitmentList.join(',')}`);
+            queryBuilder.andWhere(`wi.outputNoteCommitment in (${noteCommitmentList.map(c => `'${c}'`).join(',')})`);
         }
 
         const withdrawInfoList = (await queryBuilder.getMany()) ?? [];
@@ -90,6 +90,7 @@ export const handler: RequestHandler<string[], string> = async function (
         };
 
     } catch (err) {
+        console.error(err);
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
