@@ -1,4 +1,4 @@
-import { PublicKey, Mina } from 'snarkyjs';
+import { PublicKey, Mina } from 'o1js';
 import config from "../lib/config";
 
 import { DepositRollupProver, AnomixEntryContract, DepositRollupProof } from "@anomix/circuits";

@@ -5,7 +5,7 @@ import { BaseResponse, BlockCacheType, MerkleTreeId } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 import { getConnection } from "typeorm"
 import { Block, BlockCache } from "@anomix/dao"
-import { Field } from "snarkyjs";
+import { Field } from "o1js";
 
 
 /**

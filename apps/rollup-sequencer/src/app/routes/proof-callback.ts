@@ -5,7 +5,7 @@ import { getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { Block, WithdrawInfo } from "@anomix/dao";
 import { BaseResponse, WithdrawNoteStatus, ProofTaskDto, ProofTaskType, ProofTaskDtoSchma } from "@anomix/types";
-import { PublicKey } from "snarkyjs";
+import { PublicKey } from "o1js";
 import fs from "fs";
 
 /**

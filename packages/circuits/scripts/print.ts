@@ -1,15 +1,19 @@
 import {
-  BlockProver,
-  DepositRollupProver,
-  AnomixEntryContract,
-  InnerRollupProver,
-  JoinSplitProver,
-  AnomixRollupContract,
+    BlockProver,
+    DepositRollupProver,
+    AnomixEntryContract,
+    InnerRollupProver,
+    JoinSplitProver,
+    AnomixRollupContract,
 } from '../src';
+
+import fs from "fs";
 
 await JoinSplitProver.compile();
 const proof = await JoinSplitProver.dummy();
 const dummyTxStr = JSON.stringify(proof.toJSON());
+
+fs.writeFileSync('./circuit-JoinsplitProofDummyTx.string', dummyTxStr);
 
 console.log(dummyTxStr);
 

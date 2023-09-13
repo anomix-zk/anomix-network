@@ -1,6 +1,6 @@
 import {
     VerificationKey,
-} from 'snarkyjs';
+} from 'o1js';
 import { JoinSplitProof } from "@anomix/circuits"
 import fs from "fs";
 import * as dotenv from "dotenv"

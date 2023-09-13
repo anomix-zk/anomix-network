@@ -8,7 +8,7 @@ import {
     Field,
     Struct,
     Bool
-} from 'snarkyjs';
+} from 'o1js';
 import {
     DepositActionBatch,
     DepositRollupState,

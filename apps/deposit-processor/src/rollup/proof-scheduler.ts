@@ -9,7 +9,7 @@ import { DepositProverOutput, DepositTreeTrans } from "@anomix/dao";
 import { $axiosProofGenerator } from "@/lib";
 import { FlowTask, FlowTaskType } from "@anomix/types";
 import { getConnection } from "typeorm";
-import { Mina, PrivateKey } from 'snarkyjs';
+import { Mina, PrivateKey } from 'o1js';
 import { getLogger } from "@/lib/logUtils";
 import fs from "fs";
 

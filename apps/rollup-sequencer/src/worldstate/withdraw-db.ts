@@ -2,7 +2,7 @@
 import { LeafData, newTree, loadTree, StandardIndexedTree } from "@anomix/merkle-tree";
 import { PoseidonHasher, MerkleTreeId } from '@anomix/types';
 import { NULLIFIER_TREE_HEIGHT } from "@anomix/circuits";
-import { Field, PublicKey } from "snarkyjs";
+import { Field, PublicKey } from "o1js";
 import levelup, { LevelUp } from 'levelup';
 import leveldown from "leveldown";
 

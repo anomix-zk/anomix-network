@@ -5,7 +5,7 @@ import { In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { WithdrawInfo } from "@anomix/dao";
 import { BaseResponse, WithdrawNoteStatus, WithdrawAssetReqDto, WithdrawAssetReqDtoSchema } from "@anomix/types";
-import { Signature, PublicKey, Field } from "snarkyjs";
+import { Signature, PublicKey, Field } from "o1js";
 import { $axiosSeq } from "@/lib/api";
 
 /**

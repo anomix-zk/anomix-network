@@ -12,7 +12,7 @@ import {
     Field,
     PublicKey,
     VerificationKey
-} from 'snarkyjs';
+} from 'o1js';
 import config from "@/lib/config";
 
 /**

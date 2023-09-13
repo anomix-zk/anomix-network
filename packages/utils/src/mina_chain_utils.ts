@@ -32,9 +32,9 @@ export async function activeMinaInstance() {
     const Blockchain = isLocalBlockChain
         ? Mina.LocalBlockchain({ proofsEnabled: true })
         : Mina.Network({
-              mina: "https://berkeley.minascan.io/graphql",
-              archive: "https://archive.berkeley.minaexplorer.com",
-          });
+            mina: "https://berkeley.minascan.io/graphql",
+            archive: "https://archive.berkeley.minaexplorer.com",
+        });
 
     Mina.setActiveInstance(Blockchain);
 }
@@ -212,7 +212,7 @@ export const loopUntilAccountExists = async ({
     isZkAppAccount: boolean;
     isLocalBlockChain?: boolean;
 }) => {
-    for (;;) {
+    for (; ;) {
         let { accountExists, account } = await checkAccountExists(
             address,
             tokenId,
@@ -231,7 +231,7 @@ export const loopUntilAccountExists = async ({
             await eachTimeNotExist();
             await new Promise((resolve) => setTimeout(resolve, 60 * 1000));
         } else {
-            // TODO add optional check that verification key is correct once this is available in SnarkyJS
+            // TODO add optional check that verification key is correct once this is available in o1js
             return account!;
         }
     }
@@ -282,7 +282,7 @@ export const makeAndSendTransaction = async <State extends ToString>({
     signTx(transaction);
     console.log("Sending the transaction...");
     const res = await transaction.send();
-    const hash = await res.hash(); // This will change in a future version of SnarkyJS
+    const hash = await res.hash(); // This will change in a future version of o1js
     if (hash == null) {
         throw new Error("error sending transaction");
     } else {

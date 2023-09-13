@@ -1,6 +1,6 @@
 
 import config from './lib/config';
-import { AccountUpdate, Field, PublicKey, UInt32, Reducer, fetchAccount } from 'snarkyjs';
+import { AccountUpdate, Field, PublicKey, UInt32, Reducer, fetchAccount } from 'o1js';
 import { Column, getConnection } from 'typeorm';
 import { DepositActionEventFetchRecord, DepositCommitment } from '@anomix/dao';
 import { AnomixEntryContract, EncryptedNoteFieldData, getEncryptedNoteFromFieldData } from '@anomix/circuits';

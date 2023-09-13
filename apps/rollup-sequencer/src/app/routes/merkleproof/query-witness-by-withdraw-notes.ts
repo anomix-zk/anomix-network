@@ -6,7 +6,7 @@ import { BaseResponse, MerkleProofDto, MerkleTreeId, WithdrawalWitnessDto, Withd
 import { getConnection } from "typeorm";
 import { WithdrawInfo } from "@anomix/dao";
 import { checkAccountExists } from "@anomix/utils";
-import { PublicKey, Field } from "snarkyjs";
+import { PublicKey, Field } from "o1js";
 
 /**
  * query all Witness By WithdrawNotes

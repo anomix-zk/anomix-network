@@ -1,7 +1,7 @@
 import {
     VerificationKey,
 
-} from 'snarkyjs';
+} from 'o1js';
 import { JoinSplitProof } from "@anomix/circuits"
 import * as dotenv from "dotenv"
 dotenv.config({ path: '../../.env' })

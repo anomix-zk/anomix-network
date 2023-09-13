@@ -7,7 +7,7 @@ import { getLogger } from "./lib/logUtils";
 import { $axiosSeq } from './lib/api';
 import { initORM } from './lib/orm';
 import { parentPort } from 'worker_threads';
-import { UInt64, PublicKey, Field } from "snarkyjs";
+import { UInt64, PublicKey, Field } from "o1js";
 
 (process.send as any)({// when it's a primary process, process.send == undefined. 
     type: 'status',

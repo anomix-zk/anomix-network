@@ -4,7 +4,7 @@ import config from "@/lib/config";
 import { BaseResponse, BlockStatus, ProofTaskDto, ProofTaskType, FlowTaskType, BlockCacheType } from "@anomix/types";
 import { ActionType, AnomixEntryContract, AnomixRollupContract, BlockProveInput, BlockProveOutput, DataMerkleWitness, InnerRollupProof, RollupProof, RootMerkleWitness, ValueNote } from "@anomix/circuits";
 import { BlockProverOutput, Block, InnerRollupBatch, Task, TaskStatus, TaskType, L2Tx, WithdrawInfo, BlockCache } from "@anomix/dao";
-import { Mina, PrivateKey, PublicKey, Field, UInt64, Signature } from 'snarkyjs';
+import { Mina, PrivateKey, PublicKey, Field, UInt64, Signature } from 'o1js';
 import { $axiosProofGenerator, $axiosDepositProcessor } from "@/lib";
 import { getConnection } from "typeorm";
 import { syncAcctInfo } from "@anomix/utils";

@@ -3,7 +3,7 @@ import { AppendOnlyTree, newTree, loadTree, StandardTree, StandardIndexedTree, I
 import { MerkleTreeId } from "@anomix/types";
 import { PoseidonHasher } from '@anomix/types';
 import { NULLIFIER_TREE_HEIGHT, DEPOSIT_TREE_HEIGHT } from "@anomix/circuits";
-import { Field } from "snarkyjs";
+import { Field } from "o1js";
 import levelup, { LevelUp } from 'levelup';
 import leveldown from "leveldown";
 

@@ -6,7 +6,7 @@ import { BaseResponse, DepositProcessingSignal, FlowTask, FlowTaskType, MerkleTr
 import { getConnection } from "typeorm";
 import { DepositProcessorSignal, DepositProverOutput } from "@anomix/dao";
 import config from "@/lib/config";
-import { PrivateKey } from "snarkyjs";
+import { PrivateKey } from "o1js";
 import { $axiosProofGenerator } from "@/lib";
 import fs from "fs";
 import { getLogger } from "@/lib/logUtils";

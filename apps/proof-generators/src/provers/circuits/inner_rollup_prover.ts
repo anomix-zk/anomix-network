@@ -6,7 +6,7 @@ import {
     Provable,
     SelfProof,
     Struct,
-} from 'snarkyjs';
+} from 'o1js';
 import {
     DataRootWitnessData,
     InnerRollupInput,

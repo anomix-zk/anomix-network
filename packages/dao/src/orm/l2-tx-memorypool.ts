@@ -1,4 +1,4 @@
-import { PublicKey, Field, UInt32, UInt64, Poseidon } from 'snarkyjs';
+import { PublicKey, Field, UInt32, UInt64, Poseidon } from 'o1js';
 import { JoinSplitOutput } from "@anomix/circuits";
 import {
     Entity

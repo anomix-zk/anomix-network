@@ -7,7 +7,7 @@ import {
 } from "@anomix/circuits";
 import { WorldStateDB, WorldState, IndexDB, RollupDB } from "@/worldstate";
 import { Block, BlockCache, DepositCommitment, InnerRollupBatch, L2Tx, MemPlL2Tx, WithdrawInfo } from "@anomix/dao";
-import { Field, PublicKey, PrivateKey, Poseidon, UInt64, Provable } from 'snarkyjs';
+import { Field, PublicKey, PrivateKey, Poseidon, UInt64, Provable } from 'o1js';
 import { syncAcctInfo, uint8ArrayToBase64String } from "@anomix/utils";
 import { getConnection, In } from "typeorm";
 import { assert } from "console";

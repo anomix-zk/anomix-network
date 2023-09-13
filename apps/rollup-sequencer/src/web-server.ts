@@ -6,7 +6,7 @@ import { WithdrawDB } from './worldstate/withdraw-db';
 import fs from "fs";
 import { MerkleTreeId } from '@anomix/types';
 import { DataRootWitnessData } from '@anomix/circuits';
-import { Field } from "snarkyjs";
+import { Field } from "o1js";
 
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint

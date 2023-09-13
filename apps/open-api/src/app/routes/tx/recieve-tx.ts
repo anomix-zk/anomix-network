@@ -6,7 +6,7 @@ import { Account, MemPlL2Tx, WithdrawInfo } from '@anomix/dao'
 import { RequestHandler } from '@/lib/types';
 import { ActionType, JoinSplitProof, ValueNote } from "@anomix/circuits";
 import config from "@/lib/config";
-import { verify, Field } from "snarkyjs";
+import { verify, Field } from "o1js";
 import { $axiosCoordinator, $axiosSeq } from '@/lib/api';
 
 /**

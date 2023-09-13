@@ -11,7 +11,7 @@ import { $axiosProofGenerator } from "@/lib";
 import { syncAcctInfo } from "@anomix/utils";
 import { FlowTask, FlowTaskType } from "@anomix/types";
 import { getConnection, In } from "typeorm";
-import { AccountUpdate, Field, PublicKey, Mina, PrivateKey } from 'snarkyjs';
+import { AccountUpdate, Field, PublicKey, Mina, PrivateKey } from 'o1js';
 import fs from "fs";
 import { getLogger } from "@/lib/logUtils";
 import { INITIAL_LEAF } from "@anomix/merkle-tree";

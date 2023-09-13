@@ -1,6 +1,6 @@
 import os from 'os';
 import cluster from 'cluster';
-import { PublicKey, Signature, VerificationKey, Field } from 'snarkyjs';
+import { PublicKey, Signature, VerificationKey, Field } from 'o1js';
 import cp, { ChildProcess, ChildProcess as Worker } from "child_process";
 
 import { ProofPayload } from './constant';

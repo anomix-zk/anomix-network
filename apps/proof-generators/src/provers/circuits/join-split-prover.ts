@@ -20,7 +20,7 @@ import {
     Provable,
     PublicKey,
     UInt64,
-} from 'snarkyjs';
+} from 'o1js';
 import {
     JoinSplitAccountInput,
     JoinSplitDepositInput,

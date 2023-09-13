@@ -1,4 +1,4 @@
-import { Field, PublicKey, Proof, Mina, Signature, VerificationKey } from 'snarkyjs';
+import { Field, PublicKey, Proof, Mina, Signature, VerificationKey } from 'o1js';
 import config from "../lib/config";
 
 import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, AnomixRollupContract, WithdrawAccount, AnomixEntryContract, InnerRollupInput, JoinSplitProof, InnerRollupOutput, InnerRollupProof, BlockProveInput, JoinSplitDepositInput, RollupProof, LowLeafWitnessData, NullifierMerkleWitness, WithdrawNoteWitnessData, DepositActionBatch, DepositRollupState, DepositRollupProof } from "@anomix/circuits";

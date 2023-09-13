@@ -1,6 +1,6 @@
 import {
     VerificationKey,
-} from 'snarkyjs';
+} from 'o1js';
 import fs from "fs";
 import * as dotenv from "dotenv"
 
