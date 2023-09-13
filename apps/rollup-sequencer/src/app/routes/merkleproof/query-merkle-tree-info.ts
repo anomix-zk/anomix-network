@@ -57,6 +57,7 @@ const schema = {
         properties: {
             treeId: {
                 type: 'number',
+                enum: [1, 2, 3, 4]
             },
             includeUncommit: {
                 type: 'boolean',
