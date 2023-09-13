@@ -6,6 +6,7 @@ import { rollupProofTrigger } from "./rollup-proof-trigger";
 import { rollupSeqTrigger } from "./rollup-seq-trigger";
 import { notesEndpoint } from "./note";
 import { txEndpoint } from "./tx";
+import { networkEndpoints } from "./network";
 
 export const routes: FastifyPlugin = async function (
     instance,
@@ -19,4 +20,5 @@ export const routes: FastifyPlugin = async function (
     instance.register(rollupSeqTrigger)
     instance.register(notesEndpoint)
     instance.register(txEndpoint)
+    instance.register(networkEndpoints);
 }

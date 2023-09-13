@@ -7,7 +7,7 @@
 
 import { FastifyPlugin } from "fastify"
 import { queryTxFeeSuggestions } from "./query-txfees-suggestion";
-import { queryWorldStateStatus } from "./query-worldstate-status";
+import { queryWorldStateworldState } from "./query-worldstate-status";
 import { isNetworkReady } from "./network-is-ready";
 import { networkStatus } from "./query-network-status";
 
@@ -19,5 +19,5 @@ export const networkEndpoint: FastifyPlugin = async (
     instance.register(isNetworkReady);
     instance.register(networkStatus);
     instance.register(queryTxFeeSuggestions);
-    instance.register(queryWorldStateStatus);
+    instance.register(queryWorldStateworldState);
 }

@@ -7,11 +7,13 @@
 */
 import { FastifyPlugin } from "fastify"
 import { isNetworkReady } from './sequencer-status';
+import { queryWorldStateworldState } from './query-worldstate-state'
 
-export const notesEndpoint: FastifyPlugin = async (
+export const networkEndpoints: FastifyPlugin = async (
     instance,
     options,
     done
 ): Promise<void> => {
     instance.register(isNetworkReady);
+    instance.register(queryWorldStateworldState);
 }

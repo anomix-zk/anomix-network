@@ -4,7 +4,7 @@ import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse, BlockStatus, LatestBlockDto, NetworkStatusDto, NetworkStatusDtoSchema } from "@anomix/types";
 import { Block } from "@anomix/dao";
-import { Connection, In, getConnection } from 'typeorm';
+import { Connection, In, getConnection, UsingJoinColumnIsNotAllowedError } from 'typeorm';
 
 /**
  * check the network status
@@ -53,7 +53,7 @@ export const handler: RequestHandler<null, null> = async function (
         latestBlockDto.l1TxHash = blockEntity.l1TxHash;
         latestBlockDto.status = blockEntity.status;
         latestBlockDto.createdTs = blockEntity.createdAt.getTime();
-        latestBlockDto.finalizedTs = blockEntity.finalizedAt.getTime();
+        latestBlockDto.finalizedTs = blockEntity.finalizedAt?.getTime();
 
         // query pending block count
         const pendingNum = await blockRepository.count({
@@ -77,6 +77,8 @@ export const handler: RequestHandler<null, null> = async function (
         }
         return { code: 0, data: networkStatusDto, msg: '' };
     } catch (err) {
+        console.error(err)
+
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }

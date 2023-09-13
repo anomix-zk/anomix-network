@@ -3,7 +3,7 @@ import { L2Tx, MemPlL2Tx } from '@anomix/dao'
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
-import { WorldStateRespDto, WorldStateRespDtoSchema, BaseResponse, L2TxStatus } from '@anomix/types'
+import { WorldStateRespDto, WorldStateRespDtoSchema, BaseResponse, L2TxStatus, MerkleTreeId } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 import { $axiosSeq } from '@/lib/api';
 
@@ -33,11 +33,25 @@ export const handler: RequestHandler<null, null> = async function (
 ): Promise<BaseResponse<WorldStateRespDto>> {
     try {
         // query sequencer
-        const rs = await $axiosSeq.get<BaseResponse<WorldStateRespDto>>('/network/worldstate').then(r => { return r.data });
-        return rs;
+        return {
+            code: 0, data: {
+                dataTree: {
+                    totalNum: this.worldState.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE, false).toString(),
+                    root: this.worldState.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false).toString()
+                },
+                nullifierTree: {
+                    totalNum: this.worldState.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, false).toString(),
+                    root: this.worldState.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, false).toString()
+                },
+                rootTree: {
+                    totalNum: this.worldState.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, false).toString(),
+                    root: this.worldState.worldStateDB.getRoot(MerkleTreeId.DATA_TREE_ROOTS_TREE, false).toString()
+                },
+            }, msg: ''
+        };
+
     } catch (err) {
         console.error(err);
-
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
