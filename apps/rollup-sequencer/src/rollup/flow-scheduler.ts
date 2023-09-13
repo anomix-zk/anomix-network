@@ -73,23 +73,29 @@ export class FlowScheduler {
 
             // ================== below: mpTxList.length > 0 ==================
             // !!need double check if nullifier1/2 has already been spent!!
+            const ridTxList: MemPlL2Tx[] = [];
             const promises: Promise<any>[] = [];
-            mpTxList.forEach(x => {
+            mpTxList.forEach(tx => {
                 promises.push((async () => {
-                    if (x.actionType == ActionType.DEPOSIT.toString()) {// exclude Account?
+                    if (tx.actionType == ActionType.DEPOSIT.toString()) {// exclude Account?
                         return;
                     }
-                    const index1 = await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${x.nullifier1}`);
-                    if (index1 != -1) {
-                        throw new Error(".");
-                    }
-                    const index2 = await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${x.nullifier2}`);
-                    if (index2 != -1) {
-                        throw new Error(".");
+                    const index1 = String(await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${tx.nullifier1}`) ?? '');
+                    const index2 = String(await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${tx.nullifier2}`) ?? '');
+                    if (index1 != '' || index2 != '') {
+                        ridTxList.push(tx);
                     }
                 })());
             });
             await Promise.all(promises);
+
+            if (ridTxList.length > 0) {
+                ridTxList.forEach(tx => {
+                    mpTxList.splice(mpTxList.indexOf(tx), 1);
+                    tx.status = L2TxStatus.FAILED;
+                });
+                await queryRunner.manager.save(ridTxList);
+            }
 
             // !!need double check if nullifier1/2 has already been spent!!
             mpTxList = await this.ridLessFeeOnesIfDoubleSpend(mpTxList);
@@ -516,12 +522,12 @@ export class FlowScheduler {
 
 
             // ================ root tree parts ============
-            const tx1DataTreeRootIndex: string = (await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx1.dataRoot}`)).toString();
+            const tx1DataTreeRootIndex = String((await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx1.dataRoot}`)));
             const tx1RootWitnessData: DataRootWitnessData = {
                 dataRootIndex: Field(tx1DataTreeRootIndex),
                 witness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, BigInt(tx1DataTreeRootIndex), false)
             };
-            const tx2DataTreeRootIndex: string = (await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx2.dataRoot}`)).toString();
+            const tx2DataTreeRootIndex = String(await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx2.dataRoot}`));
             const tx2RootWitnessData: DataRootWitnessData = {
                 dataRootIndex: Field(tx2DataTreeRootIndex),
                 witness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, BigInt(tx2DataTreeRootIndex), false)
