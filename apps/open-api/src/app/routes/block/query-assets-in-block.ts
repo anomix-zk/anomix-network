@@ -62,16 +62,19 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
         }).then(async txList => {
             logger.info('query txList: ', JSON.stringify(txList));
 
-            await txList.forEach(async tx => {
+            for (const tx of txList) {
                 const { proof, blockId, blockHash, updatedAt, createdAt, encryptedData1, encryptedData2, ...restObj } = tx;
                 const dto = restObj as any as L2TxSimpleDto;
 
+                let withdrawInfoDto: any = undefined;
                 const withdrawInfoRepository = connection.getRepository(WithdrawInfo);
                 const wInfo = await withdrawInfoRepository.findOne({ where: { l2TxId: tx.id } });
-                const { createdAt: createdAtW, updatedAt: updatedAtW, ...restObjW } = wInfo!;
-                const withdrawInfoDto = (restObjW as any) as WithdrawInfoDto;
-                if (withdrawInfoDto.status == WithdrawNoteStatus.DONE) {
-                    withdrawInfoDto.l1TxBody = '';
+                if (wInfo) {
+                    const { createdAt: createdAtW, updatedAt: updatedAtW, ...restObjW } = wInfo!;
+                    withdrawInfoDto = (restObjW as any) as WithdrawInfoDto;
+                    if (withdrawInfoDto.status == WithdrawNoteStatus.DONE) {
+                        withdrawInfoDto.l1TxBody = '';
+                    }
                 }
 
                 const accountRepository = connection.getRepository(Account)
@@ -79,14 +82,15 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
 
                 dto.extraData = {
                     outputNote1: JSON.parse(encryptedData1),
-                    outputNote2: encryptedData2 ? {} : JSON.parse(encryptedData2),
-                    aliasHash: account!.aliasHash,
-                    accountPublicKey: account!.acctPk,
+                    outputNote2: encryptedData2 ? JSON.parse(encryptedData2) : {},
+                    aliasHash: account?.aliasHash,
+                    accountPublicKey: account?.acctPk,
                     withdrawNote: withdrawInfoDto
                 }
 
                 blockTxListMap.get(tx.blockId)?.txList.push(dto);
-            });
+            }
+
         });
 
         const blockEntities = await connection.getRepository(Block).find({
@@ -99,7 +103,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
                 'finalizedAt'
             ],
             where: {
-                blockId: In(blockNumList)
+                id: In(blockNumList)
             }
         });
 
@@ -110,7 +114,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
                 dto.l1TxHash = blockEntity.l1TxHash;
                 dto.status = blockEntity.status;
                 dto.createdTs = blockEntity.createdAt.getTime();
-                dto.finalizedTs = blockEntity.finalizedAt.getTime();
+                dto.finalizedTs = blockEntity.finalizedAt?.getTime();
             }
         })
 
@@ -124,6 +128,8 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
             msg: ''
         };
     } catch (err) {
+        console.error(err);
+
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
