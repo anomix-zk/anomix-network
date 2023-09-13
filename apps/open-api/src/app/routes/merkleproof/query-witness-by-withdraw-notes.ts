@@ -22,11 +22,11 @@ export const queryWitnessByWithdrawNotes: FastifyPlugin = async function (
     })
 }
 
-const handler: RequestHandler<null, string> = async function (
+const handler: RequestHandler<null, { commitment: string }> = async function (
     req,
     res
 ): Promise<BaseResponse<WithdrawalWitnessDto>> {
-    const withdrawCommitment = req.params;
+    const withdrawCommitment = req.params.commitment;
 
     try {
         const rs = await $axiosSeq.get<BaseResponse<WithdrawalWitnessDto>>('/merklewitness/withdraw-commitment/'.concat(withdrawCommitment)).then(r => {
