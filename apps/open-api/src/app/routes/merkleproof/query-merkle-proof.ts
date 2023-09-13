@@ -23,14 +23,13 @@ export const queryMerkleProof: FastifyPlugin = async function (
     })
 }
 
-export const handler: RequestHandler<{ treeId: number, commitmentList: string[] }, null> = async function (
+export const handler: RequestHandler<string[], null> = async function (
     req,
     res
 ): Promise<BaseResponse<MerkleProofDto[]>> {
-
     try {
         // request sequencer for the result.
-        const rs = await $axiosSeq.post<BaseResponse<MerkleProofDto[]>>('/merklewitness', req.body).then(r => {
+        const rs = await $axiosSeq.post<BaseResponse<MerkleProofDto[]>>('/merklewitness', { treeId: 1, commitmentList: req.body }).then(r => {
             return r.data
         })
 
@@ -44,18 +43,9 @@ const schema = {
     description: 'query MerkleWitness on data_tree/sync_data_tree by valueNote/accountNote commitment',
     tags: ['MerkleWitness'],
     body: {
-        type: 'object',
-        properties: {
-            treeId: {
-                type: 'number',
-                enum: [1, 2]
-            },
-            commitmentList: {
-                type: 'array',
-                items: {
-                    type: 'string'
-                }
-            }
+        type: 'array',
+        items: {
+            type: 'string'
         }
     },
     response: {
