@@ -29,7 +29,7 @@ const handler: RequestHandler<string[], null> = async function (
 
     try {
         const rs = await Promise.all(commitmentList.map(async c => {
-            return Object.fromEntries([[c, await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${c}`)]])
+            return [[c, String(await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${c}`))]]
         }))
 
         return { code: 0, data: rs, msg: '' };
