@@ -25,23 +25,23 @@ export const queryWitnessByWithdrawNotes: FastifyPlugin = async function (
     })
 }
 
-const handler: RequestHandler<null, string> = async function (
+const handler: RequestHandler<null, { commitment: string }> = async function (
     req,
     res
 ): Promise<BaseResponse<WithdrawalWitnessDto>> {
-    const withdrawCommitment = req.params;
+    const withdrawCommitment = req.params.commitment;
 
     try {
         const rollupDataRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, false).toString();
 
         const connection = getConnection();
         const withdrawInfoRepo = connection.getRepository(WithdrawInfo);
-        const winfo = (await withdrawInfoRepo.findOne({
+        const winfo = await withdrawInfoRepo.findOne({
             where: {
                 outputNoteCommitment: withdrawCommitment,
                 status: WithdrawNoteStatus.PENDING
             }
-        }))!
+        })
 
         if (!winfo) {
             return { code: 1, data: undefined, msg: 'cannot find the value note!' } as BaseResponse<WithdrawalWitnessDto>;
