@@ -36,12 +36,20 @@ export const handler: RequestHandler<null, AliasHashParam> = async function (
 
     const accountRepository = getConnection().getRepository(Account)
     try {
-        const accountList = await accountRepository.find({ where: { aliasHash: p_aliashash } });
+        const accountList = await accountRepository.find({ where: { aliasHash: p_aliashash } }) ?? [];
+        if (accountList.length > 0) {
+            return {
+                code: 0,
+                data: accountList.map(acct => {
+                    return acct.acctPk;
+                }),
+                msg: ''
+            };
+        }
+
         return {
             code: 0,
-            data: accountList.map(acct => {
-                return acct.acctPk;
-            }),
+            data: undefined,
             msg: ''
         };
 

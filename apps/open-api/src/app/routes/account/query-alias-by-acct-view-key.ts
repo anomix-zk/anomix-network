@@ -34,11 +34,16 @@ export const handler: RequestHandler<null, AcctvkParam> = async function (
     const accountRepository = getConnection().getRepository(Account)
     try {
         const account = await accountRepository.findOne({ where: { acctPk: p_acctvk } });
+        if (account) {
+            return {
+                code: 0, data: {
+                    alias: (account?.aliasHash) ?? '',
+                    aliasInfo: (account?.encrptedAlias) ?? ''
+                }, msg: ''
+            }
+        }
         return {
-            code: 0, data: {
-                alias: (account?.aliasHash) ?? '',
-                aliasInfo: (account?.encrptedAlias) ?? ''
-            }, msg: ''
+            code: 0, data: undefined, msg: ''
         }
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
