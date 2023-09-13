@@ -29,25 +29,30 @@ export const handler: RequestHandler<{ treeId: number, commitmentList: string[] 
     const { treeId, commitmentList } = req.body
 
     try {
-        const merkleProofDtoList = await Promise.all(commitmentList.map(async c => {
-            // DATA_TREE:{comitment} -> leafIndex
-            let leafIndex: string;
-            if (treeId == MerkleTreeId.DATA_TREE_ROOTS_TREE) {
-                leafIndex = this.worldState.worldStateDB.getNumLeaves(treeId, false).toString();
-            } else {
-                leafIndex = await this.worldState.indexDB.get(`${MerkleTreeId[treeId]}:${c}`);
-            }
+        const merkleProofDtoList: any[] = [];
 
-            const siblingPath = await this.worldState.worldStateDB.getSiblingPath(treeId, BigInt(leafIndex), false);
-            return {
-                leafIndex: Number(leafIndex),
-                commitment: c,
-                paths: siblingPath.path.map(p => { return p.toString(); })
-            } as MerkleProofDto;
-        }));
+        for (let i = 0; i < commitmentList.length; i++) {
+            const commitment = commitmentList[i];
+
+            // DATA_TREE:{comitment} -> leafIndex
+            let leafIndex = String(await this.worldState.indexDB.get(`${MerkleTreeId[treeId]}:${commitment}`) ?? '');
+
+            if (leafIndex) {
+                const siblingPath = await this.worldState.worldStateDB.getSiblingPath(treeId, BigInt(leafIndex), false);
+
+                merkleProofDtoList.push({
+                    leafIndex: Number(leafIndex),
+                    commitment: commitment,
+                    paths: siblingPath.path.map(p => { return p.toString(); })
+                } as MerkleProofDto
+                );
+            }
+        }
 
         return { code: 0, data: merkleProofDtoList, msg: '' };
     } catch (err) {
+        console.error(err);
+
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
@@ -56,9 +61,18 @@ const schema = {
     description: 'query MerkleWitness on data_tree/sync_data_tree by valueNote/accountNote commitment',
     tags: ['MerkleWitness'],
     body: {
-        type: 'array',
-        items: {
-            type: 'string'
+        type: 'object',
+        properties: {
+            treeId: {
+                type: 'number',
+                enum: [1, 2]
+            },
+            commitmentList: {
+                type: 'array',
+                items: {
+                    type: 'string'
+                }
+            }
         }
     },
     response: {
@@ -69,8 +83,11 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: 'object',
-                    properties: MerkleProofDtoSchema.properties
+                    type: 'array',
+                    items: {
+                        type: 'object',
+                        properties: MerkleProofDtoSchema.properties
+                    }
                 },
                 msg: {
                     type: 'string'

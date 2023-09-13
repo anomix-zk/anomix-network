@@ -23,15 +23,14 @@ export const queryMerkleProof: FastifyPlugin = async function (
     })
 }
 
-export const handler: RequestHandler<string[], null> = async function (
+export const handler: RequestHandler<{ treeId: number, commitmentList: string[] }, null> = async function (
     req,
     res
 ): Promise<BaseResponse<MerkleProofDto[]>> {
-    const commitmentList = req.body
 
     try {
         // request sequencer for the result.
-        const rs = await $axiosSeq.post<BaseResponse<MerkleProofDto[]>>('/merklewitness', commitmentList).then(r => {
+        const rs = await $axiosSeq.post<BaseResponse<MerkleProofDto[]>>('/merklewitness', req.body).then(r => {
             return r.data
         })
 
@@ -42,12 +41,21 @@ export const handler: RequestHandler<string[], null> = async function (
 }
 
 const schema = {
-    description: 'query MerkleWitness by valueNote/accountNote commitment',
+    description: 'query MerkleWitness on data_tree/sync_data_tree by valueNote/accountNote commitment',
     tags: ['MerkleWitness'],
     body: {
-        type: 'array',
-        items: {
-            type: 'string'
+        type: 'object',
+        properties: {
+            treeId: {
+                type: 'number',
+                enum: [1, 2]
+            },
+            commitmentList: {
+                type: 'array',
+                items: {
+                    type: 'string'
+                }
+            }
         }
     },
     response: {
@@ -58,13 +66,12 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: "array",
+                    type: 'array',
                     items: {
-                        type: (MerkleProofDtoSchema as any).type,
-                        properties: (MerkleProofDtoSchema as any).properties,
+                        type: 'object',
+                        properties: MerkleProofDtoSchema.properties
                     }
                 },
-
                 msg: {
                     type: 'string'
                 }
