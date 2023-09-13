@@ -58,7 +58,7 @@ const schema = {
                 },
                 data: {
                     description: 'like this pattern {commiment0: -1/index, commiment1: -1/index... }',
-                    type: 'object',
+                    type: 'any',
                 },
                 msg: {
                     type: 'string'

@@ -43,8 +43,8 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
     // check if nullifier1&2 is not on nullifier_tree
     const nullifier1 = joinSplitProof.publicOutput.nullifier1.toString();
     const nullifier2 = joinSplitProof.publicOutput.nullifier2.toString();
-    const rs = await $axiosSeq.post<BaseResponse<Map<string, string>>>('/existence/nullifiers', [nullifier1, nullifier2]).then(r => {
-        return new Map(r.data.data);
+    const rs = await $axiosSeq.post<BaseResponse<any>>('/existence/nullifiers', [nullifier1, nullifier2]).then(r => {
+        return new Map(Object.entries(r.data.data));
     })
     if (rs!.get(nullifier1) != '' || rs!.get(nullifier2) != '') {
         return { code: 1, data: undefined, msg: 'double spending: nullifier1 or nullifier2 is used' }

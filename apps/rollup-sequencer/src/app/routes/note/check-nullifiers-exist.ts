@@ -27,9 +27,9 @@ const handler: RequestHandler<string[], null> = async function (
     const nullifierList = req.body
 
     try {
-        const rs = await Promise.all(nullifierList.map(async n => {
-            return [[n, String(await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${n}`) ?? '')]]
-        }))
+        const rs = Object.fromEntries(await Promise.all(nullifierList.map(async n => {
+            return [n, String(await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${n}`) ?? '')]
+        })))
 
         return { code: 0, data: rs, msg: '' };
     } catch (err) {
@@ -54,8 +54,7 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: 'object',
-                    properties: {}
+                    type: 'any'
                 },
                 msg: {
                     type: 'string'

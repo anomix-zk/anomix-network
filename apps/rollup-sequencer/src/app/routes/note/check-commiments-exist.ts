@@ -24,16 +24,19 @@ export const checkCommitmentsExist: FastifyPlugin = async function (
 const handler: RequestHandler<string[], null> = async function (
     req,
     res
-): Promise<BaseResponse<object>> {
+): Promise<BaseResponse<any>> {
     const commitmentList = req.body
 
     try {
-        const rs = await Promise.all(commitmentList.map(async c => {
-            return [[c, String(await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${c}`))]]
-        }))
+        const rs = Object.fromEntries(
+            await Promise.all(commitmentList.map(async c => {
+                return [c, String(await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${c}`) ?? '')];
+            }))
+        )
 
         return { code: 0, data: rs, msg: '' };
     } catch (err) {
+        console.error(err);
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
@@ -55,8 +58,7 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: 'object',
-                    properties: {}
+                    type: 'any',
                 },
                 msg: {
                     type: 'string'
