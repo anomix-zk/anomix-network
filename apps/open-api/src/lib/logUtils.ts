@@ -17,7 +17,7 @@ export function getLogger(name: string): Logger {
         transport: {
             targets: [
                 {
-                    target: 'pino/file',
+                    target: 'pino-pretty',
                     level: 'info',
                     options: { destination: config.pinoLogFilePath.concat('/open-api-log.log') }
                 },

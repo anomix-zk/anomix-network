@@ -1,6 +1,6 @@
 
 import config from "@/lib/config";
-import { DepositStatus, MerkleTreeId, L2TxStatus, PoseidonHasher, MerkleProofDto, BlockCacheType, BaseResponse, BlockStatus } from "@anomix/types";
+import { DepositStatus, MerkleTreeId, L2TxStatus, PoseidonHasher, MerkleProofDto, BlockCacheType, BaseResponse, BlockStatus, WithdrawNoteStatus } from "@anomix/types";
 import {
     DataMerkleWitness, DataRootWitnessData, LowLeafWitnessData, NullifierMerkleWitness,
     DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, NoteType, ValueNote, Commitment, RollupState, RollupStateTransition, BlockProveOutput, TxFee, FEE_ASSET_ID_SUPPORT_NUM, AssetId
@@ -290,6 +290,7 @@ export class FlowScheduler {
             txFeeWithdrawInfo.noteType = feeValueNote.noteType.toString();
             txFeeWithdrawInfo.outputNoteCommitment = txFeeCommitment.toString();
             txFeeWithdrawInfo.outputNoteCommitmentIdx = txFeeCommitmentIdx;
+            txFeeWithdrawInfo.status = WithdrawNoteStatus.PENDING;
             await queryRunner.manager.save(txFeeWithdrawInfo);
 
             // del mpL2Tx from memory pool
