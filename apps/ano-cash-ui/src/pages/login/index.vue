@@ -72,7 +72,7 @@ import { AccountStatus } from "../../common/constants";
 const message = useMessage();
 const { SdkState, addAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
-const { setAlias, setAccountStatus, appState, setAccountPk58, setSigningPk1 } = useStatus();
+const { setAlias, setAccountStatus, appState, setAccountPk58 } = useStatus();
 const router = useRouter();
 
 const toBack = () => router.back();
@@ -180,10 +180,9 @@ const login = async () => {
         }
 
         const accountPk = await addAccount(accountPrivateKey.value, pwd.value, accountSigningKey.value,
-            undefined, undefined);
+            undefined, alias);
         if (accountPk) {
             setAccountPk58(accountPk58);
-            setSigningPk1(accountSigningKey.value);
             message.success('Account saved successfully');
 
             if (appState.value.accountStatus !== AccountStatus.UNREGISTERED) {

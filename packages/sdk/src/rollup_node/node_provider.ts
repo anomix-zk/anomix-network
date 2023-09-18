@@ -265,7 +265,7 @@ export class NodeProvider implements AnomixNode {
   ): Promise<{ alias: string; aliasInfo: string } | undefined> {
     const url = `${this.host}/account/alias/${accountPk}`;
     this.log.info(
-      'Getting alias hash by account public key at ${url}, accountPk: ${accountPk}'
+      `Getting alias hash by account public key at ${url}, accountPk: ${accountPk}`
     );
 
     const res = await this.makeRequest<{ alias: string; aliasInfo: string }>(

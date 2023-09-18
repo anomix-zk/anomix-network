@@ -111,7 +111,7 @@ const emit = defineEmits<{
     (e: 'nextStep', step: number): void;
 }>();
 const router = useRouter();
-const { appState, setConnectedWallet, setAccountPk58, setAlias, setSigningPk1, setSigningPk2, setAccountStatus } = useStatus();
+const { appState, setConnectedWallet, setAccountPk58, setAlias, setAccountStatus } = useStatus();
 const { omitAddress } = useUtils();
 const { SdkState, addAccount } = useSdk();
 const message = useMessage();
@@ -251,10 +251,8 @@ const deriveSigningKeys = async () => {
         console.log('sign result: ', signResult);
         let sk1 = await remoteApi.generateKeyPair(signResult.signature, 0);
         signingKeypair1.value = sk1;
-        setSigningPk1(sk1.publicKey);
         let sk2 = await remoteApi.generateKeyPair(signResult.signature, 1);
         signingKeypair2.value = sk2;
-        setSigningPk2(sk2.publicKey);
 
     } catch (error: any) {
         console.error('deriveSigningKeys: ', error);
