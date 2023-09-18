@@ -64,7 +64,7 @@ async function fetchActionsAndEvents() {
         if (newActionList == undefined || newActionList == null) {
             throw new Error("no new actions..."); // end
         }
-        logger.info('newActionList: ' + newActionList);
+        logger.info(`newActionList: ${JSON.stringify(newActionList)}`);
 
         if (newActionList[0].hash == zkAppActionStateArray![0].toString()) {// desc
             newActionList = newActionList.reverse(); // then reverse it.
