@@ -13,6 +13,7 @@ export function getLogger(name: string): Logger {
     return pino({
         name,
         level: getLogLevel(name),
+        timestamp: pino.stdTimeFunctions.isoTime,
         transport: {
             targets: [
                 {
