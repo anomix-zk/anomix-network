@@ -15,7 +15,7 @@
     "lib:lint": "eslint \"src/**/*.ts\" --fix"
   },
   "peerDependencies": {
-    "o1js": "0.12.2"
+    "o1js": "0.13.0"
   },
   "dependencies": {
     "@anomix/types": "0.1.0",

@@ -28,6 +28,6 @@
     "gen-schema-wwdto": "npx typescript-json-schema --refs false ./src/withdrawal-witness-dto.ts WithdrawalWitnessDto -o ./src/withdrawal-witness-dto-schema.json"
   },
   "peerDependencies": {
-    "o1js": "0.12.2"
+    "o1js": "0.13.0"
   }
 }

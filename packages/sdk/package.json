@@ -41,6 +41,6 @@
     "isomorphic-fetch": "^3.0.0"
   },
   "peerDependencies": {
-    "o1js": "0.12.2"
+    "o1js": "0.13.0"
   }
 }
