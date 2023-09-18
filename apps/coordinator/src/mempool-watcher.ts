@@ -76,7 +76,7 @@ async function mempoolWatch() {
 
             if (mpTxList.length == 0) {
                 logger.info('fetch no memplTx.');
-                return;
+                // return;
             }
 
             if (!couldSeq) {
@@ -122,11 +122,11 @@ async function mempoolWatch() {
             }
 
             if (couldSeq) {
-                // check if has depositTx, then stop depositProcessor
+                // check if has depositTx inside mempool, then stop depositProcessor
                 let needStopDepositProcessor = mpTxList.some(tx => {
                     return tx.actionType == ActionType.DEPOSIT.toString();
                 });
-                if (!needStopDepositProcessor) {
+                if (!needStopDepositProcessor) {// check if there are other unconfirmed blocks with DEPOSIT tx
                     await queryRunner.manager.find(Block, {
                         where: {
                             status: In([BlockStatus.PENDING, BlockStatus.PROVED])  // fetch all unconfirmed-at-layer1 blocks.
