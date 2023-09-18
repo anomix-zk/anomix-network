@@ -6,7 +6,6 @@
     ④最佳tx_free
 */
 import { FastifyPlugin } from "fastify"
-import { isNetworkReady } from './sequencer-status';
 import { queryWorldStateworldState } from './query-worldstate-state'
 
 export const networkEndpoints: FastifyPlugin = async (
@@ -14,6 +13,5 @@ export const networkEndpoints: FastifyPlugin = async (
     options,
     done
 ): Promise<void> => {
-    instance.register(isNetworkReady);
     instance.register(queryWorldStateworldState);
 }
