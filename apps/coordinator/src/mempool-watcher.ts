@@ -1,7 +1,7 @@
 
 import config from './lib/config';
 import { getConnection, In, QueryRunner } from 'typeorm';
-import { Block, MemPlL2Tx, DepositProcessorSignal, DepositTreeTrans } from '@anomix/dao';
+import { Block, MemPlL2Tx, DepositProcessorSignal, DepositTreeTrans, Task, TaskStatus, TaskType } from '@anomix/dao';
 import { BaseResponse, BlockStatus, DepositProcessingSignal, DepositTreeTransStatus, L2TxStatus, RollupTaskDto, RollupTaskType, SequencerStatus } from '@anomix/types';
 import { parentPort } from 'worker_threads';
 import { $axiosDeposit, $axiosSeq } from './lib/api';
@@ -170,16 +170,25 @@ async function mempoolWatch() {
 
                     logger.info('obtain the first DepositTreeTrans=', depositTreeTrans?.id);
                     if (depositTreeTrans) {
-                        // dTran MUST align with the AnomixEntryContract's states.
-                        // assert
-                        // assert
-
-                        logger.info('trigger /rollup/contract-call/', depositTreeTrans?.id);
-                        await $axiosDeposit.get<BaseResponse<string>>(`/rollup/contract-call/${depositTreeTrans.id}`).then(r => {
-                            if (r.data.code == 1) {
-                                throw new Error(r.data.msg);
-                            }
+                        // check if it's been just processed
+                        const taskList = await queryRunner.manager.find(Task, { where: { status: TaskStatus.PENDING, taskType: TaskType.DEPOSIT } }) ?? [];
+                        const rs = taskList.some(t => {
+                            return t.targetId == depositTreeTrans.id
                         });
+
+                        if (!rs) {
+                            // dTran MUST align with the AnomixEntryContract's states.
+                            // assert
+                            // assert
+
+                            logger.info('trigger /rollup/contract-call/', depositTreeTrans?.id);
+                            await $axiosDeposit.get<BaseResponse<string>>(`/rollup/contract-call/${depositTreeTrans.id}`).then(r => {
+                                if (r.data.code == 1) {
+                                    throw new Error(r.data.msg);
+                                }
+                            });
+                        }
+
                     }
                 }
 
