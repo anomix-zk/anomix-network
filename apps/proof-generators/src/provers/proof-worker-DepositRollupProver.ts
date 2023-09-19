@@ -32,7 +32,10 @@ function processMsgFromMaster() {
 
                     logger.info(`exec 'commitActionBatch' outside circuit smoothly`);
 
-                    return await DepositRollupProver.commitActionBatch(params.depositRollupState, params.depositActionBatch)
+                    const proof = await DepositRollupProver.commitActionBatch(params.depositRollupState, params.depositActionBatch);
+                    logger.info(`exec 'commitActionBatch' inside circuit: done`);
+
+                    return proof;
                 });
                 break;
 
@@ -52,11 +55,13 @@ function processMsgFromMaster() {
                     logger.info(`currently process [depositRollupProof2.publicOutput.source: {currentActionsHash: ${depositRollupProof2.publicOutput.source.currentActionsHash}, currentIndex: ${depositRollupProof2.publicOutput.source.currentIndex}}]`);
                     logger.info(`currently process [depositRollupProof2.publicOutput.target: {currentActionsHash: ${depositRollupProof2.publicOutput.target.currentActionsHash}, currentIndex: ${depositRollupProof2.publicOutput.target.currentIndex}}]`);
 
-                    merge(depositRollupProof1, depositRollupProof2);
-
+                    await merge(depositRollupProof1, depositRollupProof2);
                     logger.info(`exec 'merge' outside circuit smoothly`);
 
-                    return await DepositRollupProver.merge(depositRollupProof1, depositRollupProof2)
+                    const proof = await DepositRollupProver.merge(depositRollupProof1, depositRollupProof2);
+                    logger.info(`exec 'merge' inside circuit: done`);
+
+                    return proof;
                 });
                 break;
 

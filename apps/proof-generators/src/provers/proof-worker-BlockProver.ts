@@ -26,7 +26,10 @@ function processMsgFromMaster() {
 
                     logger.info(`currently process blockProveInput.dataStartIndex: ${params.blockProveInput.dataStartIndex}`);
 
-                    return await BlockProver.prove(params.blockProveInput, params.innerRollupProof);
+                    const proof = await BlockProver.prove(params.blockProveInput, params.innerRollupProof);
+                    logger.info(`exec 'BlockProver.prove' inside circuit: done`);
+
+                    return proof;
                 });
                 break;
 

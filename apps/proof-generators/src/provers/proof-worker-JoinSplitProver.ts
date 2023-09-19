@@ -21,10 +21,13 @@ function processMsgFromMaster() {
                     let params = new JoinSplitDepositInput(JoinSplitDepositInput.fromJSON(message.payload))
 
                     logger.info(`currently process [params.depositNoteCommitment:${params.depositNoteCommitment}, params.depositNoteIndex: ${params.depositNoteIndex}]`);
-                    let proof = deposit(params);
+                    deposit(params);
                     logger.info(`exec 'deposit' outside circuit smoothly`);
 
-                    return await JoinSplitProver.deposit(params)
+                    const proof = await JoinSplitProver.deposit(params);
+                    logger.info(`exec 'deposit' inside circuit: done`);
+
+                    return proof
                 });
                 break;
 

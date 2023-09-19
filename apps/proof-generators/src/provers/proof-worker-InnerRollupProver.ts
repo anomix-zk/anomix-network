@@ -31,11 +31,13 @@ function processMsgFromMaster() {
                     logger.info(`currently batch [joinSplitProof1.outputNoteCommitment1: ${params.joinSplitProof1.publicOutput.outputNoteCommitment1}, joinSplitProof1.outputNoteCommitment2: ${params.joinSplitProof1.publicOutput.outputNoteCommitment2}]`);
                     logger.info(`currently batch [joinSplitProof2.outputNoteCommitment1: ${params.joinSplitProof2.publicOutput.outputNoteCommitment1}, joinSplitProof2.outputNoteCommitment2: ${params.joinSplitProof2.publicOutput.outputNoteCommitment2}]`);
 
-                    const proof = proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
-
+                    proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
                     logger.info(`exec 'proveTxBatch' outside circuit smoothly`);
 
-                    return await InnerRollupProver.proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
+                    const proofRs = await InnerRollupProver.proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
+                    logger.info(`exec 'proveTxBatch' inside circuit: done`);
+
+                    return proofRs;
                 });
                 break;
 
