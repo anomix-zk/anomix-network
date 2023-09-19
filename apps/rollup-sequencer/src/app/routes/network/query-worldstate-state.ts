@@ -1,11 +1,8 @@
-import { L2Tx, MemPlL2Tx } from '@anomix/dao'
 
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
-import { getConnection } from 'typeorm';
-import { WorldStateRespDto, WorldStateRespDtoSchema, BaseResponse, L2TxStatus, MerkleTreeId } from '@anomix/types'
+import { WorldStateRespDto, WorldStateRespDtoSchema, BaseResponse, MerkleTreeId } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
-import { $axiosSeq } from '@/lib/api';
 
 /**
  * query all trees' roots

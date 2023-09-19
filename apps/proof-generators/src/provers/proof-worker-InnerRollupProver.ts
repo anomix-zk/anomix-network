@@ -27,9 +27,17 @@ function processMsgFromMaster() {
                         joinSplitProof2: JoinSplitProof.fromJSON(JSON.parse(message.payload.joinSplitProof2)) // TODO no need JSON.parse in later version.
                     }
 
-                    const proof = proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
+                    logger.info(`currently process [innerRollupInput.dataStartIndex: ${params.innerRollupInput.dataStartIndex}]`);
+                    logger.info(`currently batch [joinSplitProof1.outputNoteCommitment1: ${params.joinSplitProof1.publicOutput.outputNoteCommitment1}, joinSplitProof1.outputNoteCommitment2: ${params.joinSplitProof1.publicOutput.outputNoteCommitment2}]`);
+                    logger.info(`currently batch [joinSplitProof2.outputNoteCommitment1: ${params.joinSplitProof2.publicOutput.outputNoteCommitment1}, joinSplitProof2.outputNoteCommitment2: ${params.joinSplitProof2.publicOutput.outputNoteCommitment2}]`);
 
-                    return await InnerRollupProver.proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
+                    proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
+                    logger.info(`exec 'proveTxBatch' outside circuit smoothly`);
+
+                    const proofRs = await InnerRollupProver.proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
+                    logger.info(`exec 'proveTxBatch' inside circuit: done`);
+
+                    return proofRs;
                 });
                 break;
 
@@ -39,6 +47,8 @@ function processMsgFromMaster() {
                         innerRollupProof1: InnerRollupProof.fromJSON(message.payload.innerRollupProof1),
                         innerRollupProof2: InnerRollupProof.fromJSON(message.payload.innerRollupProof2)
                     }
+
+                    logger.info(`currently merge [innerRollupProof1.publicOutput.oldDataRoot: ${params.innerRollupProof1.publicOutput.oldDataRoot}, innerRollupProof2.publicOutput.oldDataRoot: ${params.innerRollupProof2.publicOutput.oldDataRoot}]`);
 
                     // const proof = merge(params.innerRollupProof1, params.innerRollupProof2);
                     return await InnerRollupProver.merge(params.innerRollupProof1, params.innerRollupProof2);

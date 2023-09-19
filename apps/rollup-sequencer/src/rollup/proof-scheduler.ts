@@ -78,9 +78,9 @@ export class ProofScheduler {
                     param.joinSplitProof1 = map.get(param.txId1)!;
                     if (param.txId2) {// if dummyTx, param.txId2 == undefined, should skip!
                         param.joinSplitProof2 = map.get(param.txId2)!;
-                    }/* else {
+                    } else {
                         param.joinSplitProof2 = JSON.stringify(config.joinsplitProofDummyTx.toJSON());
-                    }*/
+                    }
 
                 })
 

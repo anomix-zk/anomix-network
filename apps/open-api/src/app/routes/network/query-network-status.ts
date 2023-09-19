@@ -4,7 +4,7 @@ import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse, BlockStatus, LatestBlockDto, NetworkStatusDto, NetworkStatusDtoSchema } from "@anomix/types";
 import { Block } from "@anomix/dao";
-import { Connection, In, getConnection, UsingJoinColumnIsNotAllowedError } from 'typeorm';
+import { getConnection } from 'typeorm';
 
 /**
  * check the network status

@@ -1,10 +1,6 @@
-import fs from "fs";
 import * as dotenv from "dotenv"
-import { JoinSplitProof } from "@anomix/circuits"
 
 dotenv.config({ path: '../../.env' })
-
-const JoinsplitProofDummyTx: string = fs.readFileSync('./JoinsplitProofDummyTx.string', 'utf8');
 
 const config = {
     port: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT) || 8082,
@@ -62,8 +58,6 @@ const config = {
     depositRollup: {
         batchNum: <number>Number(<string>process.env.DEPOSIT_ROLLUP_BATCH_NUM ?? 8),
     },
-
-    joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx ?? JoinsplitProofDummyTx)),// TODO
 
     l1TxFee: <number>Number(<string>process.env.L1_TX_FEE ?? 200_000_000),
     txFeePayerPrivateKey: <string>process.env.L1_TX_FEE_PAYER_PRIVATE_KEY,

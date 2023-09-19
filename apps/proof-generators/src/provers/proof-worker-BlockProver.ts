@@ -23,7 +23,13 @@ function processMsgFromMaster() {
                         blockProveInput: new BlockProveInput(BlockProveInput.fromJSON(message.payload.blockProveInput)),
                         innerRollupProof: InnerRollupProof.fromJSON(message.payload.innerRollupProof)
                     }
-                    return await BlockProver.prove(params.blockProveInput, params.innerRollupProof);
+
+                    logger.info(`currently process blockProveInput.dataStartIndex: ${params.blockProveInput.dataStartIndex}`);
+
+                    const proof = await BlockProver.prove(params.blockProveInput, params.innerRollupProof);
+                    logger.info(`exec 'BlockProver.prove' inside circuit: done`);
+
+                    return proof;
                 });
                 break;
 

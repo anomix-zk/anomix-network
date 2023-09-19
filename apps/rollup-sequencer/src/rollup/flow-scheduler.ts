@@ -67,7 +67,11 @@ export class FlowScheduler {
             // query unhandled NON-Deposit Tx list from RollupDB
             let mpTxList = await this.rollupDB.queryPendingTxList();
             if (mpTxList.length == 0) {
+                logger.info('no tx inside mempool...');
                 await this.worldState.reset();//  end this flow!
+                logger.info('reset worldState.');
+                logger.info('end.');
+
                 return;
             }
 
@@ -415,6 +419,8 @@ export class FlowScheduler {
         } finally {
             // end the flow
             await this.worldState.reset();
+            logger.info('reset worldState.');
+            logger.info('end.');
             await queryRunner.release();
         }
     }

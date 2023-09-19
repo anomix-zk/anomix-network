@@ -34,8 +34,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
     } else {
         const start = assetInBlockReqDto.range!.from;
         const end = start + assetInBlockReqDto.range!.take - 1;
-        const gap = end - start;
-        for (let index = start; index <= gap; index++) {
+        for (let index = start; index <= end; index++) {
             blockNumList.push(index);
         }
     }
@@ -120,7 +119,9 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
 
         const data = new Array<AssetsInBlockDto>();
         blockTxListMap.forEach(function (value, key, map) {
-            data.push(value);
+            if (value.txList.length > 0) {
+                data.push(value);
+            }
         });
         return {
             code: 0,

@@ -20,9 +20,14 @@ function processMsgFromMaster() {
                 await execCircuit(message, async () => {
                     let params = new JoinSplitDepositInput(JoinSplitDepositInput.fromJSON(message.payload))
 
-                    let proof = deposit(params);
+                    logger.info(`currently process [params.depositNoteCommitment:${params.depositNoteCommitment}, params.depositNoteIndex: ${params.depositNoteIndex}]`);
+                    deposit(params);
+                    logger.info(`exec 'deposit' outside circuit smoothly`);
 
-                    return await JoinSplitProver.deposit(params)
+                    const proof = await JoinSplitProver.deposit(params);
+                    logger.info(`exec 'deposit' inside circuit: done`);
+
+                    return proof
                 });
                 break;
 
