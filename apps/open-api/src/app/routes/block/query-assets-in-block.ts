@@ -120,7 +120,9 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
 
         const data = new Array<AssetsInBlockDto>();
         blockTxListMap.forEach(function (value, key, map) {
-            data.push(value);
+            if (value.txList.length > 0) {
+                data.push(value);
+            }
         });
         return {
             code: 0,
