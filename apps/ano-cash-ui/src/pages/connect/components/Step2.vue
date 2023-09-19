@@ -5,7 +5,7 @@
         <div class="form-item">
             <!-- <div class="item-label">Alias</div> -->
             <n-input v-model:value="inputAlias" class="item" type="text" size="large" placeholder="Alias"
-                @blur="checkAliasIsRegistered">
+                @blur="checkAliasIsRegistered" @input="handleInput">
                 <template #suffix>
                     <van-icon v-show="canRegsiter === 1" name="passed" color="green" size="20" />
                     <van-icon v-show="canRegsiter === 0" name="close" color="red" size="20" />
@@ -45,6 +45,12 @@ const toAccountPage = () => {
 };
 
 const maskId = 'registerAccount';
+
+const handleInput = (v: string) => {
+    if (canRegsiter.value !== -1) {
+        canRegsiter.value = -1;
+    }
+};
 
 const checkAliasIsRegistered = async () => {
     console.log('checkAliasIsRegistered...');
