@@ -29,6 +29,7 @@ function processMsgFromMaster() {
 
                     logger.info(`currently process [innerRollupInput.dataStartIndex: ${params.innerRollupInput.dataStartIndex}]`);
                     logger.info(`currently batch [joinSplitProof1.outputNoteCommitment1: ${params.joinSplitProof1.publicOutput.outputNoteCommitment1}, joinSplitProof1.outputNoteCommitment2: ${params.joinSplitProof1.publicOutput.outputNoteCommitment2}]`);
+                    logger.info(`currently batch [joinSplitProof2.outputNoteCommitment1: ${params.joinSplitProof2.publicOutput.outputNoteCommitment1}, joinSplitProof2.outputNoteCommitment2: ${params.joinSplitProof2.publicOutput.outputNoteCommitment2}]`);
 
                     const proof = proveTxBatch(params.innerRollupInput, params.joinSplitProof1, params.joinSplitProof2);
 
