@@ -34,8 +34,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
     } else {
         const start = assetInBlockReqDto.range!.from;
         const end = start + assetInBlockReqDto.range!.take - 1;
-        const gap = end - start;
-        for (let index = start; index <= gap; index++) {
+        for (let index = start; index <= end; index++) {
             blockNumList.push(index);
         }
     }
