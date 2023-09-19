@@ -24,8 +24,13 @@ function processMsgFromMaster() {
                         depositActionBatch: new DepositActionBatch(DepositActionBatch.fromJSON(message.payload.depositActionBatch))
                     };
 
+                    logger.info(`currently process [params.depositRollupState.currentActionsHash: ${params.depositRollupState.currentActionsHash}, params.depositRollupState.currentIndex: ${params.depositRollupState.currentIndex}]`);
+                    logger.info(`currently commitActionBatch [params.depositActionBatch.actions: ${JSON.stringify(params.depositActionBatch.actions)}]`);
+
                     // for test before
                     commitActionBatch(params.depositRollupState, params.depositActionBatch)
+
+                    logger.info(`exec 'commitActionBatch' outside circuit smoothly`);
 
                     return await DepositRollupProver.commitActionBatch(params.depositRollupState, params.depositActionBatch)
                 });
@@ -41,7 +46,15 @@ function processMsgFromMaster() {
                     const depositRollupProof1 = params.depositRollupProof1;
                     const depositRollupProof2 = params.depositRollupProof2;
 
+                    logger.info(`currently process [depositRollupProof1.publicOutput.source: {currentActionsHash: ${depositRollupProof1.publicOutput.source.currentActionsHash}, currentIndex: ${depositRollupProof1.publicOutput.source.currentIndex}}]`);
+                    logger.info(`currently process [depositRollupProof1.publicOutput.target: {currentActionsHash: ${depositRollupProof1.publicOutput.target.currentActionsHash}, currentIndex: ${depositRollupProof1.publicOutput.target.currentIndex}}]`);
+
+                    logger.info(`currently process [depositRollupProof2.publicOutput.source: {currentActionsHash: ${depositRollupProof2.publicOutput.source.currentActionsHash}, currentIndex: ${depositRollupProof2.publicOutput.source.currentIndex}}]`);
+                    logger.info(`currently process [depositRollupProof2.publicOutput.target: {currentActionsHash: ${depositRollupProof2.publicOutput.target.currentActionsHash}, currentIndex: ${depositRollupProof2.publicOutput.target.currentIndex}}]`);
+
                     merge(depositRollupProof1, depositRollupProof2);
+
+                    logger.info(`exec 'merge' outside circuit smoothly`);
 
                     return await DepositRollupProver.merge(depositRollupProof1, depositRollupProof2)
                 });

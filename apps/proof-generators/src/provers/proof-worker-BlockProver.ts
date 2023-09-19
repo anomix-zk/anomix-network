@@ -23,6 +23,9 @@ function processMsgFromMaster() {
                         blockProveInput: new BlockProveInput(BlockProveInput.fromJSON(message.payload.blockProveInput)),
                         innerRollupProof: InnerRollupProof.fromJSON(message.payload.innerRollupProof)
                     }
+
+                    logger.info(`currently process blockProveInput.dataStartIndex: ${params.blockProveInput.dataStartIndex}`);
+
                     return await BlockProver.prove(params.blockProveInput, params.innerRollupProof);
                 });
                 break;
