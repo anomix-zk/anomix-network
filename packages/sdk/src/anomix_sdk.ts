@@ -548,6 +548,7 @@ export class AnomixSdk {
     signingPrivateKey2?: PrivateKey,
     alias?: string
   ) {
+    this.log.info('Adding account...');
     const accountPk = accountPrivateKey.toPublicKey();
     const accountPk58 = accountPk.toBase58();
 

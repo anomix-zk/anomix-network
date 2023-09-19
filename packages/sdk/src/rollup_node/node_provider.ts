@@ -112,7 +112,7 @@ export class NodeProvider implements AnomixNode {
     take: number
   ): Promise<AssetsInBlockDto[]> {
     const url = `${this.host}/block/assets`;
-    this.log.info(`Getting blocks at ${url}`);
+    this.log.info(`Getting blocks at ${url}, from: ${from}, take: ${take}`);
 
     const body = JSON.stringify({
       flag: 1,

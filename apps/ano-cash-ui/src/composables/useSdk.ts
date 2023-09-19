@@ -94,6 +94,7 @@ export default function () {
             signingPrivateKey2_58,
             alias
         );
+        console.log("useSdk-addAccount: ", accountPk);
 
         const cachedPubKeys: string[] = [accountPk];
         if (signingPrivateKey1_58) {

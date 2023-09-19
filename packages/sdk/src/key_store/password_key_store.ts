@@ -36,10 +36,11 @@ export class PasswordKeyStore implements KeyStore {
   ): Promise<PublicKey> {
     const pubKey = privKey.toPublicKey();
     const cipherText = await encrypt(privKey.toBase58(), KEY_SALT, pwd);
-    await this.db.upsertKey(pubKey.toBase58(), cipherText);
+    const keyName = pubKey.toBase58();
+    await this.db.upsertSecretKey(keyName, cipherText);
 
     if (isCached) {
-      this.cache[pubKey.toBase58()] = privKey;
+      this.cache[keyName] = privKey;
     }
 
     return pubKey;
