@@ -56,10 +56,8 @@ export const handler: RequestHandler<string[], null> = async function (
             txDto.createdTs = block!.createdAt.getTime();
 
             txDto.extraData = {} as any;
-            txDto.extraData.outputNote1 = JSON.parse(encryptedData1);
-            if (encryptedData2) {
-                txDto.extraData.outputNote2 = JSON.parse(encryptedData2);
-            }
+            txDto.extraData.outputNote1 = encryptedData1 ? JSON.parse(encryptedData1) : undefined;
+            txDto.extraData.outputNote2 = encryptedData2 ? JSON.parse(encryptedData2) : undefined;
 
             if (tx.actionType == ActionType.WITHDRAW.toString()) {// if Withdrawal
                 // query WithdrawInfoDto
@@ -72,11 +70,9 @@ export const handler: RequestHandler<string[], null> = async function (
                 // query Account
                 const accountRepo = connection.getRepository(Account);
                 const account = await accountRepo.findOne({ where: { l2TxId: txDto.id } });
-                if (account) {
-                    txDto.extraData.acctPk = account.acctPk;
-                    txDto.extraData.aliasHash = account.aliasHash;
-                    txDto.extraData.aliasInfo = account.encrptedAlias;
-                }
+                txDto.extraData.acctPk = account?.acctPk;
+                txDto.extraData.aliasHash = account?.aliasHash;
+                txDto.extraData.aliasInfo = account?.encrptedAlias;
             }
 
             return txDto;
