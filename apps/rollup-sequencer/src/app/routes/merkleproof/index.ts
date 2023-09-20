@@ -3,6 +3,7 @@ import { queryMerkleTreeInfo } from "./query-merkle-tree-info";
 import { queryMerkleProof } from "./query-merkle-proof";
 import { queryWitnessByWithdrawNotes } from "./query-witness-by-withdraw-notes";
 import { syncLazyDataTree } from "./sync-lazy-data-tree";
+import { queryWorldStateworldState } from './query-worldstate-state'
 
 export const merkleProofEndpoint: FastifyPlugin = async (
     instance,
@@ -13,4 +14,6 @@ export const merkleProofEndpoint: FastifyPlugin = async (
     instance.register(queryMerkleProof);
     instance.register(queryWitnessByWithdrawNotes);
     instance.register(syncLazyDataTree);
+
+    instance.register(queryWorldStateworldState);
 }
