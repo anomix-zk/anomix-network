@@ -80,8 +80,8 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
                 const account = await accountRepository.findOne({ where: { l2TxId: tx.id } });
 
                 dto.extraData = {
-                    outputNote1: JSON.parse(encryptedData1),
-                    outputNote2: encryptedData2 ? JSON.parse(encryptedData2) : {},
+                    outputNote1: encryptedData1 ? JSON.parse(encryptedData1) : undefined,
+                    outputNote2: encryptedData2 ? JSON.parse(encryptedData2) : undefined,
                     aliasHash: account?.aliasHash,
                     accountPublicKey: account?.acctPk,
                     withdrawNote: withdrawInfoDto

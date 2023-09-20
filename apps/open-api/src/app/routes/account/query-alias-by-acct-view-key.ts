@@ -37,8 +37,8 @@ export const handler: RequestHandler<null, AcctvkParam> = async function (
         if (account) {
             return {
                 code: 0, data: {
-                    alias: (account?.aliasHash) ?? '',
-                    aliasInfo: (account?.encrptedAlias) ?? ''
+                    alias: account?.aliasHash,
+                    aliasInfo: account?.encrptedAlias
                 }, msg: ''
             }
         }

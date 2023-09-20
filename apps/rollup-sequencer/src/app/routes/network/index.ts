@@ -6,12 +6,12 @@
     ④最佳tx_free
 */
 import { FastifyPlugin } from "fastify"
-import { queryWorldStateworldState } from './query-worldstate-state'
+// import { queryWorldStateworldState } from './query-worldstate-state'
 
 export const networkEndpoints: FastifyPlugin = async (
     instance,
     options,
     done
 ): Promise<void> => {
-    instance.register(queryWorldStateworldState);
+    // instance.register(queryWorldStateworldState);
 }
