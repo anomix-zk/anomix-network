@@ -91,10 +91,10 @@ export function calculateShareSecret(
 
 export function maskReceiverBySender(
     receiverPubKey: PublicKey,
-    senderPubKeyBigInt: bigint,
+    senderRealPubKeyBigInt: bigint,
     randValueBigInt: bigint
 ): Field[] {
-    const sercet = senderPubKeyBigInt | randValueBigInt;
+    const sercet = senderRealPubKeyBigInt | randValueBigInt;
     const receiverFs = receiverPubKey.toFields();
     const fs0BigInt = receiverFs[0].toBigInt();
 
@@ -104,13 +104,13 @@ export function maskReceiverBySender(
 
 export function recoverReceiverBySender(
     receiverInfo: Field[],
-    senderPubKeyBigInt: bigint,
+    senderRealPubKeyBigInt: bigint,
     randValueBigInt: bigint
 ): PublicKey {
     if (receiverInfo.length !== 2) {
         throw new Error("receiverInfo length must be 2");
     }
-    const sercet = senderPubKeyBigInt | randValueBigInt;
+    const sercet = senderRealPubKeyBigInt | randValueBigInt;
     const fs0BigInt = receiverInfo[0].toBigInt();
 
     const originFs0BigInt = fs0BigInt ^ sercet;
