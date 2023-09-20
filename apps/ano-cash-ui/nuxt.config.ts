@@ -14,12 +14,12 @@ export default defineNuxtConfig({
             // Keys within public are also exposed client-side
             public: {
                 entryContractAddress:
-                    "B62qmGaARHidMkLSM9GnaA8HRkFPvqAA2MRt4KkMiEC3wtXzTHJgQHp",
+                    "B62qp2YfmJ9epZiTwrpJZ8jpZqTG3j7VdXF4LQ2ZKzWxqWCVXZ1KrMq",
                 vaultContractAddress:
-                    "B62qkb11BC6xKCYK4WXxK54aMMWposCsMoxNBtGgdhwi1SE738BaueA",
+                    "B62qjwEjuY8mcvfvQxdAU4gy95rgYa6gKKKR58RKTMJ3hEm3FAxb72o",
                 nodeUrl: "http://198.135.49.102",
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
-                l2BlockPollingIntervalMS: 10 * 1000,
+                l2BlockPollingIntervalMS: 12 * 1000,
                 minaEndpoint: "https://berkeley.minascan.io/graphql",
                 debug: false,
             },
@@ -31,12 +31,12 @@ export default defineNuxtConfig({
             // Keys within public are also exposed client-side
             public: {
                 entryContractAddress:
-                    "B62qmGaARHidMkLSM9GnaA8HRkFPvqAA2MRt4KkMiEC3wtXzTHJgQHp",
+                    "B62qp2YfmJ9epZiTwrpJZ8jpZqTG3j7VdXF4LQ2ZKzWxqWCVXZ1KrMq",
                 vaultContractAddress:
-                    "B62qkb11BC6xKCYK4WXxK54aMMWposCsMoxNBtGgdhwi1SE738BaueA",
+                    "B62qjwEjuY8mcvfvQxdAU4gy95rgYa6gKKKR58RKTMJ3hEm3FAxb72o",
                 nodeUrl: "http://198.135.49.102",
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
-                l2BlockPollingIntervalMS: 10 * 1000,
+                l2BlockPollingIntervalMS: 12 * 1000,
                 minaEndpoint: "https://berkeley.minascan.io/graphql",
                 debug: true,
             },

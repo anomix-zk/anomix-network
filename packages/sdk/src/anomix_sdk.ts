@@ -66,7 +66,7 @@ import isNode from 'detect-node';
 import { Remote, wrap } from 'comlink';
 import nodeEndpoint from 'comlink/dist/esm/node-adapter';
 import { DEFAULT_L1_TX_FEE, SdkEventType } from './constants';
-import { decryptAlias } from './note_decryptor/alias_util';
+import { decryptAlias, encryptAlias } from './note_decryptor/alias_util';
 // import { dirname } from 'path';
 // import { fileURLToPath } from 'url';
 
@@ -1229,8 +1229,6 @@ export class AnomixSdk {
     if (!this.isPrivateCircuitCompiled) {
       throw new Error('Private circuit is not compiled');
     }
-
-    this.log.info('pick unspent notes...');
     let newAccountPk = accountPk;
     let signingPk = accountPk;
     let aliasHash = Poseidon.hash(Encoding.Bijective.Fp.fromString(alias));
@@ -1279,11 +1277,13 @@ export class AnomixSdk {
     const endTime = Date.now();
     this.log.info(`proving time: ${endTime - startTime}ms`);
 
+    const aliasInfo = await encryptAlias(alias, accountPrivateKey);
     const tx = {
       proof: proof.toJSON(),
       extraData: {
         aliasHash: aliasHash.toString(),
         acctPk: accountPk.toBase58(),
+        aliasInfo,
       },
     } as L2TxReqDto;
 
