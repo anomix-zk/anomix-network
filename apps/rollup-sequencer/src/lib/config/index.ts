@@ -8,7 +8,6 @@ import * as dotenv from "dotenv"
 dotenv.config({ path: '../../.env' })
 
 const JoinsplitProofDummyTx: string = fs.readFileSync('./circuit-JoinsplitProofDummyTx.string', 'utf8');
-const WithdrawAccountVK: string = fs.readFileSync('./circuit-WithdrawAccountVk.string', 'utf8');
 
 const config = {
     port: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
@@ -66,7 +65,6 @@ const config = {
     proofGeneratorPort: <number>Number(<string>process.env.PROOF_GENERATOR_PORT ?? 8081),
 
     joinsplitProofDummyTx: JoinSplitProof.fromJSON(JSON.parse(<string>process.env.JoinsplitProofDummyTx ?? JoinsplitProofDummyTx)),// TODO
-    withdrawAccountVK: VerificationKey.fromJSON(JSON.parse(WithdrawAccountVK)),
 
     innerRollup: {
         txCount: <number>Number(<string>process.env.InnerRollupTxCount ?? 2),

@@ -127,8 +127,8 @@ export const handler: RequestHandler<WithdrawAssetReqDto, null> = async function
         }
 
         if (!notFirst) {// first withdraw, need vk for deploy contract
-            const verificationKey: VerificationKey = config.withdrawAccountVK;
-            proofTaskDto.payload.verificationKey = verificationKey;
+            //const verificationKey: VerificationKey = config.withdrawAccountVK;
+            //proofTaskDto.payload.verificationKey = verificationKey;
         } else {
             proofTaskDto.taskType = ProofTaskType.USER_WITHDRAW
         }
