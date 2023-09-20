@@ -2,7 +2,7 @@ import { FastifyPlugin } from "fastify"
 import { queryByTxHashes } from "./query-by-tx-hashes";
 import { queryTxByNoteHash } from "./query-tx-by-note-hashes";
 import { queryWithdrawalNotes } from "./query-withdrawal-notes";
-import { recieveTx } from "./recieve-tx";
+// import { recieveTx } from "./recieve-tx";
 import { withdrawAsset } from "./withdraw-assets";
 import { queryPendingTxs } from "./query-pending-txs";
 
@@ -26,7 +26,7 @@ export const txEndpoint: FastifyPlugin = async (
     options,
     done
 ): Promise<void> => {
-    instance.register(recieveTx);
+    // instance.register(recieveTx);
     instance.register(queryPendingTxs);
     instance.register(queryByTxHashes);
     instance.register(queryTxByNoteHash);
