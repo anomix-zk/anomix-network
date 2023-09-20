@@ -69,7 +69,7 @@ const checkAliasIsRegistered = async () => {
 };
 
 const registerAccount = async () => {
-    if (canRegsiter.value === 1) {
+    if (canRegsiter.value === 0) {
         message.error('The alias is already registered');
         return;
     }
