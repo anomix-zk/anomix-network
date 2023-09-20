@@ -158,9 +158,9 @@ const connectWallet = async (action: string) => {
             height: 60px;
             border-radius: 12px;
 
-            background-color: var(--up-bg-checked);
+            background-color: var(--ano-bg-checked);
             transition: all .15s;
-            box-shadow: inset 1px 1px 3px var(--up-line);
+            box-shadow: inset 1px 1px 3px var(--ano-line);
 
             span {
                 margin-left: 10px;
@@ -194,7 +194,7 @@ const connectWallet = async (action: string) => {
         .line {
             width: 60px;
             height: 1px;
-            background-color: var(--up-text-third);
+            background-color: var(--ano-text-third);
         }
 
         span {

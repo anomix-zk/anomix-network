@@ -60,7 +60,7 @@
                     <div>Deposit</div>
                 </div>
                 <div class="btn-box" @click="toSend">
-                    <div class="btn" style="box-shadow: inset 1px 1px 4px 0 var(--up-line);">
+                    <div class="btn" style="box-shadow: inset 1px 1px 4px 0 var(--ano-line);">
                         <van-icon size="40" color="#4098fc" :name="transferIcon" />
                     </div>
                     <div>Send</div>
@@ -423,7 +423,7 @@ const toWithdraw = () => {
         font-size: 14px;
         line-height: 14px;
         font-weight: 400;
-        color: var(--up-text-third);
+        color: var(--ano-text-third);
 
         .icon-copy {
             margin-left: 6px;
@@ -450,7 +450,7 @@ const toWithdraw = () => {
     .title {
         font-size: 16px;
         font-weight: 400;
-        color: var(--up-text-secondary);
+        color: var(--ano-text-secondary);
         line-height: 16px;
     }
 
@@ -479,7 +479,7 @@ const toWithdraw = () => {
                 cursor: pointer;
                 padding: 10px;
 
-                color: var(--up-text-third);
+                color: var(--ano-text-third);
             }
         }
 
@@ -497,7 +497,7 @@ const toWithdraw = () => {
         cursor: pointer;
         font-size: 16px;
         font-weight: 400;
-        color: var(--up-text-secondary);
+        color: var(--ano-text-secondary);
         line-height: 16px;
         display: flex;
         flex-direction: column;
@@ -509,8 +509,8 @@ const toWithdraw = () => {
             // box-shadow: inset 1px 1px 3px 0 #4098fc;
             // background: #fff;
 
-            background: var(--up-bg);
-            box-shadow: inset 1px 1px 3px 0 var(--up-line);
+            background: var(--ano-bg);
+            box-shadow: inset 1px 1px 3px 0 var(--ano-line);
             border-radius: 30px;
             margin-bottom: 15px;
             display: flex;
@@ -540,7 +540,7 @@ const toWithdraw = () => {
     padding-bottom: 15px;
     padding-left: 20px;
     padding-right: 20px;
-    background: var(--up-bg);
+    background: var(--ano-bg);
     border-radius: 12px;
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
@@ -585,7 +585,7 @@ const toWithdraw = () => {
                 margin-top: 2px;
                 font-size: 14px;
                 font-weight: 400;
-                color: var(--up-text-third);
+                color: var(--ano-text-third);
                 line-height: 20px;
                 text-align: left;
             }
@@ -609,7 +609,7 @@ const toWithdraw = () => {
             margin-top: 2px;
             font-size: 14px;
             font-weight: 400;
-            color: var(--up-text-third);
+            color: var(--ano-text-third);
             text-align: right;
             line-height: 20px;
         }
@@ -624,7 +624,7 @@ const toWithdraw = () => {
     margin-bottom: 10px;
     cursor: pointer;
     padding: 20px;
-    background: var(--up-bg);
+    background: var(--ano-bg);
     border-radius: 12px;
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
@@ -657,7 +657,7 @@ const toWithdraw = () => {
                 margin-top: 2px;
                 font-size: 14px;
                 font-weight: 400;
-                color: var(--up-text-third);
+                color: var(--ano-text-third);
                 line-height: 20px;
                 text-align: left;
             }
@@ -682,7 +682,7 @@ const toWithdraw = () => {
             margin-top: 2px;
             font-size: 14px;
             font-weight: 400;
-            color: var(--up-text-third);
+            color: var(--ano-text-third);
             text-align: right;
             line-height: 20px;
         }

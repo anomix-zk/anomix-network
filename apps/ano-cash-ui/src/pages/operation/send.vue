@@ -280,13 +280,13 @@ onMounted(async () => {
 .fee-box {
   margin-top: 20px;
   padding: 20px;
-  background: var(--up-bg);
+  background: var(--ano-bg);
   border-radius: 12px;
   margin-bottom: 40px;
-  color: var(--up-text-primary);
+  color: var(--ano-text-primary);
 
   .title {
-    color: var(--up-text-primary);
+    color: var(--ano-text-primary);
     cursor: pointer;
     user-select: none;
     display: flex;
@@ -303,7 +303,7 @@ onMounted(async () => {
     justify-content: space-between;
     width: 100%;
     padding: 15px;
-    background-color: var(--up-background);
+    background-color: var(--ano-background);
 
     .left {
       font-weight: 600;
@@ -321,7 +321,7 @@ onMounted(async () => {
   .radio-item:nth-child(odd) {
     border-bottom-style: dotted;
     border-bottom-width: 0.5px;
-    border-bottom-color: var(--up-border);
+    border-bottom-color: var(--ano-border);
   }
 }
 
@@ -330,7 +330,7 @@ onMounted(async () => {
   .form-main {
     margin-top: 20px;
     padding: 20px;
-    background: var(--up-bg);
+    background: var(--ano-bg);
     border-radius: 12px;
     margin-bottom: 40px;
 
@@ -359,7 +359,7 @@ onMounted(async () => {
           margin-top: 2px;
           font-size: 14px;
           font-weight: 400;
-          color: var(--up-text-third);
+          color: var(--ano-text-third);
           line-height: 20px;
         }
       }
@@ -372,7 +372,7 @@ onMounted(async () => {
       .max-btn {
         border-left-width: 0.5px;
         border-left-style: dotted;
-        border-left-color: var(--up-border);
+        border-left-color: var(--ano-border);
         margin-left: 5px;
         padding-left: 14px;
         padding-right: 6px;
@@ -381,7 +381,7 @@ onMounted(async () => {
       }
 
       .max-btn:hover {
-        color: var(--up-primary);
+        color: var(--ano-primary);
       }
     }
 

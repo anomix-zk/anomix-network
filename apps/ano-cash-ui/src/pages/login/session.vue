@@ -323,7 +323,7 @@ const login = async () => {
         }
 
         .item {
-            background: var(--up-bg-checked);
+            background: var(--ano-bg-checked);
         }
 
         .placeholder {
@@ -336,12 +336,12 @@ const login = async () => {
             line-height: 16px;
             color: #606266;
             z-index: 999;
-            //background-color: var(--up-background);
+            //background-color: var(--ano-background);
         }
 
         :deep(.n-base-selection-label) {
             height: 56px;
-            background: var(--up-bg-checked);
+            background: var(--ano-bg-checked);
         }
 
         :deep(.n-base-selection) {

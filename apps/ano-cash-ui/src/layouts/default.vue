@@ -1,5 +1,5 @@
 <template>
-    <div class="up-app">
+    <div class="ano-app">
         <!-- <div class="view-account-header" @click="toIndex">Money</div> -->
         <div class="page">
             <slot />

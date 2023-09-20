@@ -137,13 +137,13 @@ const sendTx = async () => {
 .fee-box {
   margin-top: 20px;
   padding: 20px;
-  background: var(--up-bg);
+  background: var(--ano-bg);
   border-radius: 12px;
   margin-bottom: 40px;
-  color: var(--up-text-primary);
+  color: var(--ano-text-primary);
 
   .title {
-    color: var(--up-text-primary);
+    color: var(--ano-text-primary);
     cursor: pointer;
     user-select: none;
     display: flex;
@@ -170,7 +170,7 @@ const sendTx = async () => {
 
     .token-name {
       margin-left: 10px;
-      color: var(--up-text-primary);
+      color: var(--ano-text-primary);
       font-weight: 500;
       font-size: 16px;
       line-height: 24px;
@@ -191,7 +191,7 @@ const sendTx = async () => {
   .form-main {
     margin-top: 20px;
     padding: 20px;
-    background: var(--up-bg);
+    background: var(--ano-bg);
     border-radius: 12px;
     margin-bottom: 20px;
 
@@ -242,7 +242,7 @@ const sendTx = async () => {
   margin-top: 12px;
 
   span {
-    color: var(--up-primary);
+    color: var(--ano-primary);
     font-weight: 500;
     font-size: 14px;
     line-height: 20px;
@@ -251,7 +251,7 @@ const sendTx = async () => {
   .full-tips {
     font-size: 12px;
     line-height: 20px;
-    color: var(--up-text-third);
+    color: var(--ano-text-third);
     margin-top: 4px;
   }
 }
