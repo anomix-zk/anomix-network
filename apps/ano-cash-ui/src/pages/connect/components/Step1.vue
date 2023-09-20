@@ -111,7 +111,7 @@ const emit = defineEmits<{
     (e: 'nextStep', step: number): void;
 }>();
 const router = useRouter();
-const { appState, setConnectedWallet, setAccountPk58, setAlias, setAccountStatus } = useStatus();
+const { appState, setConnectedWallet, setAccountPk58, setAlias, setAccountStatus, setSigningPk1_58, setSigningPk2_58, showLoadingMask, closeLoadingMask } = useStatus();
 const { omitAddress } = useUtils();
 const { SdkState, addAccount } = useSdk();
 const message = useMessage();
@@ -124,6 +124,7 @@ const signingKeypair1 = ref<{ privateKey: string; publicKey: string } | null>(nu
 const signingPubKey1 = computed(() => omitAddress(signingKeypair1.value?.publicKey, 8));
 const signingKeypair2 = ref<{ privateKey: string; publicKey: string } | null>(null);
 const signingPubKey2 = computed(() => omitAddress(signingKeypair2.value?.publicKey, 8));
+const maskId = "step1";
 
 const pwd = ref("");
 const placeholderPwd = ref("Password");
@@ -217,22 +218,29 @@ const addAnomixAccount = async () => {
     }
 
     try {
+        showLoadingMask({ id: maskId, text: 'Saving account...', closable: false });
         const accountPk = await addAccount(accountPrivateKey.value, pwd.value, signingKeypair1.value?.privateKey, signingKeypair2.value?.privateKey, undefined);
         if (accountPk) {
             message.success('Account saved successfully');
 
             if (appState.value.accountStatus !== AccountStatus.UNREGISTERED) {
+                closeLoadingMask(maskId);
                 toAccountPage();
             } else {
+                setSigningPk1_58(signingKeypair1.value?.publicKey);
+                setSigningPk2_58(signingKeypair2.value?.publicKey);
+                closeLoadingMask(maskId);
                 toRegisterAliasPage();
             }
         }
     } catch (err: any) {
-        console.log('addAnomixAccount: ', err);
+        closeLoadingMask(maskId);
+        console.error(err);
         message.error(err.message, {
             closable: true,
             duration: 0
         });
+
     }
 
 }

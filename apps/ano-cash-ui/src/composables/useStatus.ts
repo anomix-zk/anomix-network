@@ -9,6 +9,8 @@ export default function () {
 
     type AppState = {
         accountPk58: string | null;
+        signingPk1_58: string | null;
+        signingPk2_58: string | null;
         alias: string | null;
         accountStatus: AccountStatus;
         isHideInfo: boolean;
@@ -32,6 +34,8 @@ export default function () {
     const appState = useState<AppState>("appState", () => {
         return {
             accountPk58: null,
+            signingPk1_58: null,
+            signingPk2_58: null,
             alias: null,
             accountStatus: AccountStatus.UNREGISTERED,
             isHideInfo: false,
@@ -175,6 +179,22 @@ export default function () {
         setTotalNanoBalance(null);
     };
 
+    const setSigningPk1_58 = (pk58: string | null | undefined) => {
+        if (pk58 === undefined) {
+            appState.value.signingPk1_58 = null;
+        } else {
+            appState.value.signingPk1_58 = pk58;
+        }
+    };
+
+    const setSigningPk2_58 = (pk58: string | null | undefined) => {
+        if (pk58 === undefined) {
+            appState.value.signingPk2_58 = null;
+        } else {
+            appState.value.signingPk2_58 = pk58;
+        }
+    };
+
     return {
         appState,
         pageParams,
@@ -194,5 +214,7 @@ export default function () {
         setTotalNanoBalance,
         resetStatusForLogOut,
         setTokenPrices,
+        setSigningPk1_58,
+        setSigningPk2_58,
     };
 }

@@ -105,6 +105,7 @@ const inputPwd = () => {
 };
 
 const toAccountPage = () => {
+    console.log("to account page");
     router.replace("/account");
 };
 
