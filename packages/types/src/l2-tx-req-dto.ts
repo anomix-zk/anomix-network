@@ -14,7 +14,7 @@ export interface L2TxReqDto {
         proof: string;
     }
     extraData: {
-        outputNote1: EncryptedNote,
+        outputNote1?: EncryptedNote,
         outputNote2?: EncryptedNote,
 
         /**
