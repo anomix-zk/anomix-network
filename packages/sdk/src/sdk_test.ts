@@ -87,9 +87,9 @@ class TestMinaProvider implements MinaProvider {
 async function run() {
   const sdk = await createAnomixSdk({
     entryContractAddress:
-      'B62qjU4gbJZDa557CcvFHkbgzRnSNTdfVco7NULpbqeDKeUds2xi1cb',
+      'B62qp2YfmJ9epZiTwrpJZ8jpZqTG3j7VdXF4LQ2ZKzWxqWCVXZ1KrMq',
     vaultContractAddress:
-      'B62qjuFbyJ5oeiR7ANnu6upXNN7FMoDCJYZs8QmiDcw8s1ZzXPb3T5b',
+      'B62qjwEjuY8mcvfvQxdAU4gy95rgYa6gKKKR58RKTMJ3hEm3FAxb72o',
     options: {
       nodeUrl: 'http://127.0.0.1:8099',
       minaEndpoint: 'https://berkeley.minascan.io/graphql',
@@ -124,7 +124,7 @@ async function run() {
   });
 
   console.log('txJson: ', txJson);
-  fs.writeFileSync('./src/zkapp1.txt', txJson);
+  fs.writeFileSync('./src/deposit1.txt', txJson);
   console.log('write json1 success');
 
   // const BERKELEY_URL = 'https://proxy.berkeley.minaexplorer.com/graphql',
@@ -162,8 +162,9 @@ async function run() {
   });
 
   console.log('txJson2: ', txJson2);
-  fs.writeFileSync('./src/zkapp2.txt', txJson2);
+  fs.writeFileSync('./src/deposit2.txt', txJson2);
   console.log('write json2 success');
+
   const provider2 = new TestMinaProvider(
     'B62qiZbXAJrAegKDehUcSZhoBAFS6dviBBH5sDGsqpBEvymTym5YzAE',
     'EKDhwYrfVipHzLvgyax5uXSrkGX12ykhuYBsgBuWpANEfGAbSVev',
@@ -194,8 +195,9 @@ async function run() {
   });
 
   console.log('txJson3: ', txJson3);
-  fs.writeFileSync('./src/zkapp3.txt', txJson3);
+  fs.writeFileSync('./src/deposit3.txt', txJson3);
   console.log('write json3 success');
+
   const provider3 = new TestMinaProvider(
     'B62qncRVmQA8gWCaxc51AjHXGU4ZwTRgT5p6CWwUjDfgzfGFXsia9Pp',
     'EKEPcPvPkQVp1B1ZGHuMNWntLeWGhKJG2cdKCzZWindZrYprKhgS',
