@@ -46,25 +46,28 @@ export function calculateNoteNullifier(
 
 export async function encryptValueNoteToFieldData(
   note: ValueNote,
-  noteEncryptPrivateKey: PrivateKey
+  userPrivateKey: PrivateKey
 ): Promise<EncryptedNoteFieldData> {
   const jsonStr = JSON.stringify(ValueNote.toJSON(note));
   const noteCommitment = note.commitment();
-  const privateKeyBigInt = noteEncryptPrivateKey.toBigInt();
+  const privateKeyBigInt = userPrivateKey.toBigInt();
   const noteCommitmentBigInt = noteCommitment.toBigInt();
-  const publicKey = genNewKeyPairForNote(
+
+  const newKeyPair = genNewKeyPairForNote(
     privateKeyBigInt,
     noteCommitmentBigInt
-  ).publicKey;
+  );
+  const notePrivateKey = newKeyPair.privateKey;
+  const notePublicKey = newKeyPair.publicKey;
   const senderPubKeyBigInt = derivePublicKeyBigInt(
-    noteEncryptPrivateKey.toPublicKey()
+    userPrivateKey.toPublicKey()
   );
   const receiverInfo = maskReceiverBySender(
     note.ownerPk,
     senderPubKeyBigInt,
     noteCommitment.toBigInt()
   );
-  const shareSecret = calculateShareSecret(noteEncryptPrivateKey, note.ownerPk);
+  const shareSecret = calculateShareSecret(notePrivateKey, note.ownerPk);
   const cipherText = await encrypt(
     jsonStr,
     noteCommitment.toString(),
@@ -73,7 +76,7 @@ export async function encryptValueNoteToFieldData(
 
   const encryptedNoteJsonStr = JSON.stringify({
     noteCommitment: noteCommitment.toString(),
-    publicKey: publicKey.toBase58(),
+    publicKey: notePublicKey.toBase58(),
     cipherText,
     receiverInfo: fieldArrayToStringArray(receiverInfo),
   });
