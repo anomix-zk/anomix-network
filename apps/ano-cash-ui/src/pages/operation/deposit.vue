@@ -272,7 +272,7 @@ const maxInputAmount = () => {
   .form-main {
     margin-top: 20px;
     padding: 20px;
-    background: var(--up-bg);
+    background: var(--ano-bg);
     border-radius: 12px;
     margin-bottom: 40px;
 
@@ -301,7 +301,7 @@ const maxInputAmount = () => {
           margin-top: 2px;
           font-size: 14px;
           font-weight: 400;
-          color: var(--up-text-third);
+          color: var(--ano-text-third);
           line-height: 20px;
         }
       }
@@ -314,7 +314,7 @@ const maxInputAmount = () => {
       .max-btn {
         border-left-width: 0.1px;
         border-left-style: dotted;
-        border-left-color: var(--up-border);
+        border-left-color: var(--ano-border);
         padding-left: 14px;
         padding-right: 6px;
         margin-left: 5px;
@@ -323,7 +323,7 @@ const maxInputAmount = () => {
       }
 
       .max-btn:hover {
-        color: var(--up-primary);
+        color: var(--ano-primary);
       }
     }
 

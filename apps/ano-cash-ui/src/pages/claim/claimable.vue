@@ -130,7 +130,7 @@ onMounted(async () => {
 .claimable-item {
   margin-top: 20px;
   padding: 15px;
-  background: var(--up-bg);
+  background: var(--ano-bg);
   border-radius: 12px;
 
   .ano-token {
@@ -150,7 +150,7 @@ onMounted(async () => {
 
         .token-name {
           margin-left: 10px;
-          color: var(--up-text-primary);
+          color: var(--ano-text-primary);
           font-weight: 500;
           font-size: 16px;
           line-height: 24px;

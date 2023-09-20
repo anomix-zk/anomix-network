@@ -313,7 +313,7 @@ const deriveAccountPubKey = async () => {
         position: relative;
 
         .item {
-            background-color: var(--up-bg-checked);
+            background-color: var(--ano-bg-checked);
         }
 
         .placeholder {
@@ -326,7 +326,7 @@ const deriveAccountPubKey = async () => {
             line-height: 16px;
             color: #606266;
             z-index: 999;
-            //background-color: var(--up-background);
+            //background-color: var(--ano-background);
         }
 
     }

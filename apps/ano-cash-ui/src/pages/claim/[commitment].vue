@@ -312,7 +312,7 @@ onMounted(async () => {
 
     .token-name {
       margin-left: 10px;
-      color: var(--up-text-primary);
+      color: var(--ano-text-primary);
       font-weight: 500;
       font-size: 16px;
       line-height: 24px;
@@ -334,7 +334,7 @@ onMounted(async () => {
   .form-main {
     margin-top: 20px;
     padding: 20px;
-    background: var(--up-bg);
+    background: var(--ano-bg);
     border-radius: 12px;
     margin-bottom: 40px;
 

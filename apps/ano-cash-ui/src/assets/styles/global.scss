@@ -1,53 +1,33 @@
 :root {
-  --up-primary: #4098fc;
-  --up-secondary: #ad94ff;
-  --up-third: #acf080;
-  --up-background: #fff;
-  --up-app-background: #f5f5f5;
-  --up-text-primary: #1f202a;
-  --up-text-secondary: #5e5f6e;
-  --up-text-third: #97989d;
-  --up-red: #d44b4b;
-  --up-green: #4aac4c;
-  --up-orange: #ff984f;
-  --up-pink: #ebdfdf;
-  --up-bg: #f9f9f9;
-  --up-bg-solid: #f4f4f4;
-  --up-bg-checked: #f7f7f7;
-  --up-text: #c1c1c1;
-  --up-line: #e5e5e5;
-  --up-mask: rgba(0, 0, 0, 0.7);
+  --ano-primary: #4098fc;
+  --ano-secondary: #ad94ff;
+  --ano-third: #acf080;
+  --ano-background: #fff;
+  --ano-app-background: #f5f5f5;
+  --ano-text-primary: #1f202a;
+  --ano-text-secondary: #5e5f6e;
+  --ano-text-third: #97989d;
+  --ano-bg: #f9f9f9;
+  --ano-bg-solid: #f4f4f4;
+  --ano-bg-checked: #f7f7f7;
+  --ano-text: #c1c1c1;
+  --ano-line: #e5e5e5;
+  --ano-mask: rgba(0, 0, 0, 0.7);
   position: relative;
-  --up-tag-bg: rgba(0, 0, 0, 0.03);
-  --up-card-bg: #f9f9f9;
-  --up-tab-text: #97989d;
-  --up-nft-card-bg: rgba(0, 0, 0, 0.03);
-  --up-button-second-bg: #f3f0ff;
-  --up-button-second-text: #8864ff;
-  --up-header-bg: #fff;
-  --up-header-border: #fff;
 }
 
 html.dark {
-  --up-primary: #a98eff;
-  --up-background: #1f202a;
-  --up-app-background: #111212;
-  --up-text-primary: #fff;
-  --up-text-secondary: hsla(0, 0%, 100%, 0.8);
-  --up-text-third: hsla(0, 0%, 100%, 0.6);
-  --up-bg: hsla(0, 0%, 100%, 0.08);
-  --up-bg-solid: #31313b;
-  --up-bg-checked: hsla(0, 0%, 100%, 0.16);
-  --up-text: hsla(0, 0%, 100%, 0.4);
-  --up-line: hsla(0, 0%, 100%, 0.2);
-  --up-tag-bg: hsla(0, 0%, 100%, 0.08);
-  --up-card-bg: #31323b;
-  --up-tab-text: #a5a6aa;
-  --up-nft-card-bg: transparent;
-  --up-button-second-bg: #1b1433;
-  --up-button-second-text: #b8a2ff;
-  --up-header-bg: #1a1920;
-  --up-header-border: #46454a;
+  --ano-primary: #a98eff;
+  --ano-background: #1f202a;
+  --ano-app-background: #111212;
+  --ano-text-primary: #fff;
+  --ano-text-secondary: hsla(0, 0%, 100%, 0.8);
+  --ano-text-third: hsla(0, 0%, 100%, 0.6);
+  --ano-bg: hsla(0, 0%, 100%, 0.08);
+  --ano-bg-solid: #31313b;
+  --ano-bg-checked: hsla(0, 0%, 100%, 0.16);
+  --ano-text: hsla(0, 0%, 100%, 0.4);
+  --ano-line: hsla(0, 0%, 100%, 0.2);
 }
 
 
@@ -69,7 +49,7 @@ html.dark {
 }
 
 html {
-  color: var(--up-text-primary);
+  color: var(--ano-text-primary);
   font-size: 16px;
   font-weight: 500;
   word-spacing: 1px;
@@ -91,13 +71,13 @@ textarea {
 
 a {
   cursor: pointer;
-  color: var(--up-primary);
+  color: var(--ano-primary);
   font-weight: 600;
   text-decoration: none;
 }
 
 a.underline:hover {
-  border-bottom: 1px solid var(--up-primary);
+  border-bottom: 1px solid var(--ano-primary);
 }
 
 h2 {
@@ -111,12 +91,12 @@ h4 {
   margin-top: 6px;
   font-size: 16px;
   font-weight: 400;
-  color: var(--up-text-third);
+  color: var(--ano-text-third);
   line-height: 24px;
 }
 
 h4 span {
-  color: var(--up-primary);
+  color: var(--ano-primary);
   font-weight: 700;
 }
 
@@ -130,14 +110,14 @@ h6 {
   margin-top: 20px;
   font-size: 14px;
   font-weight: 400;
-  color: var(--up-text-third);
+  color: var(--ano-text-third);
   line-height: 20px;
 }
 
 
-.up-app {
+.ano-app {
   min-height: 100vh;
-  background: var(--up-app-background);
+  background: var(--ano-app-background);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -148,7 +128,7 @@ h6 {
     min-height: 100vh;
     padding: 24px;
     //text-align: center;
-    background-color: var(--up-background);
+    background-color: var(--ano-background);
     position: relative;
 
     .ano-mask {
@@ -174,7 +154,7 @@ h6 {
 }
 
 .header-bg-img {
-  background-color: var(--up-background);
+  background-color: var(--ano-background);
   background-image: url(@/assets/bg.svg);
   background-size: contain;
   background-repeat: no-repeat;
@@ -182,12 +162,12 @@ h6 {
 }
 
 @media screen and (min-width: 480px) {
-  .up-app {
+  .ano-app {
       padding-top:60px;
       padding-bottom: 60px
   }
 
-  .up-app>.page {
+  .ano-app>.page {
       min-height: 800px;
       border-radius: 28px;
       padding-left: 40px;
@@ -205,18 +185,18 @@ h6 {
       }
   }
 
-  html.dark .up-app {
-      background: var(--up-app-background)
+  html.dark .ano-app {
+      background: var(--ano-app-background)
   }
 }
 
 @media(orientation: landscape)and (max-width:980px) {
-  .up-app {
+  .ano-app {
       padding-top:0;
       padding-bottom: 0
   }
 
-  .up-app > .page {
+  .ano-app > .page {
       max-width: 100%;
       border-radius: 0;
       min-height: 100vh;
