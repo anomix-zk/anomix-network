@@ -13,7 +13,7 @@ import { ValueNoteJSON } from '../note/note';
 export class NoteDecryptor {
   private log = consola.withTag('anomix:note_decryptor');
 
-  public async decryptNotes(
+  public async decryptNote(
     encryptedNote: EncryptedNote,
     accountPrivateKey: PrivateKey
   ): Promise<{ valueNoteJSON: ValueNoteJSON; isSender: boolean } | undefined> {
@@ -30,7 +30,7 @@ export class NoteDecryptor {
     const senderNewKey = senderNewKeyPair.privateKey;
     const senderNewPubKey58 = senderNewKeyPair.publicKey.toBase58();
     if (senderNewPubKey58 !== encryptedNote.publicKey) {
-      // As a receiver, we can't decrypt the note
+      // Not a sender, we can only decrypt the note if we are the receiver
       shareSecret = calculateShareSecret(
         accountPrivateKey,
         PublicKey.fromBase58(encryptedNote.publicKey)
@@ -56,8 +56,10 @@ export class NoteDecryptor {
         valueNoteJSON: JSON.parse(valueNoteJSONStr),
         isSender,
       };
-    } catch (error) {
-      this.log.info('decrypt failed ', error);
+    } catch (err) {
+      const error = err as Error;
+      this.log.info('decrypt failed message: ', error.message);
+      this.log.info('decrypt failed ', error.stack);
     }
   }
 }

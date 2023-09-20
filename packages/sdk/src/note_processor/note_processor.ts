@@ -195,7 +195,7 @@ export class NoteProcessor {
         } else if (tx.actionType === ActionType.WITHDRAW.toString()) {
           this.log.debug(`Processing withdraw tx: ${tx.txHash}`);
 
-          const decryptedResult1 = await noteDecryptor.decryptNotes(
+          const decryptedResult1 = await noteDecryptor.decryptNote(
             outputNote1!,
             accountPrivateKey
           );
@@ -249,7 +249,7 @@ export class NoteProcessor {
           // deposit and send
           this.log.debug(`Processing deposit or send tx: ${tx.txHash}`);
 
-          const decryptedResult1 = await noteDecryptor.decryptNotes(
+          const decryptedResult1 = await noteDecryptor.decryptNote(
             outputNote1!,
             accountPrivateKey
           );
@@ -276,7 +276,7 @@ export class NoteProcessor {
           }
 
           if (outputNote2) {
-            const decryptedResult2 = await noteDecryptor.decryptNotes(
+            const decryptedResult2 = await noteDecryptor.decryptNote(
               outputNote2,
               accountPrivateKey
             );

@@ -749,8 +749,8 @@ export class AnomixSdk {
     feePayerAddress,
     suggestedTxFee,
     amount,
-    assetId = AssetId.MINA,
-    anonymousToReceiver = false,
+    assetId,
+    anonymousToReceiver,
     receiverAccountRequired,
     noteEncryptPrivateKey,
   }: {
@@ -759,14 +759,22 @@ export class AnomixSdk {
     feePayerAddress: PublicKey;
     suggestedTxFee?: UInt64;
     amount: UInt64;
-    assetId: Field;
-    anonymousToReceiver: boolean;
+    assetId?: Field;
+    anonymousToReceiver?: boolean;
     receiverAccountRequired: Field;
     noteEncryptPrivateKey: PrivateKey;
   }) {
     this.log.info(`create deposit proof...`);
     if (!this.isEntryContractCompiled) {
       throw new Error('Entry contract is not compiled');
+    }
+
+    if (assetId === undefined) {
+      assetId = AssetId.MINA;
+    }
+
+    if (anonymousToReceiver === undefined) {
+      anonymousToReceiver = false;
     }
 
     const note = new ValueNote({
