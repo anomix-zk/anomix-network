@@ -102,44 +102,38 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
             // !! in a transaction!!
             await queryRunner.startTransaction();
 
-            const memPlL2TxRepository = connection.getRepository(MemPlL2Tx);
-
             let mpL2Tx = MemPlL2Tx.fromJoinSplitOutput(joinSplitProof.publicOutput);
-            const outputNote1: EncryptedNote = l2TxReqDto.extraData.outputNote1;
+            const outputNote1 = l2TxReqDto.extraData.outputNote1;
             const outputNote2 = l2TxReqDto.extraData.outputNote2;
-            mpL2Tx.encryptedData1 = JSON.stringify(outputNote1);
-            if (outputNote2) {// no encryptedData if DUMMY_NOTE
-                mpL2Tx.encryptedData2 = JSON.stringify(outputNote2);
-            }
+            mpL2Tx.encryptedData1 = outputNote1 ? JSON.stringify(outputNote1) : undefined as any;
+            mpL2Tx.encryptedData2 = outputNote2 ? JSON.stringify(outputNote2) : undefined as any;
             mpL2Tx.proof = JSON.stringify(l2TxReqDto.proof); // TODO ??should be JSON.stringfy(joinSplitProof.proof)
-            mpL2Tx = await memPlL2TxRepository.save(mpL2Tx);
+            mpL2Tx = await queryRunner.manager.save(mpL2Tx);
 
             if (actionType.equals(ActionType.WITHDRAW)) {
-                const withdrawInfoRepository = connection.getRepository(WithdrawInfo);
-                const withdrawInfo = {
-                    secret: withdrawNote.secret.toString(),
-                    ownerPk: withdrawNote.ownerPk.toBase58(),
-                    accountRequired: withdrawNote.accountRequired.toString(),
-                    creatorPk: withdrawNote.creatorPk.toBase58(),
-                    value: withdrawNote.value.toString(),
-                    assetId: withdrawNote.assetId.toString(),
-                    inputNullifier: withdrawNote.inputNullifier.toString(),
-                    noteType: withdrawNote.noteType.toString(),
-                    l2TxHash: mpL2Tx.txHash,
-                    l2TxId: mpL2Tx.id
-                } as WithdrawInfo;
-                await withdrawInfoRepository.save(withdrawInfo);
+                let withdrawInfo = new WithdrawInfo();
+                withdrawInfo.secret = withdrawNote.secret.toString();
+                withdrawInfo.ownerPk = withdrawNote.ownerPk.toBase58();
+                withdrawInfo.accountRequired = withdrawNote.accountRequired.toString();
+                withdrawInfo.creatorPk = withdrawNote.creatorPk.toBase58();
+                withdrawInfo.value = withdrawNote.value.toString();
+                withdrawInfo.assetId = withdrawNote.assetId.toString();
+                withdrawInfo.inputNullifier = withdrawNote.inputNullifier.toString();
+                withdrawInfo.noteType = withdrawNote.noteType.toString();
+                withdrawInfo.l2TxHash = mpL2Tx.txHash;
+                withdrawInfo.l2TxId = mpL2Tx.id;
+                withdrawInfo = await queryRunner.manager.save(withdrawInfo);
 
             } else if (actionType.equals(ActionType.ACCOUNT)) {
                 const aliasHash = l2TxReqDto.extraData.aliasHash;
                 const acctPk = l2TxReqDto.extraData.acctPk;
                 if (aliasHash && acctPk) {// true: registration
-                    const accountRepository = connection.getRepository(Account);
-                    const accountEntity = ({ aliasHash, acctPk } as unknown) as Account;
-                    accountEntity.l2TxHash = mpL2Tx.txHash;
-                    accountEntity.l2TxId = mpL2Tx.id;
-
-                    accountRepository.save([accountEntity]);
+                    let account = new Account();
+                    account.aliasHash = aliasHash;
+                    account.acctPk = acctPk;
+                    account.l2TxHash = mpL2Tx.txHash;
+                    account.l2TxId = mpL2Tx.id;
+                    account = await queryRunner.manager.save(account);
                 }
             }
             await queryRunner.commitTransaction();
