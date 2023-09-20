@@ -9,7 +9,7 @@ import { getLogger } from "@/lib/logUtils";
 import { initORM } from './lib';
 import fs from 'fs';
 import { DepositStatus } from '@anomix/types';
-import { str1, str2, str3 } from "./encrypt";
+// import { str1, str2, str3 } from "./encrypt";
 
 const logger = getLogger('fetch-events-only');
 
@@ -36,10 +36,6 @@ await fetchActionsAndEvents();
 setInterval(fetchActionsAndEvents, 5 * 60 * 1000);// exec/5mins
 
 async function fetchActionsAndEvents() {
-    let x1 = str1;
-    let x2 = str2;
-    let x3 = str3;
-
     logger.info('... a new ROUND to fetchActionsAndEvents ...');
 
     try {
