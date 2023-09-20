@@ -79,15 +79,14 @@ const registerAccount = async () => {
     }
 
     try {
-        showLoadingMask({ text: 'Check if account registration circuit is ready...', id: maskId, closable: false });
+        showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: false });
         const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
         if (!isPrivateCircuitReady) {
-            showLoadingMask({ text: 'Account registration circuit is not ready yet', id: maskId, closable: false });
-
             if (maskListenerSetted.value === false) {
                 listenSyncerChannel((e: SdkEvent) => {
                     if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
                         closeLoadingMask(maskId);
+                        message.info('Circuits compling done, please continue your registration', { duration: 0, closable: true });
                     }
                 });
                 maskListenerSetted.value = true;
