@@ -5,8 +5,5 @@ export default defineEventHandler(({ node: { res, req } }) => {
     console.log("request: " + req.url);
     res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
     res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-
-    if (process.env.NODE_ENV === "development") {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-    }
+    res.setHeader("Access-Control-Allow-Origin", "*");
 });

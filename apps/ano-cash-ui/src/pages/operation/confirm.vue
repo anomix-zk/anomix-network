@@ -125,8 +125,8 @@ const sendTx = async () => {
     router.replace('/account');
   } catch (err: any) {
     console.error(err);
-    closeLoadingMask(maskId);
     message.error(err.message, { duration: 0, closable: true });
+    closeLoadingMask(maskId);
   }
 };
 

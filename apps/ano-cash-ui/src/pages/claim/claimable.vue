@@ -87,13 +87,16 @@ let claimableNotes = ref<{ token: string; value: string; commitment: string }[]>
 
 onMounted(async () => {
   const cs = await remoteApi.getClaimableNotes(appState.value.connectedWallet58!, []);
+
+  let notes: { token: string; value: string; commitment: string }[] = [];
   cs.forEach((c) => {
-    claimableNotes.value.push({
+    notes.push({
       token: 'MINA',
       value: convertToMinaUnit(c.value)!.toString(),
       commitment: c.outputNoteCommitment
     });
   });
+  claimableNotes.value = notes;
 
   if (window.mina) {
     window.mina.on('accountsChanged', (accounts: string[]) => {
