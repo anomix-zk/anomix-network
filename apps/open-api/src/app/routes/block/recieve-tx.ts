@@ -29,7 +29,7 @@ export const recieveTx: FastifyPlugin = async function (
 export const handler: RequestHandler<L2TxReqDto, null> = async function (req, res): Promise<BaseResponse<string>> {
     const l2TxReqDto = req.body;
 
-    let joinSplitProof = undefined as any;
+    let joinSplitProof: JoinSplitProof = undefined as any;
     try {
         // validate tx's proof
         joinSplitProof = JoinSplitProof.fromJSON(l2TxReqDto.proof);
@@ -38,11 +38,14 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
     }
 
     const ok = await verify(joinSplitProof, config.joinSplitProverVK);// TODO
+
     if (!ok) {
         return { code: 1, data: undefined, msg: 'proof verify failed!' }
     }
 
-    if (Number(joinSplitProof.publicOutput.txFee) < config.floorMpTxFee) {
+    const actionType = joinSplitProof.publicOutput.actionType;
+    if (actionType.equals(ActionType.ACCOUNT).not().toBoolean()
+        && Number(joinSplitProof.publicOutput.txFee) < config.floorMpTxFee) {
         return { code: 1, data: undefined, msg: 'txFee not enough!' }
     }
 
@@ -81,7 +84,6 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
     */
 
     let withdrawNote: ValueNote = {} as any;
-    const actionType = joinSplitProof.publicOutput.actionType;
     if (actionType.equals(ActionType.WITHDRAW)) {
         withdrawNote = ValueNote.fromJSON(l2TxReqDto.extraData.withdrawNote as any) as any;// TODO need check!!
         if (joinSplitProof.publicOutput.outputNoteCommitment1.equals(withdrawNote.commitment()).not()) {
