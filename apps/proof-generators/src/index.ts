@@ -1,8 +1,9 @@
 import cp from "child_process";
 import cluster from "cluster";
-import { activeMinaInstance, saveProofTaskDtoFile } from "@anomix/utils";
+import { activeMinaInstance } from "@anomix/utils";
 import { ProofTaskDto, ProofTaskType, FlowTask, FlowTaskType } from "@anomix/types";
 import config from "./lib/config";
+import { saveProofTaskDtoFile } from "./lib";
 import { innerRollupBatchAndMerge } from "./provers/inner-rollup-handler";
 import { depositRollupBatchAndMerge } from "./provers/deposit-rollup-handler";
 import { ProofPayload } from "./constant";
