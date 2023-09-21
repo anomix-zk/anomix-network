@@ -41,13 +41,14 @@
 <script lang="ts" setup>
 import type { SigningKey } from '@anomix/sdk';
 import { SelectOption, useMessage } from 'naive-ui';
+import { AccountStatus } from '../../common/constants';
 
 const router = useRouter();
 const { SdkState, addAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const { omitAddress } = useUtils();
 const message = useMessage();
-const { showLoadingMask, closeLoadingMask } = useStatus();
+const { showLoadingMask, closeLoadingMask, setAccountPk58, setAlias, setAccountStatus } = useStatus();
 
 const maskId = 'session-login';
 let selectedAccount = ref<string | undefined>(undefined);
@@ -114,7 +115,7 @@ const login = async () => {
         message.error('Please input password');
         return;
     }
-    if (!selectedAccount) {
+    if (selectedAccount.value === undefined) {
         message.error('Please select account');
         return;
     }
@@ -147,9 +148,19 @@ const login = async () => {
             signingPrivateKeys.push(undefined);
         }
 
+        // get alias
+        const alias = await remoteApi.getAliasByAccountPublicKey(accountPk58, accountPrivateKey58);
+
         const accountPk = await addAccount(accountPrivateKey58, pwd.value, signingPrivateKeys[0],
-            signingPrivateKeys[1], undefined);
+            signingPrivateKeys[1], alias);
         if (accountPk) {
+            setAccountPk58(accountPk);
+            if (alias) {
+                setAlias(alias);
+                setAccountStatus(AccountStatus.REGISTERED);
+            } else {
+                setAccountStatus(AccountStatus.UNREGISTERED);
+            }
             closeLoadingMask(maskId);
             message.success('Login successfully');
 
@@ -160,123 +171,6 @@ const login = async () => {
         console.error(err);
         message.error(err.message, { duration: 0, closable: true });
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }
 </script>

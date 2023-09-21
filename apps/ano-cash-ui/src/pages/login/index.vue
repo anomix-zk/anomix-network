@@ -72,7 +72,7 @@ import { AccountStatus } from "../../common/constants";
 const message = useMessage();
 const { SdkState, addAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
-const { setAlias, setAccountStatus, appState, setAccountPk58 } = useStatus();
+const { setAlias, setAccountStatus, appState, setAccountPk58, showLoadingMask, closeLoadingMask } = useStatus();
 const router = useRouter();
 
 const toBack = () => router.back();
@@ -142,6 +142,7 @@ const inputPwdAgain = () => {
     }
 };
 
+const maskId = "login-index";
 
 const login = async () => {
     if (accountPrivateKey.value.length === 0) {
@@ -166,6 +167,7 @@ const login = async () => {
     }
 
     try {
+        showLoadingMask({ id: maskId, text: "Login...", closable: false });
         // check account is registered
         const accountPk58 = (await remoteApi.getKeypair(accountPrivateKey.value)).publicKey;
 
@@ -175,7 +177,7 @@ const login = async () => {
             setAlias(alias);
             setAccountStatus(AccountStatus.REGISTERED);
         } else {
-            console.log('alias not found, go to register flow');
+            console.log('alias not found, should go to register flow');
             setAccountStatus(AccountStatus.UNREGISTERED);
         }
 
@@ -185,6 +187,7 @@ const login = async () => {
             setAccountPk58(accountPk58);
             message.success('Account saved successfully');
 
+            closeLoadingMask(maskId);
             if (appState.value.accountStatus !== AccountStatus.UNREGISTERED) {
                 toAccountPage();
             } else {
@@ -192,7 +195,8 @@ const login = async () => {
             }
         }
     } catch (err: any) {
-        console.log('addAnomixAccount: ', err);
+        closeLoadingMask(maskId);
+        console.error(err);
         message.error(err.message, {
             closable: true,
             duration: 0

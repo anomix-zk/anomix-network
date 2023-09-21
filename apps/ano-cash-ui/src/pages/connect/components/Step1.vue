@@ -219,8 +219,9 @@ const addAnomixAccount = async () => {
 
     try {
         showLoadingMask({ id: maskId, text: 'Saving account...', closable: false });
-        const accountPk = await addAccount(accountPrivateKey.value, pwd.value, signingKeypair1.value?.privateKey, signingKeypair2.value?.privateKey, undefined);
+        const accountPk = await addAccount(accountPrivateKey.value, pwd.value, signingKeypair1.value?.privateKey, signingKeypair2.value?.privateKey, appState.value.alias === null ? undefined : appState.value.alias);
         if (accountPk) {
+            setAccountPk58(accountPk);
             message.success('Account saved successfully');
 
             if (appState.value.accountStatus !== AccountStatus.UNREGISTERED) {

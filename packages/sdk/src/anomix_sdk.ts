@@ -555,7 +555,12 @@ export class AnomixSdk {
     const us = await this.db.getUserState(accountPk58);
     if (!us) {
       await this.db.upsertUserState(new UserState(accountPk58, 0, alias));
+    } else {
+      if (us.alias === undefined && alias !== undefined) {
+        await this.db.updateUserState(accountPk58, alias);
+      }
     }
+
     await this.keyStore.addAccount(accountPrivateKey, pwd, true);
 
     if (signingPrivateKey1) {
