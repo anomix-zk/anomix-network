@@ -166,14 +166,14 @@ const deposit = async () => {
     return;
   }
   try {
+    showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: false });
     const isContractReady = await remoteSdk.isEntryContractCompiled();
     if (!isContractReady) {
-      showLoadingMask({ text: 'Anomix Entry Contract is not ready yet', id: maskId });
-
       if (maskListenerSetted.value === false) {
         listenSyncerChannel((e: SdkEvent) => {
           if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
             closeLoadingMask(maskId);
+            message.info('Circuits compling done, please continue your deposit', { duration: 0, closable: true });
           }
         });
         maskListenerSetted.value = true;

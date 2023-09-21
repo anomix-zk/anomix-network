@@ -192,14 +192,14 @@ const toConfirm = async () => {
   }
 
   try {
+    showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: false });
     const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
     if (!isPrivateCircuitReady) {
-      showLoadingMask({ text: 'Private circuit is not ready yet', id: maskId });
-
       if (maskListenerSetted.value === false) {
         listenSyncerChannel((e: SdkEvent) => {
           if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
             closeLoadingMask(maskId);
+            message.info('Circuits compling done, please continue your operation', { duration: 0, closable: true });
           }
         });
         maskListenerSetted.value = true;

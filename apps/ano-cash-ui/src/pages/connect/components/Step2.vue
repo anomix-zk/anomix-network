@@ -106,16 +106,17 @@ const registerAccount = async () => {
         message.success('Account registration tx send successful');
 
         toAccountPage();
-    } catch (error: any) {
-        console.error('registerAccount: ', error);
-        message.error(error.message, { duration: 0, closable: true });
+    } catch (err: any) {
+        closeLoadingMask(maskId);
+        console.error(err);
+        message.error(err.message, { duration: 0, closable: true });
     }
 
 
 }
 
 </script>
-<style lang="less" scoped>
+<style lang="scss" scoped>
 .step-content {
     display: flex;
     flex-direction: column;
