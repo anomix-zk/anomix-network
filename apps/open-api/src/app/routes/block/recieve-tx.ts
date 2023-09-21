@@ -29,8 +29,14 @@ export const recieveTx: FastifyPlugin = async function (
 export const handler: RequestHandler<L2TxReqDto, null> = async function (req, res): Promise<BaseResponse<string>> {
     const l2TxReqDto = req.body;
 
-    // validate tx's proof
-    const joinSplitProof = JoinSplitProof.fromJSON(l2TxReqDto.proof);
+    let joinSplitProof = undefined as any;
+    try {
+        // validate tx's proof
+        joinSplitProof = JoinSplitProof.fromJSON(l2TxReqDto.proof);
+    } catch (error) {
+        return { code: 1, data: undefined, msg: 'joinSplitProof deserialization failed!' }
+    }
+
     const ok = await verify(joinSplitProof, config.joinSplitProverVK);// TODO
     if (!ok) {
         return { code: 1, data: undefined, msg: 'proof verify failed!' }
