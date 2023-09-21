@@ -4,4 +4,3 @@ export * from "./binary";
 export * from "./convert";
 export * from "./timeout";
 export * from "./mina_chain_utils";
-export * from "./http_helper";
