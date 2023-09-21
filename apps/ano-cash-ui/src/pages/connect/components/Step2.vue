@@ -22,6 +22,7 @@
 </template>
 
 <script lang="ts" setup>
+import type { Tx } from '@anomix/sdk';
 import { useMessage } from 'naive-ui';
 import { AccountStatus, SdkEventType } from '../../../common/constants';
 import { SdkEvent } from '../../../common/types';
@@ -39,6 +40,8 @@ const { showLoadingMask, closeLoadingMask, appState, setAlias, setAccountStatus 
 const canRegsiter = ref(-1);
 const inputAlias = ref("");
 const maskListenerSetted = ref(false);
+const lastInputAlias = ref("");
+let lastTx: Tx | null = null;
 
 const toAccountPage = () => {
     emit('finish');
@@ -78,6 +81,22 @@ const registerAccount = async () => {
         return;
     }
 
+    // Due to a node error, the registered transaction needs to be re-tried to be sent, using the cached Tx
+    if (lastInputAlias.value === inputAlias.value && lastTx !== null) {
+        showLoadingMask({ text: 'Registering account...', id: maskId, closable: false });
+        // To prevent repeated sending of successfully registered transactions, we need to check alias
+        const isRegistered = await remoteApi.isAliasRegistered(inputAlias.value, true);
+        if (isRegistered) {
+            closeLoadingMask(maskId);
+            message.error('The alias is already registered');
+            return;
+        }
+
+        await sendRegisterTx(lastTx);
+        return;
+    }
+
+    let tx: Tx | null = null;
     try {
         showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: false });
         const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
@@ -96,10 +115,25 @@ const registerAccount = async () => {
         }
 
         showLoadingMask({ text: 'Registering account...', id: maskId, closable: false });
-        const tx = await remoteSdk.createAccountRegisterTx(appState.value.accountPk58!, inputAlias.value, appState.value.signingPk1_58!, appState.value.signingPk2_58!);
+        tx = await remoteSdk.createAccountRegisterTx(appState.value.accountPk58!, inputAlias.value, appState.value.signingPk1_58!, appState.value.signingPk2_58!);
+        lastInputAlias.value = inputAlias.value;
+        lastTx = tx;
         console.log('tx: ', JSON.stringify(tx));
 
+        await sendRegisterTx(tx);
+    } catch (err: any) {
+        closeLoadingMask(maskId);
+        console.error(err);
+        message.error(err.message, { duration: 0, closable: true });
+        return;
+    }
+}
+
+const sendRegisterTx = async (tx: Tx) => {
+    try {
         await remoteApi.sendTx(tx);
+        lastInputAlias.value = '';
+        lastTx = null;
         setAlias(inputAlias.value);
         setAccountStatus(AccountStatus.REGISTERING);
         closeLoadingMask(maskId);
@@ -109,10 +143,9 @@ const registerAccount = async () => {
     } catch (err: any) {
         closeLoadingMask(maskId);
         console.error(err);
-        message.error(err.message, { duration: 0, closable: true });
+        message.error(err.message, { duration: 2000, closable: true });
+        message.info('Please try again later', { duration: 3000, closable: true });
     }
-
-
 }
 
 </script>

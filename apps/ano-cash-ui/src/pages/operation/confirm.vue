@@ -65,7 +65,7 @@
       </div>
 
       <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="sendTx">
-        Confirm
+        Confirm to send
       </n-button>
 
 
