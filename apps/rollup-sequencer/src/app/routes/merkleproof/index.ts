@@ -4,6 +4,8 @@ import { queryMerkleProof } from "./query-merkle-proof";
 import { queryWitnessByWithdrawNotes } from "./query-witness-by-withdraw-notes";
 import { syncLazyDataTree } from "./sync-lazy-data-tree";
 import { queryWorldStateworldState } from './query-worldstate-state'
+import { checkCommitmentsExist } from './check-commiments-exist';
+import { checkNullifiersExist } from './check-nullifiers-exist';
 
 export const merkleProofEndpoint: FastifyPlugin = async (
     instance,
@@ -16,4 +18,6 @@ export const merkleProofEndpoint: FastifyPlugin = async (
     instance.register(syncLazyDataTree);
 
     instance.register(queryWorldStateworldState);
+    instance.register(checkCommitmentsExist);
+    instance.register(checkNullifiersExist);
 }
