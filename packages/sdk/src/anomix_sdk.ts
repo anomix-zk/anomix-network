@@ -541,6 +541,35 @@ export class AnomixSdk {
     await this.db.updateAliasOfUserState(accountPk, alias);
   }
 
+  public async loginAccount(accountPk: string, pwd: string, alias?: string) {
+    this.log.info('Logging in account...');
+
+    if (alias) {
+      await this.db.updateAliasOfUserState(accountPk, alias);
+    }
+
+    const sigingKeys = await this.db.getSigningKeys(accountPk);
+    if (sigingKeys.length === 0) {
+      throw new Error('No signing keys found for account');
+    }
+
+    const pubKeys = sigingKeys.map((sk) => sk.signingPk);
+    pubKeys.push(accountPk);
+    await this.keyStore.unlock(pubKeys, pwd);
+
+    if (this.useSyncerWorker) {
+      await this.remoteSyncer.addAccount(accountPk);
+    } else {
+      this.syncer.addAccount(PublicKey.fromBase58(accountPk));
+    }
+
+    this.log.info('Account logged in');
+
+    return {
+      pubKeys,
+    };
+  }
+
   public async addAccount(
     accountPrivateKey: PrivateKey,
     pwd: string,
@@ -563,10 +592,13 @@ export class AnomixSdk {
 
     await this.keyStore.addAccount(accountPrivateKey, pwd, true);
 
+    let signingPubKey1: string | undefined = undefined;
+    let signingPubKey2: string | undefined = undefined;
+
     if (signingPrivateKey1) {
-      const signingPubKey1 = signingPrivateKey1.toPublicKey();
+      signingPubKey1 = signingPrivateKey1.toPublicKey().toBase58();
       const signingKey1 = {
-        signingPk: signingPubKey1.toBase58(),
+        signingPk: signingPubKey1,
         accountPk: accountPk58,
       };
       await this.db.upsertSigningKey(signingKey1);
@@ -574,9 +606,9 @@ export class AnomixSdk {
     }
 
     if (signingPrivateKey2) {
-      const signingPubKey2 = signingPrivateKey2.toPublicKey();
+      signingPubKey2 = signingPrivateKey2.toPublicKey().toBase58();
       const signingKey2 = {
-        signingPk: signingPubKey2.toBase58(),
+        signingPk: signingPubKey2,
         accountPk: accountPk58,
       };
       await this.db.upsertSigningKey(signingKey2);
@@ -591,7 +623,11 @@ export class AnomixSdk {
 
     this.log.info(`added account: ${accountPk58}`);
 
-    return accountPk;
+    return {
+      accountPk: accountPk58,
+      signingPubKey1,
+      signingPubKey2,
+    };
   }
 
   public async getAccountSyncedToBlock(accountPk: string) {
