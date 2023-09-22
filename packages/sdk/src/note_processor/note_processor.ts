@@ -73,6 +73,7 @@ export class NoteProcessor {
         this.log.debug(`Skipping block ${block.blockHeight}`);
         continue;
       }
+      let alias: string | undefined = undefined;
 
       for (let j = 0; j < txList.length; j++) {
         const tx = txList[j];
@@ -89,7 +90,6 @@ export class NoteProcessor {
 
           if (accountPk === tx.extraData.accountPublicKey) {
             this.log.debug(`Account tx is for this account: ${accountPk}`);
-            let alias: string | undefined = undefined;
 
             if (tx.extraData.aliasInfo) {
               alias = await decryptAlias(
@@ -101,7 +101,7 @@ export class NoteProcessor {
               // update user state
               let userState = await this.db.getUserState(accountPk);
               if (userState) {
-                await this.db.updateUserState(accountPk, alias);
+                await this.db.updateAliasOfUserState(accountPk, alias);
               }
             }
 
@@ -336,9 +336,17 @@ export class NoteProcessor {
 
       this.syncedToBlock = block.blockHeight;
 
-      await this.db.upsertUserState(
-        new UserState(accountPk, this.syncedToBlock)
-      );
+      let userState = await this.db.getUserState(accountPk);
+      if (userState) {
+        await this.db.updateSyncedToBlockOfUserState(
+          accountPk,
+          this.syncedToBlock
+        );
+      } else {
+        await this.db.upsertUserState(
+          new UserState(accountPk, this.syncedToBlock, alias)
+        );
+      }
     }
   }
 }

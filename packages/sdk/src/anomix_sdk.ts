@@ -538,7 +538,7 @@ export class AnomixSdk {
   }
 
   public async updateAliasForUserState(accountPk: string, alias: string) {
-    await this.db.updateUserState(accountPk, alias);
+    await this.db.updateAliasOfUserState(accountPk, alias);
   }
 
   public async addAccount(
@@ -557,7 +557,7 @@ export class AnomixSdk {
       await this.db.upsertUserState(new UserState(accountPk58, 0, alias));
     } else {
       if (us.alias === undefined && alias !== undefined) {
-        await this.db.updateUserState(accountPk58, alias);
+        await this.db.updateAliasOfUserState(accountPk58, alias);
       }
     }
 

@@ -73,7 +73,11 @@ export interface Database {
 
   getUserState(accountPk: string): Promise<UserState | undefined>;
   getUserStates(): Promise<UserState[]>;
-  updateUserState(accountPk: string, alias: string): Promise<void>;
+  updateAliasOfUserState(accountPk: string, alias: string): Promise<void>;
+  updateSyncedToBlockOfUserState(
+    accountPk: string,
+    syncedToBlock: number
+  ): Promise<void>;
   upsertUserState(userState: UserState): Promise<void>;
   removeUserState(accountPk: string): Promise<void>;
   resetUserStates(): Promise<void>;
