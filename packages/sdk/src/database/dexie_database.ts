@@ -21,8 +21,8 @@ class DexieNote {
     public commitment: string,
     public nullifier: string,
     public index: number,
-    public nullified: boolean,
-    public pending: boolean
+    public nullified: 0 | 1, // 0 = false, 1 = true
+    public pending: 0 | 1 // 0 = false, 1 = true
   ) {}
 }
 
@@ -39,8 +39,8 @@ function toDexieNote(note: Note): DexieNote {
     note.commitment,
     note.nullifier,
     note.index === undefined ? -1 : note.index,
-    note.nullified,
-    note.pending
+    note.nullified ? 1 : 0,
+    note.pending ? 1 : 0
   );
 }
 
@@ -58,7 +58,7 @@ function fromDexieNote(note: DexieNote): Note {
     },
     note.commitment,
     note.nullifier,
-    note.nullified,
+    note.nullified === 1,
     note.index === -1 ? undefined : note.index
   );
 }
@@ -288,18 +288,18 @@ export class DexieDatabase implements Database {
     return note ? fromDexieNote(note) : undefined;
   }
   async nullifyNote(nullifier: string): Promise<void> {
-    await this.note.where({ nullifier }).modify({ nullified: true });
+    await this.note.where({ nullifier }).modify({ nullified: 1 });
   }
   async getNotes(accountPk: string, noteType: string): Promise<Note[]> {
     return (
       await this.note
-        .where({ ownerPk: accountPk, noteType, nullified: false })
+        .where({ ownerPk: accountPk, noteType, nullified: 0 })
         .toArray()
     ).map(fromDexieNote);
   }
   async getPendingNotes(accoutPk: string): Promise<Note[]> {
     return (
-      await this.note.where({ ownerPk: accoutPk, pending: true }).toArray()
+      await this.note.where({ ownerPk: accoutPk, pending: 1 }).toArray()
     ).map(fromDexieNote);
   }
   async removeNote(nullifier: string): Promise<void> {
