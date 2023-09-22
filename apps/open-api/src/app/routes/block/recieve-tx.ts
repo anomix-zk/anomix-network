@@ -144,6 +144,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
                     account.acctPk = acctPk;
                     account.l2TxHash = mpL2Tx.txHash;
                     account.l2TxId = mpL2Tx.id;
+                    account.encrptedAlias = l2TxReqDto.extraData.aliasInfo!;
                     account = await queryRunner.manager.save(account);
                 }
             }
