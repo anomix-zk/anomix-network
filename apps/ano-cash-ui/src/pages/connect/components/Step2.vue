@@ -61,14 +61,24 @@ const checkAliasIsRegistered = async () => {
         canRegsiter.value = -1;
         return;
     }
-    const isRegistered = await remoteApi.isAliasRegistered(inputAlias.value, true);
-    if (isRegistered) {
-        console.log('isRegistered: true');
-        canRegsiter.value = 0;
-    } else {
-        console.log('isRegistered: false');
-        canRegsiter.value = 1;
+    showLoadingMask({ text: 'Check if alias can be registered...', id: maskId, closable: false });
+    try {
+        const isRegistered = await remoteApi.isAliasRegistered(inputAlias.value, true);
+        if (isRegistered) {
+            console.log('isRegistered: true');
+            canRegsiter.value = 0;
+        } else {
+            console.log('isRegistered: false');
+            canRegsiter.value = 1;
+        }
+    } catch (err) {
+        console.error(err)
+        message.error('Failed to check if alias can be registered', { duration: 0, closable: true });
+        closeLoadingMask(maskId);
+        return;
     }
+
+    closeLoadingMask(maskId);
 };
 
 const registerAccount = async () => {

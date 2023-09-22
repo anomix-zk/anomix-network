@@ -205,7 +205,7 @@ const remoteSyncer = SdkState.remoteSyncer!;
 
 let copyFunc: (text: string) => void;
 
-const expectSyncedSpendTime = ref(0);
+const expectSyncedSpendTime = ref(20_000); // default 20s
 const toTime = computed(() => Date.now() - expectSyncedSpendTime.value);
 const syncedBlock = ref(0);
 const latestBlock = ref(0);

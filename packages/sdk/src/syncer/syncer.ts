@@ -202,9 +202,10 @@ export class Syncer {
 
   public addAccount(accountPublicKey: PublicKey) {
     const processor = this.noteProcessors.find((x) =>
-      x.accountPublicKey.equals(accountPublicKey)
+      x.accountPublicKey.equals(accountPublicKey).toBoolean()
     );
     if (processor) {
+      this.log.info('Account already added to syncer');
       return;
     }
     this.noteProcessorsToCatchUp.push(
