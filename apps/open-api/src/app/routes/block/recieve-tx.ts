@@ -6,7 +6,7 @@ import { Account, MemPlL2Tx, WithdrawInfo } from '@anomix/dao'
 import { RequestHandler } from '@/lib/types';
 import { ActionType, JoinSplitProof, ValueNote } from "@anomix/circuits";
 import config from "@/lib/config";
-import { verify, Field } from "o1js";
+import { verify, Field, PublicKey, Poseidon } from "o1js";
 import { $axiosCoordinator, $axiosSeq } from '@/lib/api';
 
 /**
@@ -84,19 +84,21 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
     */
 
     let withdrawNote: ValueNote = {} as any;
-    if (actionType.equals(ActionType.WITHDRAW)) {
+    if (actionType.equals(ActionType.WITHDRAW).toBoolean()) {
         withdrawNote = ValueNote.fromJSON(l2TxReqDto.extraData.withdrawNote as any) as any;// TODO need check!!
         if (joinSplitProof.publicOutput.outputNoteCommitment1.equals(withdrawNote.commitment()).not()) {
             return { code: 1, data: 'withdrawNote\'s commitment is not aligned with tx.outputNoteCommitment1', msg: '' }
         }
 
-    } else if (actionType.equals(ActionType.ACCOUNT)) {
+    } else if (actionType.equals(ActionType.ACCOUNT).toBoolean()) {
         const aliasHash = l2TxReqDto.extraData.aliasHash;
         const acctPk = l2TxReqDto.extraData.acctPk;
         if (aliasHash && acctPk) {// true: registration
-            if (Field.from(aliasHash).equals(joinSplitProof.publicOutput.nullifier1).not()
-                .and(Field.from(acctPk).equals(joinSplitProof.publicOutput.nullifier2))) {
-                throw req.throwError(httpCodes.BAD_REQUEST, { data: 'verify failed!' })
+            if (Poseidon.hash([Field.from(aliasHash)]).equals(joinSplitProof.publicOutput.nullifier1).not()
+                .and(
+                    Poseidon.hash(PublicKey.fromBase58(acctPk).toFields()).equals(joinSplitProof.publicOutput.nullifier2)
+                ).toBoolean()) {
+                return { code: 1, data: 'nullifier1/2 is not aligned with hash(aliasHash/acctPk)', msg: '' }
             }
         }
     }
@@ -118,7 +120,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
             mpL2Tx.proof = JSON.stringify(l2TxReqDto.proof); // TODO ??should be JSON.stringfy(joinSplitProof.proof)
             mpL2Tx = await queryRunner.manager.save(mpL2Tx);
 
-            if (actionType.equals(ActionType.WITHDRAW)) {
+            if (actionType.equals(ActionType.WITHDRAW).toBoolean()) {
                 let withdrawInfo = new WithdrawInfo();
                 withdrawInfo.secret = withdrawNote.secret.toString();
                 withdrawInfo.ownerPk = withdrawNote.ownerPk.toBase58();
@@ -132,7 +134,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
                 withdrawInfo.l2TxId = mpL2Tx.id;
                 withdrawInfo = await queryRunner.manager.save(withdrawInfo);
 
-            } else if (actionType.equals(ActionType.ACCOUNT)) {
+            } else if (actionType.equals(ActionType.ACCOUNT).toBoolean()) {
                 const aliasHash = l2TxReqDto.extraData.aliasHash;
                 const acctPk = l2TxReqDto.extraData.acctPk;
                 if (aliasHash && acctPk) {// true: registration
