@@ -173,17 +173,18 @@ const login = async () => {
 
         // get alias
         let alias = await remoteApi.getAliasByAccountPublicKey(accountPk58, accountPrivateKey.value);
-        if (alias) {
-            setAlias(alias);
-            setAccountStatus(AccountStatus.REGISTERED);
-        } else {
-            console.log('alias not found, should go to register flow');
-            setAccountStatus(AccountStatus.UNREGISTERED);
-        }
 
         const accountPk = await addAccount(accountPrivateKey.value, pwd.value, accountSigningKey.value,
             undefined, alias);
         if (accountPk) {
+            if (alias) {
+                setAlias(alias);
+                setAccountStatus(AccountStatus.REGISTERED);
+            } else {
+                console.log('alias not found, should go to register flow');
+                setAccountStatus(AccountStatus.UNREGISTERED);
+            }
+
             setAccountPk58(accountPk58);
             message.success('Account saved successfully');
 
