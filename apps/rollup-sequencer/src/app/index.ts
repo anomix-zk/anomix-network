@@ -32,9 +32,9 @@ export class FastifyCore {
         })
 
         // Core plugins
-        this.server.register(helmet, config.helmet)
-        this.server.register(fastifyCors)
-        this.server.register(ws)
+        // this.server.register(helmet, config.helmet)
+        // this.server.register(fastifyCors)
+        // this.server.register(ws)
 
         // Documentation
         this.server.register(import("fastify-swagger"), {

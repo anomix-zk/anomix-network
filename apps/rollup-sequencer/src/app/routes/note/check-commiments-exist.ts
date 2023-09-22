@@ -3,17 +3,18 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
 import { BaseResponse, MerkleTreeId } from "@anomix/types";
+
 /**
- * check if nullifiers exist
+ * check if commitments exist
  */
-export const checkNullifiersExist: FastifyPlugin = async function (
+export const checkCommitmentsExist: FastifyPlugin = async function (
     instance,
     options,
     done
 ): Promise<void> {
     instance.route({
         method: "POST",
-        url: "/existence/nullifiers",
+        url: "/existence/commitments",
         //preHandler: [instance.authGuard],
         schema,
         handler
@@ -23,22 +24,25 @@ export const checkNullifiersExist: FastifyPlugin = async function (
 const handler: RequestHandler<string[], null> = async function (
     req,
     res
-): Promise<BaseResponse<object>> {
-    const nullifierList = req.body
+): Promise<BaseResponse<any>> {
+    const commitmentList = req.body
 
     try {
-        const rs = Object.fromEntries(await Promise.all(nullifierList.map(async n => {
-            return [n, String(await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${n}`) ?? '')]
-        })))
+        const rs = Object.fromEntries(
+            await Promise.all(commitmentList.map(async c => {
+                return [c, String(await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${c}`) ?? '')];
+            }))
+        )
 
         return { code: 0, data: rs, msg: '' };
     } catch (err) {
+        console.error(err);
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
 
 const schema = {
-    description: 'check in batch existence of nullifier list including noteNullifier/aliasNullifier/acctViewPubKeyNullifier',
+    description: 'check in batch existence of each note commitment',
     tags: ['NOTE'],
     body: {
         type: 'array',
@@ -54,7 +58,8 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: 'any'
+                    type: 'object',
+                    additionalProperties: { type: "string" }
                 },
                 msg: {
                     type: 'string'
