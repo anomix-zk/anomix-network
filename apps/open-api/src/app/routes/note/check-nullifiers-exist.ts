@@ -57,7 +57,8 @@ const schema = {
                 },
                 data: {
                     description: 'like this pattern {nullifier0: -1/index, nullifier1: -1/index... }',
-                    type: 'any'
+                    type: 'object',
+                    additionalProperties: { type: 'string' }
                 },
                 msg: {
                     type: 'string'

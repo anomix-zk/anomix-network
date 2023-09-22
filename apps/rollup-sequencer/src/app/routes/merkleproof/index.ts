@@ -3,9 +3,10 @@ import { queryMerkleTreeInfo } from "./query-merkle-tree-info";
 import { queryMerkleProof } from "./query-merkle-proof";
 import { queryWitnessByWithdrawNotes } from "./query-witness-by-withdraw-notes";
 import { syncLazyDataTree } from "./sync-lazy-data-tree";
-import { queryWorldStateworldState } from './query-worldstate-state'
-import { checkCommitmentsExist } from './check-commiments-exist';
-import { checkNullifiersExist } from './check-nullifiers-exist';
+//import { queryWorldStateworldState } from './query-worldstate-state'
+//import { checkCommitmentsExist } from './check-commiments-exist';
+//import { checkNullifiersExist } from './check-nullifiers-exist';
+// import { rollupSeqTrigger } from "./rollup-seq-trigger";
 
 export const merkleProofEndpoint: FastifyPlugin = async (
     instance,
@@ -17,7 +18,8 @@ export const merkleProofEndpoint: FastifyPlugin = async (
     instance.register(queryWitnessByWithdrawNotes);
     instance.register(syncLazyDataTree);
 
-    instance.register(queryWorldStateworldState);
-    instance.register(checkNullifiersExist);
-    instance.register(checkCommitmentsExist);
+    //instance.register(rollupSeqTrigger);
+    // instance.register(checkCommitmentsExist);
+    // instance.register(checkNullifiersExist);
+    //instance.register(queryWorldStateworldState);
 }
