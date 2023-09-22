@@ -66,7 +66,7 @@ onMounted(async () => {
     localAccounts.forEach((account) => {
         const address = omitAddress(account.accountPk)!;
         acs.push({
-            label: account.alias ? account.alias + '(' + address + ')' : address,
+            label: account.alias ? account.alias + ' (' + address + ')' : address,
             value: account.accountPk,
             style: {
                 'height': '56px',
