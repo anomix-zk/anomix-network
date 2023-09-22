@@ -3,10 +3,12 @@ import {
 } from 'o1js';
 import fs from "fs";
 import * as dotenv from "dotenv"
+import { JoinSplitProver } from '@anomix/circuits';
 
 dotenv.config({ path: '../../.env' })
 
-const JoinSplitProverVK: string = fs.readFileSync('./circuit-JoinSplitProverVK.string', 'utf8');
+// const JoinSplitProverVK: string = fs.readFileSync('./circuit-JoinSplitProverVK.string', 'utf8');
+const { verificationKey: JoinSplitProverVK } = await JoinSplitProver.compile();
 
 const config = {
     port: <number>Number(<string>process.env.OPENAPI_PORT) || 80,
