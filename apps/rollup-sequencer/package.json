@@ -29,8 +29,8 @@
   "devDependencies": {},
   "scripts": {
     "serve": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/index.js",
-    "buildw": "tsc --build tsconfig.json --watch && (concurrently \"tsc --build tsconfig.json -w\" \"tsc-alias -w\")",
-    "build": "tsc --build tsconfig.json && tsc-alias",
+    "buildw": "npm run clean && tsc --build tsconfig.json --watch && (concurrently \"tsc --build tsconfig.json -w\" \"tsc-alias -w\")",
+    "build": "npm run clean && tsc --build tsconfig.json && tsc-alias",
     "dev": "nodemon src/index.ts",
     "test": "jest",
     "test:watch": "jest --watchAll",
