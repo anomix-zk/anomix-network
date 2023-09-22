@@ -553,7 +553,7 @@ export class AnomixSdk {
     const accountPk58 = accountPk.toBase58();
 
     const us = await this.db.getUserState(accountPk58);
-    if (!us) {
+    if (us === undefined) {
       await this.db.upsertUserState(new UserState(accountPk58, 0, alias));
     } else {
       if (us.alias === undefined && alias !== undefined) {
