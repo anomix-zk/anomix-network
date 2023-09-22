@@ -1,6 +1,6 @@
 import { FastifyPlugin } from "fastify"
 // import { checkCommitmentsExist } from './check-commiments-exist';
-import { checkNullifiersExist } from './check-nullifiers-exist';
+// import { checkNullifiersExist } from './check-nullifiers-exist';
 
 export const notesEndpoint: FastifyPlugin = async (
     instance,
@@ -8,5 +8,5 @@ export const notesEndpoint: FastifyPlugin = async (
     done
 ): Promise<void> => {
     // instance.register(checkCommitmentsExist);
-    instance.register(checkNullifiersExist);
+    // instance.register(checkNullifiersExist);
 }
