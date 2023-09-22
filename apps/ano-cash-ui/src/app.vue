@@ -19,8 +19,9 @@
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui';
 import { CHANNEL_SYNCER } from './common/constants';
 
-const { createRemoteSdk, createRemoteApi, startRemoteSyncer, compileCircuits } = useSdk();
+const { createRemoteSdk, createRemoteApi, startRemoteSyncer, compileCircuits, SdkState } = useSdk();
 const runtimeConfig = useRuntimeConfig();
+const route = useRoute();
 const { setTokenPrices, showLoadingMask, closeLoadingMask } = useStatus();
 
 const themeOverrides: GlobalThemeOverrides = {
@@ -95,6 +96,20 @@ onMounted(async () => {
       },
     });
 
+    const accounts = await SdkState.remoteApi!.getLocalAccounts();
+    if (accounts.length > 0) {
+      console.log('exist accounts, navigate to /login/session');
+      if (
+        route.path === "/" ||
+        route.path === "/account" ||
+        route.path === "/operation/confirm" ||
+        route.path === "/operation/send"
+      ) {
+        await navigateTo("/login/session");
+      }
+    }
+
+    console.log('App mounted-start remote syncer');
     await startRemoteSyncer({
       entryContractAddress,
       vaultContractAddress,
@@ -108,6 +123,7 @@ onMounted(async () => {
       },
     });
 
+    console.log('App mounted-start remote sdk');
     await createRemoteSdk({
       entryContractAddress,
       vaultContractAddress,

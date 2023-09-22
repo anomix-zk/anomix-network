@@ -126,15 +126,25 @@
 
                                 <div class="tx-info">
                                     <div class="tx-address">
-                                        <span v-if="item.isSender">{{ item.receiver }}</span>
-                                        <span v-else>{{ item.sender }}</span>
+                                        <span v-if="item.isSender">{{ omitAddress(item.receiver) }}</span>
+                                        <span v-else>{{ omitAddress(item.sender) }}</span>
 
                                         <div v-if="item.actionType === '3' && item.finalizedTs !== 0" class="tx-label">
                                             claimable
                                         </div>
+                                        <div v-if="item.actionType === '4'" class="tx-label">
+                                            account
+                                        </div>
                                     </div>
                                     <div class="tx-time">
-                                        <n-time :time="item.createdTs" format="yyyy-MM-dd HH:mm" />
+                                        <template v-if="item.createdTs !== 0">
+                                            <n-time :time="item.createdTs" format="yyyy-MM-dd HH:mm" />
+                                            <span v-if="item.finalizedTs !== 0">
+                                                (finalized)
+                                            </span>
+                                        </template>
+
+                                        <div v-else>Pending</div>
                                     </div>
                                 </div>
 
@@ -253,16 +263,23 @@ onMounted(async () => {
     copyFunc = copyText;
 
     // get latest block
-    latestBlock.value = await remoteApi.getBlockHeight();
+    const tempLatestBlock = await remoteApi.getBlockHeight();
+    if (tempLatestBlock > latestBlock.value) {
+        latestBlock.value = tempLatestBlock;
+    }
 
     // get account synced block
+    console.log('get account synced block...');
     const syncedToBlock = await remoteApi.getAccountSyncedToBlock(appState.value.accountPk58!);
-    if (!syncedToBlock) {
+    console.log('account syncedToBlock: ', syncedToBlock);
+    if (syncedToBlock !== undefined) {
         syncedBlock.value = syncedToBlock!;
     }
 
     // get total balance now
+    console.log('get total balance now...');
     const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
+    console.log('is account synced: ', synced);
     if (synced) {
         const balance = await remoteApi.getBalance(appState.value.accountPk58!);
         setTotalNanoBalance(balance.toString());
@@ -277,7 +294,7 @@ onMounted(async () => {
     txList.value = txHis;
 
     // set syncer listener
-    if (!syncerListenerSetted) {
+    if (!syncerListenerSetted.value) {
         listenSyncerChannel(async (event: SdkEvent) => {
             console.log('syncer event: ', event);
             if (event.eventType === SdkEventType.UPDATED_ACCOUNT_STATE) {
@@ -588,6 +605,7 @@ const toWithdraw = () => {
                 color: var(--ano-text-third);
                 line-height: 20px;
                 text-align: left;
+
             }
         }
 

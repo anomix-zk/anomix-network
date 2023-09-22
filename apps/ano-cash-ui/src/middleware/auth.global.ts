@@ -18,7 +18,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         const remoteApi = SdkState.remoteApi;
 
         if (appState.value.accountPk58 === null) {
+            console.log("auth: appState.value.accountPk58 === null");
             if (remoteApi === null) {
+                console.log("auth: remoteApi === null");
                 if (
                     to.path === "/account" ||
                     to.path === "/operation/confirm" ||
@@ -41,6 +43,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
                 }
 
                 if (to.path === "/" && from.path !== "/login/session") {
+                    console.log(
+                        'auth: to.path === "/" && from.path !== "/login/session"'
+                    );
                     return navigateTo("/login/session");
                 }
             } else {
