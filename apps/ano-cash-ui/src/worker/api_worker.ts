@@ -156,6 +156,7 @@ const apiWrapper = {
         return undefined;
     },
     getBalance: async (accountPk: string) => {
+        log("getBalance: " + accountPk);
         return await apiSdk.getBalance(accountPk);
     },
     getTxFees: async () => {
