@@ -35,11 +35,17 @@ export default function () {
         );
         SdkState.remoteSdk = wrap<SdkWrapper>(SdkState.sdkWorker!);
         await SdkState.remoteSdk.createSdk(config);
-        // async compile circuits
-        SdkState.remoteSdk.compileCircuits();
 
         setSdkExist(true);
         console.log("remote sdk create success");
+    };
+
+    const compileCircuits = () => {
+        if (SdkState.remoteSdk === null) {
+            throw new Error("remote sdk is null");
+        }
+        // async compile circuits
+        SdkState.remoteSdk.compileCircuits();
     };
 
     const createRemoteApi = async (config: SdkConfig) => {
@@ -152,5 +158,6 @@ export default function () {
         createRemoteApi,
         addAccount,
         exitAccount,
+        compileCircuits,
     };
 }

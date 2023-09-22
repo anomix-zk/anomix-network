@@ -166,7 +166,7 @@ const deposit = async () => {
     return;
   }
   try {
-    showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: false });
+    showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: true });
     const isContractReady = await remoteSdk.isEntryContractCompiled();
     if (!isContractReady) {
       if (maskListenerSetted.value === false) {
@@ -186,7 +186,7 @@ const deposit = async () => {
     let receiverPk: string | undefined = undefined;
     if (receiver.value.endsWith('.ano')) {
       receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiver.value.replace('.ano', ''));
-      if (!receiverPk) {
+      if (receiverPk === undefined) {
         closeLoadingMask(maskId);
         message.error(`Receiver: ${receiver.value} not found.`, { duration: 0, closable: true });
         return;
@@ -197,6 +197,12 @@ const deposit = async () => {
 
     const depositAmountNano = convertToNanoMinaUnit(depositAmount.value)!.toString();
 
+    console.log('connectedWallet58: ', appState.value.connectedWallet58);
+    if (appState.value.connectedWallet58 === null) {
+      closeLoadingMask(maskId);
+      message.error('Please connect wallet first.', { duration: 0, closable: true });
+      return;
+    }
     const txJson = await remoteSdk.createDepositTx({
       payerAddress: appState.value.connectedWallet58!,
       receiverAddress: receiverPk!,

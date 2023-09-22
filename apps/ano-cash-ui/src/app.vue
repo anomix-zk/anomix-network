@@ -19,7 +19,7 @@
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui';
 import { CHANNEL_SYNCER } from './common/constants';
 
-const { createRemoteSdk, createRemoteApi, startRemoteSyncer } = useSdk();
+const { createRemoteSdk, createRemoteApi, startRemoteSyncer, compileCircuits } = useSdk();
 const runtimeConfig = useRuntimeConfig();
 const { setTokenPrices, showLoadingMask, closeLoadingMask } = useStatus();
 
@@ -82,19 +82,6 @@ onMounted(async () => {
     const l2BlockPollingIntervalMS = runtimeConfig.public.l2BlockPollingIntervalMS as number;
     const broadcastChannelName = CHANNEL_SYNCER;
 
-    await createRemoteSdk({
-      entryContractAddress,
-      vaultContractAddress,
-      options: {
-        nodeUrl,
-        minaEndpoint,
-        nodeRequestTimeoutMS,
-        l2BlockPollingIntervalMS,
-        broadcastChannelName,
-        debug,
-      },
-    });
-
     await createRemoteApi({
       entryContractAddress,
       vaultContractAddress,
@@ -121,6 +108,19 @@ onMounted(async () => {
       },
     });
 
+    await createRemoteSdk({
+      entryContractAddress,
+      vaultContractAddress,
+      options: {
+        nodeUrl,
+        minaEndpoint,
+        nodeRequestTimeoutMS,
+        l2BlockPollingIntervalMS,
+        broadcastChannelName,
+        debug,
+      },
+    });
+
     closeLoadingMask(maskId);
 
     const { data } = await useFetch('https://api.coingecko.com/api/v3/simple/price?ids=mina-protocol&vs_currencies=usd%2Ccny');
@@ -128,6 +128,10 @@ onMounted(async () => {
     console.log('get price info: ', price);
 
     setTokenPrices([{ tokenName: 'MINA', usd: price['mina-protocol']['usd'] + '', cny: price['mina-protocol']['cny'] + '' }]);
+    closeLoadingMask(maskId);
+
+    compileCircuits();
+    console.log('App mounted end');
   } catch (err: any) {
     console.error(err);
     closeLoadingMask(maskId);

@@ -97,8 +97,8 @@ const registerAccount = async () => {
         // To prevent repeated sending of successfully registered transactions, we need to check alias
         const isRegistered = await remoteApi.isAliasRegistered(inputAlias.value, true);
         if (isRegistered) {
-            closeLoadingMask(maskId);
             message.error('The alias is already registered');
+            closeLoadingMask(maskId);
             return;
         }
 
@@ -108,14 +108,14 @@ const registerAccount = async () => {
 
     let tx: Tx | null = null;
     try {
-        showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: false });
+        showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: true });
         const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
         if (!isPrivateCircuitReady) {
             if (maskListenerSetted.value === false) {
                 listenSyncerChannel((e: SdkEvent) => {
                     if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
-                        closeLoadingMask(maskId);
                         message.info('Circuits compling done, please continue your registration', { duration: 0, closable: true });
+                        closeLoadingMask(maskId);
                     }
                 });
                 maskListenerSetted.value = true;
