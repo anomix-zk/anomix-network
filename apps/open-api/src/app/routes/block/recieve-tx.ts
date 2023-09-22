@@ -1,4 +1,4 @@
-import { BaseResponse, L2TxReqDtoSchema, L2TxReqDto, EncryptedNote, SequencerStatus } from '@anomix/types'
+import { BaseResponse, L2TxReqDtoSchema, L2TxReqDto, EncryptedNote, SequencerStatus, L2TxStatus } from '@anomix/types'
 import { getConnection, In } from 'typeorm';
 import { FastifyPlugin } from "fastify";
 import httpCodes from "@inip/http-codes";
@@ -113,6 +113,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
             await queryRunner.startTransaction();
 
             let mpL2Tx = MemPlL2Tx.fromJoinSplitOutput(joinSplitProof.publicOutput);
+            mpL2Tx.status = L2TxStatus.PENDING;
             const outputNote1 = l2TxReqDto.extraData.outputNote1;
             const outputNote2 = l2TxReqDto.extraData.outputNote2;
             mpL2Tx.encryptedData1 = outputNote1 ? JSON.stringify(outputNote1) : undefined as any;
