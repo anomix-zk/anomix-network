@@ -293,6 +293,7 @@ onMounted(async () => {
     });
     txList.value = txHis;
 
+    console.log('set syncer listener...');
     // set syncer listener
     if (!syncerListenerSetted.value) {
         listenSyncerChannel(async (event: SdkEvent) => {
@@ -300,14 +301,18 @@ onMounted(async () => {
             if (event.eventType === SdkEventType.UPDATED_ACCOUNT_STATE) {
                 if (event.data.accountPk === appState.value.accountPk58) {
                     const oneBlockSpendTime = Date.now() - lastBlockProcessDoneTime.value;
+                    console.log('oneBlockSpendTime: ', oneBlockSpendTime);
                     lastBlockProcessDoneTime.value = Date.now();
 
                     // get latest block
                     const blockHeight = await remoteApi.getBlockHeight();
                     latestBlock.value = blockHeight;
-                    syncedBlock.value = event.data.syncedToBlock;
+                    syncedBlock.value = event.data.synchedToBlock;
 
-                    expectSyncedSpendTime.value = oneBlockSpendTime * (blockHeight - event.data.syncedToBlock);
+                    const diffBlock = blockHeight - event.data.synchedToBlock;
+                    if (diffBlock > 0) {
+                        expectSyncedSpendTime.value = oneBlockSpendTime * diffBlock;
+                    }
 
                     // get latest balance
                     const balance = await remoteApi.getBalance(appState.value.accountPk58!);
@@ -332,6 +337,8 @@ onMounted(async () => {
             }
         });
     }
+
+    console.log('account onMounted done');
 });
 
 const exit = () => {
