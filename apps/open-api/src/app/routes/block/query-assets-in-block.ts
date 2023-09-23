@@ -21,7 +21,7 @@ export const queryAssetsInBlocks: FastifyPlugin = async function (
     })
 }
 
-const blockTxListMap = new Map<number, AssetsInBlockDto>();
+const cachedBlockTxListMap = new Map<number, AssetsInBlockDto>();
 
 export const handler: RequestHandler<AssetInBlockReqDto, null> = async function (
     req,
@@ -41,16 +41,21 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
         }
     }
 
+    const blockTxListMap1 = new Map<number, AssetsInBlockDto>();
     const blockNumList1: number[] = [];
     blockNumList.forEach(blockNum => {
-        if (!blockTxListMap.get(blockNum)) {
-            blockTxListMap.set(blockNum, ({
+        if (!cachedBlockTxListMap.get(blockNum)) {
+            blockTxListMap1.set(blockNum, ({
                 blockHeight: blockNum,
                 txList: [],
                 createdTs: 0,
                 finalizedTs: 0
             } as unknown) as AssetsInBlockDto);
+
             blockNumList1.push(blockNum);
+
+        } else {
+            blockTxListMap1.set(blockNum, cachedBlockTxListMap.get(blockNum)!);
         }
     });
 
@@ -93,7 +98,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
                         withdrawNote: withdrawInfoDto
                     }
 
-                    blockTxListMap.get(tx.blockId)?.txList.push(dto);
+                    blockTxListMap1.get(tx.blockId)?.txList.push(dto);
                 }
 
             });
@@ -113,7 +118,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
             });
 
             blockEntities?.forEach(blockEntity => {
-                const dto = blockTxListMap.get(blockEntity.id);
+                const dto = blockTxListMap1.get(blockEntity.id);
                 if (dto) {
                     dto.blockHash = blockEntity.blockHash;
                     dto.l1TxHash = blockEntity.l1TxHash;
@@ -126,9 +131,11 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
         }
 
         const data = new Array<AssetsInBlockDto>();
-        blockTxListMap.forEach(function (value, key, map) {
+        blockTxListMap1.forEach(function (value, key, map) {
             if (value.txList.length > 0) {
                 data.push(value);
+
+                cachedBlockTxListMap.set(key, value);// record valid new ones into cache
             }
         });
         return {
