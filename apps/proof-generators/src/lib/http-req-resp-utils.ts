@@ -40,5 +40,5 @@ export function saveProofTaskDtoFile(proofTaskDto: ProofTaskDto<any, any>, dirDe
             break;
     }
 
-    fs.writeFileSync(`${dirDest}/${logNamePrefix}-${new Date().getTime()}.json`, JSON.stringify(proofTaskDto));
+    fs.writeFileSync(`${dirDest}/${logNamePrefix}-${proofTaskDto.index.uuid}-${new Date().getTime()}.json`, JSON.stringify(proofTaskDto));
 }
