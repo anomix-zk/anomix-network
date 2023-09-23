@@ -131,10 +131,9 @@ async function proofTrigger() {
             }
 
             block.triggerProofAt = new Date();// update
+            await queryRunner.manager.save(block);
             logger.info(`block.triggerProofAt1: ${block.triggerProofAt?.toString()}`);
         });
-
-        await queryRunner.manager.save(blockList);
 
         await queryRunner.commitTransaction();
 
