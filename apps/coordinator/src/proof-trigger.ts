@@ -56,7 +56,7 @@ async function proofTrigger() {
 
         blockList!.forEach(async (block, indx) => {
             logger.info(`begin process block[${block.id}]`);
-            logger.inro(`block.triggerProofAt0: ${block.triggerProofAt?.toString()}`);
+            logger.info(`block.triggerProofAt0: ${block.triggerProofAt?.toString()}`);
 
             // to avoid double computation, should exclude those blocks that triggered previously but not completed
             const timeRange = block.triggerProofAt ? (new Date().getTime() - block.triggerProofAt.getTime()) : 0;
@@ -131,7 +131,7 @@ async function proofTrigger() {
             }
 
             block.triggerProofAt = new Date();// update
-            logger.inro(`block.triggerProofAt1: ${block.triggerProofAt?.toString()}`);
+            logger.info(`block.triggerProofAt1: ${block.triggerProofAt?.toString()}`);
         });
 
         await queryRunner.manager.save(blockList);
