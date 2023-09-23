@@ -86,7 +86,7 @@ async function proofTrigger() {
             } else if (block.status == BlockStatus.PENDING) {
                 logger.info(`BlockStatus: PENDING`);
 
-                if (0 < timeRange && timeRange < periodRange * 4) {
+                if (0 < timeRange && timeRange < periodRange * 6) {
                     logger.info(`this block was triggered previously, might not completed, skip it.`);
                     return;
                 }
