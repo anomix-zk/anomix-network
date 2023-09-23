@@ -200,7 +200,6 @@ export const proveTxBatch = (input: InnerRollupInput,
     const rollupId = output.generateRollupId();
     output.rollupId = rollupId;
     return output;
-
 }
 
 export const merge = (
@@ -260,7 +259,8 @@ export const merge = (
     return newOutput;
 }
 
-const processTx = ({
+
+function processTx({
     txProof,
     depositRoot,
     currentDepositStartIndex,
@@ -307,7 +307,7 @@ const processTx = ({
     currentRollupSize: Field;
     txFee: TxFee;
     currentDepositCount: Field;
-} => {
+} {
     txProof.verify();
     const txOutput = txProof.publicOutput;
     const outputNoteCommitment1 = txOutput.outputNoteCommitment1;

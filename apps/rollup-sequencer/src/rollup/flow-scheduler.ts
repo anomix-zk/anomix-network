@@ -404,7 +404,7 @@ export class FlowScheduler {
                 value: txFeeCommitmentIdx
             });
             batch.push({
-                key: `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${this.targetRootTreeRoot.toString()}`,
+                key: `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${this.targetDataRoot.toString()}`,
                 value: dataRootLeafIndex.toString()
             });
             // TODO !!! although it will not break consistency, need consider extreme case where some mechenism if this.indexDB.batchInsert(*) fails.!!!

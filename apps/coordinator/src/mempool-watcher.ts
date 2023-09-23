@@ -10,11 +10,12 @@ import { initORM } from './lib/orm';
 import { ActionType } from '@anomix/circuits';
 
 let highFeeTxExit = false;
-
-(process.send as any)({// when it's a primary process, process.send == undefined. 
-    type: 'status',
-    data: 'online'
-});
+if (process.send) {
+    (process.send as any)({// when it's a primary process, process.send == undefined. 
+        type: 'status',
+        data: 'online'
+    });
+}
 parentPort?.postMessage({// when it's not a subThread, parentPort == null. 
     type: 'status',
     data: 'online'
@@ -34,11 +35,12 @@ let lastSeqTs = new Date().getTime();
     highFeeTxExit = true;
     await mempoolWatch();
 });
-
-(process.send as any)({// if it's a subProcess
-    type: 'status',
-    data: 'isReady'
-});
+if (process.send) {
+    (process.send as any)({// if it's a subProcess
+        type: 'status',
+        data: 'isReady'
+    });
+}
 parentPort?.postMessage({// if it's a subThread
     type: 'status',
     data: 'isReady'

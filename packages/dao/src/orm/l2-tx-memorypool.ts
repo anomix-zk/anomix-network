@@ -44,6 +44,7 @@ export class MemPlL2Tx extends L2Tx {
         tx.txFeeAssetId = joinSplitOutput.txFeeAssetId.toString();
         tx.depositRoot = joinSplitOutput.depositRoot.toString();
         tx.depositIndex = joinSplitOutput.depositIndex.toString();
+        tx.txHash = joinSplitOutput.hash().toString();
 
         return tx;
     }

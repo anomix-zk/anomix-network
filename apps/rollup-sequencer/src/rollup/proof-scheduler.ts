@@ -11,6 +11,7 @@ import { syncAcctInfo } from "@anomix/utils";
 import { getLogger } from "@/lib/logUtils";
 import fs from "fs";
 import assert from "assert";
+import { randomUUID } from "crypto";
 
 const logger = getLogger('ProofScheduler');
 
@@ -91,7 +92,10 @@ export class ProofScheduler {
             // send to proof-generator, construct proofTaskDto
             const proofTaskDto: ProofTaskDto<any, any> = {
                 taskType: ProofTaskType.ROLLUP_FLOW,
-                index: { blockId },
+                index: {
+                    blockId,
+                    uuid: randomUUID().toString()
+                },
                 payload: {
                     flowId: undefined,
                     taskType: FlowTaskType.ROLLUP_TX_BATCH_MERGE,
@@ -99,7 +103,7 @@ export class ProofScheduler {
                 }
             }
 
-            const fileName = './ROLLUP_TX_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+            const fileName = './ROLLUP_TX_BATCH_MERGE_proofTaskDto_' + proofTaskDto.index.uuid + '_proofReq' + new Date().getTime() + '.json';
             fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
             logger.info(`save proofTaskDto into ${fileName}`);
 
@@ -170,7 +174,10 @@ export class ProofScheduler {
         // construct proofTaskDto
         const proofTaskDto: ProofTaskDto<any, any> = {
             taskType: ProofTaskType.ROLLUP_FLOW,
-            index: { blockId },
+            index: {
+                blockId,
+                uuid: randomUUID().toString()
+            },
             payload: {
                 flowId: undefined,
                 taskType: FlowTaskType.BLOCK_PROVE,
@@ -181,7 +188,7 @@ export class ProofScheduler {
             }
         }
 
-        const fileName = './BLOCK_PROVE_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+        const fileName = './BLOCK_PROVE_proofTaskDto_' + proofTaskDto.index.uuid + '_proofReq' + new Date().getTime() + '.json';
         fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
         logger.info(`save proofTaskDto into ${fileName}`);
 
@@ -209,6 +216,11 @@ export class ProofScheduler {
         let block: Block = undefined as any;
         try {
             block = (await queryRunner.manager.findOne(Block, { where: { id: blockId } }))!;
+            if (block.status == BlockStatus.CONFIRMED) {
+                logger.info(`duplicated proof result, due to block.status == BlockStatus.CONFIRMED.`);
+                logger.info(`this process end.`);
+                return;
+            }
 
             block.status = BlockStatus.PROVED;
             await queryRunner.manager.save(block);
@@ -282,7 +294,10 @@ export class ProofScheduler {
         // construct proofTaskDto
         const proofTaskDto: ProofTaskDto<any, any> = {
             taskType: ProofTaskType.ROLLUP_FLOW,
-            index: { blockId },
+            index: {
+                blockId,
+                uuid: randomUUID().toString()
+            },
             payload: {
                 flowId: undefined,
                 taskType: FlowTaskType.ROLLUP_CONTRACT_CALL,
@@ -296,7 +311,7 @@ export class ProofScheduler {
             }
         }
 
-        const fileName = './ROLLUP_CONTRACT_CALL_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+        const fileName = './ROLLUP_CONTRACT_CALL_proofTaskDto_' + proofTaskDto.index.uuid + '_proofReq-' + new Date().getTime() + '.json';
         fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
         logger.info(`save proofTaskDto into ${fileName}`);
 
