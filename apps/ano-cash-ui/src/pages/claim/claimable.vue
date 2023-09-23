@@ -90,7 +90,7 @@ const disconnect = () => {
 let claimableNotes = ref<{ token: string; value: string; commitment: string }[]>([]);
 const loadClaimableNotesByConnectedWallet = async () => {
   console.log('claimable.vue - loadClaimableNotesByConnectedWallet: ', appState.value.connectedWallet58);
-  const cs = await remoteApi.getClaimableNotes(appState.value.connectedWallet58!, []);
+  const cs = await remoteApi.getClaimableNotes([], appState.value.connectedWallet58!);
 
   let notes: { token: string; value: string; commitment: string }[] = [];
   cs.forEach((c) => {
@@ -110,7 +110,7 @@ onMounted(async () => {
 
   if (!walletListenerSetted.value) {
     if (window.mina) {
-      window.mina.on('accountsChanged', (accounts: string[]) => {
+      window.mina.on('accountsChanged', async (accounts: string[]) => {
         console.log('claimable.vue - connected account change: ', accounts);
         if (accounts.length === 0) {
           message.error('Please connect your wallet', {
@@ -120,13 +120,14 @@ onMounted(async () => {
           disconnect();
         } else {
           setConnectedWallet(accounts[0]);
+          await loadClaimableNotesByConnectedWallet();
         }
 
       });
 
       window.mina.on('chainChanged', (chainType: string) => {
         console.log('claimable.vue - current chain: ', chainType);
-        if (chainType !== 'Berkeley') {
+        if (chainType !== appState.value.minaNetwork) {
           message.error('Please switch to Berkeley network', {
             closable: true,
             duration: 0

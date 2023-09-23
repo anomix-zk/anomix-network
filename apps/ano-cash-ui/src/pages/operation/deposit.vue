@@ -54,8 +54,8 @@
           <div class="label">To</div>
 
           <div class="to-input">
-            <n-input placeholder="Alias (xxx.ano) or address (B62)" size="large" clearable :allow-input="checkNoSideSpace"
-              v-model:value="receiver" @blur="checkAliasExist">
+            <n-input placeholder="Alias (xxx.ano) or Anomix address (B62)" size="large" clearable
+              :allow-input="checkNoSideSpace" v-model:value="receiver" @blur="checkAliasExist" @input="handleInput">
               <template #suffix>
                 <van-icon v-show="checkAlias === 1" name="passed" color="green" size="20" />
                 <van-icon v-show="checkAlias === 0" name="close" color="red" size="20" />
@@ -115,14 +115,9 @@ const balanceLoading = ref(false);
 const disconnect = () => {
   setConnectedWallet(null);
   L1TokenBalance.value = { token: 'MINA', balance: '0' };
-  if (history.length > 1) {
-    toBack();
-  } else {
-    router.replace('/');
-  }
 };
 
-const loadConnectedWalletStatus = () => {
+const loadConnectedWalletStatus = async () => {
   console.log('loadConnectedWalletStatus...');
   if (appState.value.connectedWallet58 !== null) {
     try {
@@ -147,11 +142,11 @@ const walletListenerSetted = ref(false);
 
 onMounted(async () => {
   console.log('deposit page onMounted...');
-  loadConnectedWalletStatus();
+  await loadConnectedWalletStatus();
 
   if (!walletListenerSetted.value) {
     if (window.mina) {
-      window.mina.on('accountsChanged', (accounts: string[]) => {
+      window.mina.on('accountsChanged', async (accounts: string[]) => {
         console.log('deposit.vue - connected account change: ', accounts);
         if (accounts.length === 0) {
           message.error('Please connect your wallet', {
@@ -161,14 +156,14 @@ onMounted(async () => {
           disconnect();
         } else {
           setConnectedWallet(accounts[0]);
-          loadConnectedWalletStatus();
+          await loadConnectedWalletStatus();
         }
 
       });
 
       window.mina.on('chainChanged', (chainType: string) => {
         console.log('deposit.vue - current chain: ', chainType);
-        if (chainType !== 'Berkeley') {
+        if (chainType !== appState.value.minaNetwork) {
           message.error('Please switch to Berkeley network', {
             closable: true,
             duration: 0
@@ -192,17 +187,26 @@ const maskListenerSetted = ref(false);
 
 // -1: not alias, 0: alias not exist, 1: alias exist
 const checkAlias = ref(-1);
+const handleInput = (v: string) => {
+  if (checkAlias.value !== -1) {
+    checkAlias.value = -1;
+  }
+};
 const checkAliasExist = async () => {
   console.log('checkAliasExist...');
+  showLoadingMask({ id: maskId, text: 'Checking if input valid...', closable: false });
   if (!receiver.value.endsWith('.ano')) {
     if (receiver.value.startsWith('B62')) {
-      checkAlias.value = -1;
-      return;
+      if (checkAlias.value !== -1) {
+        checkAlias.value = -1;
+      }
+
     } else {
       checkAlias.value = 0;
       message.error(`Please input anomix address or alias.`, { duration: 5000, closable: true });
-      return;
     }
+    closeLoadingMask(maskId);
+    return;
   }
 
   const isRegistered = await remoteApi.isAliasRegistered(receiver.value, false);
@@ -214,6 +218,7 @@ const checkAliasExist = async () => {
     checkAlias.value = 0;
     message.error(`${receiver.value} not exists`, { duration: 5000, closable: true });
   }
+  closeLoadingMask(maskId);
 };
 
 const deposit = async () => {
@@ -223,6 +228,10 @@ const deposit = async () => {
   }
   if (receiver.value === '') {
     message.error('Please input receiver.');
+    return;
+  }
+  if (checkAlias.value === 0) {
+    message.error(`${receiver.value} not exists, please input a valid address or alias.`, { duration: 5000, closable: true });
     return;
   }
   try {

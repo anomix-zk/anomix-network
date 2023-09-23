@@ -186,7 +186,7 @@ onMounted(() => {
 
             window.mina.on('chainChanged', (chainType: string) => {
                 console.log('step1.vue - current chain: ', chainType);
-                if (chainType !== 'Berkeley') {
+                if (chainType !== appState.value.minaNetwork) {
                     message.error('Please switch to Berkeley network', {
                         closable: true,
                         duration: 0

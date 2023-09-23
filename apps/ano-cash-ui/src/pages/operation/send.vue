@@ -46,7 +46,8 @@
           <div class="to-input">
             <n-input
               :placeholder="currPageAction === PageAction.SEND_TOKEN ? 'Alias (xxx.ano) or Anomix address (B62)' : 'Mina address (B62)'"
-              size="large" clearable :allow-input="checkNoSideSpace" v-model:value="receiver" @blur="checkAliasExist">
+              size="large" clearable :allow-input="checkNoSideSpace" v-model:value="receiver" @blur="checkAliasExist"
+              @input="handleInput">
               <template #suffix>
                 <van-icon v-show="checkAlias === 1" name="passed" color="green" size="20" />
                 <van-icon v-show="checkAlias === 0" name="close" color="red" size="20" />
@@ -143,12 +144,28 @@ const handleSwitchValue = (value: boolean) => {
 
 const sendAmount = ref<number | undefined>(undefined);
 const receiver = ref('');
+
+const handleInput = (v: string) => {
+  if (checkAlias.value !== -1) {
+    checkAlias.value = -1;
+  }
+};
 // -1: not alias, 0: alias not exist, 1: alias exist
 const checkAlias = ref(-1);
 const checkAliasExist = async () => {
   console.log('checkAliasExist...');
+  showLoadingMask({ id: maskId, text: 'Checking if input valid...', closable: false });
   if (!receiver.value.endsWith('.ano')) {
-    checkAlias.value = -1;
+    if (receiver.value.startsWith('B62')) {
+      if (checkAlias.value !== -1) {
+        checkAlias.value = -1;
+      }
+
+    } else {
+      checkAlias.value = 0;
+      message.error(`Please input anomix address or alias.`, { duration: 5000, closable: true });
+    }
+    closeLoadingMask(maskId);
     return;
   }
 
@@ -161,6 +178,7 @@ const checkAliasExist = async () => {
     checkAlias.value = 0;
     message.error(`${receiver.value} not exists`, { duration: 5000, closable: true });
   }
+  closeLoadingMask(maskId);
 };
 
 
@@ -188,6 +206,10 @@ const toConfirm = async () => {
   }
   if (receiver.value === '') {
     message.error('Please input receiver.');
+    return;
+  }
+  if (checkAlias.value === 0) {
+    message.error(`${receiver.value} not exists, please input a valid address or alias.`, { duration: 5000, closable: true });
     return;
   }
 

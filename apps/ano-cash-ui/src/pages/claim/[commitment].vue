@@ -147,6 +147,12 @@ const claim = async () => {
     message.error('Please install auro wallet browser extension first.');
     return;
   }
+
+  if (withdrawNote.value?.ownerAddress !== appState.value.connectedWallet58) {
+    message.error('Please connect to the wallet that is consistent with note’s ownerAddress.');
+    return;
+  }
+
   disabledClaim.value = true;
   claimLoading.value = true;
   try {
@@ -183,6 +189,12 @@ const createWithdrawalAccount = async () => {
     message.error('Please install auro wallet browser extension first.');
     return;
   }
+
+  if (withdrawNote.value?.ownerAddress !== appState.value.connectedWallet58) {
+    message.error('Please connect to the wallet that is consistent with note’s ownerAddress.');
+    return;
+  }
+
   createWithdrawalAccountLoading.value = true;
   try {
     const isContractReady = await remoteSdk.isVaultContractCompiled();
@@ -211,6 +223,28 @@ const createWithdrawalAccount = async () => {
   }
 };
 
+const loadAccountInfoByConnectedWallet = async () => {
+  console.log('loadAccountInfoByConnectedWallet...');
+
+  if (appState.value.connectedWallet58 !== null) {
+    const account = await remoteApi.getL1Account(appState.value.connectedWallet58!);
+
+    console.log('account: ', account);
+    const balance = convertToMinaUnit(account.balance)!.toString();
+    L1TokenBalance.value = { token: 'MINA', balance };
+    console.log('L1TokenBalance: ', L1TokenBalance.value);
+
+    // check withdrawAccount if exists
+    const tokenId = await remoteSdk.getWithdrawAccountTokenId();
+    const withdrawAccount = await remoteApi.getL1Account(appState.value.connectedWallet58!, tokenId);
+    if (withdrawAccount !== undefined) {
+      withdrawAccountExists.value = true;
+    } else {
+      withdrawAccountExists.value = false;
+    }
+  }
+};
+
 const connect = async () => {
   console.log('connect wallet...');
   if (!window.mina) {
@@ -226,21 +260,14 @@ const connect = async () => {
     }
 
     let accounts = await window.mina.requestAccounts();
+    if (withdrawNote.value?.ownerAddress !== accounts[0]) {
+      message.error('Please connect to the wallet that is consistent with note’s ownerAddress.');
+      return;
+    }
+
     setConnectedWallet(accounts[0]);
 
-    const account = await remoteApi.getL1Account(appState.value.connectedWallet58!);
-    const balance = convertToMinaUnit(account.balance)!.toString();
-    L1TokenBalance.value = { token: 'MINA', balance };
-
-
-    // check withdrawAccount if exists
-    const tokenId = await remoteSdk.getWithdrawAccountTokenId();
-    const withdrawAccount = await remoteApi.getL1Account(appState.value.connectedWallet58!, tokenId);
-    if (withdrawAccount) {
-      withdrawAccountExists.value = true;
-    } else {
-      withdrawAccountExists.value = false;
-    }
+    await loadAccountInfoByConnectedWallet();
   } catch (error: any) {
     // if user reject, requestAccounts will throw an error with code and message filed
     console.log(error.message, error.code);
@@ -252,43 +279,24 @@ const disconnect = () => {
   setConnectedWallet(null);
   L1TokenBalance.value = null;
 };
-const loadClaimInfoByConnectedWallet = async () => {
-  console.log('loadClaimInfoByConnectedWallet...');
 
-  if (appState.value.connectedWallet58 !== null) {
-    const account = await remoteApi.getL1Account(appState.value.connectedWallet58!);
-
-    console.log('account: ', account);
-    const balance = convertToMinaUnit(account.balance)!.toString();
-    L1TokenBalance.value = { token: 'MINA', balance };
-    console.log('L1TokenBalance: ', L1TokenBalance.value);
-    const notes = await remoteApi.getClaimableNotes(appState.value.connectedWallet58!, [commitment]);
-    if (notes.length !== 1) {
-      message.error('commitment is invalid', { duration: 0, closable: true });
-      return;
-    }
-
-    withdrawNote.value = {
-      token: 'MINA',
-      ownerAddress: notes[0].ownerPk,
-      balance: convertToMinaUnit(notes[0].value)!.toString(),
-    };
-
-    // check withdrawAccount if exists
-    const tokenId = await remoteSdk.getWithdrawAccountTokenId();
-    const withdrawAccount = await remoteApi.getL1Account(appState.value.connectedWallet58!, tokenId);
-    if (withdrawAccount) {
-      withdrawAccountExists.value = true;
-    } else {
-      withdrawAccountExists.value = false;
-    }
-  }
-};
 const walletListenerSetted = ref(false);
 onMounted(async () => {
   console.log('onMounted...');
 
-  await loadClaimInfoByConnectedWallet();
+  const notes = await remoteApi.getClaimableNotes([commitment]);
+  if (notes.length !== 1) {
+    message.error('Note commitment is invalid', { duration: 0, closable: true });
+    return;
+  }
+  withdrawNote.value = {
+    token: 'MINA',
+    ownerAddress: notes[0].ownerPk,
+    balance: convertToMinaUnit(notes[0].value)!.toString(),
+  };
+
+
+  await loadAccountInfoByConnectedWallet();
 
   if (syncerListenerSetted.value === false) {
     listenSyncerChannel((e: SdkEvent) => {
@@ -301,7 +309,7 @@ onMounted(async () => {
 
   if (!walletListenerSetted.value) {
     if (window.mina) {
-      window.mina.on('accountsChanged', async (accounts: string[]) => {
+      window.mina.on('accountsChanged', (accounts: string[]) => {
         console.log('claim - connected account change: ', accounts);
         if (accounts.length === 0) {
           message.error('Please connect your wallet', {
@@ -310,15 +318,23 @@ onMounted(async () => {
           });
           disconnect();
         } else {
+          if (accounts[0] !== withdrawNote.value?.ownerAddress) {
+            message.error('The owner of the claim note is inconsistent with the current wallet. Please switch to the correct wallet', {
+              closable: true,
+              duration: 0
+            });
+
+            return;
+          }
           setConnectedWallet(accounts[0]);
-          await loadClaimInfoByConnectedWallet();
+
         }
 
       });
 
       window.mina.on('chainChanged', (chainType: string) => {
         console.log('claim - current chain: ', chainType);
-        if (chainType !== 'Berkeley') {
+        if (chainType !== appState.value.minaNetwork) {
           message.error('Please switch to Berkeley network', {
             closable: true,
             duration: 0

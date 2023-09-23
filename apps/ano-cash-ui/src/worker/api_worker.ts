@@ -97,8 +97,8 @@ const apiWrapper = {
     getSigningKeys: async (accountPk: string) => {
         return await apiSdk.getSigningKeys(accountPk);
     },
-    getClaimableNotes: async (l1address: string, commitments: string[]) => {
-        return await apiSdk.getClaimableNotes(l1address, commitments);
+    getClaimableNotes: async (commitments: string[], l1address?: string) => {
+        return await apiSdk.getClaimableNotes(commitments, l1address);
     },
     getL1Account: async (l1address: string, tokenId?: string) => {
         const ac = await apiSdk.getL1Account(l1address, tokenId);
