@@ -50,15 +50,15 @@ process!.on('message', async dto => {
         const flowTask = (proofTaskDto.payload) as FlowTask<any>;
         switch (flowTask.taskType) {
             case FlowTaskType.ROLLUP_TX_BATCH_MERGE:
-                fs.writeFileSync(`./ROLLUP_TX_BATCH_MERGE_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+                fs.writeFileSync(`./ROLLUP_TX_BATCH_MERGE_proofTaskDto_proofResult_${new Date().getTime()}.json`, JSON.stringify(proofTaskDto));
                 await proofScheduler.whenMergedResultComeBack(proofTaskDto.index.blockId, flowTask.data);
                 break;
             case FlowTaskType.BLOCK_PROVE:
-                fs.writeFileSync(`./BLOCK_PROVE_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+                fs.writeFileSync(`./BLOCK_PROVE_proofTaskDto_proofResult_${new Date().getTime()}.json`, JSON.stringify(proofTaskDto));
                 await proofScheduler.whenL2BlockComeback(proofTaskDto.index.blockId, flowTask.data);
                 break;
             case FlowTaskType.ROLLUP_CONTRACT_CALL:
-                fs.writeFileSync(`./ROLLUP_CONTRACT_CALL_proofTaskDto_proofResult_${new Date().getTime()}_json`, JSON.stringify(proofTaskDto));
+                fs.writeFileSync(`./ROLLUP_CONTRACT_CALL_proofTaskDto_proofResult_${new Date().getTime()}.json`, JSON.stringify(proofTaskDto));
                 await proofScheduler.whenL1TxComeback(proofTaskDto.index.blockId, flowTask.data);
                 break;
             default: // rid it
