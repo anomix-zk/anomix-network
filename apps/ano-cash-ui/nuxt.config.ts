@@ -14,9 +14,9 @@ export default defineNuxtConfig({
             // Keys within public are also exposed client-side
             public: {
                 entryContractAddress:
-                    "B62qp2YfmJ9epZiTwrpJZ8jpZqTG3j7VdXF4LQ2ZKzWxqWCVXZ1KrMq",
+                    "B62qoSzpsLDcsqEAvfjLhfGiu23LPcGavDAYYMT3zuZsXumj7C5NerL",
                 vaultContractAddress:
-                    "B62qjwEjuY8mcvfvQxdAU4gy95rgYa6gKKKR58RKTMJ3hEm3FAxb72o",
+                    "B62qo8kkE1fVS7kJhAnHn94W4io9qxDDn7HWdC6jFBwzd3HDNqkkUaf",
                 nodeUrl: "http://198.135.49.102",
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
                 l2BlockPollingIntervalMS: 15 * 1000,
@@ -31,9 +31,9 @@ export default defineNuxtConfig({
             // Keys within public are also exposed client-side
             public: {
                 entryContractAddress:
-                    "B62qp2YfmJ9epZiTwrpJZ8jpZqTG3j7VdXF4LQ2ZKzWxqWCVXZ1KrMq",
+                    "B62qoSzpsLDcsqEAvfjLhfGiu23LPcGavDAYYMT3zuZsXumj7C5NerL",
                 vaultContractAddress:
-                    "B62qjwEjuY8mcvfvQxdAU4gy95rgYa6gKKKR58RKTMJ3hEm3FAxb72o",
+                    "B62qo8kkE1fVS7kJhAnHn94W4io9qxDDn7HWdC6jFBwzd3HDNqkkUaf",
                 nodeUrl: "http://198.135.49.102",
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
                 l2BlockPollingIntervalMS: 15 * 1000,

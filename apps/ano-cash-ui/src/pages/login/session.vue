@@ -141,10 +141,10 @@ const login = async () => {
             } else {
                 setAccountStatus(AccountStatus.UNREGISTERED);
             }
-            closeLoadingMask(maskId);
-            message.success('Login successfully');
 
+            message.success('Login successfully');
             toAccountPage();
+            closeLoadingMask(maskId);
         }
     } catch (err: any) {
         closeLoadingMask(maskId);

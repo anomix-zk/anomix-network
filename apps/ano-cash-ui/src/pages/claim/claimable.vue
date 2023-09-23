@@ -80,12 +80,16 @@ const toClaim = (commitment: string) => {
 
 const disconnect = () => {
   setConnectedWallet(null);
-  router.replace("/");
+  if (history.length > 1) {
+    toBack();
+  } else {
+    router.replace("/");
+  }
 };
 
 let claimableNotes = ref<{ token: string; value: string; commitment: string }[]>([]);
-
-onMounted(async () => {
+const loadClaimableNotesByConnectedWallet = async () => {
+  console.log('claimable.vue - loadClaimableNotesByConnectedWallet: ', appState.value.connectedWallet58);
   const cs = await remoteApi.getClaimableNotes(appState.value.connectedWallet58!, []);
 
   let notes: { token: string; value: string; commitment: string }[] = [];
@@ -97,33 +101,44 @@ onMounted(async () => {
     });
   });
   claimableNotes.value = notes;
+};
+const walletListenerSetted = ref(false);
 
-  if (window.mina) {
-    window.mina.on('accountsChanged', (accounts: string[]) => {
-      console.log('connected account change: ', accounts);
-      if (accounts.length === 0) {
-        setConnectedWallet(null);
-        message.error('Please connect your wallet', {
-          closable: true,
-          duration: 0
-        });
-        router.replace('/');
-      } else {
-        setConnectedWallet(accounts[0]);
-      }
+onMounted(async () => {
+  console.log('claimable.vue - onMounted: ', appState.value.connectedWallet58);
+  await loadClaimableNotesByConnectedWallet();
 
-    });
+  if (!walletListenerSetted.value) {
+    if (window.mina) {
+      window.mina.on('accountsChanged', (accounts: string[]) => {
+        console.log('claimable.vue - connected account change: ', accounts);
+        if (accounts.length === 0) {
+          message.error('Please connect your wallet', {
+            closable: true,
+            duration: 0
+          });
+          disconnect();
+        } else {
+          setConnectedWallet(accounts[0]);
+        }
 
-    window.mina.on('chainChanged', (chainType: string) => {
-      console.log('current chain: ', chainType);
-      if (chainType !== 'Berkeley') {
-        message.error('Please switch to Berkeley network', {
-          closable: true,
-          duration: 0
-        });
-      }
-    });
+      });
+
+      window.mina.on('chainChanged', (chainType: string) => {
+        console.log('claimable.vue - current chain: ', chainType);
+        if (chainType !== 'Berkeley') {
+          message.error('Please switch to Berkeley network', {
+            closable: true,
+            duration: 0
+          });
+        }
+      });
+    }
+
+    walletListenerSetted.value = true;
   }
+
+
 });
 
 

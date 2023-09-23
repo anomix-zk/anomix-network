@@ -112,20 +112,74 @@ const L1TokenBalance = ref<{ token: string; balance: string }>({
 });
 const balanceLoading = ref(false);
 
-onMounted(async () => {
-  console.log('deposit page onMounted...');
+const disconnect = () => {
+  setConnectedWallet(null);
+  L1TokenBalance.value = { token: 'MINA', balance: '0' };
+  if (history.length > 1) {
+    toBack();
+  } else {
+    router.replace('/');
+  }
+};
+
+const loadConnectedWalletStatus = () => {
+  console.log('loadConnectedWalletStatus...');
   if (appState.value.connectedWallet58 !== null) {
     try {
       balanceLoading.value = true;
       const account = await remoteApi.getL1Account(appState.value.connectedWallet58!);
-      const balance = convertToMinaUnit(account.balance)!.toString();
-      L1TokenBalance.value = { token: 'MINA', balance };
+      if (account !== undefined) {
+        const balance = convertToMinaUnit(account.balance)!.toString();
+        L1TokenBalance.value = { token: 'MINA', balance };
+      } else {
+        L1TokenBalance.value = { token: 'MINA', balance: '0' };
+      }
       balanceLoading.value = false;
+
     } catch (err: any) {
       console.error(err);
       message.error(err.message);
     }
   }
+};
+
+const walletListenerSetted = ref(false);
+
+onMounted(async () => {
+  console.log('deposit page onMounted...');
+  loadConnectedWalletStatus();
+
+  if (!walletListenerSetted.value) {
+    if (window.mina) {
+      window.mina.on('accountsChanged', (accounts: string[]) => {
+        console.log('deposit.vue - connected account change: ', accounts);
+        if (accounts.length === 0) {
+          message.error('Please connect your wallet', {
+            closable: true,
+            duration: 0
+          });
+          disconnect();
+        } else {
+          setConnectedWallet(accounts[0]);
+          loadConnectedWalletStatus();
+        }
+
+      });
+
+      window.mina.on('chainChanged', (chainType: string) => {
+        console.log('deposit.vue - current chain: ', chainType);
+        if (chainType !== 'Berkeley') {
+          message.error('Please switch to Berkeley network', {
+            closable: true,
+            duration: 0
+          });
+        }
+      });
+    }
+
+    walletListenerSetted.value = true;
+  }
+
 });
 
 const toBack = () => router.back();
@@ -141,8 +195,14 @@ const checkAlias = ref(-1);
 const checkAliasExist = async () => {
   console.log('checkAliasExist...');
   if (!receiver.value.endsWith('.ano')) {
-    checkAlias.value = -1;
-    return;
+    if (receiver.value.startsWith('B62')) {
+      checkAlias.value = -1;
+      return;
+    } else {
+      checkAlias.value = 0;
+      message.error(`Please input anomix address or alias.`, { duration: 5000, closable: true });
+      return;
+    }
   }
 
   const isRegistered = await remoteApi.isAliasRegistered(receiver.value, false);
@@ -210,6 +270,7 @@ const deposit = async () => {
       amount: depositAmountNano,
       anonymousToReceiver: false,
     });
+    console.log('deposit txJson: ', txJson);
 
     showLoadingMask({ id: maskId, text: 'Wait for sending transaction...', closable: false });
     const { hash: txHash } = await window.mina.sendTransaction({
@@ -249,8 +310,12 @@ const connect = async () => {
 
     balanceLoading.value = true;
     const account = await remoteApi.getL1Account(appState.value.connectedWallet58!);
-    const balance = convertToMinaUnit(account.balance)!.toString();
-    L1TokenBalance.value = { token: 'MINA', balance };
+    if (account !== undefined) {
+      const balance = convertToMinaUnit(account.balance)!.toString();
+      L1TokenBalance.value = { token: 'MINA', balance };
+    } else {
+      L1TokenBalance.value = { token: 'MINA', balance: '0' };
+    }
     balanceLoading.value = false;
 
   } catch (err: any) {
@@ -260,10 +325,7 @@ const connect = async () => {
   }
 };
 
-const disconnect = () => {
-  setConnectedWallet(null);
-  L1TokenBalance.value = { token: 'MINA', balance: 0 };
-};
+
 
 const maxInputAmount = () => {
   depositAmount.value = Number(L1TokenBalance.value?.balance);

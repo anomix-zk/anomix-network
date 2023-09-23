@@ -120,9 +120,10 @@ const sendTx = async () => {
     showLoadingMask({ id: maskId, text: 'Sending Tx...', closable: false });
     await remoteApi.sendTx(tx);
 
-    closeLoadingMask(maskId);
     message.success('Transaction sent successfully!');
     router.replace('/account');
+    closeLoadingMask(maskId);
+
   } catch (err: any) {
     console.error(err);
     message.error(err.message, { duration: 0, closable: true });

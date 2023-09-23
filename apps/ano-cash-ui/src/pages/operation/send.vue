@@ -236,8 +236,8 @@ const toConfirm = async () => {
     };
     setPageParams(currPageAction.value, params);
 
-    closeLoadingMask(maskId);
     router.push("/operation/confirm");
+    closeLoadingMask(maskId);
   } catch (err: any) {
     console.error(err);
     message.error(err.message, { duration: 0, closable: true });

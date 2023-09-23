@@ -22,7 +22,8 @@ import { CHANNEL_SYNCER } from './common/constants';
 const { createRemoteSdk, createRemoteApi, startRemoteSyncer, compileCircuits, SdkState } = useSdk();
 const runtimeConfig = useRuntimeConfig();
 const route = useRoute();
-const { setTokenPrices, showLoadingMask, closeLoadingMask } = useStatus();
+const router = useRouter();
+const { setTokenPrices, showLoadingMask, closeLoadingMask, setConnectedWallet } = useStatus();
 
 const themeOverrides: GlobalThemeOverrides = {
   Input: {
@@ -55,7 +56,6 @@ const themeOverrides: GlobalThemeOverrides = {
 };
 
 const supportStatus = ref("supported");
-
 const maskId = 'appInit';
 
 onMounted(async () => {

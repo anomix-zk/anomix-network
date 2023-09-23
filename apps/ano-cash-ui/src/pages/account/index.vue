@@ -336,6 +336,7 @@ onMounted(async () => {
                 }
             }
         });
+        syncerListenerSetted.value = true;
     }
 
     console.log('account onMounted done');

@@ -188,12 +188,13 @@ const login = async () => {
             setAccountPk58(accountPk58);
             message.success('Account saved successfully');
 
-            closeLoadingMask(maskId);
             if (appState.value.accountStatus !== AccountStatus.UNREGISTERED) {
                 toAccountPage();
             } else {
                 toRegisterAliasPage();
             }
+
+            closeLoadingMask(maskId);
         }
     } catch (err: any) {
         closeLoadingMask(maskId);
