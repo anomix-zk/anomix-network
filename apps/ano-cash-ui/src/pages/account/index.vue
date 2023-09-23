@@ -296,6 +296,7 @@ onMounted(async () => {
 
     // get history
     const txs = await remoteApi.getTxs(appState.value.accountPk58!);
+    console.log('txs length: ', txs.length);
     let txHis: TxHis[] = [];
     txs.forEach(tx => {
         txHis.push(userTx2TxHis(tx));
