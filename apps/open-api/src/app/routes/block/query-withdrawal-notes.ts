@@ -51,9 +51,11 @@ export const handler: RequestHandler<{ noteCommitments: string[] }, { l1addr: st
             .innerJoin(L2Tx, 'tx', 'tx.id = wi.l2TxId')
             .innerJoinAndSelect(Block, 'block', 'block.id = tx.blockId')
             .where(`block.status = ${BlockStatus.CONFIRMED}`)
-            .andWhere(`wi.ownerPk = '${l1addr}'`)
             .andWhere(`wi.assetId = '${1}'`);
 
+        if (l1addr) {
+            queryBuilder.andWhere(`wi.ownerPk = '${l1addr}'`)
+        }
         if (noteCommitmentList?.length > 0) {
             queryBuilder.andWhere(`wi.outputNoteCommitment in (${noteCommitmentList.map(c => `'${c}'`).join(',')})`);
         }
@@ -104,8 +106,7 @@ const schema = {
             'l1addr': {
                 type: "string",
             }
-        },
-        required: ['l1addr']
+        }
     },
     body: {
         type: 'object',
