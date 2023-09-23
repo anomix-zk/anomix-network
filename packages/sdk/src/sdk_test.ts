@@ -87,9 +87,9 @@ class TestMinaProvider implements MinaProvider {
 async function run() {
   const sdk = await createAnomixSdk({
     entryContractAddress:
-      'B62qp2YfmJ9epZiTwrpJZ8jpZqTG3j7VdXF4LQ2ZKzWxqWCVXZ1KrMq',
+      'B62qoSzpsLDcsqEAvfjLhfGiu23LPcGavDAYYMT3zuZsXumj7C5NerL',
     vaultContractAddress:
-      'B62qjwEjuY8mcvfvQxdAU4gy95rgYa6gKKKR58RKTMJ3hEm3FAxb72o',
+      'B62qo8kkE1fVS7kJhAnHn94W4io9qxDDn7HWdC6jFBwzd3HDNqkkUaf',
     options: {
       nodeUrl: 'http://127.0.0.1:8099',
       minaEndpoint: 'https://berkeley.minascan.io/graphql',
@@ -227,18 +227,17 @@ async function test() {
 
   // console.log('json: ', json);
 
-  // let ac = await fetchAccount(
-  //   { publicKey: 'B62qncRVmQA8gWCaxc51AjHXGU4ZwTRgT5p6CWwUjDfgzfGFXsia9Pp' },
-  //   'https://berkeley.minascan.io/graphql'
-  // );
-  // console.log('ac: ', JSON.stringify(ac));
-  const m: Record<string, string> = {};
-  m['a'] = '1';
-  m['b'] = '2';
-  m['c'] = '3';
+  let ac = await fetchAccount(
+    { publicKey: 'B62qkT3U75QVgmWjgfpcgT9Yc3ni6frTprX6cP1KRjmvVoFf8Wz8L1b' },
+    'https://berkeley.minascan.io/graphql'
+  );
+  console.log('ac: ', JSON.stringify(ac));
+  // const m: Record<string, string> = {};
+  // m['a'] = '1';
+  // m['b'] = '2';
+  // m['c'] = '3';
 
-  console.log(JSON.stringify(m));
+  // console.log(JSON.stringify(m));
 }
 
-//await test();
 await run();
