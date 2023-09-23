@@ -102,7 +102,11 @@ const apiWrapper = {
     },
     getL1Account: async (l1address: string, tokenId?: string) => {
         const ac = await apiSdk.getL1Account(l1address, tokenId);
-        return JSON.parse(JSON.stringify(ac));
+        if (ac) {
+            return JSON.parse(JSON.stringify(ac));
+        }
+
+        return undefined;
     },
     checkTx: async (
         txId: string,

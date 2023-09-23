@@ -138,11 +138,6 @@ const claimLoading = ref<boolean>(false);
 const disabledClaim = ref<boolean>(false);
 const claimBtnText = ref('Claim');
 
-const disconnect = () => {
-  setConnectedWallet(null);
-  L1TokenBalance.value = null;
-};
-
 const toBack = () => router.back();
 const syncerListenerSetted = ref(false);
 
@@ -253,8 +248,12 @@ const connect = async () => {
   }
 };
 
-onMounted(async () => {
-  console.log('onMounted...');
+const disconnect = () => {
+  setConnectedWallet(null);
+  L1TokenBalance.value = null;
+};
+const loadClaimInfoByConnectedWallet = async () => {
+  console.log('loadClaimInfoByConnectedWallet...');
 
   if (appState.value.connectedWallet58 !== null) {
     const account = await remoteApi.getL1Account(appState.value.connectedWallet58!);
@@ -284,6 +283,12 @@ onMounted(async () => {
       withdrawAccountExists.value = false;
     }
   }
+};
+const walletListenerSetted = ref(false);
+onMounted(async () => {
+  console.log('onMounted...');
+
+  await loadClaimInfoByConnectedWallet();
 
   if (syncerListenerSetted.value === false) {
     listenSyncerChannel((e: SdkEvent) => {
@@ -293,6 +298,38 @@ onMounted(async () => {
     });
     syncerListenerSetted.value = true;
   }
+
+  if (!walletListenerSetted.value) {
+    if (window.mina) {
+      window.mina.on('accountsChanged', async (accounts: string[]) => {
+        console.log('claim - connected account change: ', accounts);
+        if (accounts.length === 0) {
+          message.error('Please connect your wallet', {
+            closable: true,
+            duration: 0
+          });
+          disconnect();
+        } else {
+          setConnectedWallet(accounts[0]);
+          await loadClaimInfoByConnectedWallet();
+        }
+
+      });
+
+      window.mina.on('chainChanged', (chainType: string) => {
+        console.log('claim - current chain: ', chainType);
+        if (chainType !== 'Berkeley') {
+          message.error('Please switch to Berkeley network', {
+            closable: true,
+            duration: 0
+          });
+        }
+      });
+    }
+
+    walletListenerSetted.value = true;
+  }
+
 });
 
 

@@ -146,10 +146,11 @@ const sendRegisterTx = async (tx: Tx) => {
         lastTx = null;
         setAlias(inputAlias.value);
         setAccountStatus(AccountStatus.REGISTERING);
-        closeLoadingMask(maskId);
-        message.success('Account registration tx send successful');
 
+        message.success('Account registration tx send successful');
         toAccountPage();
+        closeLoadingMask(maskId);
+
     } catch (err: any) {
         closeLoadingMask(maskId);
         console.error(err);

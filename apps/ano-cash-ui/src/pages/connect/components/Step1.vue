@@ -155,36 +155,6 @@ const inputPwdAgain = () => {
     }
 };
 
-
-onMounted(() => {
-    if (window.mina) {
-        window.mina.on('accountsChanged', (accounts: string[]) => {
-            console.log('connected account change: ', accounts);
-            if (accounts.length === 0) {
-                setConnectedWallet(null);
-                message.error('Please connect your wallet', {
-                    closable: true,
-                    duration: 0
-                });
-                router.push('/');
-            } else {
-                setConnectedWallet(accounts[0]);
-            }
-
-        });
-
-        window.mina.on('chainChanged', (chainType: string) => {
-            console.log('current chain: ', chainType);
-            if (chainType !== 'Berkeley') {
-                message.error('Please switch to Berkeley network', {
-                    closable: true,
-                    duration: 0
-                });
-            }
-        });
-    }
-});
-
 const disconnect = () => {
     setConnectedWallet(null);
     setAccountPk58(null);
@@ -194,6 +164,40 @@ const disconnect = () => {
     setAccountStatus(AccountStatus.UNREGISTERED);
     router.replace('/');
 };
+
+const walletListenerSetted = ref(false);
+onMounted(() => {
+    if (!walletListenerSetted.value) {
+        if (window.mina) {
+            window.mina.on('accountsChanged', (accounts: string[]) => {
+                console.log('step1.vue - connected account change: ', accounts);
+                if (accounts.length === 0) {
+                    message.error('Please connect your wallet', {
+                        closable: true,
+                        duration: 0
+                    });
+
+                    disconnect();
+                } else {
+                    setConnectedWallet(accounts[0]);
+                }
+
+            });
+
+            window.mina.on('chainChanged', (chainType: string) => {
+                console.log('step1.vue - current chain: ', chainType);
+                if (chainType !== 'Berkeley') {
+                    message.error('Please switch to Berkeley network', {
+                        closable: true,
+                        duration: 0
+                    });
+                }
+            });
+
+            walletListenerSetted.value = true;
+        }
+    }
+});
 
 const toRegisterAliasPage = () => {
     emit('nextStep', 2);
@@ -225,14 +229,14 @@ const addAnomixAccount = async () => {
             message.success('Account saved successfully');
 
             if (appState.value.accountStatus !== AccountStatus.UNREGISTERED) {
-                closeLoadingMask(maskId);
                 toAccountPage();
             } else {
                 setSigningPk1_58(signingKeypair1.value?.publicKey);
                 setSigningPk2_58(signingKeypair2.value?.publicKey);
-                closeLoadingMask(maskId);
                 toRegisterAliasPage();
             }
+
+            closeLoadingMask(maskId);
         }
     } catch (err: any) {
         closeLoadingMask(maskId);

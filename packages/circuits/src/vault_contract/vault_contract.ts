@@ -15,7 +15,7 @@ import {
   UInt64,
   Struct,
 } from 'o1js';
-import { MINA, USER_NULLIFIER_TREE_INIT_ROOT } from '../constants';
+import { USER_NULLIFIER_TREE_INIT_ROOT } from '../constants';
 import { AssetId, DUMMY_FIELD, NoteType } from '../models/constants';
 import {
   UserLowLeafWitnessData,
@@ -166,7 +166,7 @@ export class AnomixVaultContract extends SmartContract {
       deployUpdate.body.update.appState[0],
       USER_NULLIFIER_TREE_INIT_ROOT
     );
-    AccountUpdate.setValue(deployUpdate.body.update.appState[1], Field(0));
+    AccountUpdate.setValue(deployUpdate.body.update.appState[1], Field(1)); // null start index must be 1 because 0 is reserved for dummy leafData
     deployUpdate.requireSignature();
   }
 
@@ -193,7 +193,7 @@ export class AnomixVaultContract extends SmartContract {
     const withdrawNote = withdrawNoteWitnessData.withdrawNote;
     const userAddress = withdrawNote.ownerPk;
     userAddress.isEmpty().assertFalse('user address is empty');
-    const userMinaAu = AccountUpdate.createSigned(userAddress);
+    const userMinaAu = AccountUpdate.create(userAddress);
     userMinaAu.account.isNew.assertEquals(Bool(false));
 
     // check withdraw note
