@@ -341,7 +341,7 @@ export class NodeProvider implements AnomixNode {
     );
 
     const body = JSON.stringify({
-      aliashash: aliasHash,
+      aliasHash,
       acctViewKey: accountPk,
       includePending,
     });
