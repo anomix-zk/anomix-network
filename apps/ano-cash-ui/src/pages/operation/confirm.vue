@@ -32,7 +32,7 @@
           <div class="label">From</div>
           <div class="address-item">
             {{ params?.sender }} <span v-if="params!.senderAlias !== null" style="font-weight: 600;">({{
-              params!.senderAlias }})</span>
+              params!.senderAlias + '.ano' }})</span>
           </div>
         </div>
 
@@ -84,22 +84,17 @@ import { TxInfo } from '../../common/types';
 
 const router = useRouter();
 const message = useMessage();
-const { pageParams, clearPageParams, showLoadingMask, closeLoadingMask } = useStatus();
+const { pageParams, showLoadingMask, closeLoadingMask } = useStatus();
+const { convertToNanoMinaUnit } = useUtils();
+const currPageAction = ref(pageParams.value.action);
+const params = ref<TxInfo>(pageParams.value.params);
+
 const { SdkState } = useSdk();
 const remoteSdk = SdkState.remoteSdk!;
 const remoteApi = SdkState.remoteApi!;
-
-const currPageAction = ref(PageAction.SEND_TOKEN);
-const params = ref<TxInfo | null>(null);
 const maskId = 'confirm';
 
 const toBack = () => router.back();
-onMounted(() => {
-  console.log('confirm page mounted...');
-  currPageAction.value = pageParams.value.action!;
-  params.value = pageParams.value.params;
-  clearPageParams();
-});
 
 const sendTx = async () => {
   try {
@@ -112,8 +107,8 @@ const sendTx = async () => {
       receiverPk58: params.value!.receiver,
       receiverAccountRequiredBool: params.value!.receiverAlias !== null,
       anonToReceiver: params.value!.anonToReceiver,
-      amount: params.value!.amountOfMinaUnit,
-      txFeeAmount: params.value!.feeOfMinaUnit,
+      amount: convertToNanoMinaUnit(params.value!.amountOfMinaUnit)!.toString(),
+      txFeeAmount: convertToNanoMinaUnit(params.value!.feeOfMinaUnit)!.toString(),
       isWithdraw: currPageAction.value === PageAction.WITHDRAW_TOKEN,
     });
 

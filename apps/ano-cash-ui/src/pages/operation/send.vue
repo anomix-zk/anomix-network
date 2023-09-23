@@ -124,7 +124,7 @@ const remoteSyncer = SdkState.remoteSyncer!;
 const checkPositiveNumber = (x: number) => x > 0;
 const toBack = () => router.back();
 
-const currPageAction = ref(PageAction.SEND_TOKEN);
+const currPageAction = ref(pageParams.value.action);
 const balanceLoading = ref(false);
 const totalMinaBalance = computed(() => convertToMinaUnit(appState.value.totalNanoBalance));
 // const tokenInfo = ref<{ token: string; balance: string }>({
@@ -269,10 +269,10 @@ const toConfirm = async () => {
 
 
 onMounted(async () => {
-  console.log('onMounted...');
-  currPageAction.value = pageParams.value.action!;
-  console.log('currPageAction: ', currPageAction);
-  clearPageParams();
+  console.log('send onMounted...');
+  // currPageAction.value = pageParams.value.action!;
+  console.log('currPageAction: ', currPageAction.value);
+  // clearPageParams();
 
   balanceLoading.value = true;
   const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);

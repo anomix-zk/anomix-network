@@ -287,7 +287,7 @@ const deposit = async () => {
     });
     console.log('tx send success, txHash: ', txHash);
 
-    showLoadingMask({ id: maskId, text: 'Wait for transaction confirmed...', closable: false });
+    showLoadingMask({ id: maskId, text: `txHash: ${txHash}, Wait for transaction confirmed...`, closable: false });
     await remoteApi.checkTx(txHash);
     closeLoadingMask(maskId);
     message.success('Deposit success! You can view the deposit transaction just sent in auro wallet, Ano.Cash will be updated in a few minutes.', { duration: 0, closable: true });
