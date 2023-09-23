@@ -111,7 +111,7 @@ async function proofTrigger() {
                     });
                     logger.info('done.');
 
-                } else {
+                } else {// mainly for non-deposit block
                     // notify rollup_processor to start innnerRollup-proof-gen
                     const rollupTaskDto = {
                         taskType: RollupTaskType.ROLLUP_PROCESS,
