@@ -56,6 +56,7 @@ async function proofTrigger() {
 
         blockList!.forEach(async (block, indx) => {
             logger.info(`begin process block[${block.id}]`);
+            logger.inro(`block.triggerProofAt0: ${block.triggerProofAt?.toString()}`);
 
             // to avoid double computation, should exclude those blocks that triggered previously but not completed
             const timeRange = block.triggerProofAt ? (new Date().getTime() - block.triggerProofAt.getTime()) : 0;
@@ -86,7 +87,7 @@ async function proofTrigger() {
             } else if (block.status == BlockStatus.PENDING) {
                 logger.info(`BlockStatus: PENDING`);
 
-                if (0 < timeRange && timeRange < periodRange * 6) {
+                if (0 < timeRange && timeRange < periodRange * 4) {
                     logger.info(`this block was triggered previously, might not completed, skip it.`);
                     return;
                 }
@@ -130,6 +131,7 @@ async function proofTrigger() {
             }
 
             block.triggerProofAt = new Date();// update
+            logger.inro(`block.triggerProofAt1: ${block.triggerProofAt?.toString()}`);
         });
 
         await queryRunner.manager.save(blockList);
