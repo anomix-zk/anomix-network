@@ -41,27 +41,50 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
         }
     }
 
-    const blockTxListMap1 = new Map<number, AssetsInBlockDto>();
-    const blockNumList1: number[] = [];
-    blockNumList.forEach(blockNum => {
-        if (!cachedBlockTxListMap.get(blockNum)) {
-            blockTxListMap1.set(blockNum, ({
-                blockHeight: blockNum,
-                txList: [],
-                createdTs: 0,
-                finalizedTs: 0
-            } as unknown) as AssetsInBlockDto);
-
-            blockNumList1.push(blockNum);
-
-        } else {
-            blockTxListMap1.set(blockNum, cachedBlockTxListMap.get(blockNum)!);
-        }
-    });
-
     try {
+        // query latest block
+        const connection = getConnection();
+        const blockRepository = await connection.getRepository(Block);
+        const blockEntity = (await blockRepository.find({
+            select: [
+                'id'
+                /*,
+                'blockHash',
+                'l1TxHash',
+                'status',
+                'createdAt',
+                'finalizedAt'
+                */
+            ],
+            order: {
+                id: 'DESC'
+            },
+            take: 1
+        }))[0];
+
+        const blockTxListMap1 = new Map<number, AssetsInBlockDto>();
+        const blockNumList1: number[] = [];
+        blockNumList.forEach(blockNum => {
+            if (blockNum > blockEntity.id) {// rid the ones higher than the latest block height.
+                return;
+            }
+
+            if (!cachedBlockTxListMap.get(blockNum)) {
+                blockTxListMap1.set(blockNum, ({
+                    blockHeight: blockNum,
+                    txList: [],
+                    createdTs: 0,
+                    finalizedTs: 0
+                } as unknown) as AssetsInBlockDto);
+
+                blockNumList1.push(blockNum);
+
+            } else {
+                blockTxListMap1.set(blockNum, cachedBlockTxListMap.get(blockNum)!);
+            }
+        });
+
         if (blockNumList1.length > 0) {
-            const connection = getConnection();
             const txRepository = connection.getRepository(L2Tx)
             // then query confirmed tx collection
             await txRepository.find({
@@ -103,7 +126,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
 
             });
 
-            const blockEntities = await connection.getRepository(Block).find({
+            const blockEntities = await blockRepository.find({
                 select: [
                     'id',
                     'blockHash',
