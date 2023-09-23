@@ -359,10 +359,14 @@ export class NodeProvider implements AnomixNode {
   }
 
   public async getClaimableNotes(
-    l1address: string,
-    commitments: string[]
+    commitments: string[],
+    l1address?: string
   ): Promise<WithdrawInfoDto[]> {
-    const url = `${this.host}/tx/withdraw/${l1address}`;
+    let url = `${this.host}/tx/withdraw`;
+    if (l1address) {
+      url = url + `/${l1address}`;
+    }
+
     this.log.info(
       `Getting claimable notes at ${url}, l1addr: ${l1address}, commitments: ${commitments}`
     );

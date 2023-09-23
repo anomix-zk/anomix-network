@@ -45,7 +45,7 @@ export interface AnomixNode {
     withdrawNoteCommitment: string
   ): Promise<WithdrawalWitnessDto>;
   getClaimableNotes(
-    l1address: string,
-    commitments: string[]
+    commitments: string[],
+    l1address?: string
   ): Promise<WithdrawInfoDto[]>;
 }

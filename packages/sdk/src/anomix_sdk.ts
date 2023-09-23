@@ -489,8 +489,8 @@ export class AnomixSdk {
     return await this.node.getTxFee();
   }
 
-  public async getClaimableNotes(l1address: string, commitments: string[]) {
-    return await this.node.getClaimableNotes(l1address, commitments);
+  public async getClaimableNotes(commitments: string[], l1address?: string) {
+    return await this.node.getClaimableNotes(commitments, l1address);
   }
 
   public async localAccountExists(accountPk: string) {
