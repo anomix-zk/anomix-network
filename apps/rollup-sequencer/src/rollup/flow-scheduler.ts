@@ -609,16 +609,18 @@ export class FlowScheduler {
 
         const map = new Map<string, MemPlL2Tx>();
         mpTxList.forEach(tx => {
-            if (tx.actionType == ActionType.DEPOSIT.toString()) {// exclude Account???
+            if (tx.actionType == ActionType.DEPOSIT.toString()) {// CAN NOT exclude Account, because there might be at least two users registerring the same alias.
                 validMpL2TxSet.add(tx);
                 return;
             }
             const tx1 = map.get(tx.nullifier1);
-            if ((Number((tx1?.txFee) ?? '0')) < Number(tx.txFee)) {
+            const tx1Fee = Number((tx1?.txFee) ?? '-1');
+            if (tx1Fee < Number(tx.txFee)) {
                 map.set(tx.nullifier1, tx);
             }
             const tx2 = map.get(tx.nullifier2);
-            if ((Number((tx2?.txFee) ?? '0')) < Number(tx.txFee)) {
+            const tx2Fee = Number((tx2?.txFee) ?? '-1');
+            if (tx2Fee < Number(tx.txFee)) {
                 map.set(tx.nullifier2, tx);
             }
         });
