@@ -54,7 +54,9 @@ async function traceTasks() {
 
         const taskList = await queryRunner.manager.find(Task, { where: { status: TaskStatus.PENDING } }) ?? [];
 
-        taskList.forEach(async task => {
+        for (let index = 0; index < taskList.length; index++) {
+            const task = taskList[index];
+
             logger.info(`task info: ${task.id}:${task.taskType}:${task.targetId}`);
 
             // check if txHash is confirmed or failed
@@ -84,7 +86,7 @@ async function traceTasks() {
             if (rs.data.zkapp === null) { // ie. l1tx is not included into a l1Block on MINA chain
                 logger.info(`cooresponding l1tx is not included into a l1Block on MINA chain`);
 
-                return;
+                continue;
             }
 
             try {
@@ -201,7 +203,9 @@ async function traceTasks() {
             } finally {
                 await queryRunner.release();
             }
-        });
+        }
+
+
     } catch (error) {
         logger.error(error);
     }
