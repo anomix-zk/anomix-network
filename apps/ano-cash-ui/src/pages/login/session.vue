@@ -44,7 +44,7 @@ import { SelectOption, useMessage } from 'naive-ui';
 import { AccountStatus } from '../../common/constants';
 
 const router = useRouter();
-const { SdkState, addAccount } = useSdk();
+const { SdkState, loginAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const { omitAddress } = useUtils();
 const message = useMessage();
@@ -66,7 +66,7 @@ onMounted(async () => {
     localAccounts.forEach((account) => {
         const address = omitAddress(account.accountPk)!;
         acs.push({
-            label: account.alias ? account.alias + '(' + address + ')' : address,
+            label: account.alias ? account.alias + ' (' + address + ')' : address,
             value: account.accountPk,
             style: {
                 'height': '56px',
@@ -128,31 +128,11 @@ const login = async () => {
             message.error('Password wrong');
             return;
         }
-        const signingPubKeys = await remoteApi.getSigningKeys(accountPk58);
-        if (signingPubKeys.length === 0) {
-            message.error('No signing key found');
-            return;
-        }
-        let signingPrivateKeys: (string | undefined)[] = [];
-        for (let i = 0; i < signingPubKeys.length; i++) {
-            const signingPk = (signingPubKeys[i] as SigningKey).signingPk;
-            const signingPrivateKey = await remoteApi.getSercetKey(signingPk, pwd.value);
-            if (!signingPrivateKey) {
-                message.error('Password wrong');
-                return;
-            }
-            signingPrivateKeys.push(signingPrivateKey);
-        }
-
-        if (signingPrivateKeys.length < 2) {
-            signingPrivateKeys.push(undefined);
-        }
 
         // get alias
         const alias = await remoteApi.getAliasByAccountPublicKey(accountPk58, accountPrivateKey58);
 
-        const accountPk = await addAccount(accountPrivateKey58, pwd.value, signingPrivateKeys[0],
-            signingPrivateKeys[1], alias);
+        const accountPk = await loginAccount(accountPk58, pwd.value, alias);
         if (accountPk) {
             setAccountPk58(accountPk);
             if (alias) {

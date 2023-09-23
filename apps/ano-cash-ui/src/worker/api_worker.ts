@@ -162,10 +162,12 @@ const apiWrapper = {
     getTxFees: async () => {
         return await apiSdk.getTxFees();
     },
-    derivePublicKey: async (privateKey58: string) => {
-        const { PrivateKey } = await import("o1js");
-        return PrivateKey.fromBase58(privateKey58).toPublicKey().toBase58();
-    },
+    // derivePublicKeys: async (privateKeys: string[]) => {
+    //     const { PrivateKey } = await import("o1js");
+    //     return privateKeys.map((priKey) =>
+    //         PrivateKey.fromBase58(priKey).toPublicKey().toBase58()
+    //     );
+    // },
     getTxs: async (accountPk: string) => {
         let txs = await apiSdk.getUserTxs(accountPk);
         let pendingTxs = await apiSdk.getPendingUserTxs(accountPk);

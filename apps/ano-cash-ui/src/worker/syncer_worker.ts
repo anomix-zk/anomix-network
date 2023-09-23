@@ -35,26 +35,25 @@ const syncerWrapper = {
         signingPrivateKey2_58: string | undefined,
         alias: string | undefined
     ) => {
-        return await tryFunc(async () => {
-            const { PrivateKey } = await import("o1js");
-            const accountPrivateKey =
-                PrivateKey.fromBase58(accountPrivateKey58);
-            const signingPrivateKey1 = signingPrivateKey1_58
-                ? PrivateKey.fromBase58(signingPrivateKey1_58)
-                : undefined;
-            const signingPrivateKey2 = signingPrivateKey2_58
-                ? PrivateKey.fromBase58(signingPrivateKey2_58)
-                : undefined;
+        const { PrivateKey } = await import("o1js");
+        const accountPrivateKey = PrivateKey.fromBase58(accountPrivateKey58);
+        const signingPrivateKey1 = signingPrivateKey1_58
+            ? PrivateKey.fromBase58(signingPrivateKey1_58)
+            : undefined;
+        const signingPrivateKey2 = signingPrivateKey2_58
+            ? PrivateKey.fromBase58(signingPrivateKey2_58)
+            : undefined;
 
-            const accountPk = await syncerSdk.addAccount(
-                accountPrivateKey,
-                pwd,
-                signingPrivateKey1,
-                signingPrivateKey2,
-                alias
-            );
-            return accountPk.toBase58();
-        });
+        return await syncerSdk.addAccount(
+            accountPrivateKey,
+            pwd,
+            signingPrivateKey1,
+            signingPrivateKey2,
+            alias
+        );
+    },
+    loginAccount: async (accountPk: string, pwd: string, alias?: string) => {
+        return await syncerSdk.loginAccount(accountPk, pwd, alias);
     },
 
     lockKeyStore: () => {

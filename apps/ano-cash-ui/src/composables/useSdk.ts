@@ -93,29 +93,40 @@ export default function () {
         signingPrivateKey2_58: string | undefined,
         alias: string | undefined
     ) => {
-        const accountPk = await SdkState.remoteSyncer!.addAccount(
-            accountPrivateKey58,
-            pwd,
-            signingPrivateKey1_58,
-            signingPrivateKey2_58,
-            alias
-        );
+        const { accountPk, signingPubKey1, signingPubKey2 } =
+            await SdkState.remoteSyncer!.addAccount(
+                accountPrivateKey58,
+                pwd,
+                signingPrivateKey1_58,
+                signingPrivateKey2_58,
+                alias
+            );
         console.log("useSdk-addAccount: ", accountPk);
 
         const cachedPubKeys: string[] = [accountPk];
-        if (signingPrivateKey1_58) {
-            const signingPk1 = await SdkState.remoteApi!.derivePublicKey(
-                signingPrivateKey1_58
-            );
-            cachedPubKeys.push(signingPk1);
+        if (signingPubKey1) {
+            cachedPubKeys.push(signingPubKey1);
         }
-        if (signingPrivateKey2_58) {
-            const signingPk2 = await SdkState.remoteApi!.derivePublicKey(
-                signingPrivateKey2_58
-            );
-            cachedPubKeys.push(signingPk2);
+        if (signingPubKey2) {
+            cachedPubKeys.push(signingPubKey2);
         }
         await SdkState.remoteSdk!.unlockKeyStore(cachedPubKeys, pwd);
+
+        return accountPk;
+    };
+
+    const loginAccount = async (
+        accountPk: string,
+        pwd: string,
+        alias?: string
+    ) => {
+        const { pubKeys } = await SdkState.remoteSyncer!.loginAccount(
+            accountPk,
+            pwd,
+            alias
+        );
+
+        await SdkState.remoteSdk!.unlockKeyStore(pubKeys, pwd);
 
         return accountPk;
     };
@@ -159,5 +170,6 @@ export default function () {
         addAccount,
         exitAccount,
         compileCircuits,
+        loginAccount,
     };
 }
