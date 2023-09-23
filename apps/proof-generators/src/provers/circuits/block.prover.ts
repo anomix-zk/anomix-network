@@ -3,12 +3,16 @@ import { BlockProveInput, BlockProveOutput } from '@anomix/circuits';
 import { checkMembershipAndAssert } from '@anomix/circuits';
 import { DUMMY_FIELD } from '@anomix/circuits';
 import { RollupState, RollupStateTransition } from '@anomix/circuits';
+import { Experimental, Provable } from 'o1js';
 
 export const prove = (input: BlockProveInput, rollupProof: InnerRollupProof) => {
     rollupProof.verify();
 
+    Provable.log('input: ', input);
     const rollupOutput = rollupProof.publicOutput;
     const txFeeReceiverNote = input.txFeeReceiverNote;
+
+    Provable.log('txFeeReceiverNote', txFeeReceiverNote);
     txFeeReceiverNote.ownerPk
         .isEmpty()
         .assertFalse('txFeeReceiver should not be empty');
@@ -32,6 +36,7 @@ export const prove = (input: BlockProveInput, rollupProof: InnerRollupProof) => 
         txFeeReceiverNote.commitment(),
         input.dataStartIndex
     );
+    Provable.log('newDataRoot', newDataRoot);
 
     // update root root tree
     // check index and witness of old data roots root
@@ -48,6 +53,7 @@ export const prove = (input: BlockProveInput, rollupProof: InnerRollupProof) => 
         newDataRoot,
         input.rootStartIndex
     );
+    Provable.log('newDataRootsRoot', newDataRootsRoot);
 
     let output = new BlockProveOutput({
         blockHash: DUMMY_FIELD,

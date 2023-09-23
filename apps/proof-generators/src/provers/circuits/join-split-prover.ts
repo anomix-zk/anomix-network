@@ -29,6 +29,8 @@ import {
 } from '@anomix/circuits';
 
 export const deposit = (depositInput: JoinSplitDepositInput) => {
+    Provable.log('depositInput: ', depositInput);
+
     const actionType = ActionType.DEPOSIT;
     const nullifier1 = DUMMY_FIELD;
     const nullifier2 = DUMMY_FIELD;

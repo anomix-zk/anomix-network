@@ -23,12 +23,10 @@ class TempParams extends Struct({
 }) { }
 // for test before circuit
 export const commitActionBatch = (state: DepositRollupState, actionBatch: DepositActionBatch) => {
+
     let currDepositTreeRoot = state.depositRoot;
     let currIndex = state.currentIndex;
     let currActionsHash = state.currentActionsHash;
-
-    Provable.log('0currDepositTreeRoot: ', currDepositTreeRoot);
-    Provable.log('0currActionsHash: ', currActionsHash);
 
     // Process each action in the batch
     for (let i = 0, len = DepositActionBatch.batchSize; i < len; i++) {
@@ -76,14 +74,8 @@ export const commitActionBatch = (state: DepositRollupState, actionBatch: Deposi
         currDepositTreeRoot = temp.depositRoot;
         currIndex = temp.currentIndex;
 
-        Provable.log('   currDepositTreeRoot: ', currDepositTreeRoot);
-        Provable.log('   currActionsHash: ', currActionsHash);
-
-        Provable.log('   currIndex: ', currIndex);
+        Provable.log('currIndex: ', currIndex);
     }
-
-    Provable.log('1currDepositTreeRoot: ', currDepositTreeRoot);
-    Provable.log('1currActionsHash: ', currActionsHash);
 
     const x = new DepositRollupStateTransition({
         source: state,
@@ -93,7 +85,6 @@ export const commitActionBatch = (state: DepositRollupState, actionBatch: Deposi
             currentActionsHash: currActionsHash,
         }),
     });
-
     Provable.log('x: ', x);
 
     return x;
