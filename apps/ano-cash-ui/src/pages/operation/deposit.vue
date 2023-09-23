@@ -140,6 +140,7 @@ const loadConnectedWalletStatus = async () => {
 
 const walletListenerSetted = ref(false);
 
+const route = useRoute();
 onMounted(async () => {
   console.log('deposit page onMounted...');
   await loadConnectedWalletStatus();
@@ -148,15 +149,17 @@ onMounted(async () => {
     if (window.mina) {
       window.mina.on('accountsChanged', async (accounts: string[]) => {
         console.log('deposit.vue - connected account change: ', accounts);
-        if (accounts.length === 0) {
-          message.error('Please connect your wallet', {
-            closable: true,
-            duration: 0
-          });
-          disconnect();
-        } else {
-          setConnectedWallet(accounts[0]);
-          await loadConnectedWalletStatus();
+        if (route.path === '/operation/deposit') {
+          if (accounts.length === 0) {
+            message.error('Please connect your wallet', {
+              closable: true,
+              duration: 0
+            });
+            disconnect();
+          } else {
+            setConnectedWallet(accounts[0]);
+            await loadConnectedWalletStatus();
+          }
         }
 
       });

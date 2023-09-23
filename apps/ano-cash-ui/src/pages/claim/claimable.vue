@@ -104,6 +104,7 @@ const loadClaimableNotesByConnectedWallet = async () => {
 };
 const walletListenerSetted = ref(false);
 
+const route = useRoute();
 onMounted(async () => {
   console.log('claimable.vue - onMounted: ', appState.value.connectedWallet58);
   await loadClaimableNotesByConnectedWallet();
@@ -112,17 +113,18 @@ onMounted(async () => {
     if (window.mina) {
       window.mina.on('accountsChanged', async (accounts: string[]) => {
         console.log('claimable.vue - connected account change: ', accounts);
-        if (accounts.length === 0) {
-          message.error('Please connect your wallet', {
-            closable: true,
-            duration: 0
-          });
-          disconnect();
-        } else {
-          setConnectedWallet(accounts[0]);
-          await loadClaimableNotesByConnectedWallet();
+        if (route.path === '/claim/claimable') {
+          if (accounts.length === 0) {
+            message.error('Please connect your wallet', {
+              closable: true,
+              duration: 0
+            });
+            disconnect();
+          } else {
+            setConnectedWallet(accounts[0]);
+            await loadClaimableNotesByConnectedWallet();
+          }
         }
-
       });
 
       window.mina.on('chainChanged', (chainType: string) => {

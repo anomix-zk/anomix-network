@@ -168,8 +168,10 @@ const disconnect = () => {
 const walletListenerSetted = ref(false);
 let copyFunc: (text: string) => void;
 
+const route = useRoute();
 onMounted(() => {
     console.log('Step1 onMounted...');
+    console.log('current path: ', route.path);
     const { copyText } = useClientUtils();
     copyFunc = copyText;
 
@@ -177,17 +179,18 @@ onMounted(() => {
         if (window.mina) {
             window.mina.on('accountsChanged', (accounts: string[]) => {
                 console.log('step1.vue - connected account change: ', accounts);
-                if (accounts.length === 0) {
-                    message.error('Please connect your wallet', {
-                        closable: true,
-                        duration: 0
-                    });
+                if (route.path === '/connect/step-1') {
+                    if (accounts.length === 0) {
+                        message.error('Please connect your wallet', {
+                            closable: true,
+                            duration: 0
+                        });
 
-                    disconnect();
-                } else {
-                    setConnectedWallet(accounts[0]);
+                        disconnect();
+                    } else {
+                        setConnectedWallet(accounts[0]);
+                    }
                 }
-
             });
 
             window.mina.on('chainChanged', (chainType: string) => {

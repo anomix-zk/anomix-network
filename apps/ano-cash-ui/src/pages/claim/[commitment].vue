@@ -281,6 +281,7 @@ const disconnect = () => {
 };
 
 const walletListenerSetted = ref(false);
+
 onMounted(async () => {
   console.log('onMounted...');
 
@@ -311,23 +312,25 @@ onMounted(async () => {
     if (window.mina) {
       window.mina.on('accountsChanged', (accounts: string[]) => {
         console.log('claim - connected account change: ', accounts);
-        if (accounts.length === 0) {
-          message.error('Please connect your wallet', {
-            closable: true,
-            duration: 0
-          });
-          disconnect();
-        } else {
-          if (accounts[0] !== withdrawNote.value?.ownerAddress) {
-            message.error('The owner of the claim note is inconsistent with the current wallet. Please switch to the correct wallet', {
+        if (route.path === `/claim/${commitment}`) {
+          if (accounts.length === 0) {
+            message.error('Please connect your wallet', {
               closable: true,
               duration: 0
             });
+            disconnect();
+          } else {
+            if (accounts[0] !== withdrawNote.value?.ownerAddress) {
+              message.error('The owner of the claim note is inconsistent with the current wallet. Please switch to the correct wallet', {
+                closable: true,
+                duration: 0
+              });
 
-            return;
+              return;
+            }
+            setConnectedWallet(accounts[0]);
+
           }
-          setConnectedWallet(accounts[0]);
-
         }
 
       });
