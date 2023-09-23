@@ -1,26 +1,30 @@
 
 import { AccountUpdate, Field, PublicKey, Mina, PrivateKey, Reducer } from 'o1js';
 
-let action0 = Field('8131649398404913911588424254210624003184891119930013880087281768588225077399');
-let action1 = Field('1598781607848580545733807892716068065264754150583232160328234912681118953702');
-let action2 = Field('25943150102794205073136705238959680901769470238142848160788334504696460857371');
+console.log('1:');
+let action0 = Field('20986126668493993398462131840061171016507078919388209941587242801436282410610');
+let action1 = Field('20520108244406485857950123757550581788960680908630507722340491031217391541989');
+let action2 = Field('9955960142577905062544990411100323122468140434235100136781511053578923994435');
+calc();
 
-let currentActionsHashX = Reducer.initialActionState;
+function calc() {
+    let currentActionsHashX = Reducer.initialActionState;
 
-currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
-    currentActionsHashX,// 当前已累积值
-    AccountUpdate.Actions.hash([action0.toFields()]) // 
-);
-console.log('currentActionsHashX:' + currentActionsHashX.toString());
+    currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
+        currentActionsHashX,
+        AccountUpdate.Actions.hash([action0.toFields()]) // 
+    );
+    console.log('currentActionsHashX:' + currentActionsHashX.toString());
 
-currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
-    currentActionsHashX,// 当前已累积值
-    AccountUpdate.Actions.hash([action1.toFields()]) // 
-);
-console.log('currentActionsHashX:' + currentActionsHashX.toString());
+    currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
+        currentActionsHashX,
+        AccountUpdate.Actions.hash([action1.toFields()]) // 
+    );
+    console.log('currentActionsHashX:' + currentActionsHashX.toString());
 
-currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
-    currentActionsHashX,// 当前已累积值
-    AccountUpdate.Actions.hash([action2.toFields()]) // 
-);
-console.log('currentActionsHashX:' + currentActionsHashX.toString());
+    currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
+        currentActionsHashX,
+        AccountUpdate.Actions.hash([action2.toFields()]) // 
+    );
+    console.log('currentActionsHashX:' + currentActionsHashX.toString());
+}
