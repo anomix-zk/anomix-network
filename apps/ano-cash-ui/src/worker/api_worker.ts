@@ -173,7 +173,9 @@ const apiWrapper = {
     //     );
     // },
     getTxs: async (accountPk: string) => {
+        console.log("api_worker getTxs: " + accountPk);
         let txs = await apiSdk.getUserTxs(accountPk);
+        console.log("userTxs length: ", txs.length);
         let pendingTxs = await apiSdk.getPendingUserTxs(accountPk);
         return pendingTxs.concat(txs);
     },
