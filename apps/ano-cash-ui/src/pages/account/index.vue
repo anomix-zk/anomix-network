@@ -129,6 +129,15 @@
                                         <span v-if="item.isSender">{{ omitAddress(item.receiver) }}</span>
                                         <span v-else>{{ omitAddress(item.sender) }}</span>
 
+                                        <div v-if="item.actionType === '1'" class="tx-label">
+                                            deposit
+                                        </div>
+                                        <div v-if="item.actionType === '2'" class="tx-label">
+                                            send
+                                        </div>
+                                        <div v-if="item.actionType === '3' && item.finalizedTs === 0" class="tx-label">
+                                            withdraw
+                                        </div>
                                         <div v-if="item.actionType === '3' && item.finalizedTs !== 0" class="tx-label">
                                             claimable
                                         </div>
