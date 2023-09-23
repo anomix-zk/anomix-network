@@ -28,30 +28,38 @@ export const handler: RequestHandler<ReqBody, null> = async function (
     req,
     res
 ): Promise<BaseResponse<boolean>> {
-    const { aliasHash, acctViewKey } = req.body
+    const { aliasHash, acctViewKey, includePending } = req.body
 
     const connection = getConnection();
     const accountRepository = connection.getRepository(Account)
     try {
         let code = 1;
         let data = false;
-        let msg = '';
+        let msg = 'account key is not aligned with alias!';
 
         const account = await accountRepository.findOne({ where: { aliasHash } });
 
         if (account) {
             if (account.acctPk == acctViewKey) {
                 const mpL2TxRepo = connection.getRepository(MemPlL2Tx);
-                const status = (await mpL2TxRepo.findOne(account.l2TxId))!.status;
-                if (status == L2TxStatus.FAILED) {
-                    code = 1;// not registered!
-                    data = false;
+                const mpL2tx = await mpL2TxRepo.findOne(account.l2TxId);
+                if (mpL2tx) {
+                    const status = mpL2tx.status;
+                    if (status == L2TxStatus.FAILED) {
+                        code = 1;// not registered!
+                        data = false;
+                        msg = 'last register l2tx is failed!'
+                    } else if (includePending) {
+                        code = 0;
+                        data = true;
+                        if (status == L2TxStatus.PENDING) {
+                            msg = 'last register l2tx is pending.';
+                        }
+                    }
                 } else {
                     code = 0;
                     data = true;
-                    if (status == L2TxStatus.PENDING) {
-                        msg = 'pending';
-                    }
+                    msg = 'account key is aligned with alias!';
                 }
             }
         }
@@ -59,7 +67,7 @@ export const handler: RequestHandler<ReqBody, null> = async function (
         return {
             code,
             data,
-            msg: ''
+            msg
         };
 
     } catch (err) {
@@ -75,7 +83,7 @@ const schema = {
     body: {
         type: "object",
         properties: {
-            aliashash: {
+            aliasHash: {
                 type: "string",
             },
             acctViewKey: {
