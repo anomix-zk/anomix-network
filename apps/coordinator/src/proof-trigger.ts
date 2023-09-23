@@ -56,6 +56,7 @@ async function proofTrigger() {
 
         blockList!.forEach(async (block, indx) => {
             logger.info(`begin process block[${block.id}]`);
+            logger.info(`block.triggerProofAt0: ${block.triggerProofAt?.toString()}`);
 
             // to avoid double computation, should exclude those blocks that triggered previously but not completed
             const timeRange = block.triggerProofAt ? (new Date().getTime() - block.triggerProofAt.getTime()) : 0;
@@ -110,7 +111,7 @@ async function proofTrigger() {
                     });
                     logger.info('done.');
 
-                } else {
+                } else {// mainly for non-deposit block
                     // notify rollup_processor to start innnerRollup-proof-gen
                     const rollupTaskDto = {
                         taskType: RollupTaskType.ROLLUP_PROCESS,
@@ -130,6 +131,7 @@ async function proofTrigger() {
             }
 
             block.triggerProofAt = new Date();// update
+            logger.info(`block.triggerProofAt1: ${block.triggerProofAt?.toString()}`);
         });
 
         await queryRunner.manager.save(blockList);
