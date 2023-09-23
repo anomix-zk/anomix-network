@@ -209,6 +209,11 @@ export class ProofScheduler {
         let block: Block = undefined as any;
         try {
             block = (await queryRunner.manager.findOne(Block, { where: { id: blockId } }))!;
+            if (block.status == BlockStatus.CONFIRMED) {
+                logger.info(`duplicated proof result, due to block.status == BlockStatus.CONFIRMED.`);
+                logger.info(`this process end.`);
+                return;
+            }
 
             block.status = BlockStatus.PROVED;
             await queryRunner.manager.save(block);
