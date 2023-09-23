@@ -6,10 +6,12 @@ import { getLogger } from "./lib/logUtils";
 import { initORM } from "./lib/orm";
 import { parentPort } from "worker_threads";
 
-(process.send as any)({// when it's a primary process, process.send == undefined. 
-    type: 'status',
-    data: 'online'
-});
+if (process.send) {
+    (process.send as any)({// when it's a primary process, process.send == undefined. 
+        type: 'status',
+        data: 'online'
+    });
+}
 parentPort?.postMessage({// when it's not a subThread, parentPort == null. 
     type: 'status',
     data: 'online'
@@ -20,10 +22,13 @@ logger.info('hi, I am proof-trigger!');
 
 await initORM();
 
-(process.send as any)({// if it's a subProcess
-    type: 'status',
-    data: 'isReady'
-});
+if (process.send) {
+    (process.send as any)({// if it's a subProcess
+        type: 'status',
+        data: 'isReady'
+    });
+}
+
 parentPort?.postMessage({// if it's a subThread
     type: 'status',
     data: 'isReady'
@@ -54,7 +59,9 @@ async function proofTrigger() {
             return;
         }
 
-        blockList!.forEach(async (block, indx) => {
+        for (let indx = 0; indx < blockList.length; indx++) {
+            const block = blockList[indx];
+
             logger.info(`begin process block[${block.id}]`);
             logger.info(`block.triggerProofAt0: ${block.triggerProofAt?.toString()}`);
 
@@ -66,7 +73,7 @@ async function proofTrigger() {
 
                 if (0 < timeRange && timeRange < periodRange * 3) {
                     logger.info(`this block was triggered previously, might not completed, skip it.`);
-                    return;
+                    continue;
                 }
 
                 const rollupTaskDto = {
@@ -89,7 +96,7 @@ async function proofTrigger() {
 
                 if (0 < timeRange && timeRange < periodRange * 4) {
                     logger.info(`this block was triggered previously, might not completed, skip it.`);
-                    return;
+                    continue;
                 }
 
                 // ======== to here, means this block was created after last triggger-round or its proving journey was interrupted unexpectedly. ========
@@ -133,7 +140,8 @@ async function proofTrigger() {
             block.triggerProofAt = new Date();// update
             await queryRunner.manager.save(block);
             logger.info(`block.triggerProofAt1: ${block.triggerProofAt?.toString()}`);
-        });
+        }
+
 
         await queryRunner.commitTransaction();
 
