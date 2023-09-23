@@ -140,6 +140,7 @@ const loadConnectedWalletStatus = async () => {
 
 const walletListenerSetted = ref(false);
 
+const route = useRoute();
 onMounted(async () => {
   console.log('deposit page onMounted...');
   await loadConnectedWalletStatus();
@@ -148,15 +149,17 @@ onMounted(async () => {
     if (window.mina) {
       window.mina.on('accountsChanged', async (accounts: string[]) => {
         console.log('deposit.vue - connected account change: ', accounts);
-        if (accounts.length === 0) {
-          message.error('Please connect your wallet', {
-            closable: true,
-            duration: 0
-          });
-          disconnect();
-        } else {
-          setConnectedWallet(accounts[0]);
-          await loadConnectedWalletStatus();
+        if (route.path === '/operation/deposit') {
+          if (accounts.length === 0) {
+            message.error('Please connect your wallet', {
+              closable: true,
+              duration: 0
+            });
+            disconnect();
+          } else {
+            setConnectedWallet(accounts[0]);
+            await loadConnectedWalletStatus();
+          }
         }
 
       });
@@ -287,7 +290,7 @@ const deposit = async () => {
     });
     console.log('tx send success, txHash: ', txHash);
 
-    showLoadingMask({ id: maskId, text: 'Wait for transaction confirmed...', closable: false });
+    showLoadingMask({ id: maskId, text: `txHash: ${txHash}, Wait for transaction confirmed...`, closable: false });
     await remoteApi.checkTx(txHash);
     closeLoadingMask(maskId);
     message.success('Deposit success! You can view the deposit transaction just sent in auro wallet, Ano.Cash will be updated in a few minutes.', { duration: 0, closable: true });

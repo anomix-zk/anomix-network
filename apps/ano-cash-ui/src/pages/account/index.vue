@@ -153,7 +153,7 @@
                                             </span>
                                         </template>
 
-                                        <div v-else>Pending</div>
+                                        <div v-else style="color:#FFAC1C">Pending</div>
                                     </div>
                                 </div>
 
@@ -162,11 +162,11 @@
                             <div class="tx-right">
                                 <div class="balance">
                                     <template v-if="item.actionType === '1' || item.actionType === '3'">
-                                        <template v-if="item.isSender">-</template>{{
+                                        <template v-if="item.isSender">-</template><template v-else>+</template>{{
                                             convertToMinaUnit(item.publicValue) }} MINA
                                     </template>
                                     <template v-else>
-                                        <template v-if="item.isSender">-</template>{{
+                                        <template v-if="item.isSender">-</template><template v-else>+</template>{{
                                             convertToMinaUnit(item.privateValue) }} MINA
                                     </template>
 

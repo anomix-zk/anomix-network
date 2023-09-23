@@ -20,28 +20,28 @@
 
         <div v-if="accountPubKey !== null">
             <div class="label">Anomix Account</div>
-            <div class="item">
+            <div class="item" @click="copyContent(appState.accountPk58!)">
                 <span style="color:black; padding-left: 10px; font-size: 16px;">{{ accountPubKey }}</span>
             </div>
         </div>
 
         <div v-if="appState.alias !== null">
             <div class="label">Registered Alias</div>
-            <div class="item">
+            <div class="item" @click="copyContent(appState.alias)">
                 <span style="color:black; padding-left: 10px; font-size: 16px;">{{ appState.alias }}</span>
             </div>
         </div>
 
         <div v-if="signingPubKey1 !== null">
             <div class="label">Signing PublicKey 1</div>
-            <div class="item">
+            <div class="item" @click="copyContent(signingKeypair1!.publicKey)">
                 <span style="color:black; padding-left: 10px; font-size: 16px;">{{ signingPubKey1 }}</span>
             </div>
         </div>
 
         <div v-if="signingPubKey2 !== null">
             <div class="label">Signing PublicKey 2</div>
-            <div class="item">
+            <div class="item" @click="copyContent(signingKeypair2!.publicKey)">
                 <span style="color:black; padding-left: 10px; font-size: 16px;">{{ signingPubKey2 }}</span>
             </div>
         </div>
@@ -166,22 +166,31 @@ const disconnect = () => {
 };
 
 const walletListenerSetted = ref(false);
+let copyFunc: (text: string) => void;
+
+const route = useRoute();
 onMounted(() => {
+    console.log('Step1 onMounted...');
+    console.log('current path: ', route.path);
+    const { copyText } = useClientUtils();
+    copyFunc = copyText;
+
     if (!walletListenerSetted.value) {
         if (window.mina) {
             window.mina.on('accountsChanged', (accounts: string[]) => {
                 console.log('step1.vue - connected account change: ', accounts);
-                if (accounts.length === 0) {
-                    message.error('Please connect your wallet', {
-                        closable: true,
-                        duration: 0
-                    });
+                if (route.path === '/connect/step-1') {
+                    if (accounts.length === 0) {
+                        message.error('Please connect your wallet', {
+                            closable: true,
+                            duration: 0
+                        });
 
-                    disconnect();
-                } else {
-                    setConnectedWallet(accounts[0]);
+                        disconnect();
+                    } else {
+                        setConnectedWallet(accounts[0]);
+                    }
                 }
-
             });
 
             window.mina.on('chainChanged', (chainType: string) => {
@@ -198,6 +207,11 @@ onMounted(() => {
         }
     }
 });
+
+const copyContent = (content: string) => {
+    copyFunc(content);
+    message.success("Copy successfully");
+};
 
 const toRegisterAliasPage = () => {
     emit('nextStep', 2);
