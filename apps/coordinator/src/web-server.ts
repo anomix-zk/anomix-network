@@ -15,11 +15,12 @@ parentPort?.postMessage({// when it's not a subThread, parentPort == null.
 });
 
 const app = new FastifyCore();
-
-(process.send as any)({// if it's a subProcess
-    type: 'status',
-    data: 'isReady'
-});
+if (process.send) {
+    (process.send as any)({// if it's a subProcess
+        type: 'status',
+        data: 'isReady'
+    });
+}
 parentPort?.postMessage({// if it's a subThread
     type: 'status',
     data: 'isReady'
