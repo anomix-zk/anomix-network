@@ -1180,12 +1180,13 @@ export class AnomixSdk {
       );
     }
 
+    const publicAssetId = isWithdraw ? AssetId.MINA : DUMMY_FIELD;
     const message = [
       outputNote1.commitment(),
       outputNote2.commitment(),
       nullifier1,
       nullifier2,
-      DUMMY_FIELD,
+      publicAssetId,
       ...publicValue.toFields(),
       ...publicOwner.toFields(),
     ];
