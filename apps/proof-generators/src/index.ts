@@ -28,7 +28,7 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
     })
 
     httpWorker.on('exit', (exitCode: number) => {
-        console.log('webServer process exit...')
+        logger.error('webServer process exit...')
         // create a new worker for http-server
         bootWebServerThread(subProcessCordinator);
     })
@@ -40,9 +40,9 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                 saveProofTaskDtoFile(proofTaskDto, '.');// save to file for test
 
                 await $axiosDeposit.post('/proof-result', proofTaskDto).then(value => {
-                    console.log('$axiosDeposit.post to /proof-result, response:', value);
+                    logger.info('$axiosDeposit.post to /proof-result, response:', value);
                 }).catch(reason => {
-                    console.log('$axiosDeposit.post to /proof-result, error:', reason);
+                    logger.error('$axiosDeposit.post to /proof-result, error:', reason);
                 });
             }
 
@@ -51,9 +51,9 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                 saveProofTaskDtoFile(proofTaskDto, '.');// save to file for test
 
                 await $axiosDeposit.post('/proof-result', proofTaskDto).then(value => {
-                    console.log('$axiosDeposit.post to /proof-result, response:', value);
+                    logger.info('$axiosDeposit.post to /proof-result, response:', value);
                 }).catch(reason => {
-                    console.log('$axiosDeposit.post to /proof-result, error:', reason);
+                    logger.error('$axiosDeposit.post to /proof-result, error:', reason);
                 });
             }
 
@@ -62,9 +62,9 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                 saveProofTaskDtoFile(proofTaskDto, '.');// save to file for test
 
                 await $axiosSeq.post('/proof-result', proofTaskDto).then(value => {
-                    console.log('$axiosSeq.post to /proof-result, response:', value);
+                    logger.info('$axiosSeq.post to /proof-result, response:', value);
                 }).catch(reason => {
-                    console.log('$axiosSeq.post to /proof-result, error:', reason);
+                    logger.error('$axiosSeq.post to /proof-result, error:', reason);
                 });
             }
 

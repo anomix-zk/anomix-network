@@ -44,7 +44,7 @@ export function saveProofTaskDtoFile(proofTaskDto: ProofTaskDto<any, any>, dirDe
 }
 
 
-function getDateString() {
+export function getDateString() {
     let date = new Date();
     let YY = date.getFullYear() + '';
     let MM =

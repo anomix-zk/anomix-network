@@ -2,6 +2,8 @@ import { TaskStack } from './task-stack.js';
 import { SubProcessCordinator } from '@/create-sub-processes';
 import { ProofPayload } from "../constant";
 import { getLogger } from "../lib/logUtils";
+import { getDateString } from '@/lib';
+import fs from "fs";
 
 const logger = getLogger('inner-rollup-handler');
 
@@ -49,6 +51,7 @@ export const innerRollupBatchAndMerge = async (subProcessCordinator: SubProcessC
         console.timeEnd('duration');
 
         logger.info('result: ', res);
+        fs.writeFileSync(`./innerRollupBatchAndMerge_final_proofJson_${getDateString()}.json`, JSON.stringify(res));
 
         logger.info(
             'totalComputationalSeconds',
@@ -58,6 +61,8 @@ export const innerRollupBatchAndMerge = async (subProcessCordinator: SubProcessC
         // send back to sequencer
         if (sendCallBack) {
             await sendCallBack(res.payload);
+
+            logger.info('innerRollupBatchAndMerge done!');
         }
 
     } else {
