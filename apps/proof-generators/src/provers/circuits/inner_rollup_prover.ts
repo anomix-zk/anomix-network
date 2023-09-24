@@ -1,4 +1,4 @@
-import { FEE_ASSET_ID_SUPPORT_NUM } from '@anomix/circuits';
+import { FEE_ASSET_ID_SUPPORT_NUM, LeafData } from '@anomix/circuits';
 import {
     Bool,
     Empty,
