@@ -1193,7 +1193,12 @@ export class AnomixSdk {
       throw new Error('signingPrivateKeyBase58 is undefined');
     }
 
-    let signature = Signature.create(signingPrivateKey, message);
+    let signature: Signature;
+    if (senderAccountRequired) {
+      signature = Signature.create(signingPrivateKey, message);
+    } else {
+      signature = Signature.create(accountPrivateKey, message);
+    }
 
     const input = new JoinSplitSendInput({
       actionType: isWithdraw ? ActionType.WITHDRAW : ActionType.SEND,
