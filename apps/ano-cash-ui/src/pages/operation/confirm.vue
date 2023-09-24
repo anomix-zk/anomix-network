@@ -103,7 +103,7 @@ const sendTx = async () => {
     const tx = await remoteSdk.createPaymentTx({
       accountPk58: params.value!.sender,
       alias: params.value!.senderAlias,
-      senderAccountRequiredBool: false,
+      senderAccountRequiredBool: params.value.receiverAlias !== null ? true : false,
       receiverPk58: params.value!.receiver,
       receiverAccountRequiredBool: params.value!.receiverAlias !== null,
       anonToReceiver: params.value!.anonToReceiver,
