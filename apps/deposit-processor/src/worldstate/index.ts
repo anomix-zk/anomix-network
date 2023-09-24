@@ -10,6 +10,7 @@ import { L2Tx, MemPlL2Tx } from "@anomix/dao";
 import { ProofScheduler } from "@/rollup/proof-scheduler";
 import fs from "fs";
 import { getLogger } from "@/lib/logUtils";
+import { randomUUID } from "crypto";
 
 const logger = getLogger('deposit-processor-WorldState');
 
@@ -112,7 +113,7 @@ export class WorldState {
 
         const proofTaskDto = {
             taskType: ProofTaskType.DEPOSIT_JOIN_SPLIT,
-            index: undefined,
+            index: { uuid: randomUUID().toString() },
             payload: { blockId, data: txIdJoinSplitDepositInputList }
         } as ProofTaskDto<any, any>;
 

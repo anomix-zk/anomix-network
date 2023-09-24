@@ -12,6 +12,7 @@ import { getConnection } from "typeorm";
 import { Mina, PrivateKey } from 'o1js';
 import { getLogger } from "@/lib/logUtils";
 import fs from "fs";
+import { randomUUID } from "crypto";
 
 const logger = getLogger('proof-scheduler');
 
@@ -101,7 +102,7 @@ export class ProofScheduler {
 
         const proofTaskDto = {
             taskType: ProofTaskType.ROLLUP_FLOW,
-            index: undefined,
+            index: { uuid: randomUUID().toString() },
             payload: {
                 flowId: undefined as any,
                 taskType: FlowTaskType.DEPOSIT_UPDATESTATE,

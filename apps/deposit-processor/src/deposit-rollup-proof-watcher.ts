@@ -5,6 +5,7 @@ import { BaseResponse, FlowTask, FlowTaskType, DepositTreeTransStatus, ProofTask
 import { $axiosProofGenerator, initORM } from './lib';
 import { getLogger } from "@/lib/logUtils";
 import { activeMinaInstance } from '@anomix/utils';
+import { randomUUID } from 'crypto';
 
 const logger = getLogger('deposit-rollup-proof-watcher');
 
@@ -52,7 +53,7 @@ async function depositRollupProofWatch() {
         try {
             const proofTaskDto = {
                 taskType: ProofTaskType.ROLLUP_FLOW,
-                index: undefined,
+                index: { uuid: randomUUID().toString() },
                 payload: {
                     flowId: undefined as any,// no need
                     taskType: FlowTaskType.DEPOSIT_BATCH_MERGE,
