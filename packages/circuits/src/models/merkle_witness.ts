@@ -41,12 +41,7 @@ export class LeafData extends Struct({
   }
 
   commitment(): Field {
-    return Provable.if(
-      Provable.equal(LeafData, this, LeafData.zero()),
-      Field,
-      DUMMY_FIELD,
-      Poseidon.hash([this.value, this.nextValue, this.nextIndex])
-    );
+    return Poseidon.hash([this.value, this.nextValue, this.nextIndex]);
   }
 }
 
