@@ -14,6 +14,7 @@
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "scripts": {
+    "merkle-proof": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/scripts/merkle_proof.js",
     "verify": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/scripts/verify.js",
     "program": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/scripts/program.js",
     "state": "tsc -p tsconfig.json --module esnext && cross-env TEST_ON_BERKELEY=true node --experimental-specifier-resolution=node ./dist/scripts/token_state.js",

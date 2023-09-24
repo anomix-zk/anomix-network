@@ -114,15 +114,14 @@ let JoinSplitProver = Experimental.ZkProgram({
         actionTypeIsSend
           .or(actionTypeIsWithdraw)
           .assertTrue('Invalid actionType');
-        const publicAssetId = sendInput.assetId;
-        Provable.log('publicAssetId: ', publicAssetId);
 
-        Provable.if(
+        const publicAssetId = Provable.if(
           actionTypeIsWithdraw,
-          Bool,
-          publicAssetId.equals(AssetId.MINA),
-          publicAssetId.equals(DUMMY_FIELD)
-        ).assertTrue('Invalid assetId');
+          Field,
+          AssetId.MINA,
+          DUMMY_FIELD
+        );
+        Provable.log('publicAssetId: ', publicAssetId);
 
         const publicValue = sendInput.publicValue;
         const publicOwner = sendInput.publicOwner;
