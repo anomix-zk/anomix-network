@@ -4,4 +4,13 @@
 // '/restart-pipeline'
 // '/runtime-config': 修改配置
 
+import { FastifyPlugin } from "fastify"
+import { resetNetwork } from './reset-network'
 
+export const managerEndpoints: FastifyPlugin = async (
+    instance,
+    options,
+    done
+): Promise<void> => {
+    instance.register(resetNetwork);
+}
