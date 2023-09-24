@@ -19,6 +19,7 @@ import { ActionType, AssetId, DUMMY_FIELD } from '../models/constants';
 import { checkMembership } from '../utils/utils';
 import {
   DataMerkleWitness,
+  LeafData,
   LowLeafWitnessData,
   NullifierMerkleWitness,
 } from '../models/merkle_witness';
@@ -500,7 +501,14 @@ function processTx({
         .and(checkNullifier1GreaterThanLowLeafValue)
         .and(checkNullifier1LeassThanLowLeafNextValue)
         .and(checkWitnessOfNullifier1Valid),
-      currRoot: oldNullWitness1.calculateRoot(nullifier1, currentNullIndex),
+      currRoot: oldNullWitness1.calculateRoot(
+        new LeafData({
+          value: nullifier1,
+          nextValue: lowLeafWitness1.leafData.nextValue,
+          nextIndex: lowLeafWitness1.leafData.nextIndex,
+        }).commitment(),
+        currentNullIndex
+      ),
       currIndex: currentNullIndex.add(1),
     })
   );
@@ -578,7 +586,14 @@ function processTx({
         .and(checkNullifier2GreaterThanLowLeafValue)
         .and(checkNullifier2LeassThanLowLeafNextValue)
         .and(checkWitnessOfNullifier2Valid),
-      currRoot: oldNullWitness2.calculateRoot(nullifier2, currentNullIndex),
+      currRoot: oldNullWitness2.calculateRoot(
+        new LeafData({
+          value: nullifier2,
+          nextValue: lowLeafWitness2.leafData.nextValue,
+          nextIndex: lowLeafWitness2.leafData.nextIndex,
+        }).commitment(),
+        currentNullIndex
+      ),
       currIndex: currentNullIndex.add(1),
     })
   );
