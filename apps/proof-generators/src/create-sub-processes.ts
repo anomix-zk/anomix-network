@@ -115,6 +115,9 @@ export const createSubProcesses = async (n: number) => {
                 createFn(proverCnt, circuitName);
             });
 
+            worker.on('error', (exitCode: number) => {
+                logger.info(`${circuitName} worker error!`);
+            });
         }
 
         for (let index = 0; index < proverCnt; index++) {
