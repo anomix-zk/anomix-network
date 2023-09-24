@@ -36,6 +36,7 @@ async function depositRollupProofWatch() {
     logger.info(`dTranList.length: ${dTranList.length}`);
 
     if (dTranList?.length == 0) {
+        logger.info('end this round.');
         return;
     }
 
