@@ -930,17 +930,20 @@ export class AnomixSdk {
       senderAccountRequired.toString()
     );
 
-    let inputValueNote1 = ValueNote.zero();
-    let inputValueNote2 = ValueNote.zero();
+    let inputValueNote1: ValueNote = ValueNote.zero();
+    let inputValueNote2: ValueNote = ValueNote.zero();
     let outputNote1: ValueNote = ValueNote.zero();
     let outputNote2: ValueNote = ValueNote.zero();
-    let inputNoteNum = Field(0);
-    let inputNote1Index = Field(0);
-    let inputNote2Index = Field(0);
-    let inputNote1Witness = DataMerkleWitness.zero(DUMMY_FIELD);
-    let inputNote2Witness = DataMerkleWitness.zero(DUMMY_FIELD);
-    let accountNoteIndex = Field(0);
-    let accountNoteWitness = DataMerkleWitness.zero(DUMMY_FIELD);
+    let inputNoteNum: Field = Field(0);
+    let inputNote1Index: Field = Field(0);
+    let inputNote2Index: Field = Field(0);
+    let inputNote1Witness: DataMerkleWitness =
+      DataMerkleWitness.zero(DUMMY_FIELD);
+    let inputNote2Witness: DataMerkleWitness =
+      DataMerkleWitness.zero(DUMMY_FIELD);
+    let accountNoteIndex: Field = Field(0);
+    let accountNoteWitness: DataMerkleWitness =
+      DataMerkleWitness.zero(DUMMY_FIELD);
 
     const aliasHash =
       alias !== null ? this.computeAliasHashField(alias) : Field(0);
@@ -951,9 +954,16 @@ export class AnomixSdk {
       this.log.info(
         `getMerkleWitnessesByCommitments... aliases[0].noteCommitment: ${aliases[0].noteCommitment} `
       );
-      accountNoteWitness = await this.node.getMerkleWitnessesByCommitments([
+      const witnessDtos = await this.node.getMerkleWitnessesByCommitments([
         aliases[0].noteCommitment!,
-      ])[0];
+      ]);
+      if (witnessDtos.length === 0) {
+        throw new Error(
+          `getMerkleWitnessesByCommitments failed, commitment: ${aliases[0].noteCommitment}`
+        );
+      }
+      this.log.debug('accountNoteWitness: ', witnessDtos[0]);
+      accountNoteWitness = DataMerkleWitness.fromMerkleProofDTO(witnessDtos[0]);
     }
     let signingPk = accountPk;
     const accountPk58 = accountPk.toBase58();
@@ -991,9 +1001,15 @@ export class AnomixSdk {
       this.log.info(
         `getMerkleWitnessesByCommitments... inputNote.commitment: ${inputNote.commitment} `
       );
-      inputNote1Witness = await this.node.getMerkleWitnessesByCommitments([
+      const witessDtos = await this.node.getMerkleWitnessesByCommitments([
         inputNote.commitment!,
-      ])[0];
+      ]);
+      if (witessDtos.length === 0) {
+        throw new Error(
+          `getMerkleWitnessesByCommitments failed, commitment: ${inputNote.commitment}`
+        );
+      }
+      inputNote1Witness = DataMerkleWitness.fromMerkleProofDTO(witessDtos[0]);
       nullifier1 = calculateNoteNullifier(
         Field(inputNote.commitment),
         accountPrivateKey,
@@ -1076,6 +1092,7 @@ export class AnomixSdk {
           inputNote1.commitment!,
           inputNote2.commitment,
         ]);
+      this.log.debug('inputNoteWitnesses: ', inputNoteWitnesses);
       inputNote1Witness = DataMerkleWitness.fromMerkleProofDTO(
         inputNoteWitnesses[0]
       );
@@ -1201,7 +1218,7 @@ export class AnomixSdk {
       publicValue,
       publicOwner,
     });
-
+    this.log.info('sendInput: ', JoinSplitSendInput.toJSON(input));
     this.log.info('proving...');
     const startTime = Date.now();
     const proof = await JoinSplitProver.send(input);
