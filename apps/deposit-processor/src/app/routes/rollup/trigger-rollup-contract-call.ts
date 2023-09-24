@@ -10,6 +10,7 @@ import { PrivateKey } from "o1js";
 import { $axiosProofGenerator } from "@/lib";
 import fs from "fs";
 import { getLogger } from "@/lib/logUtils";
+import { randomUUID } from "crypto";
 
 const logger = getLogger('triggerContractCall');
 
@@ -46,7 +47,7 @@ export const handler: RequestHandler<null, { transId: number }> = async function
             const depositProverOutput = await depositProverOutputRepo.findOne({ where: { transId } });
             const proofTaskDto = {
                 taskType: ProofTaskType.ROLLUP_FLOW,
-                index: undefined,
+                index: { uuid: randomUUID().toString() },
                 payload: {
                     flowId: undefined as any,
                     taskType: FlowTaskType.DEPOSIT_UPDATESTATE,

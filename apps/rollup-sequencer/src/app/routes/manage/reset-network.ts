@@ -87,20 +87,17 @@ export const handler: RequestHandler<{ authCode: string, targetActionState: stri
 
         const depositActionEventFetchRecordId = depositActionEventFetchRecord.id;
 
-        let depositNoteIndex = '0';
-        let userDepositL1TxHash = '5JtfjjammMasPy9us8gznUjAsy4XQWzKi58ndy4dK5fpWCEZB2gk';//
-        const dc1 = await genDc('./deposit1.txt', depositActionEventFetchRecordId, depositNoteIndex, userDepositL1TxHash);
+        let userDepositL1TxHash = '5JuqGRzBboyes6Sqfj5G5bo9dDESzu1cLK2vB87KF7GPESc4oXw9';//
+        const dc1 = await genDc('./deposit1.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
 
-        depositNoteIndex = '1';
-        userDepositL1TxHash = '5JuvBTW6YsxFZxrKGaVR1Hkxp2MxEVVD6xNMR85EttVBruUcZKtL';//
-        const dc2 = await genDc('./deposit2.txt', depositActionEventFetchRecordId, depositNoteIndex, userDepositL1TxHash);
+        userDepositL1TxHash = '5JtohGWMqKGQ1iK5bGqGgGGYY5xsBs9RDpaH6uEYUt8zFStLeZBe';//
+        const dc2 = await genDc('./deposit2.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
 
-        depositNoteIndex = '2';
-        userDepositL1TxHash = '5Jv38ZCTApmMZ5M3JWz516U5Z2nsBfqPpryd2pXwA8t7WYFbhqpt';//
-        const dc3 = await genDc('./deposit3.txt', depositActionEventFetchRecordId, depositNoteIndex, userDepositL1TxHash);
+        userDepositL1TxHash = '5JuSRLwadr1hjzYg9P6c9PjADKK26s6JaSACsMpmc89xsTWNxfec';//
+        const dc3 = await genDc('./deposit3.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
 
-        const cs1 = [dc1, dc2, dc3];
-        console.log(cs1);
+        const cs1 = [dc2, dc1, dc3];
+        console.log(cs1.map(dc => dc.depositNoteCommitment));
         const reActionState = cs1.map(dc => Field(dc.depositNoteCommitment)).reduce((p, c, i) => {
             console.log('currentActionsHashX:' + p.toString());
             let currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
@@ -113,8 +110,9 @@ export const handler: RequestHandler<{ authCode: string, targetActionState: stri
         if (targetActionState != reActionState.toString()) {
             throw new Error("");
         }
-        await queryRunner.manager.save(cs1);
 
+        cs1.forEach((v, i) => v.depositNoteIndex = `${i}`);
+        await queryRunner.manager.save(cs1);
 
 
         // rm leveldb
@@ -136,7 +134,7 @@ export const handler: RequestHandler<{ authCode: string, targetActionState: stri
         await queryRunner.release();
     }
 
-    async function genDc(l1TxPath: string, depositActionEventFetchRecordId: number, depositNoteIndex: string, userDepositL1TxHash: string) {
+    async function genDc(l1TxPath: string, depositActionEventFetchRecordId: number, userDepositL1TxHash: string) {
         const l1txStr = fs.readFileSync(l1TxPath, 'utf8');
         const l1Tx = Mina.Transaction.fromJSON(JSON.parse(l1txStr));
 
@@ -156,7 +154,6 @@ export const handler: RequestHandler<{ authCode: string, targetActionState: stri
         dc.assetId = '1';
         dc.depositActionEventFetchRecordId = depositActionEventFetchRecordId;
         dc.depositNoteCommitment = action;
-        dc.depositNoteIndex = depositNoteIndex;
         dc.depositValue = balanceChange;
         dc.encryptedNote = JSON.stringify(encryptedNote);
         dc.sender = sender;

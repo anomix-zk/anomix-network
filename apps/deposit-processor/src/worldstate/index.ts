@@ -4,12 +4,13 @@ import { IndexDB, RollupDB, RollupFlow } from "@/rollup";
 import { WorldStateDB } from "./worldstate-db";
 import { JoinSplitDepositInput, ActionType } from "@anomix/circuits";
 import { BaseResponse, FlowTask, FlowTaskType, ProofTaskDto, ProofTaskType, RollupTaskDto, RollupTaskType, MerkleTreeId } from "@anomix/types";
-import { $axiosCoordinator, $axiosProofGenerator } from "@/lib";
+import { $axiosCoordinator, $axiosProofGenerator, getDateString } from "@/lib";
 import { getConnection } from "typeorm";
 import { L2Tx, MemPlL2Tx } from "@anomix/dao";
 import { ProofScheduler } from "@/rollup/proof-scheduler";
 import fs from "fs";
 import { getLogger } from "@/lib/logUtils";
+import { randomUUID } from "crypto";
 
 const logger = getLogger('deposit-processor-WorldState');
 
@@ -51,7 +52,7 @@ export class WorldState {
         const { taskType, index, payload } = proofTaskDto;
 
         if (taskType == ProofTaskType.DEPOSIT_JOIN_SPLIT) {
-            const fileName = './DEPOSIT_JOIN_SPLIT_proofTaskDto_proofResult' + new Date().getTime() + '.json';
+            const fileName = './DEPOSIT_JOIN_SPLIT_proofTaskDto_proofResult' + getDateString() + '.json';
             fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
             logger.info(`save proofTaskDto into ${fileName}`);
 
@@ -61,14 +62,14 @@ export class WorldState {
             const { flowId, taskType, data } = payload as FlowTask<any>;
 
             if (taskType == FlowTaskType.DEPOSIT_BATCH_MERGE) {
-                const fileName = './DEPOSIT_BATCH_MERGE_proofTaskDto_proofResult' + new Date().getTime() + '.json';
+                const fileName = './DEPOSIT_BATCH_MERGE_proofTaskDto_proofResult' + getDateString() + '.json';
                 fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
                 logger.info(`save proofTaskDto into ${fileName}`);
 
                 await this.proofScheduler.whenMergedResultComeBack(data);
 
             } else if (taskType == FlowTaskType.DEPOSIT_UPDATESTATE) {
-                const fileName = './DEPOSIT_UPDATESTATE_proofTaskDto_proofResult' + new Date().getTime() + '.json';
+                const fileName = './DEPOSIT_UPDATESTATE_proofTaskDto_proofResult' + getDateString() + '.json';
                 fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
                 logger.info(`save proofTaskDto into ${fileName}`);
 
@@ -112,11 +113,11 @@ export class WorldState {
 
         const proofTaskDto = {
             taskType: ProofTaskType.DEPOSIT_JOIN_SPLIT,
-            index: undefined,
+            index: { uuid: randomUUID().toString() },
             payload: { blockId, data: txIdJoinSplitDepositInputList }
         } as ProofTaskDto<any, any>;
 
-        const fileName = './DEPOSIT_JOIN_SPLIT_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+        const fileName = './DEPOSIT_JOIN_SPLIT_proofTaskDto_proofReq' + getDateString() + '.json';
         fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
         logger.info(`save proofTaskDto into ${fileName}`);
 
@@ -166,7 +167,7 @@ export class WorldState {
             payload: { blockId }
         }
 
-        const fileName = './DEPOSIT_JOINSPLIT_rollupTaskDto_proofReq' + new Date().getTime() + '.json';
+        const fileName = './DEPOSIT_JOINSPLIT_rollupTaskDto_proofReq' + getDateString() + '.json';
         fs.writeFileSync(fileName, JSON.stringify(rollupTaskDto));
         logger.info(`save rollupTaskDto into ${fileName}`);
 

@@ -6,12 +6,13 @@ import { BaseResponse, DepositTreeTransStatus, ProofTaskDto, ProofTaskType } fro
 import { WorldState } from "@/worldstate";
 import { IndexDB } from "./index-db";
 import { DepositProverOutput, DepositTreeTrans } from "@anomix/dao";
-import { $axiosProofGenerator } from "@/lib";
+import { $axiosProofGenerator, getDateString } from "@/lib";
 import { FlowTask, FlowTaskType } from "@anomix/types";
 import { getConnection } from "typeorm";
 import { Mina, PrivateKey } from 'o1js';
 import { getLogger } from "@/lib/logUtils";
 import fs from "fs";
+import { randomUUID } from "crypto";
 
 const logger = getLogger('proof-scheduler');
 
@@ -101,7 +102,7 @@ export class ProofScheduler {
 
         const proofTaskDto = {
             taskType: ProofTaskType.ROLLUP_FLOW,
-            index: undefined,
+            index: { uuid: randomUUID().toString() },
             payload: {
                 flowId: undefined as any,
                 taskType: FlowTaskType.DEPOSIT_UPDATESTATE,
@@ -114,7 +115,7 @@ export class ProofScheduler {
             } as FlowTask<any>
         } as ProofTaskDto<any, FlowTask<any>>;
 
-        const fileName = './DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+        const fileName = './DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + getDateString() + '.json';
         fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
         logger.info(`save proofTaskDto into ${fileName}`);
 
@@ -129,7 +130,7 @@ export class ProofScheduler {
         const { transId, data: tx } = result;
 
         // store into file for test
-        const fileName = './AnomixEntryContract_DEPOSIT_UPDATESTATE_tx' + new Date().getTime() + '.json';
+        const fileName = './AnomixEntryContract_DEPOSIT_UPDATESTATE_tx' + getDateString() + '.json';
         fs.writeFileSync(fileName, tx);
         logger.info(`save DepositRollupL1Tx into ${fileName}`);
 

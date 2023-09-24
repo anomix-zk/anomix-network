@@ -15,6 +15,7 @@ import { AccountUpdate, Field, PublicKey, Mina, PrivateKey } from 'o1js';
 import fs from "fs";
 import { getLogger } from "@/lib/logUtils";
 import { INITIAL_LEAF } from "@anomix/merkle-tree";
+import { randomUUID } from "crypto";
 
 const logger = getLogger('flow-scheduler');
 
@@ -183,7 +184,7 @@ export class FlowScheduler {
             try {
                 const proofTaskDto = {
                     taskType: ProofTaskType.ROLLUP_FLOW,
-                    index: undefined,
+                    index: { uuid: randomUUID().toString() },
                     payload: {
                         flowId: this.flowId,// no need actually later version!
                         taskType: FlowTaskType.DEPOSIT_BATCH_MERGE,

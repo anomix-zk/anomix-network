@@ -1,6 +1,6 @@
 
 import config from "@/lib/config";
-import { DepositStatus, MerkleTreeId, L2TxStatus, PoseidonHasher, MerkleProofDto, BlockCacheType, BaseResponse, BlockStatus, WithdrawNoteStatus } from "@anomix/types";
+import { DepositStatus, MerkleTreeId, L2TxStatus, PoseidonHasher, MerkleProofDto, BlockCacheType, BaseResponse, BlockStatus, WithdrawNoteStatus, BaseSiblingPath } from "@anomix/types";
 import {
     DataMerkleWitness, DataRootWitnessData, LowLeafWitnessData, NullifierMerkleWitness,
     DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, NoteType, ValueNote, Commitment, RollupState, RollupStateTransition, BlockProveOutput, TxFee, FEE_ASSET_ID_SUPPORT_NUM, AssetId
@@ -14,6 +14,7 @@ import { assert } from "console";
 import { getLogger } from "@/lib/logUtils";
 import { randomBytes, randomInt, randomUUID } from "crypto";
 import { $axiosDepositProcessor } from "@/lib";
+import { LeafData } from "@anomix/merkle-tree";
 const logger = getLogger('FlowScheduler');
 
 export class FlowScheduler {
@@ -477,52 +478,182 @@ export class FlowScheduler {
             // ================ tx1 nullifier parts ============
             let nullifierTreeCursor = this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true);
 
+            logger.info('starts process tx1.nullifier1...');
             let tx1LowLeafWitness1: LowLeafWitnessData = undefined as any;
-            const tx1OldNullWitness1 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+            let tx1OldNullWitness1: NullifierMerkleWitness = undefined as any;
             if (Field(tx1.nullifier1).equals(DUMMY_FIELD).not().toBoolean()) {// if non-DEPOSIT
                 tx1LowLeafWitness1 = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier1), true);
+                const predecessorLeafData = tx1LowLeafWitness1.leafData;
+                const predecessorIdx = tx1LowLeafWitness1.index.toBigInt();
 
-                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier1))
+                // modify predecessor                
+                logger.info(`before modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`before modify predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                const modifiedPredecessorLeafDataTmp: LeafData = {
+                    value: predecessorLeafData.value.toBigInt(),
+                    nextValue: Field(tx1.nullifier1).toBigInt(),
+                    nextIndex: nullifierTreeCursor
+                };
+                await this.worldStateDB.updateLeaf(MerkleTreeId.NULLIFIER_TREE, modifiedPredecessorLeafDataTmp, predecessorIdx);
+                logger.info(`after modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`after modify predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+
+                // obtain tx1OldNullWitness1
+                tx1OldNullWitness1 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+                logger.info('obtain tx1OldNullWitness1 done.');
+
+                // revert predecessor
+                const revertedPredecessorLeafDataTmp: LeafData = {
+                    value: predecessorLeafData.value.toBigInt(),
+                    nextValue: predecessorLeafData.nextValue.toBigInt(),
+                    nextIndex: predecessorLeafData.nextIndex.toBigInt()
+                };
+                await this.worldStateDB.updateLeaf(MerkleTreeId.NULLIFIER_TREE, revertedPredecessorLeafDataTmp, predecessorIdx);
+                logger.info(`after revert predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`after revert predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+
+                // insert nullifier1
+                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier1));
+                logger.info('insert tx1.nullifier1, done.');
+
                 tx1.nullifierIdx1 = nullifierTreeCursor.toString();
                 nullifierTreeCursor += 1n;
             } else {
+                tx1OldNullWitness1 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
                 tx1LowLeafWitness1 = LowLeafWitnessData.zero(await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, 0n, true));
             }
 
+            logger.info('starts process tx1.nullifier2...');
             let tx1LowLeafWitness2: LowLeafWitnessData = undefined as any;
-            const tx1OldNullWitness2: NullifierMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+            let tx1OldNullWitness2: NullifierMerkleWitness = undefined as any;
             if (Field(tx1.nullifier2).equals(DUMMY_FIELD).not().toBoolean()) {// if non-DEPOSIT
                 tx1LowLeafWitness2 = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier2), true);
+                const predecessorLeafData = tx1LowLeafWitness2.leafData;
+                const predecessorIdx = tx1LowLeafWitness2.index.toBigInt();
 
-                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier2))
+                // modify predecessor                
+                logger.info(`before modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`before modify predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                const modifiedPredecessorLeafDataTmp: LeafData = {
+                    value: predecessorLeafData.value.toBigInt(),
+                    nextValue: Field(tx1.nullifier2).toBigInt(),
+                    nextIndex: nullifierTreeCursor
+                };
+                await this.worldStateDB.updateLeaf(MerkleTreeId.NULLIFIER_TREE, modifiedPredecessorLeafDataTmp, predecessorIdx);
+                logger.info(`after modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`after modify predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+
+                // obtain tx1OldNullWitness2
+                tx1OldNullWitness2 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+
+                // revert predecessor
+                const revertedPredecessorLeafDataTmp: LeafData = {
+                    value: predecessorLeafData.value.toBigInt(),
+                    nextValue: predecessorLeafData.nextValue.toBigInt(),
+                    nextIndex: predecessorLeafData.nextIndex.toBigInt()
+                };
+                await this.worldStateDB.updateLeaf(MerkleTreeId.NULLIFIER_TREE, revertedPredecessorLeafDataTmp, predecessorIdx);
+                logger.info(`after revert predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`after revert predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+
+                // insert nullifier2
+                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier2));
+                logger.info('insert tx1.nullifier2, done.');
+
                 tx1.nullifierIdx2 = nullifierTreeCursor.toString();
                 nullifierTreeCursor += 1n;
             } else {
+                tx1OldNullWitness2 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
                 tx1LowLeafWitness2 = LowLeafWitnessData.zero(await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, 0n, true));
             }
 
             // ================ tx2 nullifier parts ============
+            logger.info('starts process tx2.nullifier1...');
             let tx2LowLeafWitness1: LowLeafWitnessData = undefined as any;
-            const tx2OldNullWitness1: NullifierMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+            let tx2OldNullWitness1: NullifierMerkleWitness = undefined as any;
             if (Field(tx2.nullifier1).equals(DUMMY_FIELD).not().toBoolean()) {// if non-DEPOSIT
                 tx2LowLeafWitness1 = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier1), true);
+                const predecessorLeafData = tx2LowLeafWitness1.leafData;
+                const predecessorIdx = tx2LowLeafWitness1.index.toBigInt();
 
-                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier1))
+                // modify predecessor 
+                logger.info(`before modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`before modify predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                const modifiedPredecessorLeafDataTmp: LeafData = {
+                    value: predecessorLeafData.value.toBigInt(),
+                    nextValue: Field(tx2.nullifier1).toBigInt(),
+                    nextIndex: nullifierTreeCursor
+                };
+                await this.worldStateDB.updateLeaf(MerkleTreeId.NULLIFIER_TREE, modifiedPredecessorLeafDataTmp, predecessorIdx);
+                logger.info(`after modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`after modify predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+
+                // obtain tx2OldNullWitness1
+                tx2OldNullWitness1 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+
+                // revert predecessor
+                const revertedPredecessorLeafDataTmp: LeafData = {
+                    value: predecessorLeafData.value.toBigInt(),
+                    nextValue: predecessorLeafData.nextValue.toBigInt(),
+                    nextIndex: predecessorLeafData.nextIndex.toBigInt()
+                };
+                await this.worldStateDB.updateLeaf(MerkleTreeId.NULLIFIER_TREE, revertedPredecessorLeafDataTmp, predecessorIdx);
+                logger.info(`after revert predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`after revert predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+
+                // insert nullifier1
+                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier1));
+                logger.info('insert tx2.nullifier1, done.');
+
+
                 tx2.nullifierIdx1 = nullifierTreeCursor.toString();
                 nullifierTreeCursor += 1n;
             } else {
+                tx2OldNullWitness1 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
                 tx2LowLeafWitness1 = LowLeafWitnessData.zero(await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, 0n, true));
             }
 
+            logger.info('starts process tx2.nullifier2...');
             let tx2LowLeafWitness2: LowLeafWitnessData = undefined as any;
-            const tx2OldNullWitness2: NullifierMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+            let tx2OldNullWitness2: NullifierMerkleWitness = undefined as any;
             if (Field(tx2.nullifier2).equals(DUMMY_FIELD).not().toBoolean()) {// if non-DEPOSIT
                 tx2LowLeafWitness2 = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier2), true);
+                const predecessorLeafData = tx2LowLeafWitness2.leafData;
+                const predecessorIdx = tx2LowLeafWitness2.index.toBigInt();
 
-                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier2))
+                // modify predecessor                
+                logger.info(`before modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`before modify predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                const modifiedPredecessorLeafDataTmp: LeafData = {
+                    value: predecessorLeafData.value.toBigInt(),
+                    nextValue: Field(tx2.nullifier2).toBigInt(),
+                    nextIndex: nullifierTreeCursor
+                };
+                await this.worldStateDB.updateLeaf(MerkleTreeId.NULLIFIER_TREE, modifiedPredecessorLeafDataTmp, predecessorIdx);
+                logger.info(`after modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`after modify predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+
+                // obtain tx2OldNullWitness2
+                tx2OldNullWitness2 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+
+                // revert predecessor
+                const revertedPredecessorLeafDataTmp: LeafData = {
+                    value: predecessorLeafData.value.toBigInt(),
+                    nextValue: predecessorLeafData.nextValue.toBigInt(),
+                    nextIndex: predecessorLeafData.nextIndex.toBigInt()
+                };
+                await this.worldStateDB.updateLeaf(MerkleTreeId.NULLIFIER_TREE, revertedPredecessorLeafDataTmp, predecessorIdx);
+                logger.info(`after revert predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+                logger.info(`after revert predecessor, nullifierTree Num: ${await this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+
+                // insert nullifier2
+                await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier2));
+                logger.info('insert tx2.nullifier2, done.');
+
                 tx2.nullifierIdx2 = nullifierTreeCursor.toString();
                 nullifierTreeCursor += 1n;
             } else {
+                tx2OldNullWitness2 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
                 tx2LowLeafWitness2 = LowLeafWitnessData.zero(await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, 0n, true));
             }
 

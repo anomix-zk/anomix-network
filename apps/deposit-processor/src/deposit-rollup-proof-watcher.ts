@@ -5,6 +5,7 @@ import { BaseResponse, FlowTask, FlowTaskType, DepositTreeTransStatus, ProofTask
 import { $axiosProofGenerator, initORM } from './lib';
 import { getLogger } from "@/lib/logUtils";
 import { activeMinaInstance } from '@anomix/utils';
+import { randomUUID } from 'crypto';
 
 const logger = getLogger('deposit-rollup-proof-watcher');
 
@@ -29,16 +30,21 @@ async function depositRollupProofWatch() {
     const dTranList = await transRepo.find({
         where: {
             status: In([DepositTreeTransStatus.PROCESSING]),
-            createdAt: LessThan(new Date(new Date().getTime() - periodRange * 3)) // created before 15mins, means they failed on previous execution--'InnerRollupProver.proveTxBatch(*)'
+            //createdAt: LessThan(new Date(new Date().getTime() - periodRange * 3)) // created before 15mins, means they failed on previous execution--'InnerRollupProver.proveTxBatch(*)'
         },
         order: { id: 'ASC' },
     }) ?? [];
+    logger.info(`dTranList.length: ${dTranList.length}`);
 
     if (dTranList?.length == 0) {
+        logger.info('end this round.');
         return;
     }
 
-    await dTranList.forEach(async dTran => {
+    for (let i = 0; i < dTranList.length; i++) {
+        let dTran = dTranList[i];
+        logger.info(`process one depositTreeTrans, transId: ${dTran.id}, done.`);
+
         // MUST save the circuit's parameters for later new proof-gen tries
         const rollupBatchRepo = connection.getRepository(DepositRollupBatch);
         const depositRollupBatch = await rollupBatchRepo.findOne({ where: { transId: dTran.id }, order: { createdAt: 'DESC' } });
@@ -47,7 +53,7 @@ async function depositRollupProofWatch() {
         try {
             const proofTaskDto = {
                 taskType: ProofTaskType.ROLLUP_FLOW,
-                index: undefined,
+                index: { uuid: randomUUID().toString() },
                 payload: {
                     flowId: undefined as any,// no need
                     taskType: FlowTaskType.DEPOSIT_BATCH_MERGE,
@@ -59,9 +65,11 @@ async function depositRollupProofWatch() {
                     throw new Error(r.data.msg);
                 }
             });
+            logger.info(`sent to /proof-gen, transId: ${dTran.id}, done.`);
+
         } catch (error) {
             logger.error(error);
         }
-    });
+    }
 
 }

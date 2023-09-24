@@ -1,6 +1,6 @@
 import type { AxiosResponse } from 'axios';
 import { timeout } from '@anomix/utils';
-import { $axiosSeq } from './client';
+import { $axiosSeq, $axiosDeposit } from './client';
 import type { ResponseError } from './response-error';
 
 type ResponseSuccessCallback = (response: AxiosResponse) => void;
@@ -17,6 +17,26 @@ const callbackTrigger: CallbackTrigger = {
 };
 
 $axiosSeq.interceptors.response.use(
+    (response: AxiosResponse) => {
+        if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
+        return response;
+    },
+
+    async (error: ResponseError) => {
+        if (error.response && error.response.status !== 0) {
+            error.isNetworkError = false;
+        } else {
+            error.isNetworkError = true;
+        }
+
+        if (callbackTrigger.responseError) {
+            callbackTrigger.responseError(error);
+        }
+        return Promise.reject(error);
+    }
+);
+
+$axiosDeposit.interceptors.response.use(
     (response: AxiosResponse) => {
         if (callbackTrigger.responseSuccess) callbackTrigger.responseSuccess(response);
         return response;

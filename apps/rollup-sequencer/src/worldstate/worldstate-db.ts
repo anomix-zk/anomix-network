@@ -201,4 +201,13 @@ export class WorldStateDB {
     ): LeafData | undefined {
         return (this.trees.get(treeId) as StandardIndexedTree).getLatestLeafDataCopy(index, includeUncommitted);
     }
+
+    /**
+    * Exposes the underlying tree's update leaf method.
+    * @param leaf - The hash to set at the leaf.
+    * @param index - The index of the element.
+    */
+    public async updateLeaf(treeId: MerkleTreeId, leaf: LeafData, index: bigint): Promise<void> {
+        return await (this.trees.get(treeId) as StandardIndexedTree).updateLeaf(leaf, index);
+    }
 }

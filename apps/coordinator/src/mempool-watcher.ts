@@ -170,7 +170,7 @@ async function mempoolWatch() {
                         order: { id: 'ASC' },
                     });
 
-                    logger.info('obtain the first DepositTreeTrans=', depositTreeTrans?.id);
+                    logger.info('obtain the first DepositTreeTrans=' + depositTreeTrans?.id);
                     if (depositTreeTrans) {
                         // check if it's been just processed
                         const taskList = await queryRunner.manager.find(Task, { where: { status: TaskStatus.PENDING, taskType: TaskType.DEPOSIT } }) ?? [];
