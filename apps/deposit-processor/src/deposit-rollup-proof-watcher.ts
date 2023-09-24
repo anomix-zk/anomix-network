@@ -33,12 +33,16 @@ async function depositRollupProofWatch() {
         },
         order: { id: 'ASC' },
     }) ?? [];
+    logger.info(`dTranList.length: ${dTranList.length}`);
 
     if (dTranList?.length == 0) {
         return;
     }
 
-    await dTranList.forEach(async dTran => {
+    for (let i = 0; i < dTranList.length; i++) {
+        let dTran = dTranList[i];
+        logger.info(`process one depositTreeTrans, transId: ${dTran.id}, done.`);
+
         // MUST save the circuit's parameters for later new proof-gen tries
         const rollupBatchRepo = connection.getRepository(DepositRollupBatch);
         const depositRollupBatch = await rollupBatchRepo.findOne({ where: { transId: dTran.id }, order: { createdAt: 'DESC' } });
@@ -59,9 +63,11 @@ async function depositRollupProofWatch() {
                     throw new Error(r.data.msg);
                 }
             });
+            logger.info(`sent to /proof-gen, transId: ${dTran.id}, done.`);
+
         } catch (error) {
             logger.error(error);
         }
-    });
+    }
 
 }
