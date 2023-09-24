@@ -1,4 +1,5 @@
 import { FastifyPlugin } from "fastify"
+import { managerEndpoints } from "./manage";
 import { merkleProofEndpoint } from "./merkleproof";
 import { proofCallback } from "./proof-callback";
 import { rollupProofTrigger } from "./rollup-proof-trigger";
@@ -12,6 +13,7 @@ export const routes: FastifyPlugin = async function (
     options,
     done
 ): Promise<void> {
+    instance.register(managerEndpoints);
     instance.register(merkleProofEndpoint)
     instance.register(proofCallback)
     instance.register(rollupProofTrigger)
