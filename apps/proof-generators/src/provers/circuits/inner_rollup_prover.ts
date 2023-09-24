@@ -259,6 +259,7 @@ export const merge = (
 }
 
 
+
 function processTx({
     txProof,
     depositRoot,
@@ -452,6 +453,23 @@ function processTx({
         checkNullifier1LeassThanLowLeafNextValue
     );
 
+    const nullifier1LeafData = new LeafData({
+        value: nullifier1,
+        nextValue: lowLeafWitness1.leafData.nextValue,
+        nextIndex: lowLeafWitness1.leafData.nextIndex,
+    });
+    // update lowLeafData in nullifier tree
+    const newLowLeafData1 = new LeafData({
+        value: lowLeafWitness1.leafData.value,
+        nextValue: nullifier1LeafData.value,
+        nextIndex: currentNullIndex,
+    });
+    currentNullRoot = lowLeafWitness1.siblingPath.calculateRoot(
+        newLowLeafData1.commitment(),
+        lowLeafWitness1.index
+    );
+    Provable.log('after update lowLeafData1, currentNullRoot: ', currentNullRoot);
+
     const checkWitnessOfNullifier1Valid = checkMembership(
         DUMMY_FIELD,
         currentNullIndex,
@@ -482,11 +500,7 @@ function processTx({
                 .and(checkNullifier1LeassThanLowLeafNextValue)
                 .and(checkWitnessOfNullifier1Valid),
             currRoot: oldNullWitness1.calculateRoot(
-                new LeafData({
-                    value: nullifier1,
-                    nextValue: lowLeafWitness1.leafData.nextValue,
-                    nextIndex: lowLeafWitness1.leafData.nextIndex,
-                }).commitment(),
+                nullifier1LeafData.commitment(),
                 currentNullIndex
             ),
             currIndex: currentNullIndex.add(1),
@@ -537,6 +551,23 @@ function processTx({
         checkNullifier2LeassThanLowLeafNextValue
     );
 
+    const nullifier2LeafData = new LeafData({
+        value: nullifier2,
+        nextValue: lowLeafWitness2.leafData.nextValue,
+        nextIndex: lowLeafWitness2.leafData.nextIndex,
+    });
+    // update lowLeafData in nullifier tree
+    const newLowLeafData2 = new LeafData({
+        value: lowLeafWitness2.leafData.value,
+        nextValue: nullifier2LeafData.value,
+        nextIndex: currentNullIndex,
+    });
+    currentNullRoot = lowLeafWitness2.siblingPath.calculateRoot(
+        newLowLeafData2.commitment(),
+        lowLeafWitness2.index
+    );
+    Provable.log('after update lowLeafData2, currentNullRoot: ', currentNullRoot);
+
     const checkWitnessOfNullifier2Valid = checkMembership(
         DUMMY_FIELD,
         currentNullIndex,
@@ -567,11 +598,7 @@ function processTx({
                 .and(checkNullifier2LeassThanLowLeafNextValue)
                 .and(checkWitnessOfNullifier2Valid),
             currRoot: oldNullWitness2.calculateRoot(
-                new LeafData({
-                    value: nullifier2,
-                    nextValue: lowLeafWitness2.leafData.nextValue,
-                    nextIndex: lowLeafWitness2.leafData.nextIndex,
-                }).commitment(),
+                nullifier2LeafData.commitment(),
                 currentNullIndex
             ),
             currIndex: currentNullIndex.add(1),
