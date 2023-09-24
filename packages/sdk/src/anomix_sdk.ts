@@ -18,6 +18,7 @@ import {
   WithdrawNoteWitnessData,
   UserLowLeafWitnessData,
   UserNullifierMerkleWitness,
+  AccountRequired,
 } from '@anomix/circuits';
 import { EncryptedNote, L2TxReqDto } from '@anomix/types';
 import {
@@ -1194,7 +1195,7 @@ export class AnomixSdk {
     }
 
     let signature: Signature;
-    if (senderAccountRequired) {
+    if (senderAccountRequired.equals(AccountRequired.REQUIRED).toBoolean()) {
       signature = Signature.create(signingPrivateKey, message);
     } else {
       signature = Signature.create(accountPrivateKey, message);
