@@ -29,7 +29,7 @@ async function depositRollupProofWatch() {
     const dTranList = await transRepo.find({
         where: {
             status: In([DepositTreeTransStatus.PROCESSING]),
-            createdAt: LessThan(new Date(new Date().getTime() - periodRange * 3)) // created before 15mins, means they failed on previous execution--'InnerRollupProver.proveTxBatch(*)'
+            //createdAt: LessThan(new Date(new Date().getTime() - periodRange * 3)) // created before 15mins, means they failed on previous execution--'InnerRollupProver.proveTxBatch(*)'
         },
         order: { id: 'ASC' },
     }) ?? [];
