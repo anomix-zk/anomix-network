@@ -258,7 +258,7 @@ const remoteSyncer = SdkState.remoteSyncer!;
 
 let copyFunc: (text: string) => void;
 
-const showExitDialog = ref(true);
+const showExitDialog = ref(false);
 const closeExitDialog = () => {
     console.log('close exit dialog');
     showExitDialog.value = false;

@@ -22,8 +22,7 @@ import { CHANNEL_SYNCER } from './common/constants';
 const { createRemoteSdk, createRemoteApi, startRemoteSyncer, compileCircuits, SdkState } = useSdk();
 const runtimeConfig = useRuntimeConfig();
 const route = useRoute();
-const router = useRouter();
-const { setTokenPrices, showLoadingMask, closeLoadingMask, setConnectedWallet } = useStatus();
+const { setTokenPrices, showLoadingMask, closeLoadingMask } = useStatus();
 
 const themeOverrides: GlobalThemeOverrides = {
   Input: {
