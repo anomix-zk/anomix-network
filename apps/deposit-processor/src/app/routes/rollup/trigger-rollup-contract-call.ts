@@ -7,7 +7,7 @@ import { getConnection } from "typeorm";
 import { DepositProcessorSignal, DepositProverOutput } from "@anomix/dao";
 import config from "@/lib/config";
 import { PrivateKey } from "o1js";
-import { $axiosProofGenerator } from "@/lib";
+import { $axiosProofGenerator, getDateString } from "@/lib";
 import fs from "fs";
 import { getLogger } from "@/lib/logUtils";
 import { randomUUID } from "crypto";
@@ -60,7 +60,7 @@ export const handler: RequestHandler<null, { transId: number }> = async function
                 } as FlowTask<any>
             } as ProofTaskDto<any, FlowTask<any>>;
 
-            const fileName = './DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+            const fileName = './DEPOSIT_UPDATESTATE_proofTaskDto_proofReq' + getDateString() + '.json';
             fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
             logger.info(`save proofTaskDto into ${fileName}`);
 

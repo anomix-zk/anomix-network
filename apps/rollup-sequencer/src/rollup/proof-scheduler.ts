@@ -189,7 +189,7 @@ export class ProofScheduler {
             }
         }
 
-        const fileName = './BLOCK_PROVE_proofTaskDto_' + proofTaskDto.index.uuid + '_proofReq' + new Date().getTime() + '.json';
+        const fileName = './BLOCK_PROVE_proofTaskDto_' + proofTaskDto.index.uuid + '_proofReq_' + getDateString() + '.json';
         fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
         logger.info(`save proofTaskDto into ${fileName}`);
 
@@ -312,7 +312,7 @@ export class ProofScheduler {
             }
         }
 
-        const fileName = './ROLLUP_CONTRACT_CALL_proofTaskDto_' + proofTaskDto.index.uuid + '_proofReq-' + new Date().getTime() + '.json';
+        const fileName = './ROLLUP_CONTRACT_CALL_proofTaskDto_' + proofTaskDto.index.uuid + '_proofReq_' + getDateString() + '.json';
         fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
         logger.info(`save proofTaskDto into ${fileName}`);
 
