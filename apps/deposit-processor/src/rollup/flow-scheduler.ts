@@ -7,7 +7,7 @@ import { DEPOSIT_ACTION_BATCH_SIZE, DUMMY_FIELD, AnomixEntryContract, ActionType
 import { WorldState } from "@/worldstate";
 import { IndexDB } from "./index-db";
 import { DepositActionEventFetchRecord, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, MemPlL2Tx } from "@anomix/dao";
-import { $axiosProofGenerator } from "@/lib";
+import { $axiosProofGenerator, getDateString } from "@/lib";
 import { syncAcctInfo } from "@anomix/utils";
 import { FlowTask, FlowTaskType } from "@anomix/types";
 import { getConnection, In } from "typeorm";
@@ -195,7 +195,7 @@ export class FlowScheduler {
                     }
                 } as ProofTaskDto<any, FlowTask<any>>;
 
-                const fileName = './DEPOSIT_BATCH_MERGE_proofTaskDto_proofReq' + new Date().getTime() + '.json';
+                const fileName = './DEPOSIT_BATCH_MERGE_proofTaskDto_proofReq' + getDateString() + '.json';
                 fs.writeFileSync(fileName, JSON.stringify(proofTaskDto));
 
 
