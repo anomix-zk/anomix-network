@@ -118,6 +118,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
                         outputNote2: encryptedData2 ? JSON.parse(encryptedData2) : undefined,
                         aliasHash: account?.aliasHash,
                         accountPublicKey: account?.acctPk,
+                        aliasInfo: account?.encrptedAlias,
                         withdrawNote: withdrawInfoDto
                     }
 
