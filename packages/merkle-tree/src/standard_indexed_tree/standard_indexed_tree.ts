@@ -120,6 +120,7 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
     }
 
     /**
+     * !! MUST call 'findIndexOfPreviousValue(*)' to find the 'index' FIRST, and later call this method. By coldStar1993#6265 !!
      * Gets the value of the leaf at the given index.
      * @param index - Index of the leaf of which to obtain the value.
      * @param includeUncommitted - Indicates whether to include uncommitted leaves in the computation.
@@ -132,6 +133,19 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
         const leaf = this.getLatestLeafDataCopy(Number(index), includeUncommitted);
         if (!leaf) return Promise.resolve(undefined);
         return Promise.resolve(Field(leaf.value));
+    }
+
+    /**
+     * obtain the current pure leaf value on underlying (Standard) merkle tree. it maybe the default value: Field('0') if 'index' beyond 'getNumLeaves(includeUncommitted)', or else the hash of coorresponding leafData.
+     * @param index 
+     * @param includeUncommitted 
+     */
+    public async getPureLeafValue(
+        index: bigint,
+        includeUncommitted: boolean
+    ) {
+        const leaf = await super.getLeafValue(index, includeUncommitted);
+        return leaf;
     }
 
     /**
@@ -176,6 +190,7 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
     }
 
     /**
+     * !! MUST call 'findIndexOfPreviousValue(*)' to find the 'index' FIRST, and later call this method. By coldStar1993#6265 !!
      * Gets the latest LeafData copy.
      * @param index - Index of the leaf of which to obtain the LeafData copy.
      * @param includeUncommitted - If true, the uncommitted changes are included in the search.
@@ -355,13 +370,13 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
         }
     }
 
+
     /**
      * Exposes the underlying tree's update leaf method.
      * @param leaf - The hash to set at the leaf.
      * @param index - The index of the element.
      */
-    // TODO: remove once the batch insertion functionality is moved here from circuit_block_builder.ts
-    public async updateLeaf(leaf: LeafData, index: bigint): Promise<void> {
+    public async updateLeafWithNoValueCheck(leaf: LeafData, index: bigint): Promise<void> {
         let encodedLeaf;
         // === origin code block ===
         /*
@@ -376,6 +391,25 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
         // === new code block ===
         encodedLeaf = hashEncodedTreeValue(leaf, this.hasher);
         // === new code block ===
+
+        this.cachedLeaves[Number(index)] = leaf;
+        await this._updateLeaf(encodedLeaf, index);
+    }
+
+    /**
+     * Exposes the underlying tree's update leaf method.
+     * @param leaf - The hash to set at the leaf.
+     * @param index - The index of the element.
+     */
+    // TODO: remove once the batch insertion functionality is moved here from circuit_block_builder.ts
+    public async updateLeaf(leaf: LeafData, index: bigint): Promise<void> {
+        let encodedLeaf;
+
+        if (leaf.value == 0n) {
+            encodedLeaf = Field(0);
+        } else {
+            encodedLeaf = hashEncodedTreeValue(leaf, this.hasher);
+        }
 
         this.cachedLeaves[Number(index)] = leaf;
         await this._updateLeaf(encodedLeaf, index);
