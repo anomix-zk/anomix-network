@@ -31,6 +31,7 @@ export const recieveTx: FastifyPlugin = async function (
 
 export const handler: RequestHandler<L2TxReqDto, null> = async function (req, res): Promise<BaseResponse<string>> {
     const l2TxReqDto = req.body;
+    logger.info(req.body);
 
     let joinSplitProof: JoinSplitProof = undefined as any;
     try {
