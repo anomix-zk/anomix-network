@@ -8,6 +8,9 @@ import { ActionType, JoinSplitProof, ValueNote } from "@anomix/circuits";
 import config from "@/lib/config";
 import { verify, Field, PublicKey, Poseidon } from "o1js";
 import { $axiosCoordinator, $axiosSeq } from '@/lib/api';
+import { getLogger } from '@/lib/logUtils';
+
+const logger = getLogger('recieveTx');
 
 /**
 * 供client发送L2 tx
@@ -148,11 +151,15 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
                     account = await queryRunner.manager.save(account);
                 }
             }
+
             await queryRunner.commitTransaction();
+            logger.info(`mpL2Tx: ${mpL2Tx.txHash} is done.`);
 
             // if there is a high-fee l2tx, then notify coordinator to trigger seq
             if (Number(mpL2Tx.txFee) >= config.minMpTxFeeToGenBlock) {
-                $axiosCoordinator.get('/tx/high-fee-exist');
+                $axiosCoordinator.get('/tx/high-fee-exist').catch(e => {
+                    logger.warn('call /tx/high-fee-exist failed, l2tx hash: ' + mpL2Tx.txHash);
+                });
             }
 
             return { code: 0, data: joinSplitProof.publicOutput.hash().toString(), msg: '' };
