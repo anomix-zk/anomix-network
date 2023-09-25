@@ -40,9 +40,9 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                 saveProofTaskDtoFile(proofTaskDto, '.');// save to file for test
 
                 await $axiosDeposit.post('/proof-result', proofTaskDto).then(value => {
-                    logger.info('$axiosDeposit.post to /proof-result, response:', value);
+                    logger.info('$axiosDeposit.post to /proof-result, response:' + JSON.stringify(value.data));
                 }).catch(reason => {
-                    logger.error('$axiosDeposit.post to /proof-result, error:', reason);
+                    logger.error('$axiosDeposit.post to /proof-result, error:' + JSON.stringify(reason));
                 });
             }
 
@@ -51,9 +51,9 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                 saveProofTaskDtoFile(proofTaskDto, '.');// save to file for test
 
                 await $axiosDeposit.post('/proof-result', proofTaskDto).then(value => {
-                    logger.info('$axiosDeposit.post to /proof-result, response:', value);
+                    logger.info('$axiosDeposit.post to /proof-result, response:' + JSON.stringify(value.data));
                 }).catch(reason => {
-                    logger.error('$axiosDeposit.post to /proof-result, error:', reason);
+                    logger.error('$axiosDeposit.post to /proof-result, error:' + JSON.stringify(reason));
                 });
             }
 
@@ -62,9 +62,9 @@ function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
                 saveProofTaskDtoFile(proofTaskDto, '.');// save to file for test
 
                 await $axiosSeq.post('/proof-result', proofTaskDto).then(value => {
-                    logger.info('$axiosSeq.post to /proof-result, response:', value);
+                    logger.info('$axiosSeq.post to /proof-result, response:' + JSON.stringify(value.data));
                 }).catch(reason => {
-                    logger.error('$axiosSeq.post to /proof-result, error:', reason);
+                    logger.error('$axiosSeq.post to /proof-result, error:' + JSON.stringify(reason));
                 });
             }
 
