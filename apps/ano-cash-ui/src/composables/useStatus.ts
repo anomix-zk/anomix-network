@@ -54,11 +54,11 @@ export default function () {
             syncerStarted: false,
             apiExist: false,
             mask: {
-                id: undefined,
-                show: false,
-                closable: true, // Users can close by clicking
-                showLoading: false,
-                loadingText: undefined,
+                id: "appInit",
+                show: true,
+                closable: false, // Users can close by clicking
+                showLoading: true,
+                loadingText: "App Initializing...",
             },
         };
     });
