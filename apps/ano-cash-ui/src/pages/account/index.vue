@@ -251,7 +251,6 @@ const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setA
 const { convertToMinaUnit, calculateUsdAmount, omitAddress, getUserTimezone } = useUtils();
 const router = useRouter();
 const message = useMessage();
-const dialog = useDialog();
 const { SdkState, exitAccount, listenSyncerChannel } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const remoteSyncer = SdkState.remoteSyncer!;

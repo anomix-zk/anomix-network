@@ -24,7 +24,7 @@
           <div class="processing">
             <div v-if="dialogLoading" class="loading">
               <n-spin stroke="#22c493" size="small" />
-              <span style="margin-left: 8px;">Processing...</span>
+              <span style="margin-left: 8px;">Processing</span>
             </div>
             <div v-else class="loading">
               <van-icon name="passed" color="#22c493" size="28" />
