@@ -116,6 +116,8 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
             await queryRunner.startTransaction();
 
             let mpL2Tx = MemPlL2Tx.fromJoinSplitOutput(joinSplitProof.publicOutput);
+            logger.info(`process mpL2Tx: ${mpL2Tx.txHash}...`);
+
             mpL2Tx.status = L2TxStatus.PENDING;
             const outputNote1 = l2TxReqDto.extraData.outputNote1;
             const outputNote2 = l2TxReqDto.extraData.outputNote2;
