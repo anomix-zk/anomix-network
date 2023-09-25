@@ -464,17 +464,21 @@ function processTx({
         nextValue: nullifier1LeafData.value,
         nextIndex: currentNullIndex,
     });
-    currentNullRoot = lowLeafWitness1.siblingPath.calculateRoot(
+
+    const afterUpdateLowLeafNullRoot = lowLeafWitness1.siblingPath.calculateRoot(
         newLowLeafData1.commitment(),
         lowLeafWitness1.index
     );
-    Provable.log('after update lowLeafData1, currentNullRoot: ', currentNullRoot);
+    Provable.log(
+        'after update lowLeafData1, afterUpdateLowLeafNullRoot: ',
+        afterUpdateLowLeafNullRoot
+    );
 
     const checkWitnessOfNullifier1Valid = checkMembership(
         DUMMY_FIELD,
         currentNullIndex,
         oldNullWitness1,
-        currentNullRoot
+        afterUpdateLowLeafNullRoot
     );
     Provable.log(
         'checkWitnessOfNullifier1Valid: ',
@@ -562,17 +566,20 @@ function processTx({
         nextValue: nullifier2LeafData.value,
         nextIndex: currentNullIndex,
     });
-    currentNullRoot = lowLeafWitness2.siblingPath.calculateRoot(
+    const afterUpdateLowLeafNullRoot2 = lowLeafWitness2.siblingPath.calculateRoot(
         newLowLeafData2.commitment(),
         lowLeafWitness2.index
     );
-    Provable.log('after update lowLeafData2, currentNullRoot: ', currentNullRoot);
+    Provable.log(
+        'after update lowLeafData2, afterUpdateLowLeafNullRoot2: ',
+        afterUpdateLowLeafNullRoot2
+    );
 
     const checkWitnessOfNullifier2Valid = checkMembership(
         DUMMY_FIELD,
         currentNullIndex,
         oldNullWitness2,
-        currentNullRoot
+        afterUpdateLowLeafNullRoot2
     );
     Provable.log(
         'checkWitnessOfNullifier2Valid: ',
