@@ -1,9 +1,9 @@
 #!/bin/bash
 
 cd /opt/anomix_server/anomix-network/apps/proof-generators
-rm ./proofTaskDto*.json
-rm ./*proofJson*.json
-rm ./*proofJson*.txt
+ls /opt/anomix_server/anomix-network/apps/proof-generators
+rm ./proofTaskDto*
+rm ./*proofJson*
 ls /opt/anomix_server/anomix-network/apps/proof-generators
 
 
@@ -19,6 +19,7 @@ rm ./*rollupTaskDto*
 rm ./AnomixEntryContract_DEPOSIT_UPDATESTATE*
 ls /opt/anomix_server/anomix-network/apps/deposit-processor
 
+echo 'done'
 
 
 

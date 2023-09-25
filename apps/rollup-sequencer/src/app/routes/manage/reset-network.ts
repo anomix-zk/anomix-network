@@ -87,28 +87,28 @@ export const handler: RequestHandler<{ authCode: string, targetActionState: stri
 
         const depositActionEventFetchRecordId = depositActionEventFetchRecord.id;
 
-        let userDepositL1TxHash = '5JuqGRzBboyes6Sqfj5G5bo9dDESzu1cLK2vB87KF7GPESc4oXw9';//
+        let userDepositL1TxHash = '5JuviMjJ18Fvk6TUFknnuSSnQNxwCjv4TEQfVFmd4kaTEW2b9Vy5';//
         const dc1 = await genDc('./deposit1.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
 
-        userDepositL1TxHash = '5JtohGWMqKGQ1iK5bGqGgGGYY5xsBs9RDpaH6uEYUt8zFStLeZBe';//
+        userDepositL1TxHash = '5JvAYRpjTxrEUfdcsP5RcDWDNPaVR4PuTDiatJf6a1gGgZicWq74';//
         const dc2 = await genDc('./deposit2.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
 
-        userDepositL1TxHash = '5JuSRLwadr1hjzYg9P6c9PjADKK26s6JaSACsMpmc89xsTWNxfec';//
+        userDepositL1TxHash = '5JuYLttr3kwHFewj6kyFedJAnzw5nCxJ68R3LkYPd7DzvZscFwrC';//
         const dc3 = await genDc('./deposit3.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
 
-        const cs1 = [dc2, dc1, dc3];
+        const cs1 = [dc3, dc1, dc2];
         console.log(cs1.map(dc => dc.depositNoteCommitment));
         const reActionState = cs1.map(dc => Field(dc.depositNoteCommitment)).reduce((p, c, i) => {
-            console.log('currentActionsHashX:' + p.toString());
             let currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
                 p,
                 AccountUpdate.Actions.hash([c.toFields()]) // 
             );
+            console.log('currentActionsHashX:' + currentActionsHashX.toString());
             return currentActionsHashX;
         }, Reducer.initialActionState);
 
         if (targetActionState != reActionState.toString()) {
-            throw new Error("");
+            throw new Error("calc action state is not aligned with targetActionState");
         }
 
         cs1.forEach((v, i) => v.depositNoteIndex = `${i}`);

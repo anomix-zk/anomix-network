@@ -9,7 +9,10 @@ import {
 
 import fs from "fs";
 
-await JoinSplitProver.compile();
+let joinSplitProverVk = await JoinSplitProver.compile();
+console.log('JoinSplitVK=', joinSplitProverVk.verificationKey);
+fs.writeFileSync('./circuit-JoinSplitProverVK.string', joinSplitProverVk.verificationKey);
+
 const proof = await JoinSplitProver.dummy();
 const dummyTxStr = JSON.stringify(proof.toJSON());
 
