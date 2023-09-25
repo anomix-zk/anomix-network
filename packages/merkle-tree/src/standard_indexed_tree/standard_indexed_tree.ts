@@ -363,11 +363,20 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
     // TODO: remove once the batch insertion functionality is moved here from circuit_block_builder.ts
     public async updateLeaf(leaf: LeafData, index: bigint): Promise<void> {
         let encodedLeaf;
+        // === origin code block ===
+        /*
         if (leaf.value == 0n) {
             encodedLeaf = Field(0);
         } else {
             encodedLeaf = hashEncodedTreeValue(leaf, this.hasher);
         }
+        */
+        // === origin code block ===
+
+        // === new code block ===
+        encodedLeaf = hashEncodedTreeValue(leaf, this.hasher);
+        // === new code block ===
+
         this.cachedLeaves[Number(index)] = leaf;
         await this._updateLeaf(encodedLeaf, index);
     }
