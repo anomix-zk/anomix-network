@@ -31,6 +31,7 @@ export const recieveTx: FastifyPlugin = async function (
 
 export const handler: RequestHandler<L2TxReqDto, null> = async function (req, res): Promise<BaseResponse<string>> {
     const l2TxReqDto = req.body;
+    logger.info(req.body);
 
     let joinSplitProof: JoinSplitProof = undefined as any;
     try {
@@ -166,6 +167,9 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
 
             return { code: 0, data: joinSplitProof.publicOutput.hash().toString(), msg: '' };
         } catch (err) {
+            logger.error(err);
+            console.error(err);
+
             await queryRunner.rollbackTransaction();
 
             throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
