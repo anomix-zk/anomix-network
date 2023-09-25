@@ -13,6 +13,8 @@ export default function () {
         signingPk2_58: string | null;
         alias: string | null;
         accountStatus: AccountStatus;
+        syncedBlock: number;
+        latestBlock: number;
         isHideInfo: boolean;
         totalNanoBalance: string | null;
         tokenPrices: tokenPrice[];
@@ -38,6 +40,8 @@ export default function () {
             signingPk2_58: null,
             alias: null,
             accountStatus: AccountStatus.UNREGISTERED,
+            syncedBlock: 0,
+            latestBlock: 0,
             isHideInfo: false,
             totalNanoBalance: null,
             tokenPrices: [
@@ -195,6 +199,14 @@ export default function () {
         }
     };
 
+    const setSyncedBlock = (block: number) => {
+        appState.value.syncedBlock = block;
+    };
+
+    const setLatestBlock = (block: number) => {
+        appState.value.latestBlock = block;
+    };
+
     return {
         appState,
         pageParams,
@@ -216,5 +228,7 @@ export default function () {
         setTokenPrices,
         setSigningPk1_58,
         setSigningPk2_58,
+        setSyncedBlock,
+        setLatestBlock,
     };
 }

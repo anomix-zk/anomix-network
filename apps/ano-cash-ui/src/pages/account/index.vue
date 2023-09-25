@@ -1,4 +1,37 @@
 <template>
+    <div v-if="showExitDialog" class="ano-mask">
+        <div class="ano-dialog" style="width:70%; height: 40%;">
+            <div class="dialog-container">
+                <div class="header">
+                    <div class="title">Log Out</div>
+
+                    <div class="close" @click="closeExitDialog">
+                        <van-icon name="close" color="#97989d" size="20" />
+                    </div>
+                </div>
+
+                <div class="content">
+
+                    <div>Are you sure you want to log out?</div>
+
+                </div>
+
+                <div class="bottom">
+                    <div class="confirm">
+                        <n-button type="info" class="dialog-btn" @click="logOut">
+                            Log out
+                        </n-button>
+                        <n-button style="margin-left: 10px;" type="info" class="dialog-btn" @click="closeExitDialog">
+                            Cancel
+                        </n-button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
     <div class="header-bg-img home">
 
         <div class="main-container" style="margin-left: 30px; margin-right: 30px">
@@ -17,7 +50,7 @@
                     <div class="right-icons">
                         <!-- <van-icon name="comment-o" dot class="dot" @click="showNotiy" />
                         <van-icon name="setting-o" class="dot" @click="toSetting" /> -->
-                        <van-icon :name="exitIcon" color="#5e5f6e" size="20" @click="exit" />
+                        <van-icon :name="exitIcon" color="#5e5f6e" size="20" @click="openExitDialog" />
                     </div>
                 </div>
 
@@ -43,9 +76,9 @@
                     </div>
                 </div>
 
-                <div>Synced / Latest Block: {{ syncedBlock }} / {{ latestBlock }}</div>
-                <div v-if="syncedBlock !== latestBlock" style="font-size: 13px;">Estimated synced: <n-time :to="toTime"
-                        type="relative" /></div>
+                <div>Synced / Latest Block: {{ appState.syncedBlock }} / {{ appState.latestBlock }}</div>
+                <div v-if="appState.syncedBlock !== appState.latestBlock" style="font-size: 13px;">Estimated synced: <n-time
+                        :to="toTime" type="relative" /></div>
 
                 <n-tag v-if="appState.accountStatus === AccountStatus.REGISTERING" type="warning" round strong>
                     Account Creation Pending
@@ -76,7 +109,7 @@
 
             <div class="ano-tab">
 
-                <n-tabs default-value="tokens" size="large" justify-content="space-evenly" :tab-style="tabStyle">
+                <n-tabs :default-value="defaultTab" size="large" justify-content="space-evenly" :tab-style="tabStyle">
                     <n-tab-pane name="tokens" tab="Tokens">
                         <div v-if="tokenList.length" v-for="item in tokenList" :key="item.tokenId" class="token">
                             <div class="token-left">
@@ -116,7 +149,7 @@
 
                     <n-tab-pane name="history" tab="History">
 
-                        <div v-if="txList.length" v-for="item in txList" :key="item.txHash" class="tx"
+                        <div v-if="txList.length > 0" v-for="item in txList" :key="item.txHash" class="tx"
                             @click="toClaimPage(item.actionType, item.finalizedTs, item.withdrawNoteCommitment)">
                             <div class="tx-left">
                                 <div class="action-icon">
@@ -147,7 +180,8 @@
                                     </div>
                                     <div class="tx-time">
                                         <template v-if="item.createdTs !== 0">
-                                            <n-time :time="item.createdTs" format="yyyy-MM-dd HH:mm" />
+                                            <n-time :time-zone="userTimezone" :time="item.createdTs"
+                                                format="yyyy-MM-dd HH:mm" />
                                             <span v-if="item.finalizedTs !== 0">
                                                 (finalized)
                                             </span>
@@ -213,8 +247,8 @@ import exitIcon from '@/assets/exit.svg';
 import { AccountStatus, PageAction, SdkEventType } from '../../common/constants';
 import { SdkEvent, TxHis } from '../../common/types';
 
-const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance } = useStatus();
-const { convertToMinaUnit, calculateUsdAmount, omitAddress } = useUtils();
+const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setAccountStatus, setSyncedBlock, setLatestBlock, pageParams } = useStatus();
+const { convertToMinaUnit, calculateUsdAmount, omitAddress, getUserTimezone } = useUtils();
 const router = useRouter();
 const message = useMessage();
 const dialog = useDialog();
@@ -224,13 +258,26 @@ const remoteSyncer = SdkState.remoteSyncer!;
 
 let copyFunc: (text: string) => void;
 
+const showExitDialog = ref(true);
+const closeExitDialog = () => {
+    console.log('close exit dialog');
+    showExitDialog.value = false;
+};
+const openExitDialog = () => {
+    showExitDialog.value = true;
+};
+const logOut = async () => {
+    console.log('log out');
+    await exitAccount();
+    message.success('Log out successfully');
+    router.replace("/login/session");
+};
+
 const expectSyncedSpendTime = ref(20_000); // default 20s
 const toTime = computed(() => Date.now() - expectSyncedSpendTime.value);
-const syncedBlock = ref(0);
-const latestBlock = ref(0);
 const lastBlockProcessDoneTime = ref(Date.now());
 const syncerListenerSetted = ref(false);
-
+const userTimezone = ref("Asia/Shanghai");
 const tokenList = computed(() => {
     return [
         { tokenId: 1, tokenName: "MINA", tokenNetwork: "Anomix", balance: appState.value.totalNanoBalance },
@@ -266,108 +313,105 @@ const userTx2TxHis = (tx: any) => {
     return txHis;
 };
 
+const defaultTab = ref('tokens');
 onMounted(async () => {
     console.log('account onMounted...');
-    const { copyText } = useClientUtils();
-    copyFunc = copyText;
+    try {
+        const { copyText } = useClientUtils();
+        copyFunc = copyText;
 
-    // get latest block
-    const tempLatestBlock = await remoteApi.getBlockHeight();
-    if (tempLatestBlock > latestBlock.value) {
-        latestBlock.value = tempLatestBlock;
-    }
+        if (pageParams.value.action === PageAction.ACCOUNT_PAGE) {
+            console.log('pageParams: ', pageParams.value);
+            defaultTab.value = pageParams.value.params !== null ? pageParams.value.params : 'tokens';
+        }
 
-    // get account synced block
-    console.log('get account synced block...');
-    const syncedToBlock = await remoteApi.getAccountSyncedToBlock(appState.value.accountPk58!);
-    console.log('account syncedToBlock: ', syncedToBlock);
-    if (syncedToBlock !== undefined) {
-        syncedBlock.value = syncedToBlock!;
-    }
+        userTimezone.value = getUserTimezone();
+        // get history
+        const txs = await remoteApi.getTxs(appState.value.accountPk58!);
+        console.log('txs length: ', txs.length);
+        let txHis: TxHis[] = [];
+        txs.forEach(tx => {
+            txHis.push(userTx2TxHis(tx));
+        });
+        txList.value = txHis;
 
-    // get total balance now
-    console.log('get total balance now...');
-    const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
-    console.log('is account synced: ', synced);
-    if (synced) {
-        const balance = await remoteApi.getBalance(appState.value.accountPk58!);
-        setTotalNanoBalance(balance.toString());
-    }
+        // get latest block
+        const tempLatestBlock = await remoteApi.getBlockHeight();
+        if (tempLatestBlock > appState.value.latestBlock) {
+            setLatestBlock(tempLatestBlock);
+        }
 
-    // get history
-    const txs = await remoteApi.getTxs(appState.value.accountPk58!);
-    console.log('txs length: ', txs.length);
-    let txHis: TxHis[] = [];
-    txs.forEach(tx => {
-        txHis.push(userTx2TxHis(tx));
-    });
-    txList.value = txHis;
+        // get account synced block
+        console.log('get account synced block...');
+        const syncedToBlock = await remoteApi.getAccountSyncedToBlock(appState.value.accountPk58!);
+        console.log('account syncedToBlock: ', syncedToBlock);
+        if (syncedToBlock !== undefined) {
+            setSyncedBlock(syncedToBlock);
+        }
 
-    console.log('set syncer listener...');
-    // set syncer listener
-    if (!syncerListenerSetted.value) {
-        listenSyncerChannel(async (event: SdkEvent) => {
-            console.log('syncer event: ', event);
-            if (event.eventType === SdkEventType.UPDATED_ACCOUNT_STATE) {
-                if (event.data.accountPk === appState.value.accountPk58) {
-                    const oneBlockSpendTime = Date.now() - lastBlockProcessDoneTime.value;
-                    console.log('oneBlockSpendTime: ', oneBlockSpendTime);
-                    lastBlockProcessDoneTime.value = Date.now();
+        // get total balance now
+        console.log('get total balance now...');
+        const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
+        console.log('is account synced: ', synced);
+        if (synced) {
+            const balance = await remoteApi.getBalance(appState.value.accountPk58!);
+            setTotalNanoBalance(balance.toString());
+        }
 
-                    // get latest block
-                    const blockHeight = await remoteApi.getBlockHeight();
-                    latestBlock.value = blockHeight;
-                    syncedBlock.value = event.data.synchedToBlock;
+        console.log('set syncer listener...');
+        // set syncer listener
+        if (!syncerListenerSetted.value) {
+            listenSyncerChannel(async (event: SdkEvent) => {
+                console.log('syncer event: ', event);
+                if (event.eventType === SdkEventType.UPDATED_ACCOUNT_STATE) {
+                    if (event.data.accountPk === appState.value.accountPk58) {
+                        const oneBlockSpendTime = Date.now() - lastBlockProcessDoneTime.value;
+                        console.log('oneBlockSpendTime: ', oneBlockSpendTime);
+                        lastBlockProcessDoneTime.value = Date.now();
 
-                    const diffBlock = blockHeight - event.data.synchedToBlock;
-                    if (diffBlock > 0) {
-                        expectSyncedSpendTime.value = oneBlockSpendTime * diffBlock;
-                    }
+                        // get latest block
+                        const blockHeight = await remoteApi.getBlockHeight();
+                        setLatestBlock(blockHeight);
+                        setSyncedBlock(event.data.synchedToBlock);
 
-                    // get latest balance
-                    const balance = await remoteApi.getBalance(appState.value.accountPk58!);
-                    setTotalNanoBalance(balance.toString());
 
-                    // get lastest history
-                    const txs = await remoteApi.getTxs(appState.value.accountPk58!);
-                    let txHis: TxHis[] = [];
-                    txs.forEach(tx => {
-                        txHis.push(userTx2TxHis(tx));
-                    });
-                    txList.value = txHis;
+                        const diffBlock = blockHeight - event.data.synchedToBlock;
+                        if (diffBlock > 0) {
+                            expectSyncedSpendTime.value = oneBlockSpendTime * diffBlock;
+                        }
 
-                    if (appState.value.accountStatus === AccountStatus.REGISTERING) {
-                        // check if register success
-                        const registerSuccess = await remoteApi.isAliasRegistered(appState.value.alias!, false);
-                        if (registerSuccess) {
-                            appState.value.accountStatus = AccountStatus.REGISTERED;
+                        // get latest balance
+                        const balance = await remoteApi.getBalance(appState.value.accountPk58!);
+                        setTotalNanoBalance(balance.toString());
+
+                        // get lastest history
+                        const txs = await remoteApi.getTxs(appState.value.accountPk58!);
+                        let txHis: TxHis[] = [];
+                        txs.forEach(tx => {
+                            txHis.push(userTx2TxHis(tx));
+                        });
+                        txList.value = txHis;
+
+                        if (appState.value.accountStatus === AccountStatus.REGISTERING) {
+                            // check if register success
+                            const registerSuccess = await remoteApi.isAliasRegistered(appState.value.alias!, false);
+                            if (registerSuccess) {
+                                setAccountStatus(AccountStatus.REGISTERED);
+                            }
                         }
                     }
                 }
-            }
-        });
-        syncerListenerSetted.value = true;
+            });
+            syncerListenerSetted.value = true;
+        }
+
+    } catch (err: any) {
+        console.error(err);
+        message.error(err.message, { duration: 0, closable: true });
     }
 
     console.log('account onMounted done');
 });
-
-const exit = () => {
-    dialog.warning({
-        title: 'Log Out Ano.Cash',
-        content: 'Are you sure you want to log out?',
-        positiveText: 'Log out',
-        negativeText: 'Cancel',
-        onPositiveClick: async () => {
-            await exitAccount();
-            message.success('Log out successfully');
-            router.replace("/login/session");
-        },
-        onNegativeClick: () => {
-            console.log('cancel log out');
-        }
-    })
-};
 
 const copyAddress = () => {
     copyFunc(appState.value.accountPk58!);
@@ -437,10 +481,10 @@ const toWithdraw = () => {
         border-radius: 50%;
         width: 40px;
         height: 40px;
-        background: #000;
+        background: #fff;
         border: 1px solid #fff;
         margin-right: 10px;
-        background-image: url(@/assets/avatar.svg);
+        background-image: url(@/assets/anomix.svg);
         background-size: cover;
     }
 

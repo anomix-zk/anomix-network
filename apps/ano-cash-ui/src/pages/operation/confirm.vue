@@ -84,7 +84,7 @@ import { TxInfo } from '../../common/types';
 
 const router = useRouter();
 const message = useMessage();
-const { pageParams, showLoadingMask, closeLoadingMask, appState } = useStatus();
+const { pageParams, showLoadingMask, closeLoadingMask, appState, setPageParams } = useStatus();
 const { convertToNanoMinaUnit } = useUtils();
 const currPageAction = ref(pageParams.value.action);
 const params = ref<TxInfo>(pageParams.value.params);
@@ -112,10 +112,12 @@ const sendTx = async () => {
       isWithdraw: currPageAction.value === PageAction.WITHDRAW_TOKEN,
     });
 
+    console.log('paymentTx json: ', tx);
     showLoadingMask({ id: maskId, text: 'Sending Tx...', closable: false });
     await remoteApi.sendTx(tx);
 
     message.success('Transaction sent successfully!');
+    setPageParams(PageAction.ACCOUNT_PAGE, 'history');
     router.replace('/account');
     closeLoadingMask(maskId);
 

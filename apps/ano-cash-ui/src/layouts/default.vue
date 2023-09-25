@@ -1,6 +1,6 @@
 <template>
     <div class="ano-app">
-        <!-- <div class="view-account-header" @click="toIndex">Money</div> -->
+
         <div class="page">
             <slot />
 
@@ -12,19 +12,12 @@
     </div>
 </template>
 <script lang="ts" setup>
-const router = useRouter();
-
 const { appState, closeLoadingMask } = useStatus();
-
 const closeCurrentLoadingMask = () => {
     if (appState.value.mask.closable) {
         closeLoadingMask(appState.value.mask.id);
     }
 };
 
-const toIndex = () => {
-    router.replace("/");
-};
 </script>
 
-<style lang="scss" scoped></style>

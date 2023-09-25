@@ -144,6 +144,101 @@ h6 {
       flex-direction: column;
       justify-content: center;
       align-items: center;
+
+      .ano-dialog {
+        position: absolute;
+        margin: auto;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+    
+        .dialog-container {
+            border-radius: 15px;
+            background-color: var(--ano-background);
+            width: 100%;
+            max-height: 250px;
+            display: flex;
+            flex-direction: column;
+    
+            .header {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                padding-left: 20px;
+                padding-right: 20px;
+                padding-top: 15px;
+                padding-bottom: 15px;
+                font-size: 18px;
+                font-weight: 500;
+    
+                .title {}
+    
+                .close {}
+            }
+    
+            .content {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                padding-left: 20px;
+                padding-right: 20px;
+                font-size: 14px;
+                color: rgb(18, 19, 20);
+
+                
+                .processing-tx-hash {
+                  display: flex;
+                  align-items: center;
+                  justify-content: left;
+                  font-size: 13px;
+                  font-weight: 600;
+                  color: #b0b8bf;
+                  line-height: 14px;
+                  margin-top: 10px;
+                }
+            }
+    
+            .bottom {
+                width: 100%;
+                padding-top: 32px;
+                padding-left: 20px;
+                padding-right: 20px;
+                padding-bottom: 15px;
+
+                .confirm {
+                  display: flex;
+                  justify-content: flex-end;
+
+                  .dialog-btn {
+                    height: 33px;
+                    border-radius: 8px;
+                  }
+                }
+                
+                .processing {
+                  height: 52px;
+                  background: #d6efe7;
+                  border-radius: 60px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 14px;
+                  font-weight: 600;
+                  color: #22c493;
+                  cursor: pointer;
+
+
+                  .loading {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                  }
+                }
+            }
+        }
+    }
     }
   }
 

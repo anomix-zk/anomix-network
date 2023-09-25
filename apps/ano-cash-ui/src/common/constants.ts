@@ -9,6 +9,7 @@ export const EMPTY_PUBLICKEY =
 export enum PageAction {
     SEND_TOKEN = "SEND_TOKEN",
     WITHDRAW_TOKEN = "WITHDRAW_TOKEN",
+    ACCOUNT_PAGE = "ACCOUNT_PAGE",
 }
 
 export enum SdkEventType {

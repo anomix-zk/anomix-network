@@ -107,6 +107,13 @@ export default function () {
     const checkNoSideSpace = (value: string) =>
         !value.startsWith(" ") && !value.endsWith(" ");
 
+    const getUserTimezone = () => {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        console.log("user timezone:", timezone);
+        return timezone;
+    };
+
     return {
         convertToMinaUnit,
         convertToNanoMinaUnit,
@@ -114,5 +121,6 @@ export default function () {
         omitAddress,
         checkOnlyNumber,
         checkNoSideSpace,
+        getUserTimezone,
     };
 }
