@@ -176,6 +176,7 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
     }
 
     /**
+     * !! MUST call 'findIndexOfPreviousValue(*)' to find the 'index' FIRST, and later call this method. By coldStar1993#6265 !!
      * Gets the latest LeafData copy.
      * @param index - Index of the leaf of which to obtain the LeafData copy.
      * @param includeUncommitted - If true, the uncommitted changes are included in the search.
@@ -355,13 +356,13 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
         }
     }
 
+
     /**
      * Exposes the underlying tree's update leaf method.
      * @param leaf - The hash to set at the leaf.
      * @param index - The index of the element.
      */
-    // TODO: remove once the batch insertion functionality is moved here from circuit_block_builder.ts
-    public async updateLeaf(leaf: LeafData, index: bigint): Promise<void> {
+    public async updateLeafWithNoValueCheck(leaf: LeafData, index: bigint): Promise<void> {
         let encodedLeaf;
         // === origin code block ===
         /*
@@ -376,6 +377,25 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
         // === new code block ===
         encodedLeaf = hashEncodedTreeValue(leaf, this.hasher);
         // === new code block ===
+
+        this.cachedLeaves[Number(index)] = leaf;
+        await this._updateLeaf(encodedLeaf, index);
+    }
+
+    /**
+     * Exposes the underlying tree's update leaf method.
+     * @param leaf - The hash to set at the leaf.
+     * @param index - The index of the element.
+     */
+    // TODO: remove once the batch insertion functionality is moved here from circuit_block_builder.ts
+    public async updateLeaf(leaf: LeafData, index: bigint): Promise<void> {
+        let encodedLeaf;
+
+        if (leaf.value == 0n) {
+            encodedLeaf = Field(0);
+        } else {
+            encodedLeaf = hashEncodedTreeValue(leaf, this.hasher);
+        }
 
         this.cachedLeaves[Number(index)] = leaf;
         await this._updateLeaf(encodedLeaf, index);
