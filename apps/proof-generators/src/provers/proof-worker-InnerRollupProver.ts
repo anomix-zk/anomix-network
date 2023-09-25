@@ -5,8 +5,7 @@ import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, A
 import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
 import { ProofTaskType, FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
-import { proveTxBatch } from './circuits/inner_rollup_prover';
-import { merge } from './circuits/deposit_rollup_prover';
+import { proveTxBatch, merge } from './circuits/inner_rollup_prover';
 
 const logger = getLogger('pWorker-InnerRollupProver');
 
@@ -50,8 +49,13 @@ function processMsgFromMaster() {
 
                     logger.info(`currently merge [innerRollupProof1.publicOutput.oldDataRoot: ${params.innerRollupProof1.publicOutput.oldDataRoot}, innerRollupProof2.publicOutput.oldDataRoot: ${params.innerRollupProof2.publicOutput.oldDataRoot}]`);
 
-                    // const proof = merge(params.innerRollupProof1, params.innerRollupProof2);
-                    return await InnerRollupProver.merge(params.innerRollupProof1, params.innerRollupProof2);
+                    const proof = merge(params.innerRollupProof1, params.innerRollupProof2);
+                    logger.info(`exec 'merge' outside circuit smoothly`);
+
+                    const proofRs = await InnerRollupProver.merge(params.innerRollupProof1, params.innerRollupProof2);
+                    logger.info(`exec 'merge' inside circuit: done`);
+
+                    return proofRs;
                 });
                 break;
 
