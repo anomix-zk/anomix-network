@@ -19,6 +19,7 @@ rm ./*rollupTaskDto*
 rm ./AnomixEntryContract_DEPOSIT_UPDATESTATE*
 ls /opt/anomix_server/anomix-network/apps/deposit-processor
 
+echo 'done'
 
 
 
