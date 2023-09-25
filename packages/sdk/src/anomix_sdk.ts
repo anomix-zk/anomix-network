@@ -1183,7 +1183,9 @@ export class AnomixSdk {
     const publicAssetId = isWithdraw ? AssetId.MINA : DUMMY_FIELD;
     const message = [
       outputNote1.commitment(),
-      outputNote2.commitment(),
+      outputNote2.value.equals(UInt64.zero).toBoolean()
+        ? DUMMY_FIELD
+        : outputNote2.commitment(),
       nullifier1,
       nullifier2,
       publicAssetId,
@@ -1225,7 +1227,10 @@ export class AnomixSdk {
       publicValue,
       publicOwner,
     });
-    this.log.info('sendInput: ', JoinSplitSendInput.toJSON(input));
+    this.log.info(
+      'sendInput: ',
+      JSON.stringify(JoinSplitSendInput.toJSON(input))
+    );
     this.log.info('proving...');
     const startTime = Date.now();
     const proof = await JoinSplitProver.send(input);
