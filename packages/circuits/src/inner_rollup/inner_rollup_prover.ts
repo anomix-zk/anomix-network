@@ -355,7 +355,7 @@ function processTx({
   ).assertTrue(
     'Tx deposit root should be equal to deposit root of private input'
   );
-  txFee.fee.add(txOutput.txFee);
+  txFee.fee = txFee.fee.add(txOutput.txFee);
 
   const [depositStartIndex, depositCount] = Provable.if(
     txIsDeposit,
