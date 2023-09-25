@@ -14,6 +14,25 @@ export class WorldStateDB {
 
     constructor(dbPath: string) {
         this.db = levelup(leveldown(dbPath));
+
+        /*
+        this.db.createReadStream().on('data', function (entry) {
+            if (String(entry.key).startsWith('NULLIFIER_TREE:leaf')) {
+                let buf = entry.value;
+                const value0 = toBigIntBE(buf.subarray(0, 32));
+                const nextIndex0 = toBigIntBE(buf.subarray(32, 64));
+                const nextValue0 = toBigIntBE(buf.subarray(64, 96));
+                const data = {
+                    value: Field(value0),
+                    nextIndex: Field(nextIndex0),
+                    nextValue: Field(nextValue0)
+                }
+                console.log(`${entry.key}: ${JSON.stringify(data)}`);
+            } else {
+                console.log(`${entry.key}: ${entry.value}`);
+            }
+        });
+        */
     }
 
     /**
@@ -159,6 +178,9 @@ export class WorldStateDB {
         index: bigint,
         includeUncommitted: boolean
     ): Promise<Field | undefined> {//
+        if (treeId == MerkleTreeId.NULLIFIER_TREE) {
+            return await (this.trees.get(MerkleTreeId.NULLIFIER_TREE)! as StandardIndexedTree).getPureLeafValue(index, includeUncommitted);
+        }
         return await this.trees.get(treeId)!.getLeafValue(index, includeUncommitted);
     }
 
@@ -170,7 +192,7 @@ export class WorldStateDB {
 
         const siblingPath = (await this.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(index), includeUncommitted))!;
 
-        const leafData0 = (await this.getLatestLeafDataCopy(MerkleTreeId.NULLIFIER_TREE, index, includeUncommitted))!;
+        const leafData0 = (this.trees.get(MerkleTreeId.NULLIFIER_TREE) as StandardIndexedTree).getLatestLeafDataCopy(index, includeUncommitted)!;
 
         return LowLeafWitnessData.fromJSON({
             index: `${index}`,
@@ -190,24 +212,11 @@ export class WorldStateDB {
     }
 
     /**
-     * Gets the latest LeafData copy.
-     * @param index - Index of the leaf of which to obtain the LeafData copy.
-     * @param includeUncommitted - If true, the uncommitted changes are included in the search.
-     * @returns A copy of the leaf data at the given index or undefined if the leaf was not found.
-     */
-    public getLatestLeafDataCopy(treeId: MerkleTreeId,
-        index: number,
-        includeUncommitted: boolean
-    ): LeafData | undefined {
-        return (this.trees.get(treeId) as StandardIndexedTree).getLatestLeafDataCopy(index, includeUncommitted);
-    }
-
-    /**
     * Exposes the underlying tree's update leaf method.
     * @param leaf - The hash to set at the leaf.
     * @param index - The index of the element.
     */
     public async updateLeaf(treeId: MerkleTreeId, leaf: LeafData, index: bigint): Promise<void> {
-        return await (this.trees.get(treeId) as StandardIndexedTree).updateLeaf(leaf, index);
+        return await (this.trees.get(treeId) as StandardIndexedTree).updateLeafWithNoValueCheck(leaf, index);
     }
 }

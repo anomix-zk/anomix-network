@@ -120,6 +120,7 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
     }
 
     /**
+     * !! MUST call 'findIndexOfPreviousValue(*)' to find the 'index' FIRST, and later call this method. By coldStar1993#6265 !!
      * Gets the value of the leaf at the given index.
      * @param index - Index of the leaf of which to obtain the value.
      * @param includeUncommitted - Indicates whether to include uncommitted leaves in the computation.
@@ -132,6 +133,19 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
         const leaf = this.getLatestLeafDataCopy(Number(index), includeUncommitted);
         if (!leaf) return Promise.resolve(undefined);
         return Promise.resolve(Field(leaf.value));
+    }
+
+    /**
+     * obtain the current pure leaf value on underlying (Standard) merkle tree. it maybe the default value: Field('0') if 'index' beyond 'getNumLeaves(includeUncommitted)', or else the hash of coorresponding leafData.
+     * @param index 
+     * @param includeUncommitted 
+     */
+    public async getPureLeafValue(
+        index: bigint,
+        includeUncommitted: boolean
+    ) {
+        const leaf = await super.getLeafValue(index, includeUncommitted);
+        return leaf;
     }
 
     /**
