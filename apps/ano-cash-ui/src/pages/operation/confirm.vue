@@ -84,7 +84,7 @@ import { TxInfo } from '../../common/types';
 
 const router = useRouter();
 const message = useMessage();
-const { pageParams, showLoadingMask, closeLoadingMask } = useStatus();
+const { pageParams, showLoadingMask, closeLoadingMask, appState } = useStatus();
 const { convertToNanoMinaUnit } = useUtils();
 const currPageAction = ref(pageParams.value.action);
 const params = ref<TxInfo>(pageParams.value.params);
@@ -103,7 +103,7 @@ const sendTx = async () => {
     const tx = await remoteSdk.createPaymentTx({
       accountPk58: params.value!.sender,
       alias: params.value!.senderAlias,
-      senderAccountRequiredBool: params.value.receiverAlias !== null ? true : false,
+      senderAccountRequiredBool: appState.value.alias !== null,
       receiverPk58: params.value!.receiver,
       receiverAccountRequiredBool: params.value!.receiverAlias !== null,
       anonToReceiver: params.value!.anonToReceiver,
