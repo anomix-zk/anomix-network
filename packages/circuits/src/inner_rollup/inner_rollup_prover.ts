@@ -462,10 +462,10 @@ function processTx({
   Provable.log('lowLeafNextValue1: ', lowLeafNextValue1);
 
   const checkNullifier1LeassThanLowLeafNextValue = Provable.if(
-    lowLeafNextValue1.equals(DUMMY_FIELD).not(),
+    lowLeafNextValue1.equals(DUMMY_FIELD),
     Bool,
-    nullifier1.lessThan(lowLeafNextValue1),
-    Bool(true)
+    Bool(true),
+    nullifier1.lessThan(lowLeafNextValue1)
   );
   Provable.log(
     'checkNullifier1LeassThanLowLeafNextValue: ',
@@ -560,10 +560,10 @@ function processTx({
   Provable.log('lowLeafNextValue2: ', lowLeafNextValue2);
 
   const checkNullifier2LeassThanLowLeafNextValue = Provable.if(
-    lowLeafNextValue2.equals(DUMMY_FIELD).not(),
+    lowLeafNextValue2.equals(DUMMY_FIELD),
     Bool,
-    nullifier2.lessThan(lowLeafNextValue2),
-    Bool(true)
+    Bool(true),
+    nullifier2.lessThan(lowLeafNextValue2)
   );
   Provable.log(
     'checkNullifier2LeassThanLowLeafNextValue: ',

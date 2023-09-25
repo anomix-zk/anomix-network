@@ -234,8 +234,8 @@ let JoinSplitProver = Experimental.ZkProgram({
         const outputNote2Commitment = Provable.if(
           outputNote2.value.equals(UInt64.zero),
           Field,
-          outputNote2.commitment(),
-          DUMMY_FIELD
+          DUMMY_FIELD,
+          outputNote2.commitment()
         );
         Provable.log('OutputNote2Commitment: ', outputNote2Commitment);
 
