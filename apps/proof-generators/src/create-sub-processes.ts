@@ -53,11 +53,11 @@ const CircuitName_InnerRollupProver = 'InnerRollupProver';
 const CircuitName_BlockProver = 'BlockProver';
 const CircuitName_AnomixRollupContract = 'AnomixRollupContract';
 
-const cnt_DepositRollupProver = 2;
-const cnt_AnomixEntryContract = 3;
+const cnt_DepositRollupProver = 1;
+const cnt_AnomixEntryContract = 1;
 const cnt_JoinSplitProver = 1;
-const cnt_InnerRollupProver = 2;
-const cnt_BlockProver = 2;
+const cnt_InnerRollupProver = 1;
+const cnt_BlockProver = 1;
 const cnt_AnomixRollupContract = 3;
 
 /* 
@@ -131,17 +131,17 @@ export const createSubProcesses = async (n: number) => {
         }
     }
 
-    // createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
+    createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
 
-    // createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
+    createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
 
-    // createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
+    createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
 
     createCircuitProcessor(cnt_InnerRollupProver, CircuitName_InnerRollupProver);
 
-    // createCircuitProcessor(cnt_BlockProver, CircuitName_BlockProver);
+    createCircuitProcessor(cnt_BlockProver, CircuitName_BlockProver);
 
-    // createCircuitProcessor(cnt_AnomixRollupContract, CircuitName_AnomixRollupContract);
+    createCircuitProcessor(cnt_AnomixRollupContract, CircuitName_AnomixRollupContract);
 
     await waitForAllWorkersReady(workerMap);
 

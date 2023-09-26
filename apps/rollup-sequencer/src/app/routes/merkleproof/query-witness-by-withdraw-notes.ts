@@ -7,7 +7,10 @@ import { getConnection } from "typeorm";
 import { WithdrawInfo } from "@anomix/dao";
 import { checkAccountExists } from "@anomix/utils";
 import { PublicKey, Field } from "o1js";
+import { getLogger } from "@/lib/logUtils";
 
+
+const logger = getLogger('queryWitnessByWithdrawNotes');
 /**
  * query all Witness By WithdrawNotes
  */
@@ -30,10 +33,9 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
     res
 ): Promise<BaseResponse<WithdrawalWitnessDto>> {
     const withdrawCommitment = req.params.commitment;
+    logger.info(`a new witness query begin, target withdrawCommitment: ${withdrawCommitment}`);
 
     try {
-        const rollupDataRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, false).toString();
-
         const connection = getConnection();
         const withdrawInfoRepo = connection.getRepository(WithdrawInfo);
         const winfo = await withdrawInfoRepo.findOne({
@@ -44,6 +46,7 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
         })
 
         if (!winfo) {
+            logger.warn(`no withdraw info, end.`);
             return { code: 1, data: undefined, msg: 'cannot find the value note!' } as BaseResponse<WithdrawalWitnessDto>;
         }
 
@@ -55,21 +58,38 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
         const notFirst = !accountExists && account.zkapp?.appState[0] == Field(0);
 
         if (notFirst) {//if it's NOT the first withdraw
+            logger.info(`it's NOT the first withdraw, load tree...`);
             // loadTree from withdrawDB & obtain merkle witness
             await this.withdrawDB.loadTree(ownerPk, tokenId);
+            await this.withdrawDB.commit();
+            logger.info(`load tree, done.`);
 
         } else {// first withdraw, should deploy first
+            logger.info(`it's the first withdraw, init tree...`);
+            // init a 'USER_NULLIFIER_TREE' tree for it
+            await this.withdrawDB.initTree(ownerPk, tokenId);
+            await this.withdrawDB.commit();
+            logger.info(`init tree, done.`);
+
             return { code: 1, data: undefined, msg: 'please deploy WithdrawAccount first!' } as BaseResponse<WithdrawalWitnessDto>;
         }
 
         const { index: preIdx, alreadyPresent } = await this.withdrawDB.findIndexOfPreviousValue(Field(winfo.outputNoteCommitment), true);
+        logger.info(`predecessor's index: ${preIdx}`);
+
         const preLeafData = await this.withdrawDB.getLatestLeafDataCopy(preIdx, true);
+        logger.info(`predecessor: ${JSON.stringify(preLeafData)}`);
+
+        const rollupDataRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, false).toString();
+        logger.info(`current root of SYNC_DATA_TREE: ${rollupDataRoot}`);
+
+        const outputNoteCommitmentIdx = winfo!.outputNoteCommitmentIdx ?? (await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${winfo.outputNoteCommitment}`));
 
         const rs = {
             withdrawNoteWitnessData: {
                 withdrawNote: winfo!.valueNote(),
-                witness: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.SYNC_DATA_TREE, BigInt(winfo!.outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
-                index: winfo!.outputNoteCommitmentIdx
+                witness: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.SYNC_DATA_TREE, BigInt(outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
+                index: outputNoteCommitmentIdx
             },
             lowLeafWitness: {
                 leafData: {
@@ -77,10 +97,10 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
                     nextIndex: preLeafData!.nextIndex.toString(),
                     nextValue: preLeafData!.nextValue.toString()
                 },
-                siblingPath: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(winfo!.outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
+                siblingPath: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
                 index: Field(preIdx).toString()
             },
-            oldNullWitness: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(winfo!.outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
+            oldNullWitness: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
             rollupDataRoot
         }
 

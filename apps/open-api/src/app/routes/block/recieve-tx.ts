@@ -159,6 +159,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
                 withdrawInfo.noteType = withdrawNote.noteType.toString();
                 withdrawInfo.l2TxHash = mpL2Tx.txHash;
                 withdrawInfo.l2TxId = mpL2Tx.id;
+                withdrawInfo.outputNoteCommitment = joinSplitProof.publicOutput.outputNoteCommitment1.toString();
                 withdrawInfo = await queryRunner.manager.save(withdrawInfo);
 
             } else if (actionType.equals(ActionType.ACCOUNT).toBoolean()) {

@@ -84,7 +84,7 @@ async function traceTasks() {
             });
 
             if (rs.data.zkapp === null) { // ie. l1tx is not included into a l1Block on MINA chain
-                logger.info(`cooresponding l1tx is not included into a l1Block on MINA chain`);
+                logger.info(`cooresponding l1tx is not included into a l1Block on MINA chain, please wait for it.`);
 
                 continue;
             }
