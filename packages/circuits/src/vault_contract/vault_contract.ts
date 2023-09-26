@@ -42,7 +42,7 @@ function updateNullifierRootAndNullStartIndex(
   );
 
   nullifier
-    .greaterThan(lowLeafWitness.leafData.value)
+    .sub(lowLeafWitness.leafData.value).greaterThan(Field(0n))
     .assertTrue(
       'Nullifier should not exist in null tree (nullifier <= lowLeafWitness.leafData.value)'
     );
