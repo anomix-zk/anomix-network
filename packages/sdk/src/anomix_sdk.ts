@@ -1247,6 +1247,7 @@ export class AnomixSdk {
         outputNote1: encryptedNotes[0],
         outputNote2:
           encryptedNotes.length === 2 ? encryptedNotes[1] : undefined,
+        withdrawNote: isWithdraw ? ValueNote.toJSON(outputNote1) : undefined,
       },
     } as L2TxReqDto;
 
