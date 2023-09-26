@@ -38,21 +38,19 @@ export class FlowScheduler {
 
         // fetch from contract
         const entryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
-        const rollupContractAddr = PublicKey.fromBase58(config.rollupContractAddress);
+        // const rollupContractAddr = PublicKey.fromBase58(config.rollupContractAddress);
         await syncAcctInfo(entryContractAddr);
-        await syncAcctInfo(rollupContractAddr);
+        // await syncAcctInfo(rollupContractAddr);
 
-        const rollupContract = new AnomixRollupContract(rollupContractAddr);
-        this.currentDataRoot = rollupContract.state.get().dataRoot;
-        this.currentRootTreeRoot = rollupContract.state.get().dataRootsRoot;
-        this.currentNullifierRoot = rollupContract.state.get().nullifierRoot;
+        // const rollupContract = new AnomixRollupContract(rollupContractAddr);// not based on onchain values, but last block's result!
+        this.currentDataRoot = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false);
+        this.currentRootTreeRoot = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE_ROOTS_TREE, false);
+        this.currentNullifierRoot = this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, false);
 
         const entryContract = new AnomixEntryContract(entryContractAddr);
-        this.depositStartIndexInBlock = rollupContract.state.get().depositStartIndex;
+        // this.depositStartIndexInBlock = rollupContract.state.get().depositStartIndex;
         this.depositTreeRootInBlock = entryContract.depositState.get().depositRoot;
 
-        assert(this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false).equals(this.currentDataRoot).toBoolean());
-        assert(this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE_ROOTS_TREE, false).equals(this.currentRootTreeRoot).toBoolean());
     }
 
     async start() {
@@ -75,6 +73,14 @@ export class FlowScheduler {
 
                 return;
             }
+
+            // based on last block's depositStartIndex1, if no last block, then set '0'
+            this.depositStartIndexInBlock = Field((await queryRunner.manager.find(Block, {
+                order: {
+                    id: 'DESC'
+                },
+                take: 1
+            }))[0]?.depositStartIndex1 ?? '0');
 
             // ================== below: mpTxList.length > 0 ==================
             // !!need double check if nullifier1/2 has already been spent!!
