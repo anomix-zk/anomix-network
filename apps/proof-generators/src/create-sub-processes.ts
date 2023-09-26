@@ -46,6 +46,32 @@ export type SubProcessCordinator = {
 
 type WorkerStatus = 'IsReady' | 'Busy';
 
+const CircuitName_DepositRollupProver = 'DepositRollupProver';
+const CircuitName_AnomixEntryContract = 'AnomixEntryContract';
+const CircuitName_JoinSplitProver = 'JoinSplitProver';
+const CircuitName_InnerRollupProver = 'InnerRollupProver';
+const CircuitName_BlockProver = 'BlockProver';
+const CircuitName_AnomixRollupContract = 'AnomixRollupContract';
+
+const cnt_DepositRollupProver = 2;
+const cnt_AnomixEntryContract = 5;
+const cnt_JoinSplitProver = 3;
+const cnt_InnerRollupProver = 3;
+const cnt_BlockProver = 3;
+const cnt_AnomixRollupContract = 5;
+
+/* 
+const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
+const cnt_AnomixEntryContract = 1;// consider L1Tx execution one by one
+const cnt_JoinSplitProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
+const cnt_InnerRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
+const cnt_BlockProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
+const cnt_AnomixRollupContract = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);// consider withdrawal scene in parallel
+*/
+
+let rollupContractCallTimes = 0;
+let entryContractCallTimes = 0;
+
 export const createSubProcesses = async (n: number) => {
     let cores = os.cpus().length - 2;
     logger.info(`Number of CPUs is ${cores}`);
@@ -56,12 +82,6 @@ export const createSubProcesses = async (n: number) => {
         );
     }
 
-    const CircuitName_DepositRollupProver = 'DepositRollupProver';
-    const CircuitName_AnomixEntryContract = 'AnomixEntryContract';
-    const CircuitName_JoinSplitProver = 'JoinSplitProver';
-    const CircuitName_InnerRollupProver = 'InnerRollupProver';
-    const CircuitName_BlockProver = 'BlockProver';
-    const CircuitName_AnomixRollupContract = 'AnomixRollupContract';
     let workerMap = new Map<string, { worker: Worker, status: WorkerStatus, type: string }[]>([
         [CircuitName_DepositRollupProver, []],
         [CircuitName_AnomixEntryContract, []],
@@ -70,20 +90,6 @@ export const createSubProcesses = async (n: number) => {
         [CircuitName_BlockProver, []],
         [CircuitName_AnomixRollupContract, []]
     ]);
-    const cnt_DepositRollupProver = 1;
-    const cnt_AnomixEntryContract = 1;// consider L1Tx execution one by one
-    const cnt_JoinSplitProver = 1;
-    const cnt_InnerRollupProver = 1;
-    const cnt_BlockProver = 1;
-    const cnt_AnomixRollupContract = 1;
-    /*     
-    const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
-    const cnt_AnomixEntryContract = 1;// consider L1Tx execution one by one
-    const cnt_JoinSplitProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
-    const cnt_InnerRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
-    const cnt_BlockProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
-    const cnt_AnomixRollupContract = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);// consider withdrawal scene in parallel
-    */
 
     const createCircuitProcessor = (proverCnt: number, circuitName: string) => {
         const createFn = (proverCnt: number, circuitName: string) => {
@@ -554,7 +560,7 @@ function getFreeWorker(
     resolve,
     reject: (err: any) => any | any
 ) {
-    let worker: { worker: Worker, status: string } | undefined = undefined;
+    let worker: { worker: Worker, status: string, type: string } | undefined = undefined;
 
     worker = workers.find((w) => w.status == 'IsReady');
 
@@ -562,6 +568,15 @@ function getFreeWorker(
         console.log('no free worker currently, will ask it again 1mins later...')
         setTimeout(getFreeWorker, 2 * 60 * 1000, workers, resolve, reject);
     } else {
+        if (worker.type == CircuitName_AnomixEntryContract) {
+            // by return, due to the last process need time to release memory(about wasm32, don't know why, but occurs), or else it will fail!
+            worker = workers.at(entryContractCallTimes % workers.length);
+
+        } else if (worker.type == CircuitName_AnomixRollupContract) {
+            // by return, due to the last process need time to release memory(about wasm32, don't know why, but occurs), or else it will fail!
+            worker = workers.at(rollupContractCallTimes % workers.length);
+        }
+
         worker!.status = 'Busy';
         return resolve(worker);
     }
