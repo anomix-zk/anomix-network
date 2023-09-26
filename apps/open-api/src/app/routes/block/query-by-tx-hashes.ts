@@ -11,7 +11,9 @@ import { BaseResponse, L2TxRespDtoSchema, WithdrawInfoDto } from '@anomix/types'
 import { L2TxRespDto } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 import { ActionType } from '@anomix/circuits';
+import { getLogger } from '@/lib/logUtils';
 
+const logger = getLogger('queryByTxHashes');
 /**
  * query confirmed tx by tx hashes
  */
@@ -44,14 +46,15 @@ export const handler: RequestHandler<string[], null> = async function (
             }
         }) ?? [];
 
-        const l2TxRespDtoList = await Promise.all(ctxList.map(async tx => {
+        const l2TxRespDtoList: L2TxRespDto[] = [];
+        for (const tx of ctxList) {
             const blockRepository = connection.getRepository(Block)
             const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx.blockId } });
 
             const { updatedAt, createdAt, proof, encryptedData1, encryptedData2, ...restObj } = tx;
             const txDto = (restObj as any) as L2TxRespDto;
 
-            txDto.finalizedTs = block!.finalizedAt.getTime();
+            txDto.finalizedTs = block!.finalizedAt?.getTime();
             txDto.createdTs = block!.createdAt.getTime();
 
             txDto.extraData = {} as any;
@@ -74,8 +77,8 @@ export const handler: RequestHandler<string[], null> = async function (
                 txDto.extraData.aliasInfo = account?.encrptedAlias;
             }
 
-            return txDto;
-        }));
+            l2TxRespDtoList.push(txDto);
+        }
 
         return {
             code: 0,
@@ -83,6 +86,10 @@ export const handler: RequestHandler<string[], null> = async function (
             msg: ''
         };
     } catch (err) {
+        logger.error(err);
+
+        console.error(err);
+
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
@@ -104,8 +111,11 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: (L2TxRespDtoSchema as any).type,
-                    properties: (L2TxRespDtoSchema as any).properties,
+                    type: "array",
+                    items: {
+                        type: (L2TxRespDtoSchema as any).type,
+                        properties: (L2TxRespDtoSchema as any).properties,
+                    }
                 },
                 msg: {
                     type: 'string'
