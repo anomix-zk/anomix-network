@@ -23,7 +23,11 @@ export class WithdrawDB {
      */
     async initTree(l1Addr: PublicKey, assetId: string) {
         let poseidonHasher = new PoseidonHasher();
-        const nullifierTree = await newTree(StandardIndexedTree, this.userAssetDB, poseidonHasher, `${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${assetId}:${l1Addr.toBase58()}`, NULLIFIER_TREE_HEIGHT, INIT_NULLIFIER_TREE_HEIGHT)
+        const nullifierTree = await newTree(StandardIndexedTree,
+            this.userAssetDB,
+            poseidonHasher,
+            `${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${assetId}:${l1Addr.toBase58()}`,
+            NULLIFIER_TREE_HEIGHT);
 
         this.currectTree = { l1Addr: l1Addr.toBase58(), assetId, tree: nullifierTree };
     }
@@ -41,7 +45,11 @@ export class WithdrawDB {
             return;
         }
         let poseidonHasher = new PoseidonHasher();
-        const nullifierTree = await loadTree(StandardIndexedTree, this.userAssetDB, poseidonHasher, `${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${assetId}:${l1Addr.toBase58()}`)
+        const nullifierTree = await loadTree(StandardIndexedTree,
+            this.userAssetDB,
+            poseidonHasher,
+            `${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${assetId}:${l1Addr.toBase58()}`);
+
         this.currectTree = { l1Addr: l1Addr.toBase58(), assetId, tree: nullifierTree };
     }
 
@@ -146,21 +154,6 @@ export class WithdrawDB {
             throw new Error("tree is not init...");
         }
         this.currectTree.tree.rollback()
-    }
-
-    /**
-     * Returns the value of a leaf at the specified index.
-     * @param index - The index of the leaf value to be returned.
-     * @param includeUncommitted - Set to true to include uncommitted updates in the data set.
-     */
-    async getLeafValue(
-        index: bigint,
-        includeUncommitted: boolean
-    ) {//
-        if (!this.currectTree) {
-            throw new Error("tree is not init...");
-        }
-        return await this.currectTree.tree.getLeafValue(index, includeUncommitted);
     }
 
     async findIndexOfPreviousValue(nullifier1: Field, includeUncommitted: boolean) {//
