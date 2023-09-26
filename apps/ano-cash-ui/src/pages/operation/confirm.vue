@@ -100,6 +100,7 @@ const sendTx = async () => {
   try {
     console.log('Prove and send tx...');
     showLoadingMask({ id: maskId, text: 'Generating Proof...', closable: false });
+    console.log("tx params: ", params.value);
     const tx = await remoteSdk.createPaymentTx({
       accountPk58: params.value!.sender,
       alias: params.value!.senderAlias,
@@ -109,7 +110,7 @@ const sendTx = async () => {
       anonToReceiver: params.value!.anonToReceiver,
       amount: convertToNanoMinaUnit(params.value!.amountOfMinaUnit)!.toString(),
       txFeeAmount: convertToNanoMinaUnit(params.value!.feeOfMinaUnit)!.toString(),
-      isWithdraw: currPageAction.value === PageAction.WITHDRAW_TOKEN,
+      isWithdraw: params.value!.isWithdraw,
     });
 
     console.log('paymentTx json: ', tx);
@@ -118,7 +119,7 @@ const sendTx = async () => {
 
     message.success('Transaction sent successfully!');
     setPageParams(PageAction.ACCOUNT_PAGE, 'history');
-    router.replace('/account');
+    await navigateTo("/account", { replace: true });
     closeLoadingMask(maskId);
 
   } catch (err: any) {

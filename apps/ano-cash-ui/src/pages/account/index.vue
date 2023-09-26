@@ -12,13 +12,22 @@
 
                 <div class="content">
 
-                    <div>Are you sure you want to log out?</div>
-
+                    <div style="font-size: 15px;">Are you sure you want to log out?</div>
+                    <div style="font-weight:600;margin-top: 5px;">Please note:<br /> If you select "Clear Account", all
+                        local data
+                        of the account
+                        will be cleared and you
+                        will log out.</div>
+                    <div style="font-weight:600;margin-top: 5px;">If you just want to log out, please select "Log out".
+                    </div>
                 </div>
 
                 <div class="bottom">
                     <div class="confirm">
-                        <n-button type="info" class="dialog-btn" @click="logOut">
+                        <n-button type="error" class="dialog-btn" @click="clearAccountAndLogout">
+                            Clear Account
+                        </n-button>
+                        <n-button style="margin-left: 10px;" type="info" class="dialog-btn" @click="logOut">
                             Log out
                         </n-button>
                         <n-button style="margin-left: 10px;" type="info" class="dialog-btn" @click="closeExitDialog">
@@ -109,7 +118,7 @@
 
             <div class="ano-tab">
 
-                <n-tabs :default-value="defaultTab" size="large" justify-content="space-evenly" :tab-style="tabStyle">
+                <n-tabs :default-value="currentTab" size="large" justify-content="space-evenly" :tab-style="tabStyle">
                     <n-tab-pane name="tokens" tab="Tokens">
                         <div v-if="tokenList.length" v-for="item in tokenList" :key="item.tokenId" class="token">
                             <div class="token-left">
@@ -247,15 +256,15 @@ import exitIcon from '@/assets/exit.svg';
 import { AccountStatus, PageAction, SdkEventType } from '../../common/constants';
 import { SdkEvent, TxHis } from '../../common/types';
 
-const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setAccountStatus, setSyncedBlock, setLatestBlock, pageParams } = useStatus();
+const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setAccountStatus, setSyncedBlock, setLatestBlock, pageParams, showLoadingMask, closeLoadingMask } = useStatus();
 const { convertToMinaUnit, calculateUsdAmount, omitAddress, getUserTimezone } = useUtils();
-const router = useRouter();
 const message = useMessage();
-const { SdkState, exitAccount, listenSyncerChannel } = useSdk();
+const { SdkState, exitAccount, listenSyncerChannel, clearAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const remoteSyncer = SdkState.remoteSyncer!;
 
 let copyFunc: (text: string) => void;
+const maskId = "account";
 
 const showExitDialog = ref(false);
 const closeExitDialog = () => {
@@ -266,10 +275,35 @@ const openExitDialog = () => {
     showExitDialog.value = true;
 };
 const logOut = async () => {
-    console.log('log out');
-    await exitAccount();
-    message.success('Log out successfully');
-    router.replace("/login/session");
+    console.log('log out...');
+    closeExitDialog();
+    showLoadingMask({ text: 'Log out...', id: maskId, closable: false });
+    try {
+        await exitAccount();
+        await navigateTo("/login/session");
+        message.success('Log out successfully');
+        closeLoadingMask(maskId);
+    } catch (err: any) {
+        console.error(err);
+        message.error(err.message);
+        closeLoadingMask(maskId);
+    }
+
+};
+const clearAccountAndLogout = async () => {
+    console.log('clear account...');
+    closeExitDialog();
+    showLoadingMask({ text: 'Clear account...', id: maskId, closable: false });
+    try {
+        await clearAccount(appState.value.accountPk58!);
+        await navigateTo("/login/session");
+        message.success('Clear account successfully');
+        closeLoadingMask(maskId);
+    } catch (err: any) {
+        console.error(err);
+        message.error(err.message);
+        closeLoadingMask(maskId);
+    }
 };
 
 const expectSyncedSpendTime = ref(20_000); // default 20s
@@ -312,17 +346,12 @@ const userTx2TxHis = (tx: any) => {
     return txHis;
 };
 
-const defaultTab = ref('tokens');
+const currentTab = ref(pageParams.value.action === PageAction.ACCOUNT_PAGE && pageParams.value.params !== null ? pageParams.value.params : 'tokens');
 onMounted(async () => {
     console.log('account onMounted...');
     try {
         const { copyText } = useClientUtils();
         copyFunc = copyText;
-
-        if (pageParams.value.action === PageAction.ACCOUNT_PAGE) {
-            console.log('pageParams: ', pageParams.value);
-            defaultTab.value = pageParams.value.params !== null ? pageParams.value.params : 'tokens';
-        }
 
         userTimezone.value = getUserTimezone();
         // get history
@@ -375,7 +404,7 @@ onMounted(async () => {
 
 
                         const diffBlock = blockHeight - event.data.synchedToBlock;
-                        if (diffBlock > 0) {
+                        if (diffBlock > 0 && oneBlockSpendTime > 0) {
                             expectSyncedSpendTime.value = oneBlockSpendTime * diffBlock;
                         }
 
@@ -406,7 +435,7 @@ onMounted(async () => {
 
     } catch (err: any) {
         console.error(err);
-        message.error(err.message, { duration: 0, closable: true });
+        message.error(err.message, { duration: 3000, closable: true });
     }
 
     console.log('account onMounted done');
@@ -417,25 +446,25 @@ const copyAddress = () => {
     message.success("Copy address successfully");
 };
 
-const toClaimPage = (actionType: string, finalizedTs: number, commitment: string | null) => {
+const toClaimPage = async (actionType: string, finalizedTs: number, commitment: string | null) => {
     if (actionType === '3' && finalizedTs !== 0 && commitment !== null) {
-        router.push(`/claim/${commitment}`);
+        await navigateTo(`/claim/${commitment}`);
     }
 
 };
 
-const toDeposit = () => {
-    router.push("/operation/deposit");
+const toDeposit = async () => {
+    await navigateTo("/operation/deposit");
 };
 
-const toSend = () => {
+const toSend = async () => {
     setPageParams(PageAction.SEND_TOKEN, null);
-    router.push("/operation/send");
+    await navigateTo("/operation/send");
 };
 
-const toWithdraw = () => {
+const toWithdraw = async () => {
     setPageParams(PageAction.WITHDRAW_TOKEN, null);
-    router.push("/operation/send");
+    await navigateTo("/operation/send");
 };
 
 </script>

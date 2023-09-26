@@ -139,6 +139,13 @@ export default function () {
         console.log("exit account success");
     };
 
+    const clearAccount = async (accountPk58: string) => {
+        console.log("clear account...");
+        await SdkState.remoteApi!.removeAccount(accountPk58);
+        await exitAccount();
+        console.log("clear account success");
+    };
+
     const listenLogChannel = () => {
         const chan = new BroadcastChannel(CHANNEL_LOG);
         chan.onmessage = (ev) => {
@@ -171,5 +178,6 @@ export default function () {
         exitAccount,
         compileCircuits,
         loginAccount,
+        clearAccount,
     };
 }

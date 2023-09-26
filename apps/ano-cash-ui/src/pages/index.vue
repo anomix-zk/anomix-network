@@ -54,13 +54,12 @@ import keyImage from "@/assets/key2.png";
 import claimImage from "@/assets/claim.svg";
 import { useMessage } from "naive-ui";
 
-const router = useRouter();
 const message = useMessage();
-const { appState, setConnectedWallet, showLoadingMask } = useStatus();
+const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
+const maskId = "index";
 
-
-const login = () => {
-    router.push("/login");
+const login = async () => {
+    await navigateTo("/login");
 }
 
 const connectWallet = async (action: string) => {
@@ -70,8 +69,10 @@ const connectWallet = async (action: string) => {
     }
 
     try {
+        showLoadingMask({ id: maskId, text: 'Connecting wallet...', closable: false });
         const currentNetwork = await window.mina.requestNetwork();
         if (appState.value.minaNetwork !== currentNetwork) {
+            closeLoadingMask(maskId);
             message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
             return;
         }
@@ -80,16 +81,17 @@ const connectWallet = async (action: string) => {
         setConnectedWallet(accounts[0]);
 
         if (action === 'connect') {
-            //router.push({ path: "/connect", query: { step: 1 } });
-            router.push("/connect/step-1");
-        } else {
-            router.push("/claim/claimable");
-        }
 
+            await navigateTo("/connect/step-1");
+        } else {
+            await navigateTo("/claim/claimable");
+        }
+        closeLoadingMask(maskId);
     } catch (error: any) {
         // if user reject, requestAccounts will throw an error with code and message filed
         console.log(error.message, error.code);
         message.error(error.message);
+        closeLoadingMask(maskId);
     }
     //showLoadingMask({ text: 'Account registration service is not ready yet', closable: false });
 };

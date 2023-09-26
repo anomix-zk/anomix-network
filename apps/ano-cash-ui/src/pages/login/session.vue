@@ -39,11 +39,9 @@
 </template>
 
 <script lang="ts" setup>
-import type { SigningKey } from '@anomix/sdk';
 import { SelectOption, useMessage } from 'naive-ui';
 import { AccountStatus } from '../../common/constants';
 
-const router = useRouter();
 const { SdkState, loginAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const { omitAddress } = useUtils();
@@ -53,9 +51,9 @@ const { showLoadingMask, closeLoadingMask, setAccountPk58, setAlias, setAccountS
 const maskId = 'session-login';
 let selectedAccount = ref<string | undefined>(undefined);
 let options = ref<SelectOption[]>([]);
-const handleUpdateValue = (value: string, option: SelectOption) => {
+const handleUpdateValue = async (value: string, option: SelectOption) => {
     if (value === 'other') {
-        router.push("/");
+        await navigateTo("/");
         return;
     }
 };
@@ -105,9 +103,9 @@ const inputPwd = () => {
     }
 };
 
-const toAccountPage = () => {
+const toAccountPage = async () => {
     console.log("to account page");
-    router.replace("/account");
+    await navigateTo("/account", { replace: true });
 };
 
 const login = async () => {
@@ -143,7 +141,7 @@ const login = async () => {
             }
 
             message.success('Login successfully');
-            toAccountPage();
+            await toAccountPage();
             closeLoadingMask(maskId);
         }
     } catch (err: any) {

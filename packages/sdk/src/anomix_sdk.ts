@@ -68,6 +68,7 @@ import { Remote, wrap } from 'comlink';
 import nodeEndpoint from 'comlink/dist/esm/node-adapter';
 import { DEFAULT_L1_TX_FEE, SdkEventType } from './constants';
 import { decryptAlias, encryptAlias } from './note_decryptor/alias_util';
+import { UserTx } from './user_tx/user_tx';
 // import { dirname } from 'path';
 // import { fileURLToPath } from 'url';
 
@@ -571,6 +572,12 @@ export class AnomixSdk {
     };
   }
 
+  public async removeAccount(accountPk58: string) {
+    this.log.info('Removing account...');
+    await this.db.removeUserState(accountPk58);
+    this.log.info('Account removed');
+  }
+
   public async addAccount(
     accountPrivateKey: PrivateKey,
     pwd: string,
@@ -671,8 +678,43 @@ export class AnomixSdk {
     return notes.filter((n) => n.assetId === assetId);
   }
 
+  // will update finalizedAt of every tx
   public async getUserTxs(accountPk: string) {
-    return await this.db.getUserTxs(accountPk);
+    let txs = await this.db.getUserTxs(accountPk);
+
+    try {
+      const unFinalizedTx = txs.filter((v) => v.finalizedTs === 0);
+      const blockSet = new Set<number>();
+      unFinalizedTx.forEach((v) => {
+        blockSet.add(v.block);
+      });
+      const unFinalizedBlocks = [...blockSet];
+      this.log.debug('unFinalizedBlocks: ', unFinalizedBlocks);
+
+      if (unFinalizedBlocks.length > 0) {
+        const blockFinalizedTimeObj = await this.node.getFinalizedTimeOfBlocks(
+          unFinalizedBlocks
+        );
+        this.log.debug('blockFinalizedTimeObj: ', blockFinalizedTimeObj);
+        let updatedUserTxs: UserTx[] = [];
+        for (let i = 0; i < txs.length; i++) {
+          const blockKey = txs[i].block + '';
+          const currentFinalizedAt = blockFinalizedTimeObj[blockKey];
+          if (currentFinalizedAt && currentFinalizedAt > 0) {
+            txs[i].finalizedTs = currentFinalizedAt;
+            updatedUserTxs.push(txs[i]);
+          }
+        }
+
+        this.log.debug('updatedUserTxs: ', updatedUserTxs);
+        await this.db.upsertUserTxs(updatedUserTxs);
+      }
+    } catch (err: any) {
+      console.error(err);
+      this.log.error('Failed to get finalized time of blocks: ', err);
+    }
+
+    return txs;
   }
 
   public async getPendingUserTxs(accountPk: string) {
@@ -1271,6 +1313,7 @@ export class AnomixSdk {
       sender: accountPk58,
       receiver: receiver.toBase58(),
       isSender: true,
+      block: 0,
       createdTs: 0,
       finalizedTs: 0,
     });
@@ -1368,6 +1411,7 @@ export class AnomixSdk {
       txFee: '0',
       txFeeAssetId: AssetId.MINA.toString(),
       migrated: false,
+      block: 0,
       createdTs: 0,
       finalizedTs: 0,
     });

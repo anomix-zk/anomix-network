@@ -100,6 +100,26 @@
       </n-button>
 
 
+      <template v-if="currPageAction === PageAction.WITHDRAW_TOKEN">
+        <div class="or-box">
+          <div class="line"></div>
+          <span>OR CLAIM WITHDRAWABLE ASSETS</span>
+          <div class="line"></div>
+        </div>
+
+        <div class="oauth-box" style="margin-top: 30px; padding-bottom: 15px;">
+          <div class="auth-item">
+            <n-button color="#f4f4f4" block type="primary" @click="connectToClaim" class="auth-btn">
+              <div style="display:flex; align-items: center;">
+                <img :src="claimImage" alt="" style="width: 35px; height: 35px;" />
+                <span style="color:#1f202a">Claim Assets</span>
+              </div>
+            </n-button>
+          </div>
+        </div>
+      </template>
+
+
     </div>
 
 
@@ -107,13 +127,14 @@
 </template>
 
 <script lang="ts" setup>
+import claimImage from "@/assets/claim.svg";
 import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
 import { SdkEvent, TxInfo } from '../../common/types';
 import { PageAction, SdkEventType } from '../../common/constants';
 
 const router = useRouter();
-const { appState, showLoadingMask, closeLoadingMask, setPageParams, clearPageParams, pageParams, setTotalNanoBalance } = useStatus();
+const { appState, showLoadingMask, closeLoadingMask, setPageParams, setConnectedWallet, pageParams, setTotalNanoBalance } = useStatus();
 const { checkNoSideSpace, convertToMinaUnit } = useUtils();
 const message = useMessage();
 const { SdkState, listenSyncerChannel } = useSdk();
@@ -144,6 +165,34 @@ const handleSwitchValue = (value: boolean) => {
 
 const sendAmount = ref<number | undefined>(undefined);
 const receiver = ref('');
+
+const connectToClaim = async () => {
+  if (!window.mina) {
+    message.error('Please install auro wallet browser extension first.');
+    return;
+  }
+
+  try {
+    showLoadingMask({ id: maskId, text: 'Connecting wallet...', closable: false });
+    const currentNetwork = await window.mina.requestNetwork();
+    if (appState.value.minaNetwork !== currentNetwork) {
+      closeLoadingMask(maskId);
+      message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
+      return;
+    }
+
+    let accounts = await window.mina.requestAccounts();
+    setConnectedWallet(accounts[0]);
+
+    await navigateTo("/claim/claimable");
+    closeLoadingMask(maskId);
+  } catch (error: any) {
+    // if user reject, requestAccounts will throw an error with code and message filed
+    console.error(error);
+    message.error(error.message);
+    closeLoadingMask(maskId);
+  }
+};
 
 const handleInput = (v: string) => {
   if (checkAlias.value !== -1) {
@@ -254,11 +303,12 @@ const toConfirm = async () => {
       sendToken: 'MINA',
       feeOfMinaUnit: feeValue.value!.toString(),
       feeToken: 'MINA',
-      anonToReceiver: anonToReceiver.value
+      anonToReceiver: anonToReceiver.value,
+      isWithdraw: currPageAction.value === PageAction.WITHDRAW_TOKEN,
     };
     setPageParams(currPageAction.value, params);
 
-    router.push("/operation/confirm");
+    await navigateTo("/operation/confirm");
     closeLoadingMask(maskId);
   } catch (err: any) {
     console.error(err);
@@ -299,6 +349,64 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
+.oauth-box {
+  margin-top: 20px;
+  width: 100%;
+
+  .auth-item {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60px;
+    border-radius: 12px;
+
+    background-color: var(--ano-bg-checked);
+    transition: all .15s;
+    box-shadow: inset 1px 1px 3px var(--ano-line);
+
+    span {
+      margin-left: 10px;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 24px;
+    }
+
+    .auth-btn {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      align-items: center;
+      align-content: center;
+      height: 100%;
+      border-radius: 12px;
+    }
+  }
+
+  .auth-item+.auth-item {
+    margin-top: 20px;
+  }
+}
+
+.or-box {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .line {
+    width: 60px;
+    height: 1px;
+    background-color: var(--ano-text-third);
+  }
+
+  span {
+    margin: 0 10px;
+    font-size: 12px;
+    font-weight: 400;
+  }
+}
+
 .fee-box {
   margin-top: 20px;
   padding: 20px;

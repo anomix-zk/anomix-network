@@ -1,16 +1,17 @@
 export class UserAccountTx {
   constructor(
-    public readonly txHash: string,
-    public readonly accountPk: string,
-    public readonly aliasHash: string,
-    public readonly alias: string | undefined,
-    public readonly newSigningPk1: string | undefined,
-    public readonly newSigningPk2: string | undefined,
-    public readonly txFee: string,
-    public readonly txFeeAssetId: string,
-    public readonly migrated: boolean,
-    public readonly createdTs: number,
-    public readonly finalizedTs: number
+    public txHash: string,
+    public accountPk: string,
+    public aliasHash: string,
+    public alias: string | undefined,
+    public newSigningPk1: string | undefined,
+    public newSigningPk2: string | undefined,
+    public txFee: string,
+    public txFeeAssetId: string,
+    public migrated: boolean,
+    public block: number,
+    public createdTs: number,
+    public finalizedTs: number
   ) {}
 
   static from(value: {
@@ -23,6 +24,7 @@ export class UserAccountTx {
     txFee: string;
     txFeeAssetId: string;
     migrated: boolean;
+    block: number;
     createdTs: number;
     finalizedTs: number;
   }): UserAccountTx {
@@ -36,6 +38,7 @@ export class UserAccountTx {
       value.txFee,
       value.txFeeAssetId,
       value.migrated,
+      value.block,
       value.createdTs,
       value.finalizedTs
     );

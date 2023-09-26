@@ -112,7 +112,7 @@ import { SdkEvent } from '../../common/types';
 import { SdkEventType } from '../../common/constants';
 
 const router = useRouter();
-const { appState, setConnectedWallet } = useStatus();
+const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
 const { omitAddress, convertToMinaUnit } = useUtils();
 const message = useMessage();
 const route = useRoute();
@@ -245,6 +245,7 @@ const loadAccountInfoByConnectedWallet = async () => {
   }
 };
 
+const maskId = "claim";
 const connect = async () => {
   console.log('connect wallet...');
   if (!window.mina) {
@@ -253,25 +254,30 @@ const connect = async () => {
   }
 
   try {
+    showLoadingMask({ id: maskId, text: 'Connecting wallet...', closable: true });
     const currentNetwork = await window.mina.requestNetwork();
     if (appState.value.minaNetwork !== currentNetwork) {
+      closeLoadingMask(maskId);
       message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
       return;
     }
 
     let accounts = await window.mina.requestAccounts();
     if (withdrawNote.value?.ownerAddress !== accounts[0]) {
+      closeLoadingMask(maskId);
       message.error('Please connect to the wallet that is consistent with note’s ownerAddress.');
       return;
     }
 
     setConnectedWallet(accounts[0]);
-
+    showLoadingMask({ id: maskId, text: 'Checking account status...', closable: false });
     await loadAccountInfoByConnectedWallet();
+    closeLoadingMask(maskId);
   } catch (error: any) {
     // if user reject, requestAccounts will throw an error with code and message filed
     console.log(error.message, error.code);
     message.error(error.message);
+    closeLoadingMask(maskId);
   }
 };
 

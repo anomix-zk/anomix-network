@@ -2,24 +2,25 @@ import { JoinSplitOutput } from '@anomix/circuits';
 
 export class UserPaymentTx {
   constructor(
-    public readonly txHash: string,
-    public readonly accountPk: string,
-    public readonly actionType: string,
-    public readonly publicValue: string,
-    public readonly publicAssetId: string,
-    public readonly publicOwner: string | undefined,
-    public readonly txFee: string,
-    public readonly txFeeAssetId: string,
-    public readonly depositRoot: string,
-    public readonly depositIndex: number,
-    public readonly privateValue: string,
-    public readonly privateValueAssetId: string,
-    public readonly withdrawNoteCommitment: string | undefined,
-    public readonly sender: string,
-    public readonly receiver: string,
-    public readonly isSender: boolean,
-    public readonly createdTs: number,
-    public readonly finalizedTs: number
+    public txHash: string,
+    public accountPk: string,
+    public actionType: string,
+    public publicValue: string,
+    public publicAssetId: string,
+    public publicOwner: string | undefined,
+    public txFee: string,
+    public txFeeAssetId: string,
+    public depositRoot: string,
+    public depositIndex: number,
+    public privateValue: string,
+    public privateValueAssetId: string,
+    public withdrawNoteCommitment: string | undefined,
+    public sender: string,
+    public receiver: string,
+    public isSender: boolean,
+    public block: number,
+    public createdTs: number,
+    public finalizedTs: number
   ) {}
 
   static from(value: {
@@ -39,6 +40,7 @@ export class UserPaymentTx {
     sender: string;
     receiver: string;
     isSender: boolean;
+    block: number;
     createdTs: number;
     finalizedTs: number;
   }): UserPaymentTx {
@@ -59,6 +61,7 @@ export class UserPaymentTx {
       value.sender,
       value.receiver,
       value.isSender,
+      value.block,
       value.createdTs,
       value.finalizedTs
     );
@@ -92,6 +95,7 @@ export class UserPaymentTx {
       sender,
       receiver,
       true,
+      0,
       0,
       0
     );

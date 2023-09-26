@@ -1,6 +1,5 @@
 <template>
     <div class="ano-app">
-
         <div class="page">
             <slot />
 

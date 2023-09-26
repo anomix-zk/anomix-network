@@ -188,6 +188,9 @@ const apiWrapper = {
     isUserTxSettled: async (txId: string) => {
         return await apiSdk.isUserTxSettled(txId);
     },
+    removeAccount: async (accountPk: string) => {
+        await apiSdk.removeAccount(accountPk);
+    },
 };
 
 //onconnect = (e: any) => expose(sdkWrapper, e.ports[0]);

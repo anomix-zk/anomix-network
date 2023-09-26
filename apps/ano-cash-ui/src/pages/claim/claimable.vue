@@ -52,8 +52,19 @@
 
     </div>
 
-    <n-empty style="margin-top: 65px;" v-if="claimableNotes.length === 0" size="large"
+    <n-empty style="margin-top: 120px;" v-if="claimableNotes.length === 0" size="large"
       description="No claimable notes found" />
+
+    <div v-if="connectedWallet === null" class="oauth-box" style="margin-top: 120px;">
+      <div class="auth-item">
+        <n-button color="#f4f4f4" block type="primary" class="auth-btn" @click="connect">
+          <div style="display:flex; align-items: center;">
+            <img :src="auroLogo" alt="" style="width: 30px; height: 30px;" />
+            <span style="color:#1f202a">Connect Wallet</span>
+          </div>
+        </n-button>
+      </div>
+    </div>
 
   </div>
 </template>
@@ -64,7 +75,7 @@ import minaIcon from "@/assets/mina.svg";
 import auroLogo from "@/assets/auro.png";
 
 const router = useRouter();
-const { appState, setConnectedWallet } = useStatus();
+const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
 const { omitAddress, convertToMinaUnit } = useUtils();
 const message = useMessage();
 const { SdkState } = useSdk();
@@ -74,17 +85,13 @@ const connectedWallet = computed(() => omitAddress(appState.value.connectedWalle
 
 const toBack = () => router.back();
 
-const toClaim = (commitment: string) => {
-  router.push(`/claim/${commitment}`);
+const toClaim = async (commitment: string) => {
+  await navigateTo(`/claim/${commitment}`);
 };
 
 const disconnect = () => {
   setConnectedWallet(null);
-  if (history.length > 1) {
-    toBack();
-  } else {
-    router.replace("/");
-  }
+  claimableNotes.value = [];
 };
 
 let claimableNotes = ref<{ token: string; value: string; commitment: string }[]>([]);
@@ -102,8 +109,39 @@ const loadClaimableNotesByConnectedWallet = async () => {
   });
   claimableNotes.value = notes;
 };
-const walletListenerSetted = ref(false);
 
+const maskId = "claimable";
+const connect = async () => {
+  console.log('connect wallet...');
+  if (!window.mina) {
+    message.error('Please install auro wallet browser extension first.');
+    return;
+  }
+
+  showLoadingMask({ text: 'Connecting...', id: maskId, closable: true });
+  try {
+    const currentNetwork = await window.mina.requestNetwork();
+    if (appState.value.minaNetwork !== currentNetwork) {
+      closeLoadingMask(maskId);
+      message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
+      return;
+    }
+
+    let accounts = await window.mina.requestAccounts();
+    setConnectedWallet(accounts[0]);
+
+    showLoadingMask({ text: 'Loading claimable notes...', id: maskId, closable: false });
+    await loadClaimableNotesByConnectedWallet();
+    closeLoadingMask(maskId);
+  } catch (err: any) {
+    // if user reject, requestAccounts will throw an error with code and message filed
+    console.error(err);
+    message.error(err.message);
+    closeLoadingMask(maskId);
+  }
+};
+
+const walletListenerSetted = ref(false);
 const route = useRoute();
 onMounted(async () => {
   console.log('claimable.vue - onMounted: ', appState.value.connectedWallet58);
@@ -235,7 +273,41 @@ onMounted(async () => {
   line-height: 20px;
 }
 
+.oauth-box {
+  width: 100%;
 
+  .auth-item {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    span {
+      margin-left: 10px;
+      font-weight: 600;
+      font-size: 16px;
+      line-height: 24px;
+    }
+
+    .auth-btn {
+      height: 60px;
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      align-items: center;
+      align-content: center;
+      border-radius: 12px;
+
+      // border-color: #000;
+      // border-width: 0.5px;
+      // border-style: dashed;
+    }
+  }
+
+  .auth-item+.auth-item {
+    margin-top: 20px;
+  }
+}
 
 .ano-header {
   display: flex;

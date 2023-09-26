@@ -97,14 +97,23 @@ onMounted(async () => {
 
     const accounts = await SdkState.remoteApi!.getLocalAccounts();
     if (accounts.length > 0) {
-      console.log('exist accounts, navigate to /login/session');
       if (
         route.path === "/" ||
         route.path === "/account" ||
         route.path === "/operation/confirm" ||
         route.path === "/operation/send"
       ) {
+        console.log('Exist accounts, navigate to /login/session');
         await navigateTo("/login/session");
+      }
+    } else {
+      if (route.path === "/account" ||
+        route.path === "/operation/confirm" ||
+        route.path === "/operation/send" ||
+        route.path === "/login/session"
+      ) {
+        console.log('No exist accounts, navigate to /');
+        await navigateTo("/");
       }
     }
 
