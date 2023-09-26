@@ -758,7 +758,7 @@ export class AnomixSdk {
       () => {
         AccountUpdate.fundNewAccount(feePayerAddress);
         this.vaultContract.deployAccount(
-          AnomixVaultContract._verificationKey!,
+          WithdrawAccount._verificationKey!,
           userAddress
         );
       }
