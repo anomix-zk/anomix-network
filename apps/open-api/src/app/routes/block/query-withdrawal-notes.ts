@@ -30,6 +30,14 @@ export const handler: RequestHandler<{ noteCommitments: string[] }, { l1addr: st
     const noteCommitmentList = req.body.noteCommitments;
     const l1addr = req.params.l1addr;
 
+    if (!(l1addr || noteCommitmentList?.length > 0)) {
+        return {
+            code: 1,
+            data: [],
+            msg: 'both l1addr and noteCommitments are none!'
+        };
+    }
+
     try {
         const connection = getConnection();
         const withdrawInfoRepository = connection.getRepository(WithdrawInfo);
