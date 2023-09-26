@@ -30,6 +30,7 @@ export const recieveTx: FastifyPlugin = async function (
 }
 
 export const handler: RequestHandler<L2TxReqDto, null> = async function (req, res): Promise<BaseResponse<string>> {
+    logger.info(`a new tx is comming in...`);
     const l2TxReqDto = req.body;
     logger.info(req.body);
 
@@ -38,18 +39,24 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
         // validate tx's proof
         joinSplitProof = JoinSplitProof.fromJSON(l2TxReqDto.proof);
     } catch (error) {
+        logger.info('joinSplitProof deserialization failed!');
+        logger.error(error);
+
         return { code: 1, data: undefined, msg: 'joinSplitProof deserialization failed!' }
     }
 
     const ok = await verify(joinSplitProof, config.joinSplitProverVK);// TODO
 
     if (!ok) {
+        logger.info('proof verify failed!');
         return { code: 1, data: undefined, msg: 'proof verify failed!' }
     }
 
     const actionType = joinSplitProof.publicOutput.actionType;
     if (actionType.equals(ActionType.ACCOUNT).not().toBoolean()
         && Number(joinSplitProof.publicOutput.txFee) < config.floorMpTxFee) {
+        logger.info('txFee not enough!');
+
         return { code: 1, data: undefined, msg: 'txFee not enough!' }
     }
 
@@ -60,6 +67,8 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
         return new Map(Object.entries(r.data.data));
     })
     if (rs!.get(nullifier1) != '' || rs!.get(nullifier2) != '') {
+        logger.info('double spending: nullifier1 or nullifier2 is used');
+
         return { code: 1, data: undefined, msg: 'double spending: nullifier1 or nullifier2 is used' }
     }
 
@@ -91,6 +100,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
     if (actionType.equals(ActionType.WITHDRAW).toBoolean()) {
         withdrawNote = ValueNote.fromJSON(l2TxReqDto.extraData.withdrawNote as any) as any;// TODO need check!!
         if (joinSplitProof.publicOutput.outputNoteCommitment1.equals(withdrawNote.commitment()).not()) {
+            logger.info('withdrawNote\'s commitment is not aligned with tx.outputNoteCommitment1');
             return { code: 1, data: 'withdrawNote\'s commitment is not aligned with tx.outputNoteCommitment1', msg: '' }
         }
 
@@ -102,6 +112,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
                 .and(
                     Poseidon.hash(PublicKey.fromBase58(acctPk).toFields()).equals(joinSplitProof.publicOutput.nullifier2)
                 ).toBoolean()) {
+                logger.info('nullifier1/2 is not aligned with hash(aliasHash/acctPk)');
                 return { code: 1, data: 'nullifier1/2 is not aligned with hash(aliasHash/acctPk)', msg: '' }
             }
         }
