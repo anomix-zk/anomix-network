@@ -36,7 +36,7 @@
         <div class="bottom">
           <div class="commitment">
             <n-tag :bordered="false" type="info">
-              Note ID: {{ item.commitment }}
+              Note ID: {{ omitAddress(item.commitment, 5) }}
             </n-tag>
           </div>
 

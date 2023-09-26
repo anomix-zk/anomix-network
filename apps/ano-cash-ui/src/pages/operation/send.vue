@@ -224,7 +224,7 @@ const checkAliasExist = async () => {
     return;
   }
 
-  const isRegistered = await remoteApi.isAliasRegistered(receiver.value, false);
+  const isRegistered = await remoteApi.isAliasRegistered(receiver.value.replace('.ano', ''), false);
   if (isRegistered) {
     console.log(`${receiver.value} exists`);
     checkAlias.value = 1;

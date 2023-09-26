@@ -154,11 +154,12 @@ onMounted(async () => {
     setTokenPrices([{ tokenName: 'MINA', usd: price['mina-protocol']['usd'] + '', cny: price['mina-protocol']['cny'] + '' }]);
     closeLoadingMask(maskId);
 
-    compileCircuits();
-    console.log('App mounted end');
   } catch (err: any) {
     console.error(err);
     closeLoadingMask(maskId);
   }
+
+  compileCircuits();
+  console.log('App mounted end');
 });
 </script>
