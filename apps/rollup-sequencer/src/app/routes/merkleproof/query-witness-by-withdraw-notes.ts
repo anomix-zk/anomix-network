@@ -83,11 +83,13 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
         const rollupDataRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, false).toString();
         logger.info(`current root of SYNC_DATA_TREE: ${rollupDataRoot}`);
 
+        const outputNoteCommitmentIdx = winfo!.outputNoteCommitmentIdx ?? (await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${winfo.outputNoteCommitment}`));
+
         const rs = {
             withdrawNoteWitnessData: {
                 withdrawNote: winfo!.valueNote(),
-                witness: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.SYNC_DATA_TREE, BigInt(winfo!.outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
-                index: winfo!.outputNoteCommitmentIdx
+                witness: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.SYNC_DATA_TREE, BigInt(outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
+                index: outputNoteCommitmentIdx
             },
             lowLeafWitness: {
                 leafData: {
@@ -95,10 +97,10 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
                     nextIndex: preLeafData!.nextIndex.toString(),
                     nextValue: preLeafData!.nextValue.toString()
                 },
-                siblingPath: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(winfo!.outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
+                siblingPath: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
                 index: Field(preIdx).toString()
             },
-            oldNullWitness: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(winfo!.outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
+            oldNullWitness: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
             rollupDataRoot
         }
 
