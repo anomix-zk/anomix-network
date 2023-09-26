@@ -570,11 +570,16 @@ function getFreeWorker(
     } else {
         if (worker.type == CircuitName_AnomixEntryContract) {
             // by return, due to the last process need time to release memory(about wasm32, don't know why, but occurs), or else it will fail!
+
+            logger.info(`worker.type: ${worker.type}, entryContractCallTimes:${entryContractCallTimes}, workerIndex: ${entryContractCallTimes % workers.length}`);
+
             worker = workers.at(entryContractCallTimes % workers.length);
             entryContractCallTimes++;
 
         } else if (worker.type == CircuitName_AnomixRollupContract) {
             // by return, due to the last process need time to release memory(about wasm32, don't know why, but occurs), or else it will fail!
+            logger.info(`worker.type: ${worker.type}, rollupContractCallTimes:${rollupContractCallTimes}, workerIndex: ${rollupContractCallTimes % workers.length}`);
+
             worker = workers.at(rollupContractCallTimes % workers.length);
             rollupContractCallTimes++;
 
