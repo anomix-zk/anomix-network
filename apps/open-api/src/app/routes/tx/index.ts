@@ -1,4 +1,5 @@
 import { FastifyPlugin } from "fastify"
+import { queryPartialByTxHashes } from "./query-tx-partial-by-hashes";
 // import { queryByTxHashes } from "./query-by-tx-hashes";
 // import { queryTxByNoteHash } from "./query-tx-by-note-hashes";
 // import { queryWithdrawalNotes } from "./query-withdrawal-notes";
@@ -32,4 +33,5 @@ export const txEndpoint: FastifyPlugin = async (
     // instance.register(queryTxByNoteHash);
     // instance.register(queryWithdrawalNotes);
     // instance.register(withdrawAsset);
+    instance.register(queryPartialByTxHashes);
 }
