@@ -1,5 +1,5 @@
 import { Alias, Database } from '../database/database';
-import { Bool, Field, PublicKey } from 'o1js';
+import { Bool, Field, PublicKey, UInt64 } from 'o1js';
 import { AnomixNode } from '../rollup_node/anomix_node';
 import { consola } from 'consola';
 import { AssetsInBlockDto } from '@anomix/types';
@@ -207,7 +207,16 @@ export class NoteProcessor {
             const withdrawNote = WithdrawInfoDtoToValueNoteJSON(
               tx.extraData.withdrawNote!
             );
-            const valueNote = ValueNote.fromJSON(withdrawNote) as ValueNote;
+            const valueNote = new ValueNote({
+              secret: Field(withdrawNote.secret),
+              ownerPk: PublicKey.fromBase58(withdrawNote.ownerPk),
+              accountRequired: Field(withdrawNote.accountRequired),
+              creatorPk: PublicKey.empty(),
+              value: UInt64.from(withdrawNote.value),
+              assetId: Field(withdrawNote.assetId),
+              inputNullifier: Field(withdrawNote.inputNullifier),
+              noteType: Field(withdrawNote.noteType),
+            });
             const commitment = valueNote.commitment();
             const nullifier = calculateNoteNullifier(
               commitment,

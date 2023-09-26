@@ -31,7 +31,16 @@ export class WithdrawNoteWitnessData extends Struct({
     witness: string[];
     index: string;
   }): WithdrawNoteWitnessData {
-    const withdrawNote = ValueNote.fromJSON(dto.withdrawNote) as ValueNote;
+    const withdrawNote = new ValueNote({
+      secret: Field(dto.withdrawNote.secret),
+      ownerPk: PublicKey.fromBase58(dto.withdrawNote.ownerPk),
+      accountRequired: Field(dto.withdrawNote.accountRequired),
+      creatorPk: PublicKey.empty(),
+      value: UInt64.from(dto.withdrawNote.value),
+      assetId: Field(dto.withdrawNote.assetId),
+      inputNullifier: Field(dto.withdrawNote.inputNullifier),
+      noteType: Field(dto.withdrawNote.noteType),
+    });
     const index = Field(dto.index);
     const witness = DataMerkleWitness.fromJSON({ path: dto.witness });
 
