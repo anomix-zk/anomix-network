@@ -6,6 +6,7 @@ import { queryByTxHashes } from "./query-by-tx-hashes";
 import { queryTxByNoteHash } from "./query-tx-by-note-hashes";
 import { queryWithdrawalNotes } from "./query-withdrawal-notes";
 import { queryPendingTxs } from "./query-pending-txs";
+import { queryPartialByBlockHeight } from "./query-block-partial-by-blockheight";
 
 export const blockEndpoint: FastifyPlugin = async (
     instance,
@@ -20,4 +21,5 @@ export const blockEndpoint: FastifyPlugin = async (
 
     instance.register(queryAssetsInBlocks);
     instance.register(queryLatestBlockHeight);
+    instance.register(queryPartialByBlockHeight);
 }
