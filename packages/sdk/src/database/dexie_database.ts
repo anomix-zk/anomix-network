@@ -456,7 +456,7 @@ export class DexieDatabase implements Database {
     await this.userState.where({ accountPk }).delete();
     await this.userTx.where({ accountPk }).delete();
     await this.signingKey.where({ accountPk }).delete();
-    await this.note.where({ accountPk }).delete();
+    await this.note.where({ ownerPk: accountPk }).delete();
   }
   async resetUserStates(): Promise<void> {
     await this.userState.toCollection().modify({ syncedToBlock: 0 });

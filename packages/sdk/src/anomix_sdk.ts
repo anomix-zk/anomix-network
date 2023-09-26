@@ -933,6 +933,33 @@ export class AnomixSdk {
     return encryptedNotes;
   }
 
+  public async getAnalysisOfNotes(
+    accountPk: string
+  ): Promise<{ availableNotesNum: number; maxSpendValuePerTx: string }> {
+    const notes = await this.db.getNotes(accountPk, NoteType.NORMAL.toString());
+    const sortedNotes = notes
+      .filter((n) => !n.pending)
+      .sort((a, b) => Number(BigInt(b.value) - BigInt(a.value)));
+
+    if (sortedNotes.length === 0) {
+      return {
+        availableNotesNum: 0,
+        maxSpendValuePerTx: '0',
+      };
+    } else if (sortedNotes.length === 1) {
+      return {
+        availableNotesNum: 1,
+        maxSpendValuePerTx: sortedNotes[0].value,
+      };
+    } else {
+      return {
+        availableNotesNum: sortedNotes.length,
+        maxSpendValuePerTx:
+          BigInt(sortedNotes[0].value) + BigInt(sortedNotes[1].value) + '',
+      };
+    }
+  }
+
   public async createPaymentTx({
     accountPk,
     alias,
