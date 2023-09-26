@@ -5,6 +5,7 @@ import { InnerRollupProver, JoinSplitProver, BlockProver, DepositRollupProver, A
 import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
 import { ProofTaskType, FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
+import { prove } from "./circuits/block_prover";
 
 const logger = getLogger('pWorker-BlockProver');
 
@@ -25,6 +26,9 @@ function processMsgFromMaster() {
                     }
 
                     logger.info(`currently process blockProveInput.dataStartIndex: ${params.blockProveInput.dataStartIndex}`);
+
+                    await prove(params.blockProveInput, params.innerRollupProof);
+                    logger.info(`exec 'BlockProver.prove' outside circuit smoothly`);
 
                     const proof = await BlockProver.prove(params.blockProveInput, params.innerRollupProof);
                     logger.info(`exec 'BlockProver.prove' inside circuit: done`);
