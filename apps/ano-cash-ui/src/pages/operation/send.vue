@@ -25,9 +25,15 @@
           <div class="token-info">
             <div class="token-name">MINA</div>
             <div class="token-balance">Balance <template v-if="balanceLoading"><n-spin :size="14"
-                  stroke="#97989d" /></template><template v-else>{{ totalMinaBalance }}</template> MINA</div>
+                  stroke="#97989d" /></template><template v-else>{{ totalMinaBalance }}</template> MINA<template
+                v-if="notesInfo !== null"> ({{
+                  notesInfo.availableNotesNum }} notes, max: {{
+    convertToMinaUnit(notesInfo.maxSpendValuePerTx) }} mina)</template></div>
           </div>
-
+          <!-- 
+          <div v-if="notesInfo !== null" style="color: var(--ano-text-third);font-size: 14px;">{{
+            notesInfo.availableNotesNum }} notes, maxSpend: {{
+    convertToMinaUnit(notesInfo.maxSpendValuePerTx) }} MINA</div> -->
         </div>
 
         <div class="amount">
@@ -318,6 +324,8 @@ const toConfirm = async () => {
 };
 
 
+const notesInfo = ref<{ availableNotesNum: number; maxSpendValuePerTx: string } | null>(null);
+
 onMounted(async () => {
   console.log('send onMounted...');
   // currPageAction.value = pageParams.value.action!;
@@ -344,6 +352,10 @@ onMounted(async () => {
     kind: 'Faster',
     value: convertToMinaUnit(txFees.faster)!.toString()
   }];
+
+  const analysisInfo = await remoteApi.getAnalysisOfNotes(appState.value.accountPk58!);
+  console.log('analysisInfo: ', analysisInfo);
+  notesInfo.value = analysisInfo;
 });
 
 </script>
