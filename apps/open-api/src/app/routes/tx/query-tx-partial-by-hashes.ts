@@ -24,43 +24,57 @@ export const queryPartialByTxHashes: FastifyPlugin = async function (
 ): Promise<void> {
     instance.route({
         method: "POST",
-        url: "/tx/paitial-fields",
+        url: "/block/paitial-fields",
         //preHandler: [instance.authGuard],
         schema,
         handler
     })
 }
 
-export const handler: RequestHandler<{ txHashes: string[], fieldNames: string[] }, null> = async function (
+export const handler: RequestHandler<{ blockHeightList: number[], fieldNames: string[] }, null> = async function (
     req,
     res
 ): Promise<BaseResponse<object>> {
-    const txHashList = req.body.txHashes
-    const connection = getConnection();
+    const blockHeightList = req.body.blockHeightList;
+    if (blockHeightList.some(b => b <= 0)) {
+        return {
+            code: 1,
+            data: undefined,
+            msg: 'There are blockHeight <= 0.'
+        }
+    }
 
+    const connection = getConnection();
     const data = {} as any;
     try {
-        const txRepository = connection.getRepository(L2Tx)
-        // then query confirmed tx collection
-        const ctxList = await txRepository.find({
+        const blockRepository = connection.getRepository(Block);
+        // query latest block
+        const blockEntityList = (await blockRepository.find({
+            select: [
+                'id',
+                'finalizedAt'
+                /*,
+                'blockHash',
+                'l1TxHash',
+                'status',
+                'createdAt',
+                */
+            ],
             where: {
-                txHash: In(txHashList)
+                id: In(blockHeightList)
             }
-        }) ?? [];
+        }));
 
-        if (ctxList.length == 0) {
+        const ids = blockEntityList.map(b => b.id);
+        if (blockHeightList.some(h => !ids.includes(h))) {
             return {
-                code: 0,
-                data,
-                msg: ''
-            };
+                code: 1,
+                data: undefined,
+                msg: 'There are excessing blockHeight.'
+            }
         }
 
-        const blockRepository = connection.getRepository(Block)
-        const blockList = (await blockRepository.find({ select: ['id', 'createdAt', 'finalizedAt'], where: { id: In(ctxList.map(tx => tx.blockId)) } })) ?? [];
-        for (const tx of ctxList) {
-            data[`${tx.txHash}`] = blockList.filter(b => b.id == tx.blockId)[0].finalizedAt?.getTime();
-        }
+        blockEntityList.forEach(b => data[`${b.id}`] = b.finalizedAt.getTime());
 
         return {
             code: 0,
@@ -82,16 +96,16 @@ const schema = {
     body: {
         type: 'object',
         properties: {
-            txHashes: {
+            blockHeightList: {
                 type: "array",
                 items: {
-                    type: "string"
+                    type: "number"
                 }
             },
             fieldNames: {
                 type: "array",
                 items: {
-                    type: "string"
+                    type: "number"
                 }
             }
         }
@@ -105,7 +119,7 @@ const schema = {
                 },
                 data: {
                     type: "object",
-                    additionalProperties: { type: 'number' }
+                    additionalProperties: { type: 'string' }
                 },
                 msg: {
                     type: 'string'
