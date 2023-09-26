@@ -6,6 +6,7 @@ import { AssetsInBlockDto } from '@anomix/types';
 import { NoteDecryptor } from '../note_decryptor/note_decryptor';
 import {
   AccountNote,
+  AssetId,
   calculateNoteNullifier,
   ValueNote,
 } from '@anomix/circuits';
@@ -204,34 +205,20 @@ export class NoteProcessor {
             accountPrivateKey
           );
           if (decryptedResult1) {
-            const withdrawNote = WithdrawInfoDtoToValueNoteJSON(
-              tx.extraData.withdrawNote!
-            );
-            const valueNote = new ValueNote({
-              secret: Field(withdrawNote.secret),
-              ownerPk: PublicKey.fromBase58(withdrawNote.ownerPk),
-              accountRequired: Field(withdrawNote.accountRequired),
-              creatorPk: PublicKey.empty(),
-              value: UInt64.from(withdrawNote.value),
-              assetId: Field(withdrawNote.assetId),
-              inputNullifier: Field(withdrawNote.inputNullifier),
-              noteType: Field(withdrawNote.noteType),
-            });
-            const commitment = valueNote.commitment();
+            const withdrawNote = decryptedResult1.valueNoteJSON;
+
             const nullifier = calculateNoteNullifier(
-              commitment,
+              Field(outputNote1!.noteCommitment),
               accountPrivateKey,
               Bool(true)
             ).toString();
             await this.db.upsertNote(
               Note.from({
                 valueNoteJSON: withdrawNote,
-                commitment: commitment.toString(),
+                commitment: outputNote1!.noteCommitment,
                 nullifier,
                 nullified: false,
-                index: Number(
-                  tx.extraData.withdrawNote?.outputNoteCommitmentIdx
-                ),
+                index: Number(tx.outputNoteCommitmentIdx1),
               })
             );
 
@@ -259,6 +246,32 @@ export class NoteProcessor {
               })
             );
           }
+
+          if (outputNote2) {
+            const decryptedResult2 = await noteDecryptor.decryptNote(
+              outputNote2,
+              accountPrivateKey
+            );
+            if (decryptedResult2) {
+              valueNoteJSON2 = decryptedResult2.valueNoteJSON;
+              if (valueNoteJSON2.ownerPk === accountPk) {
+                const outputNote2Nullifier = calculateNoteNullifier(
+                  Field(outputNote2.noteCommitment),
+                  accountPrivateKey,
+                  Bool(true)
+                );
+                await this.db.upsertNote(
+                  Note.from({
+                    valueNoteJSON: valueNoteJSON2,
+                    commitment: outputNote2.noteCommitment,
+                    nullifier: outputNote2Nullifier.toString(),
+                    nullified: false,
+                    index: Number(tx.outputNoteCommitmentIdx2),
+                  })
+                );
+              }
+            }
+          }
         } else {
           // deposit and send
           this.log.debug(`Processing deposit or send tx: ${tx.txHash}`);
@@ -272,6 +285,7 @@ export class NoteProcessor {
             isSenderForTx = decryptedResult1.isSender;
             isTxRelated = true;
             if (valueNoteJSON1.ownerPk === accountPk) {
+              // current user as receiver
               const outputNote1Nullifier = calculateNoteNullifier(
                 Field(outputNote1!.noteCommitment),
                 accountPrivateKey,
@@ -279,7 +293,7 @@ export class NoteProcessor {
               );
               await this.db.upsertNote(
                 Note.from({
-                  valueNoteJSON: decryptedResult1.valueNoteJSON,
+                  valueNoteJSON: valueNoteJSON1,
                   commitment: outputNote1!.noteCommitment,
                   nullifier: outputNote1Nullifier.toString(),
                   nullified: false,
@@ -305,7 +319,7 @@ export class NoteProcessor {
                 );
                 await this.db.upsertNote(
                   Note.from({
-                    valueNoteJSON: decryptedResult2.valueNoteJSON,
+                    valueNoteJSON: valueNoteJSON2,
                     commitment: outputNote2.noteCommitment,
                     nullifier: outputNote2Nullifier.toString(),
                     nullified: false,
@@ -317,7 +331,13 @@ export class NoteProcessor {
           }
 
           if (isTxRelated) {
-            let privateValueTotal = BigInt(valueNoteJSON1!.value);
+            let privateValueTotal = 0n;
+            if (valueNoteJSON1?.ownerPk === accountPk) {
+              privateValueTotal += BigInt(valueNoteJSON1!.value);
+            }
+            if (valueNoteJSON2?.ownerPk === accountPk) {
+              privateValueTotal += BigInt(valueNoteJSON2!.value);
+            }
 
             await this.db.upsertUserPaymentTx(
               UserPaymentTx.from({

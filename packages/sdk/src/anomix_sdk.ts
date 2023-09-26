@@ -1223,11 +1223,16 @@ export class AnomixSdk {
     let outputNote2Commitment = outputNote2.commitment();
 
     const outputValueNotes = [outputNote1];
+
     const originOutputNotes = [
       Note.from({
         valueNoteJSON: ValueNote.toJSON(outputNote1),
         commitment: outputNote1Commitment.toString(),
-        nullifier: nullifier1.toString(),
+        nullifier: calculateNoteNullifier(
+          outputNote1Commitment,
+          accountPrivateKey,
+          Bool(true)
+        ).toString(),
         nullified: false,
       }),
     ];
@@ -1243,7 +1248,11 @@ export class AnomixSdk {
         Note.from({
           valueNoteJSON: ValueNote.toJSON(outputNote2),
           commitment: outputNote2Commitment.toString(),
-          nullifier: nullifier2.toString(),
+          nullifier: calculateNoteNullifier(
+            outputNote2Commitment,
+            accountPrivateKey,
+            Bool(true)
+          ).toString(),
           nullified: false,
         })
       );
@@ -1348,7 +1357,9 @@ export class AnomixSdk {
     return {
       provedTx,
       txInfo: {
-        actionType: ActionType.SEND.toString(),
+        actionType: isWithdraw
+          ? ActionType.WITHDRAW.toString()
+          : ActionType.SEND.toString(),
         originTx,
         originOutputNotes,
       },
