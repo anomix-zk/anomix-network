@@ -105,7 +105,7 @@ const schema = {
             fieldNames: {
                 type: "array",
                 items: {
-                    type: "string"
+                    type: "number"
                 }
             }
         }
