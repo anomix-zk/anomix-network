@@ -169,7 +169,7 @@ async function traceTasks() {
                                     // sync data tree
                                     await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
                                         if (rs.data.code != 0) {
-                                            throw new Error("cannot sync sync_data_tree!");
+                                            throw new Error(`cannot sync sync_data_tree, due to: [${rs.data.msg}]`);
                                         }
                                     })
                                 } else {
