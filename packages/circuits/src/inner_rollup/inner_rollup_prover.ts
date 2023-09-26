@@ -450,9 +450,8 @@ function processTx({
     lowLeafWitness1.checkMembership(currentNullRoot);
   Provable.log('checkLowLeafMembership: ', checkLowLeafMembership);
 
-  const checkNullifier1GreaterThanLowLeafValue = nullifier1.greaterThan(
-    lowLeafWitness1.leafData.value
-  );
+  const checkNullifier1GreaterThanLowLeafValue = nullifier1.sub(lowLeafWitness1.leafData.value).greaterThan(Field(0n))
+
   Provable.log(
     'checkNullifier1GreaterThanLowLeafValue: ',
     checkNullifier1GreaterThanLowLeafValue
@@ -465,7 +464,7 @@ function processTx({
     lowLeafNextValue1.equals(DUMMY_FIELD),
     Bool,
     Bool(true),
-    nullifier1.lessThan(lowLeafNextValue1)
+    nullifier1.sub(lowLeafNextValue1).lessThan(Field(0n))
   );
   Provable.log(
     'checkNullifier1LeassThanLowLeafNextValue: ',
@@ -552,9 +551,8 @@ function processTx({
     lowLeafWitness2.checkMembership(currentNullRoot);
   Provable.log('checkLowLeafMembership2: ', checkLowLeafMembership2);
 
-  const checkNullifier2GreaterThanLowLeafValue = nullifier2.greaterThan(
-    lowLeafWitness2.leafData.value
-  );
+  const checkNullifier2GreaterThanLowLeafValue = nullifier2.sub(lowLeafWitness2.leafData.value).greaterThan(Field(0n));
+
   Provable.log(
     'checkNullifier2GreaterThanLowLeafValue: ',
     checkNullifier2GreaterThanLowLeafValue
@@ -567,7 +565,7 @@ function processTx({
     lowLeafNextValue2.equals(DUMMY_FIELD),
     Bool,
     Bool(true),
-    nullifier2.lessThan(lowLeafNextValue2)
+    nullifier2.sub(lowLeafNextValue2).lessThan(Field(0n))
   );
   Provable.log(
     'checkNullifier2LeassThanLowLeafNextValue: ',
