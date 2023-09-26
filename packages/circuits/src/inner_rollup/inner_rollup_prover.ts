@@ -464,7 +464,7 @@ function processTx({
     lowLeafNextValue1.equals(DUMMY_FIELD),
     Bool,
     Bool(true),
-    nullifier1.sub(lowLeafNextValue1).lessThan(Field(0n))
+    lowLeafNextValue1.sub(nullifier1).greaterThan(Field(0n))
   );
   Provable.log(
     'checkNullifier1LeassThanLowLeafNextValue: ',
@@ -565,7 +565,7 @@ function processTx({
     lowLeafNextValue2.equals(DUMMY_FIELD),
     Bool,
     Bool(true),
-    nullifier2.sub(lowLeafNextValue2).lessThan(Field(0n))
+    lowLeafNextValue2.sub(nullifier2).greaterThan(Field(0n))
   );
   Provable.log(
     'checkNullifier2LeassThanLowLeafNextValue: ',
