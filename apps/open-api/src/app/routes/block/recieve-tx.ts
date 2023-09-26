@@ -6,7 +6,7 @@ import { Account, MemPlL2Tx, WithdrawInfo } from '@anomix/dao'
 import { RequestHandler } from '@/lib/types';
 import { ActionType, JoinSplitProof, ValueNote } from "@anomix/circuits";
 import config from "@/lib/config";
-import { verify, Field, PublicKey, Poseidon } from "o1js";
+import { verify, Field, PublicKey, Poseidon, UInt64 } from "o1js";
 import { $axiosCoordinator, $axiosSeq } from '@/lib/api';
 import { getLogger } from '@/lib/logUtils';
 
@@ -98,7 +98,16 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
 
     let withdrawNote: ValueNote = {} as any;
     if (actionType.equals(ActionType.WITHDRAW).toBoolean()) {
-        withdrawNote = ValueNote.fromJSON(l2TxReqDto.extraData.withdrawNote as any) as any;// TODO need check!!
+        withdrawNote = new ValueNote({
+            secret: Field(l2TxReqDto.extraData.withdrawNote!.secret),
+            ownerPk: PublicKey.fromBase58(l2TxReqDto.extraData.withdrawNote!.ownerPk),
+            accountRequired: Field(l2TxReqDto.extraData.withdrawNote!.accountRequired),
+            assetId: Field(l2TxReqDto.extraData.withdrawNote!.assetId),
+            inputNullifier: Field(l2TxReqDto.extraData.withdrawNote!.inputNullifier),
+            noteType: Field(l2TxReqDto.extraData.withdrawNote!.noteType),
+            creatorPk: PublicKey.empty(),
+            value: UInt64.from(l2TxReqDto.extraData.withdrawNote!.value)
+        });
         if (joinSplitProof.publicOutput.outputNoteCommitment1.equals(withdrawNote.commitment()).not()) {
             logger.info('withdrawNote\'s commitment is not aligned with tx.outputNoteCommitment1');
             return { code: 1, data: 'withdrawNote\'s commitment is not aligned with tx.outputNoteCommitment1', msg: '' }
