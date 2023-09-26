@@ -144,6 +144,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
             blockEntities?.forEach(blockEntity => {
                 const dto = blockTxListMap1.get(blockEntity.id);
                 if (dto) {
+                    logger.info(`block.id: ${blockEntity.id}, block.createdAt.getTime(): ${blockEntity.createdAt.getTime()}`);
                     dto.blockHash = blockEntity.blockHash;
                     dto.l1TxHash = blockEntity.l1TxHash;
                     dto.status = blockEntity.status;
