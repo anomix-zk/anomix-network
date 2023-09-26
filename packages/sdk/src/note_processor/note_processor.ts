@@ -69,6 +69,9 @@ export class NoteProcessor {
     for (let i = 0; i < l2Blocks.length; i++) {
       const block = l2Blocks[i];
       const txList = block.txList;
+      console.log(
+        `block: ${block.blockHeight}, createdTs: ${block.createdTs}, finalizedTs: ${block.finalizedTs}, txs num: ${txList.length}`
+      );
       if (this.syncedToBlock >= block.blockHeight) {
         this.log.debug(`Skipping block ${block.blockHeight}`);
         continue;
@@ -122,6 +125,7 @@ export class NoteProcessor {
                 txFeeAssetId: tx.txFeeAssetId,
                 // TODO: migrated default false
                 migrated: false,
+                block: block.blockHeight,
                 createdTs: block.createdTs,
                 finalizedTs: block.finalizedTs,
               })
@@ -240,6 +244,7 @@ export class NoteProcessor {
                 sender: accountPk,
                 receiver: withdrawNote.ownerPk,
                 isSender: true,
+                block: block.blockHeight,
                 createdTs: block.createdTs,
                 finalizedTs: block.finalizedTs,
               })
@@ -323,6 +328,7 @@ export class NoteProcessor {
                 sender: isSenderForTx ? accountPk : valueNoteJSON1!.creatorPk,
                 receiver: isSenderForTx ? valueNoteJSON1!.ownerPk : accountPk,
                 isSender: isSenderForTx,
+                block: block.blockHeight,
                 createdTs: block.createdTs,
                 finalizedTs: block.finalizedTs,
               })

@@ -44,7 +44,6 @@ export class NodeProvider implements AnomixNode {
         init.signal = controller.signal;
       }
       let resp = await fetch(url, init);
-
       if (resp.ok) {
         let jsonResp = (await resp.json()) as BaseResponse<T>;
 
@@ -358,13 +357,36 @@ export class NodeProvider implements AnomixNode {
     throw new Error(res.msg);
   }
 
+  // TODO: update
+  public async getFinalizedTimeOfBlocks(
+    blocks: number[]
+  ): Promise<{ [block: string]: number }> {
+    const url = `${this.host}/block/finalized-time`;
+    this.log.info(
+      `Getting finalized time of blocks at ${url}, blocks: ${blocks}`
+    );
+
+    const body = JSON.stringify(blocks);
+    const res = await this.makeRequest<{ [block: string]: number }>(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (res.code === 0) {
+      return res.data!;
+    }
+
+    throw new Error(res.msg);
+  }
+
   public async getClaimableNotes(
     commitments: string[],
     l1address?: string
   ): Promise<WithdrawInfoDto[]> {
-    let url = `${this.host}/tx/withdraw`;
+    let url = `${this.host}/tx/withdraw/`;
     if (l1address) {
-      url = url + `/${l1address}`;
+      url = url + `${l1address}`;
     }
 
     this.log.info(

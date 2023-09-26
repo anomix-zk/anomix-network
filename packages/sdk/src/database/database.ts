@@ -31,6 +31,7 @@ export interface Database {
   getSecretKey(publicKey: string): Promise<string | undefined>;
   getSecretKeys(): Promise<KeyPair[]>;
   deleteSecretKey(publicKey: string): Promise<void>;
+  removeSecretKeys(publicKeys: string[]): Promise<void>;
 
   upsertKey(name: string, value: string): Promise<void>;
   getKey(name: string): Promise<string | undefined>;
@@ -57,6 +58,7 @@ export interface Database {
   getUserAccountTxs(accountPk: string): Promise<UserAccountTx[]>;
 
   getUserTxs(accountPk: string): Promise<UserTx[]>;
+  upsertUserTxs(txs: UserTx[]): Promise<void>;
   isUserTxSettled(txHash: string): Promise<boolean>;
   getPendingUserTxs(accountPk: string): Promise<UserTx[]>;
   removeUserTx(accountPk: string, txHash: string): Promise<void>;

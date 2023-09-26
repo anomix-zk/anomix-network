@@ -72,6 +72,7 @@ class DexieUserTx {
     public txHash: string,
     public accountPk: string,
     public actionType: string,
+    public block: number,
     public createdTs: number,
     public finalizedTs: number
   ) {}
@@ -93,6 +94,7 @@ class DexiePaymentTx implements DexieUserTx {
     public sender: string,
     public receiver: string,
     public isSender: boolean,
+    public block: number,
     public createdTs: number,
     public finalizedTs: number,
     public publicOwner?: string,
@@ -118,6 +120,7 @@ function fromDexiePaymentTx(tx: DexiePaymentTx): UserPaymentTx {
     tx.sender,
     tx.receiver,
     tx.isSender,
+    tx.block,
     tx.createdTs,
     tx.finalizedTs
   );
@@ -139,6 +142,7 @@ function toDexiePaymentTx(tx: UserPaymentTx): DexiePaymentTx {
     tx.sender,
     tx.receiver,
     tx.isSender,
+    tx.block,
     tx.createdTs,
     tx.finalizedTs,
     tx.publicOwner,
@@ -155,6 +159,7 @@ class DexieAccountTx implements DexieUserTx {
     public txFee: string,
     public txFeeAssetId: string,
     public migrated: boolean,
+    public block: number,
     public createdTs: number,
     public finalizedTs: number,
     public alias?: string,
@@ -174,6 +179,7 @@ function fromDexieAccountTx(tx: DexieAccountTx): UserAccountTx {
     tx.txFee,
     tx.txFeeAssetId,
     tx.migrated,
+    tx.block,
     tx.createdTs,
     tx.finalizedTs
   );
@@ -188,6 +194,7 @@ function toDexieAccountTx(tx: UserAccountTx): DexieAccountTx {
     tx.txFee,
     tx.txFeeAssetId,
     tx.migrated,
+    tx.block,
     tx.createdTs,
     tx.finalizedTs,
     tx.alias,
@@ -272,6 +279,9 @@ export class DexieDatabase implements Database {
 
     await this.key.where({ publicKey }).delete();
   }
+  async removeSecretKeys(publicKeys: string[]): Promise<void> {
+    await this.secretKey.bulkDelete(publicKeys);
+  }
 
   async upsertNote(note: Note): Promise<void> {
     await this.note.put(toDexieNote(note));
@@ -355,6 +365,18 @@ export class DexieDatabase implements Database {
       .sortBy('createdTs')) as DexieAccountTx[];
     return sortTxs(txs).map(fromDexieAccountTx);
   }
+
+  async upsertUserTxs(txs: UserTx[]): Promise<void> {
+    await this.userTx.bulkPut(
+      txs.map((tx) => {
+        if ((tx as any).actionType !== undefined) {
+          return toDexiePaymentTx(tx as UserPaymentTx);
+        } else {
+          return toDexieAccountTx(tx as UserAccountTx);
+        }
+      })
+    );
+  }
   async getUserTxs(accountPk: string): Promise<UserTx[]> {
     const txs = await this.userTx
       .where({ accountPk })
@@ -425,6 +447,12 @@ export class DexieDatabase implements Database {
     await this.userState.update(accountPk, { syncedToBlock });
   }
   async removeUserState(accountPk: string): Promise<void> {
+    const signingKeys = await this.getSigningKeys(accountPk);
+    const removePubKeys: string[] = [accountPk];
+    signingKeys.forEach((sk) => {
+      removePubKeys.push(sk.signingPk);
+    });
+    await this.removeSecretKeys(removePubKeys);
     await this.userState.where({ accountPk }).delete();
     await this.userTx.where({ accountPk }).delete();
     await this.signingKey.where({ accountPk }).delete();

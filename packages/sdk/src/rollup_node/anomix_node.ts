@@ -48,4 +48,7 @@ export interface AnomixNode {
     commitments: string[],
     l1address?: string
   ): Promise<WithdrawInfoDto[]>;
+  getFinalizedTimeOfBlocks(
+    blocks: number[]
+  ): Promise<{ [block: string]: number }>;
 }
