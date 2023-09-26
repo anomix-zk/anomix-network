@@ -361,12 +361,15 @@ export class NodeProvider implements AnomixNode {
   public async getFinalizedTimeOfBlocks(
     blocks: number[]
   ): Promise<{ [block: string]: number }> {
-    const url = `${this.host}/block/finalized-time`;
+    const url = `${this.host}/block/paitial-fields`;
     this.log.info(
       `Getting finalized time of blocks at ${url}, blocks: ${blocks}`
     );
 
-    const body = JSON.stringify(blocks);
+    const body = JSON.stringify({
+      blockHeightList: blocks,
+      fieldNames: ['finalizedAt'],
+    });
     const res = await this.makeRequest<{ [block: string]: number }>(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
