@@ -66,7 +66,7 @@
         <n-alert title="Notice" type="info" style="margin-bottom: 15px;">
           It is the first time you claim funds, you need to create a withdrawal account before you can continue to
           operate,
-          creating a withdrawal account needs to consume one mina (collected by the mina network), this operation only
+          creating a withdrawal account needs to consume 1 mina (collected by the mina network), this operation only
           needs
           to be performed once.
         </n-alert>
@@ -129,7 +129,7 @@ const connectedWallet = computed(() => omitAddress(appState.value.connectedWalle
 const withdrawNote = ref<{ token: string; balance: string; ownerAddress: string } | null>(null);
 const withdrawNoteBalance = computed(() => {
   if (withdrawNote.value === null) return '0.0';
-  return convertToMinaUnit(withdrawNote.value.balance);
+  return convertToMinaUnit(withdrawNote.value.balance)?.toString();
 });
 const withdrawAccountExists = ref<boolean>(false);
 const L1TokenBalance = ref<{ token: string; balance: string } | null>(null);
@@ -299,7 +299,7 @@ onMounted(async () => {
   withdrawNote.value = {
     token: 'MINA',
     ownerAddress: notes[0].ownerPk,
-    balance: convertToMinaUnit(notes[0].value)!.toString(),
+    balance: notes[0].value,
   };
 
 

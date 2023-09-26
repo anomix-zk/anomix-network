@@ -180,7 +180,8 @@
                                         <div v-if="item.actionType === '3' && item.finalizedTs === 0" class="tx-label">
                                             withdraw
                                         </div>
-                                        <div v-if="item.actionType === '3' && item.finalizedTs !== 0" class="tx-label">
+                                        <div v-if="item.actionType === '3' && item.finalizedTs !== 0" class="tx-label"
+                                            style="background-color:#22c493">
                                             claimable
                                         </div>
                                         <div v-if="item.actionType === '4'" class="tx-label">
