@@ -7,7 +7,7 @@ import { FastifyPlugin } from "fastify"
 import { getConnection } from 'typeorm';
 
 import { RequestHandler } from '@/lib/types'
-import { Account, MemPlL2Tx } from '@anomix/dao'
+import { Account, L2Tx, MemPlL2Tx } from '@anomix/dao'
 import { BaseResponse, L2TxStatus } from "@anomix/types";
 import { getLogger } from "@/lib/logUtils";
 
@@ -44,12 +44,23 @@ export const handler: RequestHandler<reqBody, null> = async function (
         const account = await accountRepository.findOne({ where: { acctPk: acctViewKey } });
         if (account /* && includePending */) {
             const mpL2TxRepo = connection.getRepository(MemPlL2Tx);
-            const status = (await mpL2TxRepo.findOne(account.l2TxId))!.status;
-            if (status == L2TxStatus.FAILED) {
-                code = 1;// not registered!
-                data = false;
-            } else if (status == L2TxStatus.PENDING) {
-                msg = 'pending';
+            const mpL2Tx = await mpL2TxRepo.findOne(account.l2TxId);
+            if (!mpL2Tx) {
+                const l2TxRepo = connection.getRepository(L2Tx);
+                const l2Tx = await l2TxRepo.findOne(account.l2TxId);
+                if (!l2Tx) {
+                    code = 1;// not registered!
+                    data = false;
+                }
+
+            } else {
+                const status = (mpL2Tx)!.status;
+                if (status == L2TxStatus.FAILED) {
+                    code = 1;// not registered!
+                    data = false;
+                } else if (status == L2TxStatus.PENDING) {
+                    msg = 'pending';
+                }
             }
         } else {
             data = false;
