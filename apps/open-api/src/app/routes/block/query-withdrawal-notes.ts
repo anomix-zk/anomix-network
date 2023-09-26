@@ -23,18 +23,18 @@ export const queryWithdrawalNotes: FastifyPlugin = async function (
     })
 }
 
-export const handler: RequestHandler<{ noteCommitments: string[] }, { l1addr: string }> = async function (
+export const handler: RequestHandler<{ commitments: string[] }, { l1addr: string }> = async function (
     req,
     res
 ): Promise<BaseResponse<WithdrawInfoDto[] | undefined>> {
-    const noteCommitmentList = req.body.noteCommitments;
+    const noteCommitmentList = req.body.commitments;
     const l1addr = req.params.l1addr;
 
     if (!(l1addr || noteCommitmentList?.length > 0)) {
         return {
             code: 1,
             data: [],
-            msg: 'both l1addr and noteCommitments are none!'
+            msg: 'both l1addr and commitments are none!'
         };
     }
 
@@ -119,7 +119,7 @@ const schema = {
     body: {
         type: 'object',
         properties: {
-            'noteCommitments': {
+            'commitments': {
                 type: "array",
                 items: {
                     type: "string"
