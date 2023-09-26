@@ -12,7 +12,7 @@
 
         <div class="content">
 
-          <div>Approximately 3 minutes</div>
+          <div>Approximately 3-5 minutes</div>
           <a :href='txExplorerUrl' target='_blank' class='processing-tx-hash'>
             <span style="color:#000;margin-right: 8px;font-weight: 500;">View Tx: </span> {{ omitTxHash
             }} >
@@ -350,7 +350,7 @@ const deposit = async () => {
     await remoteApi.checkTx(txHash);
     txDialogLoadingDone();
 
-    message.success('Deposit success! You can view the deposit transaction just sent in auro wallet, Ano.Cash will be updated in a few minutes.', { duration: 0, closable: true });
+    message.success('Deposit success! You can view the deposit transaction just sent in auro wallet, Ano.Cash will be updated in about half an hour.', { duration: 0, closable: true });
 
   } catch (err: any) {
     console.error(err);

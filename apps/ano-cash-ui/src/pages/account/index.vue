@@ -90,7 +90,7 @@
                         :to="toTime" type="relative" /></div>
 
                 <n-tag v-if="appState.accountStatus === AccountStatus.REGISTERING" type="warning" round strong>
-                    Account Creation Pending
+                    Alias registration pending
                 </n-tag>
             </div>
 
@@ -296,7 +296,7 @@ const clearAccountAndLogout = async () => {
     showLoadingMask({ text: 'Clear account...', id: maskId, closable: false });
     try {
         await clearAccount(appState.value.accountPk58!);
-        await navigateTo("/login/session");
+        await navigateTo("/");
         message.success('Clear account successfully');
         closeLoadingMask(maskId);
     } catch (err: any) {
