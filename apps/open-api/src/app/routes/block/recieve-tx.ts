@@ -108,7 +108,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
             creatorPk: PublicKey.empty(),
             value: UInt64.from(l2TxReqDto.extraData.withdrawNote!.value)
         });
-        if (joinSplitProof.publicOutput.outputNoteCommitment1.equals(withdrawNote.commitment()).not()) {
+        if (joinSplitProof.publicOutput.outputNoteCommitment1.equals(withdrawNote.commitment()).not().toBoolean()) {
             logger.info('withdrawNote\'s commitment is not aligned with tx.outputNoteCommitment1');
             return { code: 1, data: 'withdrawNote\'s commitment is not aligned with tx.outputNoteCommitment1', msg: '' }
         }
