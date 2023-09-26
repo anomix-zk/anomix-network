@@ -28,10 +28,9 @@ const currentTab = ref(Number(step) || 1);
 const nextStep = (step: number) => {
     currentTab.value = step;
 };
-const finish = () => {
-    router.replace("/account");
+const finish = async () => {
+    await navigateTo("/account", { replace: true });
 };
-
 
 const toBack = () => router.back();
 </script>

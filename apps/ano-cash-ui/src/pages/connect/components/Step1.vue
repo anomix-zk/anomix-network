@@ -110,7 +110,6 @@ import { AccountStatus } from "../../../common/constants";
 const emit = defineEmits<{
     (e: 'nextStep', step: number): void;
 }>();
-const router = useRouter();
 const { appState, setConnectedWallet, setAccountPk58, setAlias, setAccountStatus, setSigningPk1_58, setSigningPk2_58, showLoadingMask, closeLoadingMask } = useStatus();
 const { omitAddress } = useUtils();
 const { SdkState, addAccount } = useSdk();
@@ -155,14 +154,14 @@ const inputPwdAgain = () => {
     }
 };
 
-const disconnect = () => {
+const disconnect = async () => {
     setConnectedWallet(null);
     setAccountPk58(null);
     accountPrivateKey.value = '';
     signingKeypair1.value = null;
     signingKeypair2.value = null;
     setAccountStatus(AccountStatus.UNREGISTERED);
-    router.replace('/');
+    await navigateTo("/", { replace: true });
 };
 
 const walletListenerSetted = ref(false);
@@ -177,7 +176,7 @@ onMounted(() => {
 
     if (!walletListenerSetted.value) {
         if (window.mina) {
-            window.mina.on('accountsChanged', (accounts: string[]) => {
+            window.mina.on('accountsChanged', async (accounts: string[]) => {
                 console.log('step1.vue - connected account change: ', accounts);
                 if (route.path === '/connect/step-1') {
                     if (accounts.length === 0) {
@@ -186,7 +185,7 @@ onMounted(() => {
                             duration: 0
                         });
 
-                        disconnect();
+                        await disconnect();
                     } else {
                         setConnectedWallet(accounts[0]);
                     }
@@ -217,8 +216,9 @@ const toRegisterAliasPage = () => {
     emit('nextStep', 2);
 };
 
-const toAccountPage = () => {
-    router.replace("/account");
+const toAccountPage = async () => {
+    //router.replace("/account");
+    await navigateTo("/account", { replace: true });
 };
 
 const addAnomixAccount = async () => {
@@ -236,14 +236,14 @@ const addAnomixAccount = async () => {
     }
 
     try {
-        showLoadingMask({ id: maskId, text: 'Saving account...', closable: false });
+        showLoadingMask({ id: maskId, text: 'Saving account locally...', closable: false });
         const accountPk = await addAccount(accountPrivateKey.value, pwd.value, signingKeypair1.value?.privateKey, signingKeypair2.value?.privateKey, appState.value.alias === null ? undefined : appState.value.alias);
         if (accountPk) {
             setAccountPk58(accountPk);
             message.success('Account saved successfully');
 
             if (appState.value.accountStatus !== AccountStatus.UNREGISTERED) {
-                toAccountPage();
+                await toAccountPage();
             } else {
                 setSigningPk1_58(signingKeypair1.value?.publicKey);
                 setSigningPk2_58(signingKeypair2.value?.publicKey);
@@ -270,6 +270,7 @@ const deriveSigningKeys = async () => {
         return;
     }
 
+    showLoadingMask({ id: maskId, text: 'Deriving signing keys...', closable: true });
     let signMessage = await remoteApi.getSigningKeySigningData();
     try {
         let signResult = await window.mina.signMessage({
@@ -280,13 +281,14 @@ const deriveSigningKeys = async () => {
         signingKeypair1.value = sk1;
         let sk2 = await remoteApi.generateKeyPair(signResult.signature, 1);
         signingKeypair2.value = sk2;
-
+        closeLoadingMask(maskId);
     } catch (error: any) {
         console.error('deriveSigningKeys: ', error);
         message.error(error.message, {
             closable: true,
             duration: 0
         });
+        closeLoadingMask(maskId);
     }
 
 };
@@ -297,6 +299,7 @@ const deriveAccountPubKey = async () => {
         return;
     }
 
+    showLoadingMask({ id: maskId, text: 'Deriving anomix account...', closable: true });
     let signMessage = await remoteApi.getAccountKeySigningData();
     try {
         let signResult = await window.mina.signMessage({
@@ -307,6 +310,7 @@ const deriveAccountPubKey = async () => {
         setAccountPk58(accountKeypair.publicKey);
         accountPrivateKey.value = accountKeypair.privateKey;
 
+        showLoadingMask({ id: maskId, text: 'Checking if alias is registered...', closable: false });
         // get alias
         let alias = await remoteApi.getAliasByAccountPublicKey(accountKeypair.publicKey, accountKeypair.privateKey);
         if (alias) {
@@ -316,13 +320,14 @@ const deriveAccountPubKey = async () => {
             console.log('alias not found, go to register flow');
             setAccountStatus(AccountStatus.UNREGISTERED);
         }
-
+        closeLoadingMask(maskId);
     } catch (error: any) {
         console.error('deriveAccountPubKey: ', error);
         message.error(error.message, {
             closable: true,
             duration: 0
         });
+        closeLoadingMask(maskId);
     }
 
 };

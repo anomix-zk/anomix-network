@@ -77,12 +77,12 @@ const router = useRouter();
 
 const toBack = () => router.back();
 
-const toRegisterAliasPage = () => {
-    router.push({ path: "/connect", query: { step: 2 } });
+const toRegisterAliasPage = async () => {
+    await navigateTo({ path: "/connect", query: { step: 2 } });
 };
 
-const toAccountPage = () => {
-    router.replace("/account");
+const toAccountPage = async () => {
+    await navigateTo("/account", { replace: true });
 };
 
 const accountPrivateKey = ref("");
@@ -189,9 +189,9 @@ const login = async () => {
             message.success('Account saved successfully');
 
             if (appState.value.accountStatus !== AccountStatus.UNREGISTERED) {
-                toAccountPage();
+                await toAccountPage();
             } else {
-                toRegisterAliasPage();
+                await toRegisterAliasPage();
             }
 
             closeLoadingMask(maskId);

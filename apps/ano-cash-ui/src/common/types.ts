@@ -15,6 +15,7 @@ export interface TxInfo {
     feeOfMinaUnit: string;
     feeToken: string;
     anonToReceiver: boolean;
+    isWithdraw: boolean;
 }
 
 export interface TxHis {

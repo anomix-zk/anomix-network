@@ -368,15 +368,18 @@ const connect = async () => {
   }
 
   try {
+    showLoadingMask({ id: maskId, text: 'Connecting wallet...', closable: true });
     const currentNetwork = await window.mina.requestNetwork();
     if (appState.value.minaNetwork !== currentNetwork) {
       message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
+      closeLoadingMask(maskId);
       return;
     }
 
     let accounts = await window.mina.requestAccounts();
     setConnectedWallet(accounts[0]);
 
+    showLoadingMask({ id: maskId, text: 'Checking balance...', closable: false });
     balanceLoading.value = true;
     const account = await remoteApi.getL1Account(appState.value.connectedWallet58!);
     if (account !== undefined) {
@@ -386,11 +389,13 @@ const connect = async () => {
       L1TokenBalance.value = { token: 'MINA', balance: '0' };
     }
     balanceLoading.value = false;
+    closeLoadingMask(maskId);
 
   } catch (err: any) {
     // if user reject, requestAccounts will throw an error with code and message filed
     console.error(err);
     message.error(err.message);
+    closeLoadingMask(maskId);
   }
 };
 
