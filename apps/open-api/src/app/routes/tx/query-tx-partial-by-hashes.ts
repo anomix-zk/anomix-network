@@ -57,7 +57,7 @@ export const handler: RequestHandler<{ txHashes: string[], fieldNames: string[] 
         }
 
         const blockRepository = connection.getRepository(Block)
-        const blockList = (await blockRepository.find({ select: ['createdAt', 'finalizedAt'], where: { id: In(ctxList.map(tx => tx.blockId)) } })) ?? [];
+        const blockList = (await blockRepository.find({ select: ['id', 'createdAt', 'finalizedAt'], where: { id: In(ctxList.map(tx => tx.blockId)) } })) ?? [];
         for (const tx of ctxList) {
             data[`${tx.txHash}`] = blockList.filter(b => b.id == tx.blockId)[0].finalizedAt?.getTime();
         }
