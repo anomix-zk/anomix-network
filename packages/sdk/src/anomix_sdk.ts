@@ -147,6 +147,10 @@ export class AnomixSdk {
       console.time('compile withdrawAccount');
       await WithdrawAccount.compile();
       console.timeEnd('compile withdrawAccount');
+      this.log.info(
+        'withdrawAccount vk hash: ',
+        WithdrawAccount._verificationKey!.hash.toString()
+      );
 
       console.time('compile vaultContract');
       AnomixVaultContract.withdrawAccountVkHash =
@@ -158,12 +162,18 @@ export class AnomixSdk {
         eventType: SdkEventType.VAULT_CONTRACT_COMPILED_DONE,
       } as SdkEvent);
       console.timeEnd('compile vaultContract');
+      this.log.info(
+        'vaultContract vk hash: ',
+        AnomixVaultContract._verificationKey!.hash.toString()
+      );
     }
 
     if (!this.isEntryContractCompiled) {
       console.time('compile depositRollupProver');
-      await DepositRollupProver.compile();
+      let { verificationKey: depositRollupVk } =
+        await DepositRollupProver.compile();
       console.timeEnd('compile depositRollupProver');
+      this.log.info('depositRollupProver vk: ', depositRollupVk);
 
       console.time('compile anomixEntryContract');
       await AnomixEntryContract.compile();
@@ -173,6 +183,10 @@ export class AnomixSdk {
         eventType: SdkEventType.ENTRY_CONTRACT_COMPILED_DONE,
       } as SdkEvent);
       console.timeEnd('compile anomixEntryContract');
+      this.log.info(
+        'anomixEntryContract vk hash: ',
+        AnomixEntryContract._verificationKey!.hash.toString()
+      );
     }
 
     this.log.info('Compile EntryContract and VaultContract Circuits done!');
@@ -183,13 +197,14 @@ export class AnomixSdk {
 
     if (!this.isPrivateCircuitCompiled) {
       console.time('compile private circuit');
-      await JoinSplitProver.compile();
+      let { verificationKey } = await JoinSplitProver.compile();
       this.isPrivateCircuitCompiled = true;
 
       this.broadcastChannel?.postMessage({
         eventType: SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE,
       } as SdkEvent);
       console.timeEnd('compile private circuit');
+      this.log.info('private circuit vk: ', verificationKey);
     }
 
     this.log.info('Compile Private Circuit= done');
@@ -758,7 +773,7 @@ export class AnomixSdk {
       () => {
         AccountUpdate.fundNewAccount(feePayerAddress);
         this.vaultContract.deployAccount(
-          AnomixVaultContract._verificationKey!,
+          WithdrawAccount._verificationKey!,
           userAddress
         );
       }

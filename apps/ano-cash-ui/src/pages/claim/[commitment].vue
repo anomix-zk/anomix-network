@@ -1,4 +1,46 @@
 <template>
+  <div v-if="showTxDialog" class="ano-mask">
+    <div class="ano-dialog" style="width:70%; height: 40%;">
+      <div class="dialog-container">
+        <div class="header">
+          <div class="title">Submitted</div>
+
+          <div class="close" @click="closeTxDialog">
+            <van-icon name="close" color="#97989d" size="20" />
+          </div>
+        </div>
+
+        <div class="content">
+
+          <div>Approximately 3-5 minutes</div>
+          <a :href='txExplorerUrl' target='_blank' class='processing-tx-hash'>
+            <span style="color:#000;margin-right: 8px;font-weight: 500;">View Tx: </span> {{ omitTxHash
+            }} >
+          </a>
+
+        </div>
+
+        <div class="bottom">
+          <div class="processing">
+            <div v-if="dialogLoading" class="loading">
+              <n-spin stroke="#22c493" size="small" />
+              <span style="margin-left: 8px;">Processing</span>
+            </div>
+            <div v-else class="loading">
+              <van-icon name="passed" color="#22c493" size="28" />
+              <span style="margin-left: 8px;">Done</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+
+
+
   <div style="justify-content: flex-start;">
     <div class="ano-header">
       <div class="left" @click="toBack">
@@ -66,7 +108,7 @@
         <n-alert title="Notice" type="info" style="margin-bottom: 15px;">
           It is the first time you claim funds, you need to create a withdrawal account before you can continue to
           operate,
-          creating a withdrawal account needs to consume one mina (collected by the mina network), this operation only
+          creating a withdrawal account needs to consume 1 mina (collected by the mina network), this operation only
           needs
           to be performed once.
         </n-alert>
@@ -80,11 +122,6 @@
           </template>
         </n-button>
       </div>
-
-      <n-alert v-if="checkTxUrl !== null" title="Notice" type="info" style="margin-bottom: 15px;">
-        The transaction has been sent, please check the transaction status: <a :href="checkTxUrl" target="_blank">{{
-          checkTxUrl }}</a>
-      </n-alert>
 
       <div v-if="connectedWallet === null" class="oauth-box">
         <div class="auth-item">
@@ -120,16 +157,38 @@ const { SdkState, listenSyncerChannel } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const remoteSdk = SdkState.remoteSdk!;
 
-const checkTxUrl = ref<string | null>(null);
+// show Loading mask
+const maskId = "claim";
+showLoadingMask({ text: 'Loading...', id: maskId, closable: false });
 
 const commitment = route.params.commitment as string;
 console.log('claim-commitment: ', commitment);
+
+// =============tx dialog--------------------------
+const showTxDialog = ref(false);
+const dialogLoading = ref(true);
+const submittedTxHash = ref('');
+const omitTxHash = computed(() => omitAddress(submittedTxHash.value, 6));
+const txExplorerUrl = computed(() => appState.value.explorerUrl + submittedTxHash.value);
+const closeTxDialog = () => {
+  showTxDialog.value = false;
+};
+const openTxDialog = (txHash: string) => {
+  submittedTxHash.value = txHash;
+  dialogLoading.value = true;
+  showTxDialog.value = true;
+};
+const txDialogLoadingDone = () => {
+  dialogLoading.value = false;
+}
+// =============tx dialog--------------------------
+
 
 const connectedWallet = computed(() => omitAddress(appState.value.connectedWallet58, 5));
 const withdrawNote = ref<{ token: string; balance: string; ownerAddress: string } | null>(null);
 const withdrawNoteBalance = computed(() => {
   if (withdrawNote.value === null) return '0.0';
-  return convertToMinaUnit(withdrawNote.value.balance);
+  return convertToMinaUnit(withdrawNote.value.balance)?.toString();
 });
 const withdrawAccountExists = ref<boolean>(false);
 const L1TokenBalance = ref<{ token: string; balance: string } | null>(null);
@@ -142,7 +201,7 @@ const toBack = () => router.back();
 const syncerListenerSetted = ref(false);
 
 const claim = async () => {
-  console.log('claim funds...');
+  console.log('start claim funds...');
   if (!window.mina) {
     message.error('Please install auro wallet browser extension first.');
     return;
@@ -153,25 +212,38 @@ const claim = async () => {
     return;
   }
 
+  showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: false });
   disabledClaim.value = true;
   claimLoading.value = true;
   try {
     const isContractReady = await remoteSdk.isVaultContractCompiled();
     if (!isContractReady) {
-      message.error('Anomix Vault contract is not ready, please try again later. If it is ready, you will receive a message notification.');
+      if (syncerListenerSetted.value === false) {
+        listenSyncerChannel((e: SdkEvent) => {
+          if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
+            closeLoadingMask(maskId);
+            message.info('Circuits compling done, please continue your deposit', { duration: 0, closable: true });
+          }
+        });
+        syncerListenerSetted.value = true;
+      }
       disabledClaim.value = false;
       claimLoading.value = false;
       return;
     }
+
+    showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
     const txJson = await remoteSdk.createClaimFundsTx(commitment, appState.value.connectedWallet58!);
     const { hash: txHash } = await window.mina.sendTransaction({
       transaction: txJson,
     });
     console.log('tx send success, txHash: ', txHash);
+    closeLoadingMask(maskId);
 
-    checkTxUrl.value = appState.value.explorerUrl + txHash;
+    openTxDialog(txHash);
     await remoteApi.checkTx(txHash);
-    message.success('Claim funds success.');
+    txDialogLoadingDone();
+
     claimBtnText.value = 'Claimed';
     claimLoading.value = false;
 
@@ -180,6 +252,7 @@ const claim = async () => {
     message.error(err.message, { duration: 0, closable: true });
     claimLoading.value = false;
     disabledClaim.value = false;
+    closeLoadingMask(maskId);
   }
 };
 
@@ -195,31 +268,49 @@ const createWithdrawalAccount = async () => {
     return;
   }
 
+  showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: true });
   createWithdrawalAccountLoading.value = true;
   try {
     const isContractReady = await remoteSdk.isVaultContractCompiled();
     if (!isContractReady) {
-      message.error('Anomix Vault contract is not ready, please try again later. If it is ready, you will receive a message notification.');
+      if (syncerListenerSetted.value === false) {
+        listenSyncerChannel((e: SdkEvent) => {
+          if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
+            closeLoadingMask(maskId);
+            message.info('Circuits compling done, please continue your operation.', { duration: 0, closable: true });
+          }
+        });
+        syncerListenerSetted.value = true;
+      }
+
       createWithdrawalAccountLoading.value = false;
       return;
     }
+
+    showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
     const txJson = await remoteSdk.createWithdrawalAccount(withdrawNote.value?.ownerAddress!,
       appState.value.connectedWallet58!);
 
+    console.log('createWithdrawalAccount txJson: ', txJson);
+
+    showLoadingMask({ id: maskId, text: 'Wait for sending transaction...', closable: false });
     const { hash: txHash } = await window.mina.sendTransaction({
       transaction: txJson,
     });
     console.log('tx send success, txHash: ', txHash);
-    checkTxUrl.value = appState.value.explorerUrl + txHash;
+    closeLoadingMask(maskId);
 
+    openTxDialog(txHash);
     await remoteApi.checkTx(txHash);
-    message.success('Create withdrawal account success.');
+    txDialogLoadingDone();
+
     withdrawAccountExists.value = true;
     createWithdrawalAccountLoading.value = false;
   } catch (err: any) {
     console.error(err);
     message.error(err.message, { duration: 0, closable: true });
     createWithdrawalAccountLoading.value = false;
+    closeLoadingMask(maskId);
   }
 };
 
@@ -245,7 +336,7 @@ const loadAccountInfoByConnectedWallet = async () => {
   }
 };
 
-const maskId = "claim";
+
 const connect = async () => {
   console.log('connect wallet...');
   if (!window.mina) {
@@ -291,69 +382,69 @@ const walletListenerSetted = ref(false);
 onMounted(async () => {
   console.log('onMounted...');
 
-  const notes = await remoteApi.getClaimableNotes([commitment]);
-  if (notes.length !== 1) {
-    message.error('Note commitment is invalid', { duration: 0, closable: true });
-    return;
-  }
-  withdrawNote.value = {
-    token: 'MINA',
-    ownerAddress: notes[0].ownerPk,
-    balance: convertToMinaUnit(notes[0].value)!.toString(),
-  };
+  try {
+
+    const notes = await remoteApi.getClaimableNotes([commitment]);
+    if (notes.length !== 1) {
+      message.error('Note commitment is invalid', { duration: 0, closable: true });
+      return;
+    }
+    withdrawNote.value = {
+      token: 'MINA',
+      ownerAddress: notes[0].ownerPk,
+      balance: notes[0].value,
+    };
 
 
-  await loadAccountInfoByConnectedWallet();
+    await loadAccountInfoByConnectedWallet();
 
-  if (syncerListenerSetted.value === false) {
-    listenSyncerChannel((e: SdkEvent) => {
-      if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE) {
-        message.info('Anomix Vault Contract is ready now', { duration: 0, closable: true });
-      }
-    });
-    syncerListenerSetted.value = true;
-  }
-
-  if (!walletListenerSetted.value) {
-    if (window.mina) {
-      window.mina.on('accountsChanged', (accounts: string[]) => {
-        console.log('claim - connected account change: ', accounts);
-        if (route.path === `/claim/${commitment}`) {
-          if (accounts.length === 0) {
-            message.error('Please connect your wallet', {
-              closable: true,
-              duration: 0
-            });
-            disconnect();
-          } else {
-            if (accounts[0] !== withdrawNote.value?.ownerAddress) {
-              message.error('The owner of the claim note is inconsistent with the current wallet. Please switch to the correct wallet', {
+    if (!walletListenerSetted.value) {
+      if (window.mina) {
+        window.mina.on('accountsChanged', (accounts: string[]) => {
+          console.log('claim - connected account change: ', accounts);
+          if (route.path === `/claim/${commitment}`) {
+            if (accounts.length === 0) {
+              message.error('Please connect your wallet', {
                 closable: true,
                 duration: 0
               });
+              disconnect();
+            } else {
+              if (accounts[0] !== withdrawNote.value?.ownerAddress) {
+                message.error('The owner of the claim note is inconsistent with the current wallet. Please switch to the correct wallet', {
+                  closable: true,
+                  duration: 0
+                });
 
-              return;
+                return;
+              }
+              setConnectedWallet(accounts[0]);
+
             }
-            setConnectedWallet(accounts[0]);
-
           }
-        }
 
-      });
+        });
 
-      window.mina.on('chainChanged', (chainType: string) => {
-        console.log('claim - current chain: ', chainType);
-        if (chainType !== appState.value.minaNetwork) {
-          message.error('Please switch to Berkeley network', {
-            closable: true,
-            duration: 0
-          });
-        }
-      });
+        window.mina.on('chainChanged', (chainType: string) => {
+          console.log('claim - current chain: ', chainType);
+          if (chainType !== appState.value.minaNetwork) {
+            message.error('Please switch to Berkeley network', {
+              closable: true,
+              duration: 0
+            });
+          }
+        });
+      }
+
+      walletListenerSetted.value = true;
     }
 
-    walletListenerSetted.value = true;
+  } catch (err: any) {
+    console.error(err);
+    message.error(err.message, { duration: 5000, closable: true });
   }
+
+  closeLoadingMask(maskId);
 
 });
 
