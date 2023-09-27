@@ -210,6 +210,15 @@ const checkAlias = ref(-1);
 const checkAliasExist = async () => {
   console.log('checkAliasExist...');
   showLoadingMask({ id: maskId, text: 'Checking if input valid...', closable: false });
+  if (currPageAction.value === PageAction.WITHDRAW_TOKEN) {
+    if (receiver.value === '' || !receiver.value.trim().startsWith('B62')) {
+      checkAlias.value = 0;
+      closeLoadingMask(maskId);
+      message.error(`Please input mina address.`, { duration: 5000, closable: true });
+      return;
+    }
+  }
+
   if (!receiver.value.endsWith('.ano')) {
     if (receiver.value.startsWith('B62')) {
       if (checkAlias.value !== -1) {
@@ -288,9 +297,9 @@ const toConfirm = async () => {
     showLoadingMask({ id: maskId, text: 'Processing...', closable: false });
     let receiverPk: string | undefined = undefined;
     let receiverAlias: string | null = null;
-    if (receiver.value.endsWith('.ano')) {
-      receiverAlias = receiver.value;
-      receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiver.value.replace('.ano', ''));
+    if (receiver.value.trim().endsWith('.ano')) {
+      receiverAlias = receiver.value.trim();
+      receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiver.value.trim().replace('.ano', ''));
       if (!receiverPk) {
         message.error(`Receiver: ${receiver.value} not exists`, { duration: 0, closable: true });
         closeLoadingMask(maskId);
