@@ -284,6 +284,10 @@ const deposit = async () => {
     message.error('Please input deposit amount.');
     return;
   }
+  if (depositAmount.value > Number(L1TokenBalance.value.balance)) {
+    message.error('Insufficient balance.');
+    return;
+  }
   if (receiver.value === '') {
     message.error('Please input receiver.');
     return;
