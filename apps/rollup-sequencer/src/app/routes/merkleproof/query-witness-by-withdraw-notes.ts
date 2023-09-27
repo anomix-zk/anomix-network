@@ -8,6 +8,7 @@ import { WithdrawInfo } from "@anomix/dao";
 import { checkAccountExists } from "@anomix/utils";
 import { PublicKey, Field } from "o1js";
 import { getLogger } from "@/lib/logUtils";
+import { LeafData } from "@anomix/merkle-tree";
 
 
 const logger = getLogger('queryWitnessByWithdrawNotes');
@@ -99,18 +100,42 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
             logger.info(`load tree, done.`);
         }
 
-        const { index: preIdx, alreadyPresent } = await this.withdrawDB.findIndexOfPreviousValue(Field(winfo.outputNoteCommitment), true);
-        logger.info(`predecessor's index: ${preIdx}`);
-
-        const preLeafData = await this.withdrawDB.getLatestLeafDataCopy(preIdx, true);
-        logger.info(`predecessor: {value:${preLeafData?.value}, nextValue:${preLeafData?.nextValue}, nextIndex:${preLeafData?.nextIndex}}`);
-
+        const outputNoteCommitmentIdx = winfo!.outputNoteCommitmentIdx ?? (await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${winfo.outputNoteCommitment}`));
         const targetIndx = this.withdrawDB.getNumLeaves(false);
 
         const rollupDataRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, false).toString();
         logger.info(`current root of SYNC_DATA_TREE: ${rollupDataRoot}`);
 
-        const outputNoteCommitmentIdx = winfo!.outputNoteCommitmentIdx ?? (await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${winfo.outputNoteCommitment}`));
+        const lowLeafWitness = await this.withdrawDB.findPreviousValueAndMp(Field(winfo.outputNoteCommitment), true);
+        const predecessorLeafData = lowLeafWitness.leafData;
+        const predecessorIdx = lowLeafWitness.index;
+
+        logger.info(`predecessor's index: ${predecessorIdx}`);
+        logger.info(`predecessor: {value:${predecessorLeafData?.value}, nextValue:${predecessorLeafData?.nextValue}, nextIndex:${predecessorLeafData?.nextIndex}}`);
+
+        logger.info(`before modify predecessor, nullifierTree Root: ${await this.withdrawDB.getRoot(true)}`);
+        // logger.info(`before modify predecessor, nullifierTree Num: ${await this.withdrawDB.getNumLeaves(true)}`);
+        const modifiedPredecessorLeafDataTmp: LeafData = {
+            value: predecessorLeafData.value.toBigInt(),
+            nextValue: Field(winfo.outputNoteCommitment).toBigInt(),
+            nextIndex: targetIndx
+        };
+        await this.withdrawDB.updateLeaf(modifiedPredecessorLeafDataTmp, predecessorIdx.toBigInt());
+        logger.info(`after modify predecessor, nullifierTree Root: ${await this.withdrawDB.getRoot(true)}`);
+        // logger.info(`after modify predecessor, nullifierTree Num: ${await this.withdrawDB.getNumLeaves(true)}`);
+
+        // obtain oldNullWitness
+        const oldNullWitness = (await this.withdrawDB.getSiblingPath(BigInt(targetIndx), true))!.path.map(p => p.toString());
+        logger.info('obtain oldNullWitness done.');
+
+        const revertedPredecessorLeafDataTmp: LeafData = {
+            value: predecessorLeafData.value.toBigInt(),
+            nextValue: predecessorLeafData.nextValue.toBigInt(),
+            nextIndex: predecessorLeafData.nextIndex.toBigInt()
+        };
+        await this.withdrawDB.updateLeaf(revertedPredecessorLeafDataTmp, predecessorIdx.toBigInt());
+        logger.info(`after revert predecessor, nullifierTree Root: ${await this.withdrawDB.getRoot(true)}`);
+        // logger.info(`after revert predecessor, nullifierTree Num: ${await this.withdrawDB.getNumLeaves(true)}`);
 
         const rs = {
             withdrawNoteWitnessData: {
@@ -120,14 +145,14 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
             },
             lowLeafWitness: {
                 leafData: {
-                    value: preLeafData!.value.toString(),
-                    nextIndex: preLeafData!.nextIndex.toString(),
-                    nextValue: preLeafData!.nextValue.toString()
+                    value: predecessorLeafData!.value.toString(),
+                    nextIndex: predecessorLeafData!.nextIndex.toString(),
+                    nextValue: predecessorLeafData!.nextValue.toString()
                 },
-                siblingPath: (await this.withdrawDB.getSiblingPath(BigInt(preIdx), false))!.path.map(p => p.toString()),
-                index: Field(preIdx).toString()
+                siblingPath: lowLeafWitness.siblingPath.path.map(p => p.toString()),
+                index: Field(predecessorIdx).toString()
             },
-            oldNullWitness: (await this.withdrawDB.getSiblingPath(BigInt(targetIndx), false))!.path.map(p => p.toString()),
+            oldNullWitness,
             rollupDataRoot
         }
 
