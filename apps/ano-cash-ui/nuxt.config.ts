@@ -22,6 +22,7 @@ export default defineNuxtConfig({
                 l2BlockPollingIntervalMS: 15 * 1000,
                 minaEndpoint: "https://berkeley.minascan.io/graphql",
                 debug: false,
+                minaNetwork: "zkapp", // auro wallet network config
             },
         },
     },
@@ -39,6 +40,7 @@ export default defineNuxtConfig({
                 l2BlockPollingIntervalMS: 15 * 1000,
                 minaEndpoint: "https://berkeley.minascan.io/graphql",
                 debug: true,
+                minaNetwork: "zkapp", // auro wallet network config
             },
         },
     },

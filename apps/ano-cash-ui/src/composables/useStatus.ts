@@ -207,6 +207,10 @@ export default function () {
         appState.value.latestBlock = block;
     };
 
+    const setMinaNetwork = (network: string) => {
+        appState.value.minaNetwork = network;
+    };
+
     return {
         appState,
         pageParams,
@@ -230,5 +234,6 @@ export default function () {
         setSigningPk2_58,
         setSyncedBlock,
         setLatestBlock,
+        setMinaNetwork,
     };
 }

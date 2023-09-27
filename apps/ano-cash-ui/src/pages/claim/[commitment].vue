@@ -234,6 +234,8 @@ const claim = async () => {
 
     showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
     const txJson = await remoteSdk.createClaimFundsTx(commitment, appState.value.connectedWallet58!);
+
+    console.log('createClaimFundsTx txJson: ', txJson);
     const { hash: txHash } = await window.mina.sendTransaction({
       transaction: txJson,
     });

@@ -22,7 +22,7 @@ import { CHANNEL_SYNCER } from './common/constants';
 const { createRemoteSdk, createRemoteApi, startRemoteSyncer, compileCircuits, SdkState } = useSdk();
 const runtimeConfig = useRuntimeConfig();
 const route = useRoute();
-const { setTokenPrices, showLoadingMask, closeLoadingMask } = useStatus();
+const { setTokenPrices, showLoadingMask, closeLoadingMask, setMinaNetwork } = useStatus();
 
 const themeOverrides: GlobalThemeOverrides = {
   Input: {
@@ -73,6 +73,7 @@ onMounted(async () => {
       return;
     }
 
+    setMinaNetwork(runtimeConfig.public.minaNetwork as string);
     const debug = runtimeConfig.public.debug as boolean;
     const entryContractAddress = runtimeConfig.public.entryContractAddress as string;
     const vaultContractAddress = runtimeConfig.public.vaultContractAddress as string;
