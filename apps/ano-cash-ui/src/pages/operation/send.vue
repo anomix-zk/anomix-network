@@ -25,15 +25,14 @@
           <div class="token-info">
             <div class="token-name">MINA</div>
             <div class="token-balance">Balance <template v-if="balanceLoading"><n-spin :size="14"
-                  stroke="#97989d" /></template><template v-else>{{ totalMinaBalance }}</template> MINA<template
+                  stroke="#97989d" /></template><template v-else>{{ totalMinaBalance }}</template> <template
                 v-if="notesInfo !== null"> ({{
-                  notesInfo.availableNotesNum }} notes, max: {{
-    convertToMinaUnit(notesInfo.maxSpendValuePerTx) }} mina)</template></div>
+                  notesInfo.availableNotesNum }} <template
+                  v-if="notesInfo.availableNotesNum === 0 || notesInfo.availableNotesNum === 1">note</template><template
+                  v-else>notes</template>, max per tx: {{
+                    convertToMinaUnit(notesInfo.maxSpendValuePerTx) }} )</template></div>
           </div>
-          <!-- 
-          <div v-if="notesInfo !== null" style="color: var(--ano-text-third);font-size: 14px;">{{
-            notesInfo.availableNotesNum }} notes, maxSpend: {{
-    convertToMinaUnit(notesInfo.maxSpendValuePerTx) }} MINA</div> -->
+
         </div>
 
         <div class="amount">
@@ -159,10 +158,6 @@ const totalMinaBalance = computed(() => convertToMinaUnit(appState.value.totalNa
 //   balance: '0.0',
 // });
 
-const maxInputAmount = () => {
-  sendAmount.value = totalMinaBalance.value?.toNumber();
-};
-
 const anonToReceiver = ref(false);
 const handleSwitchValue = (value: boolean) => {
   console.log('anonToReceiver-switch: ', value);
@@ -171,6 +166,10 @@ const handleSwitchValue = (value: boolean) => {
 
 const sendAmount = ref<number | undefined>(undefined);
 const receiver = ref('');
+
+const maxInputAmount = () => {
+  sendAmount.value = totalMinaBalance.value?.toNumber();
+};
 
 const connectToClaim = async () => {
   if (!window.mina) {
@@ -266,6 +265,10 @@ const toConfirm = async () => {
   console.log('toConfirm...');
   if (sendAmount.value === undefined || sendAmount.value <= 0) {
     message.error('Please input amount.');
+    return;
+  }
+  if (sendAmount.value > totalMinaBalance.value!.toNumber()) {
+    message.error('Insufficient balance.');
     return;
   }
   if (receiver.value === '') {
