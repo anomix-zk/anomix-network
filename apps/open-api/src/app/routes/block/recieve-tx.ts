@@ -1,4 +1,4 @@
-import { BaseResponse, L2TxReqDtoSchema, L2TxReqDto, EncryptedNote, SequencerStatus, L2TxStatus } from '@anomix/types'
+import { BaseResponse, L2TxReqDtoSchema, L2TxReqDto, EncryptedNote, SequencerStatus, L2TxStatus, WithdrawNoteStatus } from '@anomix/types'
 import { getConnection, In } from 'typeorm';
 import { FastifyPlugin } from "fastify";
 import httpCodes from "@inip/http-codes";
@@ -159,6 +159,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
                 withdrawInfo.noteType = withdrawNote.noteType.toString();
                 withdrawInfo.l2TxHash = mpL2Tx.txHash;
                 withdrawInfo.l2TxId = mpL2Tx.id;
+                withdrawInfo.status = WithdrawNoteStatus.PENDING;
                 withdrawInfo.outputNoteCommitment = joinSplitProof.publicOutput.outputNoteCommitment1.toString();
                 withdrawInfo = await queryRunner.manager.save(withdrawInfo);
 

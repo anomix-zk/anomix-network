@@ -66,9 +66,14 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
 
         } else {// first withdraw, should deploy first
             logger.info(`it's the first withdraw, init tree...`);
-            // init a 'USER_NULLIFIER_TREE' tree for it
-            await this.withdrawDB.initTree(ownerPk, tokenId);
-            await this.withdrawDB.commit();
+            // TODO check if already init
+            if ((await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk.toBase58}:${tokenId}`)) != '1') {
+                // init a 'USER_NULLIFIER_TREE' tree for it
+                await this.withdrawDB.initTree(ownerPk, tokenId);
+                await this.withdrawDB.commit();
+                await this.worldState.indexDB.put(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk.toBase58}:${tokenId}`, '1');
+            }
+
             logger.info(`init tree, done.`);
 
             return { code: 1, data: undefined, msg: 'please deploy WithdrawAccount first!' } as BaseResponse<WithdrawalWitnessDto>;
