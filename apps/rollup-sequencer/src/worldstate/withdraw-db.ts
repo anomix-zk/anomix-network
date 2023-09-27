@@ -1,7 +1,7 @@
 
 import { LeafData, newTree, loadTree, StandardIndexedTree } from "@anomix/merkle-tree";
 import { PoseidonHasher, MerkleTreeId } from '@anomix/types';
-import { NULLIFIER_TREE_HEIGHT } from "@anomix/circuits";
+import { NULLIFIER_TREE_HEIGHT, USER_NULLIFIER_TREE_HEIGHT } from "@anomix/circuits";
 import { Field, PublicKey } from "o1js";
 import levelup, { LevelUp } from 'levelup';
 import leveldown from "leveldown";
@@ -27,7 +27,7 @@ export class WithdrawDB {
             this.userAssetDB,
             poseidonHasher,
             `${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${assetId}:${l1Addr.toBase58()}`,
-            NULLIFIER_TREE_HEIGHT);
+            USER_NULLIFIER_TREE_HEIGHT);
 
         this.currectTree = { l1Addr: l1Addr.toBase58(), assetId, tree: nullifierTree };
     }
