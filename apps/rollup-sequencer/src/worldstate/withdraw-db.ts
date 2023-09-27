@@ -1,7 +1,7 @@
 
 import { LeafData, newTree, loadTree, StandardIndexedTree } from "@anomix/merkle-tree";
 import { PoseidonHasher, MerkleTreeId } from '@anomix/types';
-import { NULLIFIER_TREE_HEIGHT, USER_NULLIFIER_TREE_HEIGHT } from "@anomix/circuits";
+import { LowLeafWitnessData, NULLIFIER_TREE_HEIGHT, USER_NULLIFIER_TREE_HEIGHT } from "@anomix/circuits";
 import { Field, PublicKey } from "o1js";
 import levelup, { LevelUp } from 'levelup';
 import leveldown from "leveldown";
@@ -77,17 +77,6 @@ export class WithdrawDB {
     async appendLeaf(leaf: Field, includeUnCommit: boolean) {//
         return (await this.appendLeaves([leaf], includeUnCommit))[0];
     }
-    /**
-     * Updates a leaf at a given index in the tree.
-     * @param leaf - The leaf value to be updated.
-     * @param index - The leaf to be updated.
-     */
-    async updateLeaf(leaf: LeafData, index: bigint) {//
-        if (!this.currectTree) {
-            throw new Error("tree is not init...");
-        }
-        this.currectTree.tree.updateLeaf(leaf, index);
-    }
 
     /**
      * Returns the sibling path for a requested leaf index.
@@ -156,6 +145,30 @@ export class WithdrawDB {
         this.currectTree.tree.rollback()
     }
 
+    async findPreviousValueAndMp(nullifier1: Field, includeUncommitted: boolean) {//
+        if (!this.currectTree) {
+            throw new Error("tree is not init...");
+        }
+
+        const { index: predecessorIndex, alreadyPresent } = this.currectTree.tree.findIndexOfPreviousValue(nullifier1.toBigInt(), includeUncommitted);
+        if (alreadyPresent) {// actually won't be tree here!
+            throw new Error("nullifier1[${nullifier1}] existed!");
+        }
+
+        const predecessorLeafData = this.currectTree.tree.getLatestLeafDataCopy(predecessorIndex, includeUncommitted)!;
+        const siblingPath = await this.currectTree.tree.getSiblingPath(BigInt(predecessorIndex), includeUncommitted);
+
+        return LowLeafWitnessData.fromJSON({
+            index: `${predecessorIndex}`,
+            siblingPath,
+            leafData: {
+                value: predecessorLeafData.value.toString(),
+                nextIndex: predecessorLeafData.nextIndex.toString(),
+                nextValue: predecessorLeafData.nextValue.toString()
+            }
+        }) as LowLeafWitnessData;
+    }
+
     async findIndexOfPreviousValue(nullifier1: Field, includeUncommitted: boolean) {//
         if (!this.currectTree) {
             throw new Error("tree is not init...");
@@ -179,5 +192,14 @@ export class WithdrawDB {
             throw new Error("tree is not init...");
         }
         return this.currectTree.tree.getLatestLeafDataCopy(index, includeUncommitted);
+    }
+
+    /**
+    * Exposes the underlying tree's update leaf method.
+    * @param leaf - The hash to set at the leaf.
+    * @param index - The index of the element.
+    */
+    public async updateLeaf(leaf: LeafData, index: bigint): Promise<void> {
+        return await (this.currectTree.tree as StandardIndexedTree).updateLeafWithNoValueCheck(leaf, index);
     }
 }
