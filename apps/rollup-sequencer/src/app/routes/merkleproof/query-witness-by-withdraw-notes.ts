@@ -105,6 +105,8 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
         const preLeafData = await this.withdrawDB.getLatestLeafDataCopy(preIdx, true);
         logger.info(`predecessor: {value:${preLeafData?.value}, nextValue:${preLeafData?.nextValue}, nextIndex:${preLeafData?.nextIndex}}`);
 
+        const targetIndx = this.withdrawDB.getNumLeaves(false);
+
         const rollupDataRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, false).toString();
         logger.info(`current root of SYNC_DATA_TREE: ${rollupDataRoot}`);
 
@@ -122,10 +124,10 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
                     nextIndex: preLeafData!.nextIndex.toString(),
                     nextValue: preLeafData!.nextValue.toString()
                 },
-                siblingPath: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
+                siblingPath: (await this.withdrawDB.getSiblingPath(BigInt(preIdx), false))!.path.map(p => p.toString()),
                 index: Field(preIdx).toString()
             },
-            oldNullWitness: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, BigInt(outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
+            oldNullWitness: (await this.withdrawDB.getSiblingPath(BigInt(targetIndx), false))!.path.map(p => p.toString()),
             rollupDataRoot
         }
 
