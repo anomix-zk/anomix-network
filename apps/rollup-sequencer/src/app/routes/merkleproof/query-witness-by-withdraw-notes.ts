@@ -53,9 +53,9 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
         // check if it's the first withdraw
         let tokenId = winfo.assetId;
         const ownerPk = PublicKey.fromBase58(winfo.ownerPk);
-        const { accountExists, account } = await checkAccountExists(ownerPk, Field(tokenId));
 
         /*
+        const { accountExists, account } = await checkAccountExists(ownerPk, Field(tokenId));
         const notFirst = !accountExists && account.zkapp?.appState[0] == Field(0);
 
         if (notFirst) {//if it's NOT the first withdraw
