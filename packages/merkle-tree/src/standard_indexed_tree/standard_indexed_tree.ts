@@ -313,7 +313,8 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
                     lte: indexToKeyLeaf(this.getName(), 2n ** BigInt(this.getDepth())),
                 })
                 .on('data', function (data) {
-                    const index = Number(data.key.toString().split(':')[2]);
+                    const arr = data.key.toString().split(':');
+                    const index = Number(arr[arr.length - 1]);
                     values[index] = decodeTreeValue(data.value);
                 })
                 .on('close', function () { })
