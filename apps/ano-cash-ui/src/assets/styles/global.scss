@@ -248,13 +248,6 @@ h6 {
   }
 }
 
-.header-bg-img {
-  background-color: var(--ano-background);
-  background-image: url(@/assets/bg.svg);
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position-x: center;
-}
 
 @media screen and (min-width: 480px) {
   .ano-app {
@@ -263,7 +256,7 @@ h6 {
   }
 
   .ano-app>.page {
-      min-height: 800px;
+      min-height: 760px;
       border-radius: 28px;
       padding-left: 40px;
       padding-right: 40px;

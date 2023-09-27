@@ -71,6 +71,7 @@ const connectWallet = async (action: string) => {
     try {
         showLoadingMask({ id: maskId, text: 'Connecting wallet...', closable: false });
         const currentNetwork = await window.mina.requestNetwork();
+        console.log({ currentNetwork });
         if (appState.value.minaNetwork !== currentNetwork) {
             closeLoadingMask(maskId);
             message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
@@ -214,7 +215,7 @@ const connectWallet = async (action: string) => {
     left: 0;
     width: 100%;
     //height: 20px;
-    line-height: 50px;
+    line-height: 80px;
     text-align: center;
     color: gray;
     font-size: 16px;
