@@ -55,6 +55,7 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
         const ownerPk = PublicKey.fromBase58(winfo.ownerPk);
         const { accountExists, account } = await checkAccountExists(ownerPk, Field(tokenId));
 
+        /*
         const notFirst = !accountExists && account.zkapp?.appState[0] == Field(0);
 
         if (notFirst) {//if it's NOT the first withdraw
@@ -77,6 +78,22 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
             logger.info(`init tree, done.`);
 
             return { code: 1, data: undefined, msg: 'please deploy WithdrawAccount first!' } as BaseResponse<WithdrawalWitnessDto>;
+        }
+        */
+
+        // check if already init
+        if ((await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk.toBase58}:${tokenId}`)) != '1') {
+            logger.info(`it's the first withdraw, init tree...`);
+            // init a 'USER_NULLIFIER_TREE' tree for it
+            await this.withdrawDB.initTree(ownerPk, tokenId);
+            await this.withdrawDB.commit();
+            await this.worldState.indexDB.put(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk.toBase58}:${tokenId}`, '1');
+        } else {
+            logger.info(`it's NOT the first withdraw, load tree...`);
+            // loadTree from withdrawDB & obtain merkle witness
+            await this.withdrawDB.loadTree(ownerPk, tokenId);
+            await this.withdrawDB.commit();
+            logger.info(`load tree, done.`);
         }
 
         const { index: preIdx, alreadyPresent } = await this.withdrawDB.findIndexOfPreviousValue(Field(winfo.outputNoteCommitment), true);
