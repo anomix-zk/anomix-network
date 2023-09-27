@@ -87,7 +87,10 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
             // init a 'USER_NULLIFIER_TREE' tree for it
             await this.withdrawDB.initTree(ownerPk, tokenId);
             await this.withdrawDB.commit();
+            logger.info(`init tree, done.`);
+
             await this.worldState.indexDB.put(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk.toBase58}:${tokenId}`, '1');
+
         } else {
             logger.info(`it's NOT the first withdraw, load tree...`);
             // loadTree from withdrawDB & obtain merkle witness
