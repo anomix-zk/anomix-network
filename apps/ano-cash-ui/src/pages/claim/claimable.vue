@@ -81,6 +81,10 @@ const message = useMessage();
 const { SdkState } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 
+// show laoding mask when init
+const maskId = "claimable";
+showLoadingMask({ text: 'Loading...', id: maskId, closable: false });
+
 const connectedWallet = computed(() => omitAddress(appState.value.connectedWallet58, 8));
 
 const toBack = () => router.back();
@@ -110,7 +114,7 @@ const loadClaimableNotesByConnectedWallet = async () => {
   claimableNotes.value = notes;
 };
 
-const maskId = "claimable";
+
 const connect = async () => {
   console.log('connect wallet...');
   if (!window.mina) {
@@ -132,54 +136,62 @@ const connect = async () => {
 
     showLoadingMask({ text: 'Loading claimable notes...', id: maskId, closable: false });
     await loadClaimableNotesByConnectedWallet();
-    closeLoadingMask(maskId);
   } catch (err: any) {
     // if user reject, requestAccounts will throw an error with code and message filed
     console.error(err);
     message.error(err.message);
-    closeLoadingMask(maskId);
   }
+
+  closeLoadingMask(maskId);
 };
 
 const walletListenerSetted = ref(false);
 const route = useRoute();
 onMounted(async () => {
   console.log('claimable.vue - onMounted: ', appState.value.connectedWallet58);
-  await loadClaimableNotesByConnectedWallet();
 
-  if (!walletListenerSetted.value) {
-    if (window.mina) {
-      window.mina.on('accountsChanged', async (accounts: string[]) => {
-        console.log('claimable.vue - connected account change: ', accounts);
-        if (route.path === '/claim/claimable') {
-          if (accounts.length === 0) {
-            message.error('Please connect your wallet', {
+  try {
+
+    await loadClaimableNotesByConnectedWallet();
+
+    if (!walletListenerSetted.value) {
+      if (window.mina) {
+        window.mina.on('accountsChanged', async (accounts: string[]) => {
+          console.log('claimable.vue - connected account change: ', accounts);
+          if (route.path === '/claim/claimable') {
+            if (accounts.length === 0) {
+              message.error('Please connect your wallet', {
+                closable: true,
+                duration: 0
+              });
+              disconnect();
+            } else {
+              setConnectedWallet(accounts[0]);
+              await loadClaimableNotesByConnectedWallet();
+            }
+          }
+        });
+
+        window.mina.on('chainChanged', (chainType: string) => {
+          console.log('claimable.vue - current chain: ', chainType);
+          if (chainType !== appState.value.minaNetwork) {
+            message.error('Please switch to Berkeley network', {
               closable: true,
               duration: 0
             });
-            disconnect();
-          } else {
-            setConnectedWallet(accounts[0]);
-            await loadClaimableNotesByConnectedWallet();
           }
-        }
-      });
+        });
+      }
 
-      window.mina.on('chainChanged', (chainType: string) => {
-        console.log('claimable.vue - current chain: ', chainType);
-        if (chainType !== appState.value.minaNetwork) {
-          message.error('Please switch to Berkeley network', {
-            closable: true,
-            duration: 0
-          });
-        }
-      });
+      walletListenerSetted.value = true;
     }
 
-    walletListenerSetted.value = true;
+  } catch (err: any) {
+    console.error(err);
+    message.error(err.message, { duration: 5000, closable: true });
   }
 
-
+  closeLoadingMask(maskId);
 });
 
 
