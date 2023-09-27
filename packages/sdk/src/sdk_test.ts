@@ -87,9 +87,9 @@ class TestMinaProvider implements MinaProvider {
 async function run() {
   const sdk = await createAnomixSdk({
     entryContractAddress:
-      'B62qp6k2rCBKECnjMZXDBU73MuKj4g8eh8pcN2xn7sgYLYRmJkNx9SX',
+      'B62qqogwbARwzFxpwp6T1P1EnqSF7H3xSgjgYtf21DX4wdXSm2PFheq',
     vaultContractAddress:
-      'B62qroCQ4gsXYdeGacqYBim39JVeM1xGy9xksXH6sMtTHakE4dL2mpJ',
+      'B62qjJSpKobQJaWcB4UjyKVYBYoXY1adD6U5urAxWXWwTEh2ZHxyHT1',
     options: {
       nodeUrl: 'http://127.0.0.1:8099',
       minaEndpoint: 'https://berkeley.minascan.io/graphql',
