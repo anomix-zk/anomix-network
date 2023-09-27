@@ -79,6 +79,7 @@ const config = {
 
     entryContractAddress: <string>process.env.ENTRY_CONTRACT_ADDRESS || 'B62785kfljj8784990kj0kj90kjjiekljk',
     rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
+    vaultContractAddress: <string>process.env.VAULT_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
 
     // criterion to trigger seq
     maxMpTxCnt: <number>Number(<string>process.env.MAX_MP_TX_CNT) || 300,
