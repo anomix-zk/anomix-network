@@ -267,7 +267,7 @@ const checkAliasExist = async () => {
     return;
   }
 
-  const isRegistered = await remoteApi.isAliasRegistered(receiver.value, false);
+  const isRegistered = await remoteApi.isAliasRegistered(receiver.value.replace('.ano', ''), false);
   if (isRegistered) {
     console.log(`${receiver.value} exists`);
     checkAlias.value = 1;
@@ -311,15 +311,16 @@ const deposit = async () => {
 
     showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
     let receiverPk: string | undefined = undefined;
-    if (receiver.value.endsWith('.ano')) {
-      receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiver.value.replace('.ano', ''));
+    const receiverValue = receiver.value.trim();
+    if (receiverValue.endsWith('.ano')) {
+      receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiverValue.replace('.ano', ''));
       if (receiverPk === undefined) {
         closeLoadingMask(maskId);
         message.error(`Receiver: ${receiver.value} not found.`, { duration: 0, closable: true });
         return;
       }
     } else {
-      receiverPk = receiver.value;
+      receiverPk = receiverValue;
     }
 
     const depositAmountNano = convertToNanoMinaUnit(depositAmount.value)!.toString();
