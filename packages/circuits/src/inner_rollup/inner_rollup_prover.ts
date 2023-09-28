@@ -16,7 +16,7 @@ import {
 } from './models';
 import { JoinSplitProof } from '../join_split/join_split_prover';
 import { ActionType, AssetId, DUMMY_FIELD } from '../models/constants';
-import { checkMembership } from '../utils/utils';
+import { checkMembership, greaterThanFor254BitField } from '../utils/utils';
 import {
   DataMerkleWitness,
   LeafData,
@@ -450,7 +450,10 @@ function processTx({
     lowLeafWitness1.checkMembership(currentNullRoot);
   Provable.log('checkLowLeafMembership: ', checkLowLeafMembership);
 
-  const checkNullifier1GreaterThanLowLeafValue = nullifier1.sub(lowLeafWitness1.leafData.value).greaterThan(Field(0n))
+  const checkNullifier1GreaterThanLowLeafValue = greaterThanFor254BitField(
+    nullifier1,
+    lowLeafWitness1.leafData.value
+  );
 
   Provable.log(
     'checkNullifier1GreaterThanLowLeafValue: ',
@@ -460,15 +463,15 @@ function processTx({
   const lowLeafNextValue1 = lowLeafWitness1.leafData.nextValue;
   Provable.log('lowLeafNextValue1: ', lowLeafNextValue1);
 
-  const checkNullifier1LeassThanLowLeafNextValue = Provable.if(
+  const checkNullifier1LessThanLowLeafNextValue = Provable.if(
     lowLeafNextValue1.equals(DUMMY_FIELD),
     Bool,
     Bool(true),
-    lowLeafNextValue1.sub(nullifier1).greaterThan(Field(0n))
+    greaterThanFor254BitField(lowLeafNextValue1, nullifier1)
   );
   Provable.log(
     'checkNullifier1LeassThanLowLeafNextValue: ',
-    checkNullifier1LeassThanLowLeafNextValue
+    checkNullifier1LessThanLowLeafNextValue
   );
 
   const nullifier1LeafData = new LeafData({
@@ -551,7 +554,10 @@ function processTx({
     lowLeafWitness2.checkMembership(currentNullRoot);
   Provable.log('checkLowLeafMembership2: ', checkLowLeafMembership2);
 
-  const checkNullifier2GreaterThanLowLeafValue = nullifier2.sub(lowLeafWitness2.leafData.value).greaterThan(Field(0n));
+  const checkNullifier2GreaterThanLowLeafValue = greaterThanFor254BitField(
+    nullifier2,
+    lowLeafWitness2.leafData.value
+  );
 
   Provable.log(
     'checkNullifier2GreaterThanLowLeafValue: ',
@@ -561,15 +567,15 @@ function processTx({
   const lowLeafNextValue2 = lowLeafWitness2.leafData.nextValue;
   Provable.log('lowLeafNextValue2: ', lowLeafNextValue2);
 
-  const checkNullifier2LeassThanLowLeafNextValue = Provable.if(
+  const checkNullifier2LessThanLowLeafNextValue = Provable.if(
     lowLeafNextValue2.equals(DUMMY_FIELD),
     Bool,
     Bool(true),
-    lowLeafNextValue2.sub(nullifier2).greaterThan(Field(0n))
+    greaterThanFor254BitField(lowLeafNextValue2, nullifier2)
   );
   Provable.log(
     'checkNullifier2LeassThanLowLeafNextValue: ',
-    checkNullifier2LeassThanLowLeafNextValue
+    checkNullifier2LessThanLowLeafNextValue
   );
 
   const nullifier2LeafData = new LeafData({

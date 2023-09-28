@@ -22,7 +22,10 @@ import {
   UserLowLeafWitnessData,
   UserNullifierMerkleWitness,
 } from '../models/merkle_witness';
-import { checkMembershipAndAssert } from '../utils/utils';
+import {
+  checkMembershipAndAssert,
+  greaterThanFor254BitField,
+} from '../utils/utils';
 import { WithdrawFundEvent, WithdrawNoteWitnessData } from './models';
 
 function updateNullifierRootAndNullStartIndex(
@@ -41,11 +44,12 @@ function updateNullifierRootAndNullStartIndex(
     'lowLeafWitness is not valid'
   );
 
-  nullifier
-    .sub(lowLeafWitness.leafData.value).greaterThan(Field(0n))
-    .assertTrue(
-      'Nullifier should not exist in null tree (nullifier <= lowLeafWitness.leafData.value)'
-    );
+  greaterThanFor254BitField(
+    nullifier,
+    lowLeafWitness.leafData.value
+  ).assertTrue(
+    'Nullifier should not exist in null tree (Nullifier should be greater than lowLeafWitness.leafData.value)'
+  );
   const lowLeafNextValue = lowLeafWitness.leafData.nextValue;
   Provable.log('lowLeafNextValue', lowLeafNextValue);
 
@@ -53,7 +57,7 @@ function updateNullifierRootAndNullStartIndex(
     lowLeafNextValue.equals(DUMMY_FIELD),
     Bool,
     Bool(true),
-    lowLeafNextValue.sub(nullifier).greaterThan(Field(0n))
+    greaterThanFor254BitField(lowLeafNextValue, nullifier)
   ).assertTrue(
     'Nullifier should not exist in null tree (nullifier >= lowLeafWitness.leafData.nextValue)'
   );
