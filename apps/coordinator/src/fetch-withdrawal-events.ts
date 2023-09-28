@@ -53,7 +53,11 @@ async function fetchWithdrawalEvents() {
             "headers": {
                 "content-type": "application/json",
             },
-            "body": "{\"query\":\"query MyQuery {\\n  events(\\n    input: {address: \\\"" + config.vaultContractAddress + "\\\", from: " + lastQueryBlockHeight + "}\\n  ) {\\n    blockInfo {\\n      height\\n      timestamp\\n    }\\n    eventData {\\n      data\\n      transactionInfo {\\n        hash\\n      }\\n    }\\n  }\\n}\",\"operationName\":\"MyQuery\",\"extensions\":{}}",
+            "body": "{\"query\":\"query MyQuery {\\n  events(\\n    input: {address: \\\""
+                + config.vaultContractAddress
+                + "\\\", from: "
+                + lastQueryBlockHeight
+                + "}\\n  ) {\\n    blockInfo {\\n      height\\n      timestamp\\n    }\\n    eventData {\\n      data\\n      transactionInfo {\\n        hash\\n      }\\n    }\\n  }\\n}\",\"operationName\":\"MyQuery\",\"extensions\":{}}",
             "method": "POST"
         }).then(v => v.json()).then(json => {
             return json;
