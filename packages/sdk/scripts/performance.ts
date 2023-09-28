@@ -15,7 +15,6 @@ class TestStruct extends Struct({
 
 let ts = new TestStruct({ path: Array(10).fill(Field.random()) });
 let tsJsonStr = JSON.stringify(TestStruct.toJSON(ts));
-console.log('ts1022');
 
 let tsArr = TestStruct.toFields(ts).toString();
 

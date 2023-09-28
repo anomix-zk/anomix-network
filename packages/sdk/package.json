@@ -8,9 +8,9 @@
   "types": "dist/src/index.d.ts",
   "license": "MIT",
   "scripts": {
-    "sdk": "tsc --build tsconfig.json && node --stack-trace-limit=1000 --experimental-specifier-resolution=node ./dist/src/sdk_test.js",
-    "node": "tsc --build tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/rollup_node/node_Provider_test.js",
-    "demo": "tsc --build tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/demo_test.js",
+    "sdk:deposit": "tsc --build tsconfig.json && node --stack-trace-limit=1000 --experimental-specifier-resolution=node ./dist/scripts/sdk_deposit.js",
+    "providerTest": "tsc --build tsconfig.json && node --experimental-specifier-resolution=node ./dist/scripts/node_Provider_test.js",
+    "performance": "tsc --build tsconfig.json && node --experimental-specifier-resolution=node ./dist/scripts/performance.js",
     "lib:dev": "npm run lib:build && (concurrently \"tsc --build tsconfig.json --watch\" \"tsc-alias -w\")",
     "lib:build": "tsc --build tsconfig.json && tsc-alias",
     "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
