@@ -28,6 +28,7 @@
   },
   "devDependencies": {},
   "scripts": {
+    "serve:fetch-withdrawal-events": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/fetch-withdrawal-events.js",
     "serve:proof-trigger": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/proof-trigger.js",
     "serve:mempool-watcher": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/mempool-watcher.js",
     "serve:task-tracer": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/task-tracer.js",
