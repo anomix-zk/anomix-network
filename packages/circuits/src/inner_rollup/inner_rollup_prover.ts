@@ -522,7 +522,7 @@ function processTx({
       checkWitnessValid: checkNullifier1Valid
         .and(checkLowLeafMembership)
         .and(checkNullifier1GreaterThanLowLeafValue)
-        .and(checkNullifier1LeassThanLowLeafNextValue)
+        .and(checkNullifier1LessThanLowLeafNextValue)
         .and(checkWitnessOfNullifier1Valid),
       currRoot: oldNullWitness1.calculateRoot(
         nullifier1LeafData.commitment(),
@@ -625,7 +625,7 @@ function processTx({
       checkWitnessValid: checkNullifier2Valid
         .and(checkLowLeafMembership2)
         .and(checkNullifier2GreaterThanLowLeafValue)
-        .and(checkNullifier2LeassThanLowLeafNextValue)
+        .and(checkNullifier2LessThanLowLeafNextValue)
         .and(checkWitnessOfNullifier2Valid),
       currRoot: oldNullWitness2.calculateRoot(
         nullifier2LeafData.commitment(),
