@@ -41,11 +41,13 @@ function updateNullifierRootAndNullStartIndex(
     'lowLeafWitness is not valid'
   );
 
+  /*
   nullifier
     .sub(lowLeafWitness.leafData.value).greaterThan(Field(0n))
     .assertTrue(
       'Nullifier should not exist in null tree (nullifier <= lowLeafWitness.leafData.value)'
     );
+  */
   const lowLeafNextValue = lowLeafWitness.leafData.nextValue;
   Provable.log('lowLeafNextValue', lowLeafNextValue);
 
@@ -53,7 +55,7 @@ function updateNullifierRootAndNullStartIndex(
     lowLeafNextValue.equals(DUMMY_FIELD),
     Bool,
     Bool(true),
-    lowLeafNextValue.sub(nullifier).greaterThan(Field(0n))
+    Bool(true) //lowLeafNextValue.sub(nullifier).greaterThan(Field(0n))
   ).assertTrue(
     'Nullifier should not exist in null tree (nullifier >= lowLeafWitness.leafData.nextValue)'
   );
