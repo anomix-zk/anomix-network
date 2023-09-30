@@ -33,7 +33,7 @@ await initORM();
 
 await fetchActionsAndEvents();
 
-setInterval(fetchActionsAndEvents, 5 * 60 * 1000);// exec/5mins
+setInterval(fetchActionsAndEvents, 2 * 60 * 1000);// exec/5mins
 
 async function fetchActionsAndEvents() {
     logger.info('... a new ROUND to fetchActionsAndEvents ...');
@@ -90,7 +90,19 @@ async function fetchActionsAndEvents() {
             }));
             dcList.forEach((d, i) => {
                 d.depositNoteIndex = (startIdx + BigInt(i)).toString();
-            })
+            });
+
+            const calcActionState = dcList.reduce((p, c) => {
+                let currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
+                    p,
+                    AccountUpdate.Actions.hash([Field(c.depositNoteCommitment).toFields()]) // 
+                );
+                console.log('currentActionsHashX:' + currentActionsHashX.toString());
+                return currentActionsHashX;
+            }, Reducer.initialActionState);
+            if (calcActionState.equals(zkAppActionStateArray![0]).not().toBoolean()) {
+                throw new Error("calc action state is not aligned with targetActionState");
+            }
 
             let depositActionEventFetchRecord = new DepositActionEventFetchRecord();
             depositActionEventFetchRecord.startBlock = startBlockHeight; //
