@@ -1,5 +1,5 @@
 import { consola } from 'consola';
-import { NodeProvider } from './node_provider';
+import { NodeProvider } from '../src/rollup_node/node_provider';
 
 const node = new NodeProvider('http://127.0.0.1:8099');
 

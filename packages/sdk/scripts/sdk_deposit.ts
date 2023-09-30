@@ -8,7 +8,7 @@ import {
   TokenId,
   UInt64,
 } from 'o1js';
-import { createAnomixSdk } from './create_anomix_sdk';
+import { createAnomixSdk } from '../src/create_anomix_sdk';
 import 'fake-indexeddb/auto';
 import { AccountRequired, AssetId, MINA } from '@anomix/circuits';
 import {
@@ -17,8 +17,11 @@ import {
   SendTransactionResult,
   SignedData,
   SignMessageArgs,
-} from './mina_provider';
+} from '../src/mina_provider';
 import * as fs from 'fs';
+
+// @ts-ignore
+import KeyConfig from '../../../circuits/scripts/keys-private.json' assert { type: 'json' };
 
 const accountKeySign = {
   field:
@@ -85,11 +88,13 @@ class TestMinaProvider implements MinaProvider {
 }
 
 async function run() {
+  console.log('start run sdk deposit...');
+
+  console.log({ KeyConfig });
+
   const sdk = await createAnomixSdk({
-    entryContractAddress:
-      'B62qqogwbARwzFxpwp6T1P1EnqSF7H3xSgjgYtf21DX4wdXSm2PFheq',
-    vaultContractAddress:
-      'B62qjJSpKobQJaWcB4UjyKVYBYoXY1adD6U5urAxWXWwTEh2ZHxyHT1',
+    entryContractAddress: KeyConfig.entryContract.publicKey,
+    vaultContractAddress: KeyConfig.vaultContract.publicKey,
     options: {
       nodeUrl: 'http://127.0.0.1:8099',
       minaEndpoint: 'https://berkeley.minascan.io/graphql',
@@ -209,6 +214,8 @@ async function run() {
   });
   console.log('provider res3: ', JSON.stringify(res3));
 
+  console.log('sdk deposit done');
+
   // EKE7LbkHVVwaHiP83ZZTpLNp8irWe7ukpg3E9qbPDdS7FeXAuiR5
   // B62qrPECbX44XodVBvpLUkXVLKyAhT1hpEkP6c6u2rp6sMgfjcVHspg
 
@@ -217,27 +224,6 @@ async function run() {
 
   // EKEPcPvPkQVp1B1ZGHuMNWntLeWGhKJG2cdKCzZWindZrYprKhgS
   // B62qncRVmQA8gWCaxc51AjHXGU4ZwTRgT5p6CWwUjDfgzfGFXsia9Pp
-}
-
-async function test() {
-  // let key = PrivateKey.fromBase58(
-  //   'EKDzUnQJhC8Fsojn7ndQrbCfT5VogS7BfK98Lt34UV424sySrG5N'
-  // );
-  // let json = Signature.create(key, [Field('1234')]).toJSON();
-
-  // console.log('json: ', json);
-
-  let ac = await fetchAccount(
-    { publicKey: 'B62qkT3U75QVgmWjgfpcgT9Yc3ni6frTprX6cP1KRjmvVoFf8Wz8L1b' },
-    'https://berkeley.minascan.io/graphql'
-  );
-  console.log('ac: ', JSON.stringify(ac));
-  // const m: Record<string, string> = {};
-  // m['a'] = '1';
-  // m['b'] = '2';
-  // m['c'] = '3';
-
-  // console.log(JSON.stringify(m));
 }
 
 await run();

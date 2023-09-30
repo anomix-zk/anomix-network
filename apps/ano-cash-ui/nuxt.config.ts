@@ -2,6 +2,8 @@
 import Components from "unplugin-vue-components/vite";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
 
+import KeyConfig from "../../packages/circuits/scripts/keys-private.json" assert { type: "json" };
+
 export default defineNuxtConfig({
     devtools: { enabled: false },
     typescript: {
@@ -13,10 +15,8 @@ export default defineNuxtConfig({
         runtimeConfig: {
             // Keys within public are also exposed client-side
             public: {
-                entryContractAddress:
-                    "B62qp6k2rCBKECnjMZXDBU73MuKj4g8eh8pcN2xn7sgYLYRmJkNx9SX",
-                vaultContractAddress:
-                    "B62qroCQ4gsXYdeGacqYBim39JVeM1xGy9xksXH6sMtTHakE4dL2mpJ",
+                entryContractAddress: KeyConfig.entryContract.publicKey,
+                vaultContractAddress: KeyConfig.vaultContract.publicKey,
                 nodeUrl: "http://198.135.49.102",
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
                 l2BlockPollingIntervalMS: 15 * 1000,
@@ -31,10 +31,8 @@ export default defineNuxtConfig({
         runtimeConfig: {
             // Keys within public are also exposed client-side
             public: {
-                entryContractAddress:
-                    "B62qp6k2rCBKECnjMZXDBU73MuKj4g8eh8pcN2xn7sgYLYRmJkNx9SX",
-                vaultContractAddress:
-                    "B62qroCQ4gsXYdeGacqYBim39JVeM1xGy9xksXH6sMtTHakE4dL2mpJ",
+                entryContractAddress: KeyConfig.entryContract.publicKey,
+                vaultContractAddress: KeyConfig.vaultContract.publicKey,
                 nodeUrl: "http://198.135.49.102",
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
                 l2BlockPollingIntervalMS: 15 * 1000,
