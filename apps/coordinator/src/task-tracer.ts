@@ -46,12 +46,12 @@ setInterval(traceTasks, 3 * 60 * 1000); // exec/3mins
 async function traceTasks() {
     logger.info('start a new round...');
 
+
+    const connection = getConnection();
+
+    const queryRunner = connection.createQueryRunner();
+    await queryRunner.startTransaction();
     try {
-        const connection = getConnection();
-
-        const queryRunner = connection.createQueryRunner();
-        await queryRunner.startTransaction();
-
         const taskList = await queryRunner.manager.find(Task, { where: { status: TaskStatus.PENDING } }) ?? [];
 
         for (let index = 0; index < taskList.length; index++) {
@@ -89,127 +89,122 @@ async function traceTasks() {
                 continue;
             }
 
-            try {
-                // to here, means task id done, even if L1tx failed.
-                task.status = TaskStatus.DONE;
-                await queryRunner.manager.save(task);
-                logger.info('task is done, and update it into db...');
+            // to here, means task id done, even if L1tx failed.
+            task.status = TaskStatus.DONE;
+            await queryRunner.manager.save(task);
+            logger.info('task is done, and update it into db...');
 
-                // if Confirmed, then maintain related entites' status            
-                switch (task.taskType) {
-                    case TaskType.DEPOSIT:
-                        {
-                            if (!rs.data.zkapp.failureReason) {// L1TX CONFIRMED
-                                const depositTrans = await queryRunner.manager.findOne(DepositTreeTrans, { where: { id: task.targetId } });
+            // if Confirmed, then maintain related entites' status            
+            switch (task.taskType) {
+                case TaskType.DEPOSIT:
+                    {
+                        if (!rs.data.zkapp.failureReason) {// L1TX CONFIRMED
+                            const depositTrans = await queryRunner.manager.findOne(DepositTreeTrans, { where: { id: task.targetId } });
 
-                                logger.info('update depositTrans.status = CONFIRMED...');
-                                depositTrans!.status = DepositTreeTransStatus.CONFIRMED;
-                                await queryRunner.manager.save(depositTrans!);
+                            logger.info('update depositTrans.status = CONFIRMED...');
+                            depositTrans!.status = DepositTreeTransStatus.CONFIRMED;
+                            await queryRunner.manager.save(depositTrans!);
 
-                                logger.info('obtain related DepositCommitment list...');
-                                const vDepositTxList: MemPlL2Tx[] = [];
-                                const dcList = await queryRunner.manager.find(DepositCommitment, { where: { depositTreeTransId: depositTrans!.id } });
+                            logger.info('obtain related DepositCommitment list...');
+                            const vDepositTxList: MemPlL2Tx[] = [];
+                            const dcList = await queryRunner.manager.find(DepositCommitment, { where: { depositTreeTransId: depositTrans!.id } });
 
-                                dcList!.forEach(dc => {
-                                    const memPlL2Tx = new MemPlL2Tx();
-                                    memPlL2Tx.actionType = ActionType.DEPOSIT.toString();
-                                    memPlL2Tx.nullifier1 = DUMMY_FIELD.toString();
-                                    memPlL2Tx.nullifier2 = DUMMY_FIELD.toString();
-                                    memPlL2Tx.outputNoteCommitment1 = dc.depositNoteCommitment;
-                                    memPlL2Tx.outputNoteCommitment2 = DUMMY_FIELD.toString();
-                                    memPlL2Tx.publicValue = dc.depositValue;
-                                    memPlL2Tx.publicOwner = dc.sender;
-                                    memPlL2Tx.publicAssetId = dc.assetId;
-                                    memPlL2Tx.dataRoot = '0';
-                                    memPlL2Tx.depositRoot = '0';
-                                    memPlL2Tx.depositIndex = dc.depositNoteIndex;
-                                    memPlL2Tx.txFee = '0';
-                                    memPlL2Tx.txFeeAssetId = dc.assetId;
-                                    memPlL2Tx.encryptedData1 = dc.encryptedNote;
-                                    memPlL2Tx.status = L2TxStatus.PENDING
-                                    memPlL2Tx.txHash = new JoinSplitOutput({
-                                        actionType: ActionType.DEPOSIT,
-                                        outputNoteCommitment1: Field(memPlL2Tx.outputNoteCommitment1),
-                                        outputNoteCommitment2: DUMMY_FIELD,
-                                        nullifier1: DUMMY_FIELD,
-                                        nullifier2: DUMMY_FIELD,
-                                        publicValue: UInt64.zero,
-                                        publicOwner: PublicKey.fromBase58(memPlL2Tx.publicOwner),
-                                        publicAssetId: Field(memPlL2Tx.publicAssetId),
-                                        dataRoot: DUMMY_FIELD,
-                                        txFee: UInt64.zero,
-                                        txFeeAssetId: Field(memPlL2Tx.txFeeAssetId),
-                                        depositRoot: DUMMY_FIELD,
-                                        depositIndex: Field(memPlL2Tx.depositIndex),
-                                    }).hash().toString();
+                            dcList!.forEach(dc => {
+                                const memPlL2Tx = new MemPlL2Tx();
+                                memPlL2Tx.actionType = ActionType.DEPOSIT.toString();
+                                memPlL2Tx.nullifier1 = DUMMY_FIELD.toString();
+                                memPlL2Tx.nullifier2 = DUMMY_FIELD.toString();
+                                memPlL2Tx.outputNoteCommitment1 = dc.depositNoteCommitment;
+                                memPlL2Tx.outputNoteCommitment2 = DUMMY_FIELD.toString();
+                                memPlL2Tx.publicValue = dc.depositValue;
+                                memPlL2Tx.publicOwner = dc.sender;
+                                memPlL2Tx.publicAssetId = dc.assetId;
+                                memPlL2Tx.dataRoot = '0';
+                                memPlL2Tx.depositRoot = '0';
+                                memPlL2Tx.depositIndex = dc.depositNoteIndex;
+                                memPlL2Tx.txFee = '0';
+                                memPlL2Tx.txFeeAssetId = dc.assetId;
+                                memPlL2Tx.encryptedData1 = dc.encryptedNote;
+                                memPlL2Tx.status = L2TxStatus.PENDING
+                                memPlL2Tx.txHash = new JoinSplitOutput({
+                                    actionType: ActionType.DEPOSIT,
+                                    outputNoteCommitment1: Field(memPlL2Tx.outputNoteCommitment1),
+                                    outputNoteCommitment2: DUMMY_FIELD,
+                                    nullifier1: DUMMY_FIELD,
+                                    nullifier2: DUMMY_FIELD,
+                                    publicValue: UInt64.zero,
+                                    publicOwner: PublicKey.fromBase58(memPlL2Tx.publicOwner),
+                                    publicAssetId: Field(memPlL2Tx.publicAssetId),
+                                    dataRoot: DUMMY_FIELD,
+                                    txFee: UInt64.zero,
+                                    txFeeAssetId: Field(memPlL2Tx.txFeeAssetId),
+                                    depositRoot: DUMMY_FIELD,
+                                    depositIndex: Field(memPlL2Tx.depositIndex),
+                                }).hash().toString();
 
-                                    // pre-construct depositTx
-                                    vDepositTxList.push(memPlL2Tx);
-                                });
+                                // pre-construct depositTx
+                                vDepositTxList.push(memPlL2Tx);
+                            });
 
-                                logger.info('transform related DepositCommitment list into MemPlL2Tx list...');
-                                // insert depositTx into memorypool
-                                await queryRunner.manager.save(vDepositTxList);
+                            logger.info('transform related DepositCommitment list into MemPlL2Tx list...');
+                            // insert depositTx into memorypool
+                            await queryRunner.manager.save(vDepositTxList);
+                        }
+                    }
+                    break;
+
+                case TaskType.ROLLUP:
+                    {
+                        logger.info('obtain related block...');
+                        await queryRunner.manager.findOne(Block, { where: { id: task.targetId } }).then(async (b) => {
+                            if (!rs.data.zkapp.failureReason) {
+                                logger.info('update block’ status to BlockStatus.CONFIRMED...');
+                                b!.status = BlockStatus.CONFIRMED;
+                                logger.info('update block’ finalizedAt to confirmed datetime...');
+                                b!.finalizedAt = new Date(rs.data.zkapp.dateTime);
+                                await queryRunner.manager.save(b!);
+
+                                logger.info('sync data tree...');
+                                // sync data tree
+                                await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
+                                    if (rs.data.code != 0) {
+                                        throw new Error(`cannot sync sync_data_tree, due to: [${rs.data.msg}]`);
+                                    }
+                                })
+                            } else {
+                                logger.warn('ALERT: this block failed at Layer1!!!!!');// TODO extreme case, need alert operator!
                             }
-                        }
-                        break;
+                        });
+                    }
+                    break;
 
-                    case TaskType.ROLLUP:
-                        {
-                            logger.info('obtain related block...');
-                            await queryRunner.manager.findOne(Block, { where: { id: task.targetId } }).then(async (b) => {
-                                if (!rs.data.zkapp.failureReason) {
-                                    logger.info('update block’ status to BlockStatus.CONFIRMED...');
-                                    b!.status = BlockStatus.CONFIRMED;
-                                    logger.info('update block’ finalizedAt to confirmed datetime...');
-                                    b!.finalizedAt = new Date(rs.data.zkapp.dateTime);
-                                    await queryRunner.manager.save(b!);
+                case TaskType.WITHDRAW: // omit currently
+                    {
+                        await queryRunner.manager.findOne(WithdrawInfo, { where: { id: task.targetId } }).then(async (w) => {
+                            w!.status = rs.data.zkapp.failureReason ? w!.status : WithdrawNoteStatus.DONE;// TODO FAILED??
+                            w!.finalizedAt = new Date(rs.data.zkapp.dateTime);
+                            await queryRunner.manager.save(w!);
+                        });
+                    }
+                    break;
 
-                                    logger.info('sync data tree...');
-                                    // sync data tree
-                                    await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
-                                        if (rs.data.code != 0) {
-                                            throw new Error(`cannot sync sync_data_tree, due to: [${rs.data.msg}]`);
-                                        }
-                                    })
-                                } else {
-                                    logger.warn('ALERT: this block failed at Layer1!!!!!');// TODO extreme case, need alert operator!
-                                }
-                            });
-                        }
-                        break;
-
-                    case TaskType.WITHDRAW: // omit currently
-                        {
-                            await queryRunner.manager.findOne(WithdrawInfo, { where: { id: task.targetId } }).then(async (w) => {
-                                w!.status = rs.data.zkapp.failureReason ? w!.status : WithdrawNoteStatus.DONE;// TODO FAILED??
-                                w!.finalizedAt = new Date(rs.data.zkapp.dateTime);
-                                await queryRunner.manager.save(w!);
-                            });
-                        }
-                        break;
-
-                    default:
-                        break;
-                }
-
-                await queryRunner.commitTransaction();
-
-            } catch (error) {
-                console.error(error);
-                await queryRunner.rollbackTransaction();
-
-                throw error;
-            } finally {
-                await queryRunner.release();
+                default:
+                    break;
             }
         }
 
+        await queryRunner.commitTransaction();
 
     } catch (error) {
-        logger.error(error);
+        console.error(error);
+        await queryRunner.rollbackTransaction();
+
+        throw error;
+    } finally {
+        await queryRunner.release();
+        logger.info('this round is done.');
+
     }
-    logger.info('this round is done.');
 }
 
 
