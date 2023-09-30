@@ -99,7 +99,7 @@ async function fetchActionsAndEvents() {
                 );
                 console.log('currentActionsHashX:' + currentActionsHashX.toString());
                 return currentActionsHashX;
-            }, Reducer.initialActionState);
+            }, startActionHash);
             if (calcActionState.equals(zkAppActionStateArray![0]).not().toBoolean()) {
                 throw new Error("calc action state is not aligned with targetActionState");
             }
