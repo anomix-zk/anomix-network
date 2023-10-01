@@ -121,7 +121,7 @@ async function run() {
       'B62qmV8Rfq76JMEBrqv3eyypNXBM2gc7h8nU32rHhqBCVXe8PkLwzX4'
     ),
     suggestedTxFee: UInt64.from(0.11 * MINA),
-    amount: UInt64.from(3.88 * MINA),
+    amount: UInt64.from(5.12 * MINA),
     assetId: AssetId.MINA,
     anonymousToReceiver: false,
     receiverAccountRequired: AccountRequired.NOTREQUIRED,
@@ -150,69 +150,69 @@ async function run() {
   //-----------------------------------------------------------------
 
   // second deposit
-  let txJson2 = await sdk.createDepositTx({
-    payerAddress: PublicKey.fromBase58(
-      'B62qiZbXAJrAegKDehUcSZhoBAFS6dviBBH5sDGsqpBEvymTym5YzAE'
-    ),
-    receiverAddress: accountPk,
-    feePayerAddress: PublicKey.fromBase58(
-      'B62qiZbXAJrAegKDehUcSZhoBAFS6dviBBH5sDGsqpBEvymTym5YzAE'
-    ),
-    suggestedTxFee: UInt64.from(0.11 * MINA),
-    amount: UInt64.from(5 * MINA),
-    assetId: AssetId.MINA,
-    anonymousToReceiver: false,
-    receiverAccountRequired: AccountRequired.NOTREQUIRED,
-    noteEncryptPrivateKey: PrivateKey.random(),
-  });
+  // let txJson2 = await sdk.createDepositTx({
+  //   payerAddress: PublicKey.fromBase58(
+  //     'B62qiZbXAJrAegKDehUcSZhoBAFS6dviBBH5sDGsqpBEvymTym5YzAE'
+  //   ),
+  //   receiverAddress: accountPk,
+  //   feePayerAddress: PublicKey.fromBase58(
+  //     'B62qiZbXAJrAegKDehUcSZhoBAFS6dviBBH5sDGsqpBEvymTym5YzAE'
+  //   ),
+  //   suggestedTxFee: UInt64.from(0.11 * MINA),
+  //   amount: UInt64.from(2 * MINA),
+  //   assetId: AssetId.MINA,
+  //   anonymousToReceiver: false,
+  //   receiverAccountRequired: AccountRequired.NOTREQUIRED,
+  //   noteEncryptPrivateKey: PrivateKey.random(),
+  // });
 
-  console.log('txJson2: ', txJson2);
-  fs.writeFileSync('./src/deposit2.txt', txJson2);
-  console.log('write json2 success');
+  // console.log('txJson2: ', txJson2);
+  // fs.writeFileSync('./src/deposit2.txt', txJson2);
+  // console.log('write json2 success');
 
-  const provider2 = new TestMinaProvider(
-    'B62qiZbXAJrAegKDehUcSZhoBAFS6dviBBH5sDGsqpBEvymTym5YzAE',
-    'EKDhwYrfVipHzLvgyax5uXSrkGX12ykhuYBsgBuWpANEfGAbSVev',
-    'https://berkeley.minascan.io/graphql'
-  );
+  // const provider2 = new TestMinaProvider(
+  //   'B62qiZbXAJrAegKDehUcSZhoBAFS6dviBBH5sDGsqpBEvymTym5YzAE',
+  //   'EKDhwYrfVipHzLvgyax5uXSrkGX12ykhuYBsgBuWpANEfGAbSVev',
+  //   'https://berkeley.minascan.io/graphql'
+  // );
 
-  let res2 = await provider2.sendTransaction({
-    transaction: txJson2,
-  });
-  console.log('provider res2: ', JSON.stringify(res2));
+  // let res2 = await provider2.sendTransaction({
+  //   transaction: txJson2,
+  // });
+  // console.log('provider res2: ', JSON.stringify(res2));
   //-----------------------------------------------------------------
 
   // third deposit
-  let txJson3 = await sdk.createDepositTx({
-    payerAddress: PublicKey.fromBase58(
-      'B62qncRVmQA8gWCaxc51AjHXGU4ZwTRgT5p6CWwUjDfgzfGFXsia9Pp'
-    ),
-    receiverAddress: accountPk,
-    feePayerAddress: PublicKey.fromBase58(
-      'B62qncRVmQA8gWCaxc51AjHXGU4ZwTRgT5p6CWwUjDfgzfGFXsia9Pp'
-    ),
-    suggestedTxFee: UInt64.from(0.11 * MINA),
-    amount: UInt64.from(2.012 * MINA),
-    assetId: AssetId.MINA,
-    anonymousToReceiver: false,
-    receiverAccountRequired: AccountRequired.NOTREQUIRED,
-    noteEncryptPrivateKey: PrivateKey.random(),
-  });
+  // let txJson3 = await sdk.createDepositTx({
+  //   payerAddress: PublicKey.fromBase58(
+  //     'B62qncRVmQA8gWCaxc51AjHXGU4ZwTRgT5p6CWwUjDfgzfGFXsia9Pp'
+  //   ),
+  //   receiverAddress: accountPk,
+  //   feePayerAddress: PublicKey.fromBase58(
+  //     'B62qncRVmQA8gWCaxc51AjHXGU4ZwTRgT5p6CWwUjDfgzfGFXsia9Pp'
+  //   ),
+  //   suggestedTxFee: UInt64.from(0.11 * MINA),
+  //   amount: UInt64.from(2.012 * MINA),
+  //   assetId: AssetId.MINA,
+  //   anonymousToReceiver: false,
+  //   receiverAccountRequired: AccountRequired.NOTREQUIRED,
+  //   noteEncryptPrivateKey: PrivateKey.random(),
+  // });
 
-  console.log('txJson3: ', txJson3);
-  fs.writeFileSync('./src/deposit3.txt', txJson3);
-  console.log('write json3 success');
+  // console.log('txJson3: ', txJson3);
+  // fs.writeFileSync('./src/deposit3.txt', txJson3);
+  // console.log('write json3 success');
 
-  const provider3 = new TestMinaProvider(
-    'B62qncRVmQA8gWCaxc51AjHXGU4ZwTRgT5p6CWwUjDfgzfGFXsia9Pp',
-    'EKEPcPvPkQVp1B1ZGHuMNWntLeWGhKJG2cdKCzZWindZrYprKhgS',
-    'https://berkeley.minascan.io/graphql'
-  );
+  // const provider3 = new TestMinaProvider(
+  //   'B62qncRVmQA8gWCaxc51AjHXGU4ZwTRgT5p6CWwUjDfgzfGFXsia9Pp',
+  //   'EKEPcPvPkQVp1B1ZGHuMNWntLeWGhKJG2cdKCzZWindZrYprKhgS',
+  //   'https://berkeley.minascan.io/graphql'
+  // );
 
-  let res3 = await provider3.sendTransaction({
-    transaction: txJson3,
-  });
-  console.log('provider res3: ', JSON.stringify(res3));
+  // let res3 = await provider3.sendTransaction({
+  //   transaction: txJson3,
+  // });
+  // console.log('provider res3: ', JSON.stringify(res3));
 
   console.log('sdk deposit done');
 
