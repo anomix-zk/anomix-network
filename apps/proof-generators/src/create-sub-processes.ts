@@ -54,11 +54,11 @@ const CircuitName_BlockProver = 'BlockProver';
 const CircuitName_AnomixRollupContract = 'AnomixRollupContract';
 
 const cnt_DepositRollupProver = 1;
-const cnt_AnomixEntryContract = 1;
+const cnt_AnomixEntryContract = 3;
 const cnt_JoinSplitProver = 1;
 const cnt_InnerRollupProver = 1;
 const cnt_BlockProver = 1;
-const cnt_AnomixRollupContract = 3;
+const cnt_AnomixRollupContract = 5;
 
 /* 
 const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
