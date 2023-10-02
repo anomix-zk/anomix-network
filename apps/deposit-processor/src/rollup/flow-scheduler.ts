@@ -147,7 +147,7 @@ export class FlowScheduler {
             const recordIds = new Set(originDcList.map(dc => {
                 return dc.depositActionEventFetchRecordId;
             }))
-			console.log("recordIds: "+JSON.stringfy(recordIds));
+			console.log("recordIds: "+JSON.stringify(recordIds));
             const depositActionEventFetchRecordRepo = connection.getRepository(DepositActionEventFetchRecord);
             const fetchRecordList = await depositActionEventFetchRecordRepo.find({ where: { id: In([...recordIds]) }, order: { id: 'ASC' } })!;
             const startBlock = fetchRecordList[0].startBlock;
