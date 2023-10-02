@@ -15,8 +15,13 @@ const periodRange = 3 * 60 * 1000
 setInterval(depositSeqTrigger, periodRange); // exec/3mins
 
 async function depositSeqTrigger() {
-    logger.info('start triggerring deposit seq...');
-    await $axiosDeposit.get('/rollup/seq');
-    logger.info('done.');
+    try {
+        logger.info('start triggerring deposit seq...');
+        await $axiosDeposit.get('/rollup/seq');
+        logger.info('done.');
+    } catch (error) {
+        console.error(error);
+        logger.error(error);
+    }
 }
 
