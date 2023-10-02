@@ -92,7 +92,7 @@ export const createSubProcesses = async (n: number) => {
     ]);
 
     const createCircuitProcessor = (proverCnt: number, circuitName: string) => {
-        const createFn = (proverCnt: number, circuitName: string) => {
+        const createFn = (proverCnt: number, circuitName: string, index: number) => {
             let worker = cp.fork(__dirname.concat('/provers/proof-worker-').concat(circuitName).concat('.js'), [circuitName]);
 
             let workerEntity: { worker: Worker, status: WorkerStatus, type: string } = { worker, status: 'Busy', type: circuitName };
@@ -100,7 +100,7 @@ export const createSubProcesses = async (n: number) => {
                 message = JSON.parse(JSON.stringify(message));
                 switch (message.type) {
                     case 'online':
-                        workerMap.get(circuitName)!.push(workerEntity);
+                        workerMap.get(circuitName)![index] = workerEntity;
                         break;
                     case 'isReady':
                         workerEntity.status = 'IsReady';
@@ -110,15 +110,14 @@ export const createSubProcesses = async (n: number) => {
                 }
             });
             worker.on('exit', (exitCode: number) => {
-                logger.info(`${circuitName} worker exited`);
+                logger.info(`${circuitName} worker exited, exitCode:${exitCode}`);
 
                 const index = workerMap.get(circuitName)!.findIndex((t, i) => {
                     return t.worker == worker;
                 });
-                workerMap.get(circuitName)!.splice(index, 1);
-
-                // create a new one again
-                createFn(proverCnt, circuitName);
+                // workerMap.get(circuitName)!.splice(index, 1);
+                // create a new one again at the same position
+                createFn(proverCnt, circuitName, index);
             });
 
             worker.on('error', (exitCode: number) => {
@@ -127,7 +126,7 @@ export const createSubProcesses = async (n: number) => {
         }
 
         for (let index = 0; index < proverCnt; index++) {
-            createFn(proverCnt, circuitName);
+            createFn(proverCnt, circuitName, index);
         }
     }
 
