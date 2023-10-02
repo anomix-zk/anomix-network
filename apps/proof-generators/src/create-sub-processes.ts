@@ -54,11 +54,11 @@ const CircuitName_BlockProver = 'BlockProver';
 const CircuitName_AnomixRollupContract = 'AnomixRollupContract';
 
 const cnt_DepositRollupProver = 1;
-const cnt_AnomixEntryContract = 1;
+const cnt_AnomixEntryContract = 3;
 const cnt_JoinSplitProver = 1;
 const cnt_InnerRollupProver = 1;
 const cnt_BlockProver = 1;
-const cnt_AnomixRollupContract = 3;
+const cnt_AnomixRollupContract = 5;
 
 /* 
 const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
@@ -92,7 +92,7 @@ export const createSubProcesses = async (n: number) => {
     ]);
 
     const createCircuitProcessor = (proverCnt: number, circuitName: string) => {
-        const createFn = (proverCnt: number, circuitName: string) => {
+        const createFn = (proverCnt: number, circuitName: string, index: number) => {
             let worker = cp.fork(__dirname.concat('/provers/proof-worker-').concat(circuitName).concat('.js'), [circuitName]);
 
             let workerEntity: { worker: Worker, status: WorkerStatus, type: string } = { worker, status: 'Busy', type: circuitName };
@@ -100,7 +100,7 @@ export const createSubProcesses = async (n: number) => {
                 message = JSON.parse(JSON.stringify(message));
                 switch (message.type) {
                     case 'online':
-                        workerMap.get(circuitName)!.push(workerEntity);
+                        workerMap.get(circuitName)![index] = workerEntity;
                         break;
                     case 'isReady':
                         workerEntity.status = 'IsReady';
@@ -110,15 +110,14 @@ export const createSubProcesses = async (n: number) => {
                 }
             });
             worker.on('exit', (exitCode: number) => {
-                logger.info(`${circuitName} worker exited`);
+                logger.info(`${circuitName} worker exited, exitCode:${exitCode}`);
 
                 const index = workerMap.get(circuitName)!.findIndex((t, i) => {
                     return t.worker == worker;
                 });
-                workerMap.get(circuitName)!.splice(index, 1);
-
-                // create a new one again
-                createFn(proverCnt, circuitName);
+                // workerMap.get(circuitName)!.splice(index, 1);
+                // create a new one again at the same position
+                createFn(proverCnt, circuitName, index);
             });
 
             worker.on('error', (exitCode: number) => {
@@ -127,7 +126,7 @@ export const createSubProcesses = async (n: number) => {
         }
 
         for (let index = 0; index < proverCnt; index++) {
-            createFn(proverCnt, circuitName);
+            createFn(proverCnt, circuitName, index);
         }
     }
 
@@ -521,14 +520,14 @@ function generateProof(
 
     }).then(workerEntity => {
 
-        let worker = workerEntity as { worker: Worker, status: WorkerStatus, type: string };
+        let workerE = workerEntity as { worker: Worker, status: WorkerStatus, type: string };
 
         const handler = (message: any) => {
-            workers.find(
-                //(w) => w.worker.process.pid == worker!.worker.process.pid
-                (w) => w.worker.pid == worker!.worker.pid
-            )!.status = 'IsReady';
-            worker.worker!.removeListener('message', handler);// must rm it here to avoid listener accumulation.
+            if (workerE.type != CircuitName_AnomixRollupContract && workerE.type != CircuitName_AnomixEntryContract) {
+                workerE.status = 'IsReady';
+            }
+
+            workerE.worker!.removeListener('message', handler);// must rm it here to avoid listener accumulation.
 
             if (message.type == 'done') {
                 try {
@@ -548,10 +547,10 @@ function generateProof(
             }
 
         }
-        worker.worker!.on('message', handler);
+        workerE.worker!.on('message', handler);
 
         // async exec
-        worker.worker!.send(msg);
+        workerE.worker!.send(msg);
     });
 }
 

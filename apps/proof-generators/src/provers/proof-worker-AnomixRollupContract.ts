@@ -44,6 +44,8 @@ function processMsgFromMaster() {
                 throw Error(`Unknown message ${message}`);
         }
         logger.info(`[WORKER ${process.pid}] completed ${message.type}`);
+
+        process.exit(0);
     });
 }
 

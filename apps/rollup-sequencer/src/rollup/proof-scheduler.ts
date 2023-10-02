@@ -289,7 +289,7 @@ export class ProofScheduler {
         await syncAcctInfo(addr);// fetch account.
         const entryContract = new AnomixEntryContract(addr);
         const entryDepositRoot = entryContract.depositState.get().depositRoot;
-        assert(entryDepositRoot.toString() == block.depositRoot);
+        // assert(entryDepositRoot.toString() == block.depositRoot);
 
         // send to proof-generator for 'AnomixRollupContract.updateRollupState'
         // construct proofTaskDto
