@@ -335,9 +335,6 @@ export class NoteProcessor {
             if (valueNoteJSON1?.ownerPk === accountPk) {
               privateValueTotal += BigInt(valueNoteJSON1!.value);
             }
-            if (valueNoteJSON2?.ownerPk === accountPk) {
-              privateValueTotal += BigInt(valueNoteJSON2!.value);
-            }
 
             await this.db.upsertUserPaymentTx(
               UserPaymentTx.from({
