@@ -520,14 +520,14 @@ function generateProof(
 
     }).then(workerEntity => {
 
-        let worker = workerEntity as { worker: Worker, status: WorkerStatus, type: string };
+        let workerE = workerEntity as { worker: Worker, status: WorkerStatus, type: string };
 
         const handler = (message: any) => {
-            workers.find(
-                //(w) => w.worker.process.pid == worker!.worker.process.pid
-                (w) => w.worker.pid == worker!.worker.pid
-            )!.status = 'IsReady';
-            worker.worker!.removeListener('message', handler);// must rm it here to avoid listener accumulation.
+            if (workerE.type != CircuitName_AnomixRollupContract && workerE.type != CircuitName_AnomixEntryContract) {
+                workerE.status = 'IsReady';
+            }
+
+            workerE.worker!.removeListener('message', handler);// must rm it here to avoid listener accumulation.
 
             if (message.type == 'done') {
                 try {
@@ -547,10 +547,10 @@ function generateProof(
             }
 
         }
-        worker.worker!.on('message', handler);
+        workerE.worker!.on('message', handler);
 
         // async exec
-        worker.worker!.send(msg);
+        workerE.worker!.send(msg);
     });
 }
 
