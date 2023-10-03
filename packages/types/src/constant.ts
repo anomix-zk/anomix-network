@@ -126,7 +126,6 @@ export type FlowTask<T> = {
  */
 export enum MerkleTreeId {
     DEPOSIT_TREE = 0,
-    SYNC_DEPOSIT_TREE,
     /**
      * for normal 
      */
@@ -139,7 +138,9 @@ export enum MerkleTreeId {
     SYNC_DATA_TREE,
     NULLIFIER_TREE,
     DATA_TREE_ROOTS_TREE,
-    USER_NULLIFIER_TREE
+    USER_NULLIFIER_TREE,
+
+    SYNC_DEPOSIT_TREE,// add a deposit tree to always sync with the onchain root.
 }
 
 /**
