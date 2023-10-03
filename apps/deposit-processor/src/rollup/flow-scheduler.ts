@@ -23,9 +23,9 @@ const logger = getLogger('flow-scheduler');
  * deposit_processor rollup flow at 'deposit_tree'
  */
 export class FlowScheduler {
-    private currentIndexOnchain: Field
-    private currentDepositRootOnchain: Field
-    private currentActionsHashOnchain: Field
+    private currentIndex: Field
+    private currentDepositRoot: Field
+    private currentActionsHash: Field
 
     private depositStartIndexInBatch: Field
 
@@ -44,9 +44,9 @@ export class FlowScheduler {
         const entryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
         await syncAcctInfo(entryContractAddr);
         const entryContract = new AnomixEntryContract(entryContractAddr);
-        this.currentIndexOnchain = entryContract.depositState.get().currentIndex;
-        this.currentDepositRootOnchain = entryContract.depositState.get().depositRoot;
-        this.currentActionsHashOnchain = entryContract.depositState.get().currentActionsHash;
+        this.currentIndex = entryContract.depositState.get().currentIndex;
+        this.currentDepositRoot = entryContract.depositState.get().depositRoot;
+        this.currentActionsHash = entryContract.depositState.get().currentActionsHash;
 
         // console.assert(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false) == this.depositStartIndexInBatch.toBigInt());
         // console.assert(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false).equals(this.currentDepositRootOnchain).toBoolean());
@@ -68,12 +68,12 @@ export class FlowScheduler {
 
         await queryRunner.startTransaction();
         try {
-            let dcTrans0 = await queryRunner.manager.findOne(DepositTreeTrans, { where: { status: DepositStatus.PENDING }, order: { id: 'DESC' } });
-            this.currentIndexOnchain = dcTrans0 ? Field(dcTrans0.nextActionIndex) : this.currentIndexOnchain;
-            this.currentDepositRootOnchain = Field(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false));
-            this.currentActionsHashOnchain = dcTrans0 ? Field(dcTrans0.nextActionHash) : this.currentActionsHashOnchain;
+            let dcTrans0 = await queryRunner.manager.findOne(DepositTreeTrans, { order: { id: 'DESC' } });
+            this.currentIndex = dcTrans0 ? Field(dcTrans0.nextActionIndex) : this.currentIndex;
+            this.currentDepositRoot = Field(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false));
+            this.currentActionsHash = dcTrans0 ? Field(dcTrans0.nextActionHash) : this.currentActionsHash;
 
-            this.depositStartIndexInBatch = this.currentIndexOnchain;
+            this.depositStartIndexInBatch = this.currentIndex;
 
             let originDcList = await queryRunner.manager.find(DepositCommitment, { where: { status: DepositStatus.PENDING }, order: { id: 'ASC' } }) ?? [];
             if (originDcList.length == 0) {// if no, end.
@@ -97,9 +97,9 @@ export class FlowScheduler {
             }
             // preinsert into tree cache,
             const batchParamList: { depositRollupState: DepositRollupState, depositActionBatch: DepositActionBatch }[] = [];
-            let depositRootX = this.currentDepositRootOnchain;
-            let currentIndexX = this.currentIndexOnchain;
-            let currentActionsHashX = this.currentActionsHashOnchain;
+            let depositRootX = this.currentDepositRoot;
+            let currentIndexX = this.currentIndex;
+            let currentActionsHashX = this.currentActionsHash;
             const batchCnt = depositCommitmentList.length / DEPOSIT_ACTION_BATCH_SIZE;
             for (let i = 0; i < batchCnt; i++) {
                 const actions: Field[] = [];
@@ -159,10 +159,12 @@ export class FlowScheduler {
             const endBlock = fetchRecordList[fetchRecordList.length - 1].endBlock;
 
             let depositTreeTrans = new DepositTreeTrans();
-            depositTreeTrans.startActionHash = this.currentActionsHashOnchain.toString();
+            depositTreeTrans.startActionHash = this.currentActionsHash.toString();
             depositTreeTrans.startActionIndex = this.depositStartIndexInBatch.toString();
             depositTreeTrans.nextActionHash = this.targetActionsHash.toString();
             depositTreeTrans.nextActionIndex = this.targetHandledActionsNum.toString();
+            depositTreeTrans.startDepositRoot = this.currentDepositRoot.toString();
+            depositTreeTrans.nextDepositRoot = this.targetDepositRoot.toString();
             depositTreeTrans.status = DepositTreeTransStatus.PROCESSING;// initial status
             depositTreeTrans.startBlock = startBlock;
             depositTreeTrans.endBlock = endBlock;

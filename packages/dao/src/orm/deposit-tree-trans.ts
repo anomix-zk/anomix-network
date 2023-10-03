@@ -63,6 +63,12 @@ export class DepositTreeTrans {
     @Column()
     endBlock: number
 
+    @Column()
+    startDepositRoot: string
+
+    @Column()
+    nextDepositRoot: string
+
     /**
      * just record
      */
