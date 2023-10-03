@@ -7,11 +7,10 @@ import { Field } from "o1js";
 import levelup, { LevelUp } from 'levelup';
 import leveldown from "leveldown";
 
-let INIT_NULLIFIER_TREE_HEIGHT = NULLIFIER_TREE_HEIGHT;
-
 export class WorldStateDB {
     private readonly db: LevelUp
     private trees = new Map<MerkleTreeId, (AppendOnlyTree | StandardIndexedTree)>();
+    private appendedLeavesCollection = new Map<MerkleTreeId, Field[]>();
 
     constructor(dbPath: string) {
         this.db = levelup(leveldown(dbPath));// leveldown itself will mkdir underlyingly if dir not exists.
@@ -22,9 +21,15 @@ export class WorldStateDB {
      */
     async initTrees() {
         let poseidonHasher = new PoseidonHasher();
-        const depositTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`, DEPOSIT_TREE_HEIGHT)
 
+        const depositTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`, DEPOSIT_TREE_HEIGHT);
         this.trees.set(MerkleTreeId.DEPOSIT_TREE, depositTree);
+
+        const syncDepositTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.SYNC_DEPOSIT_TREE]}`, DEPOSIT_TREE_HEIGHT)
+        this.trees.set(MerkleTreeId.SYNC_DEPOSIT_TREE, syncDepositTree);
+
+        this.appendedLeavesCollection.set(MerkleTreeId.DEPOSIT_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DEPOSIT_TREE, []);
     }
 
     /**
@@ -34,8 +39,13 @@ export class WorldStateDB {
         let poseidonHasher = new PoseidonHasher();
 
         const depositTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`)
-
         this.trees.set(MerkleTreeId.DEPOSIT_TREE, depositTree);
+
+        const syncDepositTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.SYNC_DEPOSIT_TREE]}`)
+        this.trees.set(MerkleTreeId.SYNC_DEPOSIT_TREE, syncDepositTree);
+
+        this.appendedLeavesCollection.set(MerkleTreeId.DEPOSIT_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DEPOSIT_TREE, []);
     }
 
     /**
@@ -44,6 +54,7 @@ export class WorldStateDB {
      */
     async appendLeaves(treeId: MerkleTreeId, leaves: Field[]) {
         await this.trees.get(treeId)!.appendLeaves(leaves);
+        this.appendedLeavesCollection.get(treeId)?.push(...leaves);
     }
 
     /**
@@ -52,6 +63,14 @@ export class WorldStateDB {
      */
     async appendLeaf(treeId: MerkleTreeId, leaf: Field) {
         await this.appendLeaves(treeId, [leaf]);
+    }
+
+    /**
+     * export cached updates in order
+     */
+    exportCacheUpdates(treeId: MerkleTreeId) {
+        const updates = this.appendedLeavesCollection.get(treeId);
+        return updates;
     }
 
     /**
@@ -107,6 +126,9 @@ export class WorldStateDB {
      */
     async commit() {
         await this.trees.get(MerkleTreeId.DEPOSIT_TREE)?.commit();
+
+        this.appendedLeavesCollection.set(MerkleTreeId.DEPOSIT_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DEPOSIT_TREE, []);
     }
 
     /**
@@ -114,6 +136,9 @@ export class WorldStateDB {
      */
     async rollback() {
         await this.trees.get(MerkleTreeId.DEPOSIT_TREE)?.rollback();
+
+        this.appendedLeavesCollection.set(MerkleTreeId.DEPOSIT_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DEPOSIT_TREE, []);
     }
 
 }

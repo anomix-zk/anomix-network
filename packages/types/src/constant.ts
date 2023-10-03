@@ -126,6 +126,7 @@ export type FlowTask<T> = {
  */
 export enum MerkleTreeId {
     DEPOSIT_TREE = 0,
+    SYNC_DEPOSIT_TREE,
     /**
      * for normal 
      */
@@ -148,4 +149,11 @@ export enum BlockCacheType {
     DATA_TREE_UPDATES,
     TX_FEE_EMPTY_LEAF_WITNESS,
     DATA_TREE_ROOT_EMPTY_LEAF_WITNESS,
+}
+
+/**
+ * the type of 'DepositTransCache'
+ */
+export enum DepositTransCacheType {
+    DEPOSIT_TREE_UPDATES
 }

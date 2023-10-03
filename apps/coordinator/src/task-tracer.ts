@@ -4,7 +4,7 @@ import { Block, DepositCommitment, DepositTreeTrans, MemPlL2Tx, Task, TaskStatus
 import { L1TxStatus, BlockStatus, WithdrawNoteStatus, DepositStatus, L2TxStatus, DepositTreeTransStatus, BaseResponse } from "@anomix/types";
 import { ActionType, DUMMY_FIELD, JoinSplitOutput } from '@anomix/circuits';
 import { getLogger } from "./lib/logUtils";
-import { $axiosSeq } from './lib/api';
+import { $axiosDeposit, $axiosSeq } from './lib/api';
 import { initORM } from './lib/orm';
 import { parentPort } from 'worker_threads';
 import { UInt64, PublicKey, Field } from "o1js";
@@ -104,7 +104,7 @@ async function traceTasks() {
                             logger.info('update depositTrans.status = CONFIRMED...');
                             depositTrans!.status = DepositTreeTransStatus.CONFIRMED;
                             await queryRunner.manager.save(depositTrans!);
-
+                            /*
                             logger.info('obtain related DepositCommitment list...');
                             const vDepositTxList: MemPlL2Tx[] = [];
                             const dcList = await queryRunner.manager.find(DepositCommitment, { where: { depositTreeTransId: depositTrans!.id } });
@@ -149,6 +149,14 @@ async function traceTasks() {
                             logger.info('transform related DepositCommitment list into MemPlL2Tx list...');
                             // insert depositTx into memorypool
                             await queryRunner.manager.save(vDepositTxList);
+                            */
+
+                            logger.info('sync deposit tree...');
+                            await $axiosDeposit.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
+                                if (rs.data.code != 0) {
+                                    throw new Error(`cannot sync sync_deposit_tree, due to: [${rs.data.msg}]`);
+                                }
+                            })
                         }
                     }
                     break;

@@ -106,7 +106,7 @@ export class WorldState {
                     depositRoot: tx.depositRoot,
                     depositNoteCommitment: tx.outputNoteCommitment1,
                     depositNoteIndex: tx.depositIndex,
-                    depositWitness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DEPOSIT_TREE, BigInt(tx.depositIndex), false)
+                    depositWitness: await this.worldStateDB.getSiblingPath(MerkleTreeId.SYNC_DEPOSIT_TREE, BigInt(tx.depositIndex), false)
                 }
             };
         }))
