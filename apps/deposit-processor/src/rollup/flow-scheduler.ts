@@ -221,7 +221,7 @@ export class FlowScheduler {
             // insert depositTx into memorypool
             await queryRunner.manager.save(vDepositTxList);
 
-            const cachedUpdates = this.worldStateDB.exportCacheUpdates(MerkleTreeId.DATA_TREE);
+            const cachedUpdates = this.worldStateDB.exportCacheUpdates(MerkleTreeId.DEPOSIT_TREE);
             const deTransCachedUpdates = new DepositTreeTransCache();
             deTransCachedUpdates.dcTransId = depositTreeTrans.id;
             deTransCachedUpdates.cache = JSON.stringify(cachedUpdates);
