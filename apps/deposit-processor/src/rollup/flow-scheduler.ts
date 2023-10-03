@@ -70,7 +70,7 @@ export class FlowScheduler {
         try {
             let dcTrans0 = await queryRunner.manager.findOne(DepositTreeTrans, { where: { status: DepositStatus.PENDING }, order: { id: 'DESC' } });
             this.currentIndexOnchain = dcTrans0 ? Field(dcTrans0.nextActionIndex) : this.currentIndexOnchain;
-            this.currentDepositRootOnchain = Field(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false));
+            this.currentDepositRootOnchain = Field(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false));
             this.currentActionsHashOnchain = dcTrans0 ? Field(dcTrans0.nextActionHash) : this.currentActionsHashOnchain;
 
             this.depositStartIndexInBatch = this.currentIndexOnchain;
