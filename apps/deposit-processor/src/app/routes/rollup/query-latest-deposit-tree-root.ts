@@ -41,21 +41,32 @@ export const handler: RequestHandler<null, null> = async function (
         // if deposit_processor just send out a deposit-rollup L1tx that is not yet confirmed at Mina Chain, then return the latest DEPOSIT_TREE root !!
         // later if the seq-rollup L1Tx of the L2Block with this root is confirmed before this deposit-rollup L1tx (even though this case is rare), then the seq-rollup L1Tx fails!!
         const connection = getConnection();
-        const dcTransRepo = await connection.getRepository(DepositTreeTrans);
-        const depositTrans = await dcTransRepo.findOne({ where: { status: DepositTreeTransStatus.PROVED }, order: { id: 'ASC' } });
+        const queryRunner = connection.createQueryRunner();
 
-        const taskRepo = await connection.getRepository(Task);
-        const task = await taskRepo.findOne({ where: { taskType: TaskType.DEPOSIT, targetId: depositTrans?.id } });
+        await queryRunner.startTransaction();
+        try {
+            const depositTrans = await queryRunner.manager.findOne(DepositTreeTrans, { where: { status: DepositTreeTransStatus.PROVED }, order: { id: 'ASC' } });
+            const task = await await queryRunner.manager.findOne(Task, { where: { taskType: TaskType.DEPOSIT, targetId: depositTrans?.id } });
+            if (task) {
+                return {
+                    code: 0, data: depositTrans?.nextDepositRoot, msg: ''
+                };
+            }
 
-        if (task) {
+            const latestDepositTreeRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DEPOSIT_TREE, true).toString();
             return {
-                code: 0, data: depositTrans?.nextDepositRoot, msg: ''
+                code: 0, data: latestDepositTreeRoot, msg: ''
             };
+        } catch (error) {
+            console.error(error);
+            await queryRunner.rollbackTransaction();
+
+        } finally {
+            await queryRunner.release();
         }
 
-        const latestDepositTreeRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DEPOSIT_TREE, true).toString();
         return {
-            code: 0, data: latestDepositTreeRoot, msg: ''
+            code: 1, data: undefined, msg: ''
         };
     } catch (err) {
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
