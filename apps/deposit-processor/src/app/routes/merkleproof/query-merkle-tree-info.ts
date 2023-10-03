@@ -34,14 +34,6 @@ export const handler: RequestHandler<{ treeId: number, includeUncommit: boolean 
 }>> {
     const { treeId, includeUncommit } = req.body;
 
-    if (treeId != MerkleTreeId.DEPOSIT_TREE) {
-        return {
-            code: 0,
-            data: undefined,
-            msg: 'unknown treeId'
-        };
-    }
-
     try {
         return {
             code: 0, data: {
