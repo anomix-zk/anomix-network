@@ -332,8 +332,8 @@ export class NoteProcessor {
 
           if (isTxRelated) {
             let privateValueTotal = 0n;
-            if (valueNoteJSON1?.ownerPk === accountPk) {
-              privateValueTotal += BigInt(valueNoteJSON1!.value);
+            if (valueNoteJSON1) {
+              privateValueTotal += BigInt(valueNoteJSON1.value);
             }
 
             await this.db.upsertUserPaymentTx(
