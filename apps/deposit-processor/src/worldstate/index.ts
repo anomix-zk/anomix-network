@@ -3,10 +3,10 @@
 import { IndexDB, RollupDB, RollupFlow } from "@/rollup";
 import { WorldStateDB } from "./worldstate-db";
 import { JoinSplitDepositInput, ActionType } from "@anomix/circuits";
-import { BaseResponse, FlowTask, FlowTaskType, ProofTaskDto, ProofTaskType, RollupTaskDto, RollupTaskType, MerkleTreeId } from "@anomix/types";
+import { BaseResponse, FlowTask, FlowTaskType, ProofTaskDto, ProofTaskType, RollupTaskDto, RollupTaskType, MerkleTreeId, BlockCacheType } from "@anomix/types";
 import { $axiosCoordinator, $axiosProofGenerator, getDateString } from "@/lib";
 import { getConnection } from "typeorm";
-import { L2Tx, MemPlL2Tx } from "@anomix/dao";
+import { BlockCache, L2Tx, MemPlL2Tx } from "@anomix/dao";
 import { ProofScheduler } from "@/rollup/proof-scheduler";
 import fs from "fs";
 import { getLogger } from "@/lib/logUtils";
@@ -95,7 +95,16 @@ export class WorldState {
             return;
         }
 
-        const txIdJoinSplitDepositInputList = await Promise.all(await depositL2TxList.map(async tx => {
+        const blockCacheRepo = connection.getRepository(BlockCache);
+        const blockCache = await blockCacheRepo.findOne({
+            where: {
+                blockId,
+                type: BlockCacheType.DEPOSIT_COMMITMENTS_WITNESS
+            }
+        });
+        const witnessMap = new Map<any, any>(JSON.parse(blockCache!.cache));
+
+        const txIdJoinSplitDepositInputList = depositL2TxList.map(async tx => {
             return {
                 txId: tx.id,
                 data: {
@@ -106,10 +115,10 @@ export class WorldState {
                     depositRoot: tx.depositRoot,
                     depositNoteCommitment: tx.outputNoteCommitment1,
                     depositNoteIndex: tx.depositIndex,
-                    depositWitness: await this.worldStateDB.getSiblingPath(MerkleTreeId.SYNC_DEPOSIT_TREE, BigInt(tx.depositIndex), false)
+                    depositWitness: witnessMap.get(tx.depositIndex)
                 }
             };
-        }))
+        });
 
         const proofTaskDto = {
             taskType: ProofTaskType.DEPOSIT_JOIN_SPLIT,

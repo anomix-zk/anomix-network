@@ -45,15 +45,7 @@ export const handler: RequestHandler<null, null> = async function (
 
         await queryRunner.startTransaction();
         try {
-            const depositTrans = await queryRunner.manager.findOne(DepositTreeTrans, { where: { status: DepositTreeTransStatus.PROVED }, order: { id: 'ASC' } });
-            const task = await await queryRunner.manager.findOne(Task, { where: { taskType: TaskType.DEPOSIT, targetId: depositTrans?.id } });
-            if (task) {
-                return {
-                    code: 0, data: depositTrans?.nextDepositRoot, msg: ''
-                };
-            }
-
-            const latestDepositTreeRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DEPOSIT_TREE, true).toString();
+            const latestDepositTreeRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, true).toString();
             return {
                 code: 0, data: latestDepositTreeRoot, msg: ''
             };

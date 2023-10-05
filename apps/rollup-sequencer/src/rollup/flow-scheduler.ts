@@ -129,22 +129,38 @@ export class FlowScheduler {
             const depositCount = depositTxList.length;
             this.depositEndIndexInBlock = this.depositStartIndexInBlock.add(depositCount);
 
+            let blockCachedWitnessDc: BlockCache = undefined as any;
             if (depositCount > 0) {
                 //  coordinator has already stopped Broadcasting DepositRollupProof as L1Tx.
-                await $axiosDepositProcessor.get<BaseResponse<string>>('/rollup/deposit-tree-root').then(r => {
+                const dcWitnessWrapper = await $axiosDepositProcessor.post<BaseResponse<{
+                    treeId: number,
+                    treeRoot: string,
+                    witnesses: any[][]
+                }>>('/merkle-witness', {
+                    treeId: MerkleTreeId.DEPOSIT_TREE,
+                    leafIndexList: depositTxList.map(d => d.depositIndex)
+                }).then(r => {
                     if (r.data.code == 1) {
                         throw new Error(`could not obtain latest DEPOSIT_TREE root: ${r.data.msg}`);
                     }
-                    this.depositTreeRootInBlock = Field(r.data.data!);
-                });
 
-                // pre fill with the latest depositTreeRoot
+                    return r.data.data!;
+                });
+                this.depositTreeRootInBlock = Field(dcWitnessWrapper.treeRoot);
+
+                // pre fill with the latest depositTreeRoot and currently dataTreeRoot
                 const depositTreeRootStr = this.depositTreeRootInBlock.toString();
                 const dataTreeRootStr = this.currentDataRoot.toString();
                 depositTxList.forEach(tx => {
                     tx.depositRoot = depositTreeRootStr;
                     tx.dataRoot = dataTreeRootStr;
                 });
+
+                blockCachedWitnessDc = new BlockCache();
+                // blockCachedWitnessTxFee.blockId = block.id;
+                blockCachedWitnessDc.cache = JSON.stringify(dcWitnessWrapper.witnesses);
+                blockCachedWitnessDc.type = BlockCacheType.DEPOSIT_COMMITMENTS_WITNESS;
+                await queryRunner.manager.save(blockCachedWitnessDc);
             }
 
             const rollupSize = mpTxList.length;
@@ -295,6 +311,12 @@ export class FlowScheduler {
             blockCachedWitnessDataRoot.cache = JSON.stringify(dataRootEmptyLeafWitness);
             blockCachedWitnessDataRoot.type = BlockCacheType.DATA_TREE_ROOT_EMPTY_LEAF_WITNESS;// 2
             await queryRunner.manager.save(blockCachedWitnessDataRoot);
+
+            // cache depositCommitments' witnesses if existing
+            if (blockCachedWitnessDc) {
+                blockCachedWitnessDc.blockId = block.id;
+                await queryRunner.manager.save(blockCachedWitnessDc);
+            }
 
             const txFeeWithdrawInfo = new WithdrawInfo();
             txFeeWithdrawInfo.secret = feeValueNote.secret.toString();

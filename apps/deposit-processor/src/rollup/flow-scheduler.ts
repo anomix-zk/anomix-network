@@ -45,7 +45,7 @@ export class FlowScheduler {
         await syncAcctInfo(entryContractAddr);
         const entryContract = new AnomixEntryContract(entryContractAddr);
         this.currentIndex = entryContract.depositState.get().currentIndex;
-        this.currentDepositRoot = entryContract.depositState.get().depositRoot;
+        // this.currentDepositRoot = entryContract.depositState.get().depositRoot;
         this.currentActionsHash = entryContract.depositState.get().currentActionsHash;
 
         // console.assert(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false) == this.depositStartIndexInBatch.toBigInt());
