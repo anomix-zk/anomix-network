@@ -104,7 +104,7 @@ export class WorldState {
         });
         const witnessMap = new Map<any, any>(JSON.parse(blockCache!.cache));
 
-        const txIdJoinSplitDepositInputList = depositL2TxList.map(async tx => {
+        const txIdJoinSplitDepositInputList = depositL2TxList.map(tx => {
             return {
                 txId: tx.id,
                 data: {
