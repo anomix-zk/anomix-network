@@ -49,7 +49,7 @@ export const handler: RequestHandler<null, { transId: number }> = async function
         const treeLeafNum = this.worldState.worldStateDB.getNumLeaves(MerkleTreeId.SYNC_DEPOSIT_TREE, false);
         if (dcTrans.startActionIndex == treeLeafNum.toString()) {
             const dcTransCacheRepo = getConnection().getRepository(DepositTreeTransCache);
-            const cachedStr = (await dcTransCacheRepo.findOne({ where: { transId, type: DepositTransCacheType.DEPOSIT_TREE_UPDATES } }))!.cache;
+            const cachedStr = (await dcTransCacheRepo.findOne({ where: { dcTransId: transId, type: DepositTransCacheType.DEPOSIT_TREE_UPDATES } }))!.cache;
 
             const dcTransCachedUpdates1 = (JSON.parse(cachedStr) as Array<string>).map(i => Field(i));
             await this.worldState.worldStateDB.appendLeaves(MerkleTreeId.SYNC_DEPOSIT_TREE, dcTransCachedUpdates1);
