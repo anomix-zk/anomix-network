@@ -6,7 +6,9 @@ import { RequestHandler } from '@/lib/types'
 import { getConnection } from "typeorm"
 import { Block, BlockCache, DepositTreeTrans, DepositTreeTransCache } from "@anomix/dao"
 import { Field } from "o1js";
+import { getLogger } from "@/lib/logUtils"
 
+const logger = getLogger('syncLazyDepositTree');
 
 /**
  * query MerkleTree Info
@@ -64,6 +66,9 @@ export const handler: RequestHandler<null, { transId: number }> = async function
         }
 
     } catch (err) {
+        logger.error(err);
+        console.error(err);
+
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
