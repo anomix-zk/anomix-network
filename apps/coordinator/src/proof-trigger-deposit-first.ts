@@ -132,10 +132,9 @@ async function proofTrigger() {
                                 }
                             });
                         }
+                        logger.info('done.');
+                        continue;
                     }
-                    logger.info('done.');
-
-                    continue;
                 }
 
                 const rollupTaskDto = {
