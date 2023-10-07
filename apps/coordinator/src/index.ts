@@ -34,7 +34,7 @@ function bootTaskTracerThread() {
 
 function bootMempoolWatcherThread() {
     // init worker thread A
-    const worker = cp.fork(`${__dirname}/mempool-watcher.js`);// TODO
+    const worker = cp.fork(`${__dirname}/mempool-watcher-deposit-first.js`);// TODO
 
     worker.on('message', (msg: { type: any, data: any }) => {
         if (msg.type == 'online') {
@@ -54,7 +54,7 @@ function bootMempoolWatcherThread() {
 
 function bootProofTriggerThread() {
     // init worker thread A
-    const worker = cp.fork(`${__dirname}/proof-trigger.js`);// TODO
+    const worker = cp.fork(`${__dirname}/proof-trigger-deposit-first.js`);// TODO
 
     worker.on('message', (msg: { type: any, data: any }) => {
         if (msg.type == 'online') {
