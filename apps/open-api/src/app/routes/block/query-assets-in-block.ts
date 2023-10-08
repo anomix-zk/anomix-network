@@ -62,6 +62,14 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
             take: 1
         }))[0];
 
+        if (!blockEntity) {
+            return {
+                code: 0,
+                data: undefined,
+                msg: ''
+            };
+        }
+
         const blockTxListMap1 = new Map<number, AssetsInBlockDto>();
         const blockNumList1: number[] = [];
         blockNumList.forEach(blockNum => {

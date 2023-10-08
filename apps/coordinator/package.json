@@ -30,7 +30,9 @@
   "scripts": {
     "serve:fetch-withdrawal-events": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/fetch-withdrawal-events.js",
     "serve:proof-trigger": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/proof-trigger.js",
+    "serve:proof-trigger-deposit-first": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/proof-trigger-deposit-first.js",
     "serve:mempool-watcher": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/mempool-watcher.js",
+    "serve:mempool-watcher-deposit-first": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/mempool-watcher-deposit-first.js",
     "serve:task-tracer": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/task-tracer.js",
     "serve:web-server": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/web-server.js",
     "serve": "npm run clean && tsc && tsc-alias && node --experimental-specifier-resolution=node ./dist/src/index.js",

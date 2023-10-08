@@ -6,42 +6,45 @@ import { RequestHandler } from '@/lib/types'
 
 
 /**
- * query MerkleTree Info
+ * query MerkleWitness
  */
-export const queryMerkleTreeInfo: FastifyPlugin = async function (
+export const queryMerkleWitness: FastifyPlugin = async function (
     instance,
     options,
     done
 ): Promise<void> {
     instance.route({
         method: "POST",
-        url: "/merkletree",
+        url: "/merkle-witness",
         //preHandler: [instance.authGuard],
         schema,
         handler
     })
 }
 
-export const handler: RequestHandler<{ treeId: number, includeUncommit: boolean }, null> = async function (
+export const handler: RequestHandler<{ treeId: number, leafIndexList: string[] }, null> = async function (
     req,
     res
 ): Promise<BaseResponse<{
     treeId: number,
-    includeUncommit: boolean,
-    depth: number,
-    leafNum: string,
-    treeRoot: string
+    treeRoot: string,
+    witnesses: any[][]
 }>> {
-    const { treeId, includeUncommit } = req.body;
+    const { treeId, leafIndexList } = req.body;
 
     try {
+        const treeRoot = this.worldState.worldStateDB.getRoot(treeId, false).toString();
+        const witnesses: any[][] = [];
+
+        for (const leafIndex of leafIndexList) {
+            witnesses.push([leafIndex, await this.worldState.worldStateDB.getSiblingPath(treeId, BigInt(leafIndex), false)]);
+        }
+
         return {
             code: 0, data: {
                 treeId,
-                includeUncommit,
-                depth: this.worldState.worldStateDB.getDepth(treeId),
-                leafNum: this.worldState.worldStateDB.getNumLeaves(treeId, includeUncommit).toString(),
-                treeRoot: this.worldState.worldStateDB.getRoot(treeId, includeUncommit).toString()
+                treeRoot,
+                witnesses
             }, msg: ''
         };
     } catch (err) {
@@ -59,8 +62,11 @@ const schema = {
                 type: 'number',
                 enum: [0, 6]
             },
-            includeUncommit: {
-                type: 'boolean',
+            leafIndexList: {
+                type: 'array',
+                items: {
+                    type: 'string'
+                }
             }
         }
     },
@@ -77,17 +83,14 @@ const schema = {
                         treeId: {
                             type: 'number',
                         },
-                        includeUncommit: {
-                            type: 'boolean',
-                        },
-                        depth: {
-                            type: 'number'
-                        },
-                        leafNum: {
-                            type: 'string',
-                        },
                         treeRoot: {
                             type: 'string'
+                        },
+                        witnesses: {
+                            type: 'array',
+                            items: {
+                                type: 'array',
+                            }
                         }
                     }
                 },

@@ -138,7 +138,9 @@ export enum MerkleTreeId {
     SYNC_DATA_TREE,
     NULLIFIER_TREE,
     DATA_TREE_ROOTS_TREE,
-    USER_NULLIFIER_TREE
+    USER_NULLIFIER_TREE,
+
+    SYNC_DEPOSIT_TREE,// add a deposit tree to always sync with the onchain root.
 }
 
 /**
@@ -148,4 +150,12 @@ export enum BlockCacheType {
     DATA_TREE_UPDATES,
     TX_FEE_EMPTY_LEAF_WITNESS,
     DATA_TREE_ROOT_EMPTY_LEAF_WITNESS,
+    DEPOSIT_COMMITMENTS_WITNESS
+}
+
+/**
+ * the type of 'DepositTransCache'
+ */
+export enum DepositTransCacheType {
+    DEPOSIT_TREE_UPDATES
 }

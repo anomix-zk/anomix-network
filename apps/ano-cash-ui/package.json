@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
-    "dev": "cd ../../packages/sdk && npm run lib:build && cd ../circuits && npm run lib:build && cd ../../apps/ano-cash-ui && npm install && nuxt dev",
+    "dev": "cd ../../packages/sdk && npm run lib:build && cd ../circuits && npm run lib:build && cd ../../apps/ano-cash-ui && npm install && nuxt dev --host 198.135.49.102",
     "sdkUpdate": "cd ../../packages/sdk && npm run lib:build && cd ../../apps/ano-cash-ui && npm install",
     "generate": "nuxt generate",
     "preview": "nuxt preview",

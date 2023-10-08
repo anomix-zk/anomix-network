@@ -7,7 +7,7 @@ import { AnomixEntryContract, EncryptedNoteFieldData, getEncryptedNoteFromFieldD
 import { activeMinaInstance, syncActions, syncNetworkStatus } from "@anomix/utils";
 import { getLogger } from "@/lib/logUtils";
 import { initORM } from './lib';
-import fs from 'fs';
+import { $axiosDeposit } from './lib';
 import { DepositStatus } from '@anomix/types';
 // import { str1, str2, str3 } from "./encrypt";
 
@@ -157,6 +157,15 @@ async function fetchActionsAndEvents() {
             await queryRunner.rollbackTransaction();
         } finally {
             await queryRunner.release();
+        }
+
+        try {
+            logger.info('start triggerring deposit seq...');
+            await $axiosDeposit.get('/rollup/seq');
+            logger.info('done.');
+        } catch (error) {
+            console.error(error);
+            logger.error(error);
         }
     } catch (error) {
         console.error(error);

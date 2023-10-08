@@ -17,7 +17,7 @@ export class RollupFlow {
     }
 
     async start() {
-        this.flowScheduler.start();
+        await this.flowScheduler.start();
     }
 
     async end() {

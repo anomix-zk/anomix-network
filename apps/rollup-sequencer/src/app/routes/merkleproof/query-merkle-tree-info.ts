@@ -3,7 +3,9 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { BaseResponse } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
+import { getLogger } from "@/lib/logUtils"
 
+const logger = getLogger('queryMerkleTreeInfo');
 
 /**
  * query MerkleTree Info
@@ -45,6 +47,8 @@ export const handler: RequestHandler<{ treeId: number, includeUncommit: boolean 
             }, msg: ''
         };
     } catch (err) {
+        logger.error(err);
+        console.error(err);
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }

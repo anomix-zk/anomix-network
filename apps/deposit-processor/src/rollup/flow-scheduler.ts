@@ -3,15 +3,15 @@ import { WorldStateDB } from "@/worldstate/worldstate-db";
 import { RollupDB } from "./rollup-db";
 import config from "@/lib/config";
 import { BaseResponse, DepositStatus, L2TxStatus, ProofTaskDto, ProofTaskType, MerkleTreeId, L1TxStatus, DepositTreeTransStatus } from "@anomix/types";
-import { DEPOSIT_ACTION_BATCH_SIZE, DUMMY_FIELD, AnomixEntryContract, ActionType, DepositActionBatch, DepositRollupState, DepositRollupProof, DepositMerkleWitness, checkMembershipAndAssert } from "@anomix/circuits";
+import { DEPOSIT_ACTION_BATCH_SIZE, DUMMY_FIELD, AnomixEntryContract, ActionType, DepositActionBatch, DepositRollupState, DepositRollupProof, DepositMerkleWitness, checkMembershipAndAssert, JoinSplitOutput } from "@anomix/circuits";
 import { WorldState } from "@/worldstate";
 import { IndexDB } from "./index-db";
-import { DepositActionEventFetchRecord, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, MemPlL2Tx } from "@anomix/dao";
+import { DepositActionEventFetchRecord, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, DepositTreeTransCache, MemPlL2Tx } from "@anomix/dao";
 import { $axiosProofGenerator, getDateString } from "@/lib";
 import { syncAcctInfo } from "@anomix/utils";
-import { FlowTask, FlowTaskType } from "@anomix/types";
+import { FlowTask, FlowTaskType, DepositTransCacheType } from "@anomix/types";
 import { getConnection, In } from "typeorm";
-import { AccountUpdate, Field, PublicKey, Mina, PrivateKey } from 'o1js';
+import { AccountUpdate, Field, PublicKey, Mina, PrivateKey, UInt64 } from 'o1js';
 import fs from "fs";
 import { getLogger } from "@/lib/logUtils";
 import { INITIAL_LEAF } from "@anomix/merkle-tree";
@@ -23,9 +23,9 @@ const logger = getLogger('flow-scheduler');
  * deposit_processor rollup flow at 'deposit_tree'
  */
 export class FlowScheduler {
-    private currentIndexOnchain: Field
-    private currentDepositRootOnchain: Field
-    private currentActionsHashOnchain: Field
+    private currentIndex: Field
+    private currentDepositRoot: Field
+    private currentActionsHash: Field
 
     private depositStartIndexInBatch: Field
 
@@ -44,14 +44,12 @@ export class FlowScheduler {
         const entryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
         await syncAcctInfo(entryContractAddr);
         const entryContract = new AnomixEntryContract(entryContractAddr);
-        this.currentIndexOnchain = entryContract.depositState.get().currentIndex;
-        this.currentDepositRootOnchain = entryContract.depositState.get().depositRoot;
-        this.currentActionsHashOnchain = entryContract.depositState.get().currentActionsHash;
+        this.currentIndex = entryContract.depositState.get().currentIndex;
+        // this.currentDepositRoot = entryContract.depositState.get().depositRoot;
+        this.currentActionsHash = entryContract.depositState.get().currentActionsHash;
 
-        this.depositStartIndexInBatch = this.currentIndexOnchain;
-
-        console.assert(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false) == this.depositStartIndexInBatch.toBigInt());
-        console.assert(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false).equals(this.currentDepositRootOnchain).toBoolean());
+        // console.assert(this.worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false) == this.depositStartIndexInBatch.toBigInt());
+        // console.assert(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false).equals(this.currentDepositRootOnchain).toBoolean());
     }
 
     async start() {
@@ -70,6 +68,13 @@ export class FlowScheduler {
 
         await queryRunner.startTransaction();
         try {
+            let dcTrans0 = await queryRunner.manager.findOne(DepositTreeTrans, { order: { id: 'DESC' } });
+            this.currentIndex = dcTrans0 ? Field(dcTrans0.nextActionIndex) : this.currentIndex;
+            this.currentDepositRoot = Field(this.worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false));
+            this.currentActionsHash = dcTrans0 ? Field(dcTrans0.nextActionHash) : this.currentActionsHash;
+
+            this.depositStartIndexInBatch = this.currentIndex;
+
             let originDcList = await queryRunner.manager.find(DepositCommitment, { where: { status: DepositStatus.PENDING }, order: { id: 'ASC' } }) ?? [];
             if (originDcList.length == 0) {// if no, end.
                 return;
@@ -92,9 +97,9 @@ export class FlowScheduler {
             }
             // preinsert into tree cache,
             const batchParamList: { depositRollupState: DepositRollupState, depositActionBatch: DepositActionBatch }[] = [];
-            let depositRootX = this.currentDepositRootOnchain;
-            let currentIndexX = this.currentIndexOnchain;
-            let currentActionsHashX = this.currentActionsHashOnchain;
+            let depositRootX = this.currentDepositRoot;
+            let currentIndexX = this.currentIndex;
+            let currentActionsHashX = this.currentActionsHash;
             const batchCnt = depositCommitmentList.length / DEPOSIT_ACTION_BATCH_SIZE;
             for (let i = 0; i < batchCnt; i++) {
                 const actions: Field[] = [];
@@ -147,17 +152,19 @@ export class FlowScheduler {
             const recordIds = new Set(originDcList.map(dc => {
                 return dc.depositActionEventFetchRecordId;
             }))
-			console.log("recordIds: "+JSON.stringify(recordIds));
+            console.log("recordIds: " + JSON.stringify(recordIds));
             const depositActionEventFetchRecordRepo = connection.getRepository(DepositActionEventFetchRecord);
             const fetchRecordList = await depositActionEventFetchRecordRepo.find({ where: { id: In([...recordIds]) }, order: { id: 'ASC' } })!;
             const startBlock = fetchRecordList[0].startBlock;
             const endBlock = fetchRecordList[fetchRecordList.length - 1].endBlock;
 
             let depositTreeTrans = new DepositTreeTrans();
-            depositTreeTrans.startActionHash = this.currentActionsHashOnchain.toString();
+            depositTreeTrans.startActionHash = this.currentActionsHash.toString();
             depositTreeTrans.startActionIndex = this.depositStartIndexInBatch.toString();
             depositTreeTrans.nextActionHash = this.targetActionsHash.toString();
             depositTreeTrans.nextActionIndex = this.targetHandledActionsNum.toString();
+            depositTreeTrans.startDepositRoot = this.currentDepositRoot.toString();
+            depositTreeTrans.nextDepositRoot = this.targetDepositRoot.toString();
             depositTreeTrans.status = DepositTreeTransStatus.PROCESSING;// initial status
             depositTreeTrans.startBlock = startBlock;
             depositTreeTrans.endBlock = endBlock;
@@ -169,12 +176,59 @@ export class FlowScheduler {
             batch.transId = depositTreeTrans.id
             await queryRunner.manager.save(batch);
 
+            const vDepositTxList: MemPlL2Tx[] = [];
             // update status to MARKED
             originDcList.forEach(dc => {
                 dc.depositTreeTransId = depositTreeTrans.id;
                 dc.status = DepositStatus.MARKED;
+
+                const memPlL2Tx = new MemPlL2Tx();
+                memPlL2Tx.actionType = ActionType.DEPOSIT.toString();
+                memPlL2Tx.nullifier1 = DUMMY_FIELD.toString();
+                memPlL2Tx.nullifier2 = DUMMY_FIELD.toString();
+                memPlL2Tx.outputNoteCommitment1 = dc.depositNoteCommitment;
+                memPlL2Tx.outputNoteCommitment2 = DUMMY_FIELD.toString();
+                memPlL2Tx.publicValue = dc.depositValue;
+                memPlL2Tx.publicOwner = dc.sender;
+                memPlL2Tx.publicAssetId = dc.assetId;
+                memPlL2Tx.dataRoot = '0';
+                memPlL2Tx.depositRoot = '0';
+                memPlL2Tx.depositIndex = dc.depositNoteIndex;
+                memPlL2Tx.txFee = '0';
+                memPlL2Tx.txFeeAssetId = dc.assetId;
+                memPlL2Tx.encryptedData1 = dc.encryptedNote;
+                memPlL2Tx.status = L2TxStatus.PENDING
+                memPlL2Tx.txHash = new JoinSplitOutput({
+                    actionType: ActionType.DEPOSIT,
+                    outputNoteCommitment1: Field(memPlL2Tx.outputNoteCommitment1),
+                    outputNoteCommitment2: DUMMY_FIELD,
+                    nullifier1: DUMMY_FIELD,
+                    nullifier2: DUMMY_FIELD,
+                    publicValue: UInt64.zero,
+                    publicOwner: PublicKey.fromBase58(memPlL2Tx.publicOwner),
+                    publicAssetId: Field(memPlL2Tx.publicAssetId),
+                    dataRoot: DUMMY_FIELD,
+                    txFee: UInt64.zero,
+                    txFeeAssetId: Field(memPlL2Tx.txFeeAssetId),
+                    depositRoot: DUMMY_FIELD,
+                    depositIndex: Field(memPlL2Tx.depositIndex),
+                }).hash().toString();
+
+                // pre-construct depositTx
+                vDepositTxList.push(memPlL2Tx);
             });
             await queryRunner.manager.save(originDcList);
+
+            logger.info('transform DepositCommitment list into MemPlL2Tx list...');
+            // insert depositTx into memorypool
+            await queryRunner.manager.save(vDepositTxList);
+
+            const cachedUpdates = this.worldStateDB.exportCacheUpdates(MerkleTreeId.DEPOSIT_TREE);
+            const deTransCachedUpdates = new DepositTreeTransCache();
+            deTransCachedUpdates.dcTransId = depositTreeTrans.id;
+            deTransCachedUpdates.cache = JSON.stringify(cachedUpdates);
+            deTransCachedUpdates.type = DepositTransCacheType.DEPOSIT_TREE_UPDATES;//  0
+            await queryRunner.manager.save(deTransCachedUpdates);
 
             // commit
             await queryRunner.commitTransaction();
