@@ -1,5 +1,7 @@
 import { ValueNote } from '@anomix/circuits';
 import { WithdrawInfoDto } from '@anomix/types';
+import { Field, PublicKey, UInt64 } from 'o1js';
+import { EMPTY_PUBLICKEY } from '../constants';
 
 export interface ValueNoteJSON {
   accountRequired: string;
@@ -53,7 +55,20 @@ export class Note {
   }
 
   public get valueNote() {
-    return ValueNote.fromJSON(this.valueNoteJSON) as ValueNote;
+    if (this.valueNoteJSON.creatorPk !== EMPTY_PUBLICKEY) {
+      return ValueNote.fromJSON(this.valueNoteJSON) as ValueNote;
+    } else {
+      return new ValueNote({
+        secret: Field(this.valueNoteJSON.secret),
+        value: UInt64.from(this.valueNoteJSON.value),
+        assetId: Field(this.valueNoteJSON.assetId),
+        ownerPk: PublicKey.fromBase58(this.valueNoteJSON.ownerPk),
+        accountRequired: Field(this.valueNoteJSON.accountRequired),
+        creatorPk: PublicKey.empty(),
+        noteType: Field(this.valueNoteJSON.noteType),
+        inputNullifier: Field(this.valueNoteJSON.inputNullifier),
+      });
+    }
   }
 
   public get pending() {
