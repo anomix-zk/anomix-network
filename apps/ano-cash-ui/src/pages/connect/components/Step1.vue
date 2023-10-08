@@ -157,6 +157,7 @@ const inputPwdAgain = () => {
 const disconnect = async () => {
     setConnectedWallet(null);
     setAccountPk58(null);
+    setAlias(null);
     accountPrivateKey.value = '';
     signingKeypair1.value = null;
     signingKeypair2.value = null;
