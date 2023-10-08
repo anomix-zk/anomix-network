@@ -2,6 +2,9 @@ import { MINA } from '@anomix/circuits';
 
 export const DEFAULT_L1_TX_FEE = 0.03 * MINA;
 
+export const EMPTY_PUBLICKEY =
+  'B62qiTKpEPjGTSHZrtM8uXiKgn8So916pLmNJKDhKeyBQL9TDb3nvBG';
+
 export enum SdkEventType {
   // An account's state has changed.
   UPDATED_ACCOUNT_STATE = 'SDKEVENT_UPDATED_ACCOUNT_STATE',
