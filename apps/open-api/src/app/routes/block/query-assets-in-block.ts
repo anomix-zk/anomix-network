@@ -65,7 +65,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
         if (!blockEntity) {
             return {
                 code: 0,
-                data: undefined,
+                data: [],
                 msg: ''
             };
         }
