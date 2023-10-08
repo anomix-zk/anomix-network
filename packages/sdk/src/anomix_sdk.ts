@@ -1100,8 +1100,10 @@ export class AnomixSdk {
         accountPrivateKey,
         Bool(true)
       );
+      let randomZeroValueNote = ValueNote.zero();
+      randomZeroValueNote.secret = Field.random();
       nullifier2 = calculateNoteNullifier(
-        ValueNote.zero().commitment(),
+        randomZeroValueNote.commitment(),
         accountPrivateKey,
         Bool(false)
       );
@@ -1234,23 +1236,11 @@ export class AnomixSdk {
       }
     }
 
-    const outputNote1Commitment = outputNote1.commitment();
     let outputNote2Commitment = outputNote2.commitment();
 
     const outputValueNotes = [outputNote1];
 
-    const originOutputNotes = [
-      Note.from({
-        valueNoteJSON: ValueNote.toJSON(outputNote1),
-        commitment: outputNote1Commitment.toString(),
-        nullifier: calculateNoteNullifier(
-          outputNote1Commitment,
-          accountPrivateKey,
-          Bool(true)
-        ).toString(),
-        nullified: false,
-      }),
-    ];
+    const originOutputNotes: Note[] = [];
 
     const isOutputNote2Empty = outputNote2.value
       .equals(UInt64.zero)
@@ -1376,7 +1366,10 @@ export class AnomixSdk {
           ? ActionType.WITHDRAW.toString()
           : ActionType.SEND.toString(),
         originTx,
-        originOutputNotes,
+        originOutputNotes:
+          originOutputNotes && originOutputNotes.length > 0
+            ? originOutputNotes
+            : undefined,
       },
     } as Tx;
   }
