@@ -254,7 +254,7 @@ import withdrawIcon from '@/assets/withdraw.svg';
 import transferIcon from '@/assets/round_transfer.svg';
 import copyIcon from '@/assets/copy.svg';
 import exitIcon from '@/assets/exit.svg';
-import { AccountStatus, PageAction, SdkEventType } from '../../common/constants';
+import { AccountStatus, PageAction, SdkEventType, EMPTY_PUBLICKEY } from '../../common/constants';
 import { SdkEvent, TxHis } from '../../common/types';
 
 const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setAccountStatus, setSyncedBlock, setLatestBlock, pageParams, showLoadingMask, closeLoadingMask } = useStatus();
