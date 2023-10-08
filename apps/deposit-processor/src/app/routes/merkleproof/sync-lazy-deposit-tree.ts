@@ -47,7 +47,10 @@ export const handler: RequestHandler<null, { transId: number }> = async function
         // check if sync_date_tree root is aligned with 
         // check if duplicated call
         const treeLeafNum = this.worldState.worldStateDB.getNumLeaves(MerkleTreeId.SYNC_DEPOSIT_TREE, false);
-        if (dcTrans.startActionIndex == treeLeafNum.toString()) {
+        const treeRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DEPOSIT_TREE, false);
+
+        // must also check treeRoot!
+        if (dcTrans.startActionIndex == treeLeafNum.toString() && dcTrans.startDepositRoot == treeRoot.toString()) {
             const dcTransCacheRepo = getConnection().getRepository(DepositTreeTransCache);
             const cachedStr = (await dcTransCacheRepo.findOne({ where: { dcTransId: transId, type: DepositTransCacheType.DEPOSIT_TREE_UPDATES } }))!.cache;
 
