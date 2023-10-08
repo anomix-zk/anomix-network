@@ -52,7 +52,7 @@
                             <div v-if="alias !== null" class="alias">{{ alias }}</div>
                             <div class="address">
                                 <span>{{ accountPk58 }}</span>
-                                <van-icon style="margin-left: 5px;" :name="copyIcon" size="20px" @click="copyAddress" />
+                                <van-icon style="margin-left: 5px;" :name="copyIcon" size="20px" @click="copyAddress(appState.accountPk58!)" />
                             </div>
                         </div>
                     </div>
@@ -168,9 +168,9 @@
 
                                 <div class="tx-info">
                                     <div class="tx-address">
-                                        <span v-if="item.isSender">{{ omitAddress(item.receiver) }}</span>
-                                        <span v-else>{{ item.sender !== emptyPublicKey ? omitAddress(item.sender) : unknown }}</span>
-
+                                        <span @click="copyAddress(item.receiver)" v-if="item.isSender">{{ omitAddress(item.receiver) }}</span>
+                                        <span @click="copyAddress(item.sender)" v-else>{{ item.sender !== emptyPublicKey ? omitAddress(item.sender) : 'unknown' }}</span>
+                        
                                         <div v-if="item.actionType === '1'" class="tx-label">
                                             deposit
                                         </div>
@@ -443,8 +443,12 @@ onMounted(async () => {
     console.log('account onMounted done');
 });
 
-const copyAddress = () => {
-    copyFunc(appState.value.accountPk58!);
+const copyAddress = (address: string) => {
+    if(address === emptyPublicKey) {
+        console.log('address is emptyPublicKey, return');
+        return;
+    }
+    copyFunc(address);
     message.success("Copy address successfully");
 };
 
