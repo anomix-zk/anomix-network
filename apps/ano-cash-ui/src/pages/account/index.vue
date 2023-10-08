@@ -169,7 +169,7 @@
                                 <div class="tx-info">
                                     <div class="tx-address">
                                         <span v-if="item.isSender">{{ omitAddress(item.receiver) }}</span>
-                                        <span v-else>{{ omitAddress(item.sender) }}</span>
+                                        <span v-else>{{ item.sender !== emptyPublicKey ? omitAddress(item.sender) : unknown }}</span>
 
                                         <div v-if="item.actionType === '1'" class="tx-label">
                                             deposit
@@ -263,6 +263,7 @@ const message = useMessage();
 const { SdkState, exitAccount, listenSyncerChannel, clearAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const remoteSyncer = SdkState.remoteSyncer!;
+const emptyPublicKey = EMPTY_PUBLICKEY;
 
 let copyFunc: (text: string) => void;
 const maskId = "account";
