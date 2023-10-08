@@ -5,6 +5,8 @@ import { JoinSplitProof } from "@anomix/circuits"
 import fs from "fs";
 import * as dotenv from "dotenv"
 
+const KeyConfig = JSON.parse(fs.readFileSync('../../packages/circuits/scripts/keys-private.json', 'utf8'));
+
 dotenv.config({ path: '../../.env' })
 
 const JoinsplitProofDummyTx: string = fs.readFileSync('./circuit-JoinsplitProofDummyTx.string', 'utf8');
@@ -73,16 +75,17 @@ const config = {
         innerBatchesCount: <number>Number(<string>process.env.OuterRollupInnerBatchesCount ?? 12),
     },
     l1TxFee: <number>Number(<string>process.env.L1_TX_FEE ?? 200_000_000),
-    txFeePayerPrivateKey: <string>process.env.L1_TX_FEE_PAYER_PRIVATE_KEY,
-    operatorPrivateKey: <string>process.env.OPERATOR_PRIVATE_KEY,
     networkInit: <number>Number(<string>process.env.NETWORK_INIT ?? 1),
     worldStateDBPath: <string>process.env.LEVELDB_WORLDSTATE_DB_PATH || '/var/leveldb/anomix_world_state_db',
     indexedDBPath: <string>process.env.LEVELDB_INDEX_DB_PATH || '/var/leveldb/anomix_index_db',
     withdrawDBPath: <string>process.env.LEVELDB_WITHDRAW_DB_PATH || '/var/leveldb/anomix_withdraw_db',
     pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/',
-    entryContractAddress: <string>process.env.ENTRY_CONTRACT_ADDRESS || 'B62785kfljj8784990kj0kj90kjjiekljk',
-    rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
-    vaultContractAddress: <string>process.env.VAULT_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
+
+    txFeePayerPrivateKey: <string>KeyConfig.feePayer.privateKey,
+    operatorPrivateKey: <string>KeyConfig.operator.privateKey,
+    vaultContractAddress: <string>KeyConfig.vaultContract.publicKey,
+    entryContractAddress: <string>KeyConfig.entryContract.publicKey,
+    rollupContractAddress: <string>KeyConfig.rollupContract.publicKey,
 
     coordinatorHost: <string>process.env.COORDINATOR_HOST || '127.0.0.1',
     coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT ?? 8083),

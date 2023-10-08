@@ -13,5 +13,5 @@ export const managerEndpoints: FastifyPlugin = async (
     options,
     done
 ): Promise<void> => {
-    instance.register(resetNetwork);
+    // instance.register(resetNetwork);
 }
