@@ -1,4 +1,8 @@
 import * as dotenv from "dotenv"
+import fs from "fs";
+
+const KeyConfig = JSON.parse(fs.readFileSync('../../packages/circuits/scripts/keys-private.json', 'utf8'));
+
 dotenv.config({ path: '../../.env' })
 
 const config = {
@@ -47,8 +51,9 @@ const config = {
 
     pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/proof-generators/',
 
-    entryContractAddress: <string>process.env.ENTRY_CONTRACT_ADDRESS || 'B62785kfljj8784990kj0kj90kjjiekljk',
-    rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
+    vaultContractAddress: <string>KeyConfig.vaultContract.publicKey,
+    entryContractAddress: <string>KeyConfig.entryContract.publicKey,
+    rollupContractAddress: <string>KeyConfig.rollupContract.publicKey,
 
     subProcessCnt: <number>Number(<string>process.env.PROOR_GENERATOR_SUB_PROCESSOR_COUNT ?? 1),
     httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http'
