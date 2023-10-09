@@ -27,8 +27,8 @@
 
         <div v-if="appState.alias !== null">
             <div class="label">Registered Alias</div>
-            <div class="item" @click="copyContent(appState.alias)">
-                <span style="color:black; padding-left: 10px; font-size: 16px;">{{ appState.alias }}</span>
+            <div class="item" @click="copyContent(appState.alias + '.ano')">
+                <span style="color:black; padding-left: 10px; font-size: 16px;">{{ appState.alias }}.ano</span>
             </div>
         </div>
 
