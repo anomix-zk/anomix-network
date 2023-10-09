@@ -1240,6 +1240,7 @@ export class AnomixSdk {
         });
       }
     }
+    outputNote2.inputNullifier = nullifier2;
 
     let outputNote2Commitment = outputNote2.commitment();
 
