@@ -213,6 +213,34 @@ export class Syncer {
     );
   }
 
+  public removeAccount(accountPublicKey: PublicKey) {
+    let catchupProcessorIndex = -1;
+    for (let i = 0; i < this.noteProcessorsToCatchUp.length; i++) {
+      const processor = this.noteProcessorsToCatchUp[i];
+      if (processor.accountPublicKey.equals(accountPublicKey).toBoolean()) {
+        catchupProcessorIndex = i;
+        break;
+      }
+    }
+    if (catchupProcessorIndex >= 0) {
+      this.log.info('Removing account from syncer (catchup)');
+      this.noteProcessorsToCatchUp.splice(catchupProcessorIndex, 1);
+    }
+
+    let processorIndex = -1;
+    for (let i = 0; i < this.noteProcessors.length; i++) {
+      const processor = this.noteProcessors[i];
+      if (processor.accountPublicKey.equals(accountPublicKey).toBoolean()) {
+        processorIndex = i;
+        break;
+      }
+    }
+    if (processorIndex >= 0) {
+      this.log.info('Removing account from syncer');
+      this.noteProcessors.splice(processorIndex, 1);
+    }
+  }
+
   public async isAccountSynced(accountPk: string) {
     const result = await this.db.getUserState(accountPk);
     if (!result) {

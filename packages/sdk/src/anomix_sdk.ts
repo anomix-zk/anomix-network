@@ -589,6 +589,11 @@ export class AnomixSdk {
 
   public async removeAccount(accountPk58: string) {
     this.log.info('Removing account...');
+    if (this.useSyncerWorker) {
+      await this.remoteSyncer.removeAccount(accountPk58);
+    } else {
+      this.syncer.removeAccount(PublicKey.fromBase58(accountPk58));
+    }
     await this.db.removeUserState(accountPk58);
     this.log.info('Account removed');
   }

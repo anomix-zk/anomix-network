@@ -113,6 +113,14 @@ const syncerWrapper = {
       currSyncer.addAccount(PublicKey.fromBase58(accountPk));
     });
   },
+
+  removeAccount: async (accountPk: string) => {
+    await tryFunc(async () => {
+      clog.info('Removing account...');
+      log('Removing account...');
+      currSyncer.removeAccount(PublicKey.fromBase58(accountPk));
+    });
+  },
 };
 
 export type SyncerWrapper = typeof syncerWrapper;
