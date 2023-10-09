@@ -132,7 +132,8 @@ import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
 import auroLogo from "@/assets/auro.png";
 import { SdkEvent } from '../../common/types';
-import { SdkEventType } from '../../common/constants';
+import { SdkEventType, CHANNEL_MINA, WalletEventType } from '../../common/constants';
+import type { WalletEvent } from '../../common/types';
 
 const router = useRouter();
 const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
@@ -141,6 +142,8 @@ const message = useMessage();
 const { SdkState, listenSyncerChannel } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const remoteSdk = SdkState.remoteSdk!;
+
+let walletChannel: BroadcastChannel | null = null;
 
 const showTxDialog = ref(false);
 const dialogLoading = ref(true);
@@ -198,44 +201,44 @@ const walletListenerSetted = ref(false);
 const route = useRoute();
 onMounted(async () => {
   console.log('deposit page onMounted...');
+
   await loadConnectedWalletStatus();
 
+  walletChannel = new BroadcastChannel(CHANNEL_MINA);
   if (!walletListenerSetted.value) {
-    if (window.mina) {
-      window.mina.on('accountsChanged', async (accounts: string[]) => {
-        console.log('deposit.vue - connected account change: ', accounts);
-        if (route.path === '/operation/deposit') {
-          if (accounts.length === 0) {
+    walletChannel.onmessage = async (e: any) => {
+        const event = e.data as WalletEvent;
+        console.log('deposit - walletChannel.onmessage: ', event);
+        if(event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
+          
+          if(event.connectedAddress) {
+            setConnectedWallet(event.connectedAddress);
+            await loadConnectedWalletStatus();
+          } else {
             message.error('Please connect your wallet', {
               closable: true,
               duration: 0
             });
             disconnect();
-          } else {
-            setConnectedWallet(accounts[0]);
-            await loadConnectedWalletStatus();
           }
-        }
 
-      });
-
-      window.mina.on('chainChanged', (chainType: string) => {
-        console.log('deposit.vue - current chain: ', chainType);
-        if (chainType !== appState.value.minaNetwork) {
+        } else if(event.eventType === WalletEventType.NETWORK_INCORRECT) {
           message.error('Please switch to Berkeley network', {
             closable: true,
             duration: 0
           });
         }
-      });
-    }
+      };
 
     walletListenerSetted.value = true;
   }
 
 });
 
-const toBack = () => router.back();
+const toBack = () => {
+  walletChannel?.close();
+  router.back();
+};
 const checkPositiveNumber = (x: number) => x > 0;
 
 const depositAmount = ref<number | undefined>(undefined);

@@ -22,7 +22,7 @@ export default defineNuxtConfig({
                 l2BlockPollingIntervalMS: 15 * 1000,
                 minaEndpoint: "https://berkeley.minascan.io/graphql",
                 debug: false,
-                minaNetwork: "Unknown", // auro wallet network config
+                minaNetwork: "Berkeley", // auro wallet network config
             },
         },
     },
@@ -38,7 +38,7 @@ export default defineNuxtConfig({
                 l2BlockPollingIntervalMS: 15 * 1000,
                 minaEndpoint: "https://berkeley.minascan.io/graphql",
                 debug: true,
-                minaNetwork: "Unknown", // auro wallet network config
+                minaNetwork: "Berkeley", // auro wallet network config
             },
         },
     },

@@ -105,7 +105,8 @@
 <script lang="ts" setup>
 import auroLogo from "@/assets/auro.png";
 import { useMessage } from "naive-ui";
-import { AccountStatus } from "../../../common/constants";
+import { AccountStatus, CHANNEL_MINA, WalletEventType } from "../../../common/constants";
+import type { WalletEvent } from "../../../common/types"; 
 
 const emit = defineEmits<{
     (e: 'nextStep', step: number): void;
@@ -115,6 +116,8 @@ const { omitAddress } = useUtils();
 const { SdkState, addAccount } = useSdk();
 const message = useMessage();
 const remoteApi = SdkState.remoteApi!;
+
+let walletChannel: BroadcastChannel | null = null;
 
 const externWalletAddress = computed(() => omitAddress(appState.value.connectedWallet58, 8));
 const accountPubKey = computed(() => omitAddress(appState.value.accountPk58, 8));
@@ -162,6 +165,7 @@ const disconnect = async () => {
     signingKeypair1.value = null;
     signingKeypair2.value = null;
     setAccountStatus(AccountStatus.UNREGISTERED);
+    walletChannel?.close();
     await navigateTo("/", { replace: true });
 };
 
@@ -175,36 +179,33 @@ onMounted(() => {
     const { copyText } = useClientUtils();
     copyFunc = copyText;
 
+    walletChannel = new BroadcastChannel(CHANNEL_MINA);
     if (!walletListenerSetted.value) {
-        if (window.mina) {
-            window.mina.on('accountsChanged', async (accounts: string[]) => {
-                console.log('step1.vue - connected account change: ', accounts);
-                if (route.path === '/connect/step-1') {
-                    if (accounts.length === 0) {
-                        message.error('Please connect your wallet', {
-                            closable: true,
-                            duration: 0
-                        });
+        walletChannel.onmessage = async (e: any) => {
+        const event = e.data as WalletEvent;
+        console.log('step1 - walletChannel.onmessage: ', event);
+        if(event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
+          
+          if(event.connectedAddress) {
+            setConnectedWallet(event.connectedAddress);
 
-                        await disconnect();
-                    } else {
-                        setConnectedWallet(accounts[0]);
-                    }
-                }
+          } else {
+            message.error('Please connect your wallet', {
+              closable: true,
+              duration: 0
             });
+            await disconnect();
+          }
 
-            window.mina.on('chainChanged', (chainType: string) => {
-                console.log('step1.vue - current chain: ', chainType);
-                if (chainType !== appState.value.minaNetwork) {
-                    message.error('Please switch to Berkeley network', {
-                        closable: true,
-                        duration: 0
-                    });
-                }
-            });
-
-            walletListenerSetted.value = true;
+        } else if(event.eventType === WalletEventType.NETWORK_INCORRECT) {
+          message.error('Please switch to Berkeley network', {
+            closable: true,
+            duration: 0
+          });
         }
+      };
+
+      walletListenerSetted.value = true;
     }
 });
 
@@ -218,7 +219,7 @@ const toRegisterAliasPage = () => {
 };
 
 const toAccountPage = async () => {
-    //router.replace("/account");
+    walletChannel?.close();
     await navigateTo("/account", { replace: true });
 };
 

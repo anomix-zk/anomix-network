@@ -74,6 +74,8 @@ import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
 import auroLogo from "@/assets/auro.png";
 
+import { CHANNEL_MINA, WalletEventType } from '../../common/constants';
+import type { WalletEvent } from '../../common/types';
 const router = useRouter();
 const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
 const { omitAddress, convertToMinaUnit } = useUtils();
@@ -87,9 +89,14 @@ showLoadingMask({ text: 'Loading...', id: maskId, closable: false });
 
 const connectedWallet = computed(() => omitAddress(appState.value.connectedWallet58, 8));
 
-const toBack = () => router.back();
+let walletChannel: BroadcastChannel | null = null;
+const toBack = () => {
+  walletChannel?.close();
+  router.back();
+};
 
 const toClaim = async (commitment: string) => {
+  walletChannel?.close();
   await navigateTo(`/claim/${commitment}`);
 };
 
@@ -151,37 +158,35 @@ onMounted(async () => {
   console.log('claimable.vue - onMounted: ', appState.value.connectedWallet58);
 
   try {
+    walletChannel = new BroadcastChannel(CHANNEL_MINA);
 
     await loadClaimableNotesByConnectedWallet();
 
     if (!walletListenerSetted.value) {
-      if (window.mina) {
-        window.mina.on('accountsChanged', async (accounts: string[]) => {
-          console.log('claimable.vue - connected account change: ', accounts);
-          if (route.path === '/claim/claimable') {
-            if (accounts.length === 0) {
-              message.error('Please connect your wallet', {
-                closable: true,
-                duration: 0
-              });
-              disconnect();
-            } else {
-              setConnectedWallet(accounts[0]);
-              await loadClaimableNotesByConnectedWallet();
-            }
-          }
-        });
+      walletChannel.onmessage = async (e: any) => {
+        const event = e.data as WalletEvent;
+        console.log('claimable - walletChannel.onmessage: ', event);
+        if(event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
+          
+          if(event.connectedAddress) {
+            setConnectedWallet(event.connectedAddress);
+            await loadClaimableNotesByConnectedWallet();
 
-        window.mina.on('chainChanged', (chainType: string) => {
-          console.log('claimable.vue - current chain: ', chainType);
-          if (chainType !== appState.value.minaNetwork) {
-            message.error('Please switch to Berkeley network', {
+          } else {
+            message.error('Please connect your wallet', {
               closable: true,
               duration: 0
             });
+            disconnect();
           }
-        });
-      }
+
+        } else if(event.eventType === WalletEventType.NETWORK_INCORRECT) {
+          message.error('Please switch to Berkeley network', {
+            closable: true,
+            duration: 0
+          });
+        }
+      };
 
       walletListenerSetted.value = true;
     }

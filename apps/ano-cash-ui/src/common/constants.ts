@@ -1,5 +1,6 @@
 export const CHANNEL_LOG = "log";
 export const CHANNEL_SYNCER = "syncer";
+export const CHANNEL_MINA = "mina";
 
 export const MINA = 1000_000_000;
 
@@ -10,6 +11,11 @@ export enum PageAction {
     SEND_TOKEN = "SEND_TOKEN",
     WITHDRAW_TOKEN = "WITHDRAW_TOKEN",
     ACCOUNT_PAGE = "ACCOUNT_PAGE",
+}
+
+export enum WalletEventType {
+    ACCOUNTS_CHANGED = "WALLETEVENT_ACCOUNTS_CHANGED",
+    NETWORK_INCORRECT = "WALLETEVENT_NETWORK_INCORRECT",
 }
 
 export enum SdkEventType {

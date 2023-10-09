@@ -145,8 +145,8 @@
 import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
 import auroLogo from "@/assets/auro.png";
-import { SdkEvent } from '../../common/types';
-import { SdkEventType } from '../../common/constants';
+import type { SdkEvent, WalletEvent } from '../../common/types';
+import { SdkEventType, CHANNEL_MINA, WalletEventType } from '../../common/constants';
 
 const router = useRouter();
 const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
@@ -197,7 +197,11 @@ const claimLoading = ref<boolean>(false);
 const disabledClaim = ref<boolean>(false);
 const claimBtnText = ref('Claim');
 
-const toBack = () => router.back();
+let walletChannel: BroadcastChannel | null = null;
+const toBack = () => {
+  walletChannel?.close();
+  router.back();
+};
 const syncerListenerSetted = ref(false);
 
 const claim = async () => {
@@ -385,6 +389,7 @@ onMounted(async () => {
   console.log('onMounted...');
 
   try {
+    walletChannel = new BroadcastChannel(CHANNEL_MINA);
 
     const notes = await remoteApi.getClaimableNotes([commitment]);
     if (notes.length !== 1) {
@@ -401,42 +406,37 @@ onMounted(async () => {
     await loadAccountInfoByConnectedWallet();
 
     if (!walletListenerSetted.value) {
-      if (window.mina) {
-        window.mina.on('accountsChanged', (accounts: string[]) => {
-          console.log('claim - connected account change: ', accounts);
-          if (route.path === `/claim/${commitment}`) {
-            if (accounts.length === 0) {
-              message.error('Please connect your wallet', {
+      walletChannel.onmessage = (e: any) => {
+        const event = e.data as WalletEvent;
+        console.log('claim - walletChannel.onmessage: ', event);
+        if(event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
+          
+          if(event.connectedAddress) {
+            if(event.connectedAddress !== withdrawNote.value?.ownerAddress) {
+              message.error('The owner of the claim note is inconsistent with the current wallet. Please switch to the correct wallet', {
                 closable: true,
                 duration: 0
               });
-              disconnect();
-            } else {
-              if (accounts[0] !== withdrawNote.value?.ownerAddress) {
-                message.error('The owner of the claim note is inconsistent with the current wallet. Please switch to the correct wallet', {
-                  closable: true,
-                  duration: 0
-                });
 
-                return;
-              }
-              setConnectedWallet(accounts[0]);
-
+              return;
             }
-          }
+            setConnectedWallet(event.connectedAddress);
 
-        });
-
-        window.mina.on('chainChanged', (chainType: string) => {
-          console.log('claim - current chain: ', chainType);
-          if (chainType !== appState.value.minaNetwork) {
-            message.error('Please switch to Berkeley network', {
+          } else {
+            message.error('Please connect your wallet', {
               closable: true,
               duration: 0
             });
+            disconnect();
           }
-        });
-      }
+
+        } else if(event.eventType === WalletEventType.NETWORK_INCORRECT) {
+          message.error('Please switch to Berkeley network', {
+            closable: true,
+            duration: 0
+          });
+        }
+      };
 
       walletListenerSetted.value = true;
     }

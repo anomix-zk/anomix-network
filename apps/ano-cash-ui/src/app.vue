@@ -17,7 +17,8 @@
 
 <script lang="ts" setup>
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui';
-import { CHANNEL_SYNCER } from './common/constants';
+import { CHANNEL_SYNCER, CHANNEL_MINA, WalletEventType } from './common/constants';
+import type { WalletEvent } from './common/types';
 
 const { createRemoteSdk, createRemoteApi, startRemoteSyncer, compileCircuits, SdkState } = useSdk();
 const runtimeConfig = useRuntimeConfig();
@@ -56,6 +57,7 @@ const themeOverrides: GlobalThemeOverrides = {
 
 const supportStatus = ref("supported");
 const maskId = 'appInit';
+const walletListenerSetted = ref(false);
 
 onMounted(async () => {
   console.log('App mounted...');
@@ -145,6 +147,39 @@ onMounted(async () => {
         debug,
       },
     });
+
+    if (!walletListenerSetted.value) {
+      if (window.mina) {
+        const chan = new BroadcastChannel(CHANNEL_MINA);
+        window.mina.on('accountsChanged', (accounts: string[]) => {
+          console.log('App - connected account change: ', accounts);
+          
+            if (accounts.length === 0) {
+              chan.postMessage({
+                eventType: WalletEventType.ACCOUNTS_CHANGED,
+                connectedAddress: undefined,
+              } as WalletEvent);
+            } else {
+              chan.postMessage({
+                eventType: WalletEventType.ACCOUNTS_CHANGED,
+                connectedAddress: accounts[0],
+              } as WalletEvent);
+            }
+
+        });
+
+        window.mina.on('chainChanged', (chainType: string) => {
+          console.log('App - current chain: ', chainType);
+          if (chainType !== appState.value.minaNetwork || chainType !== 'Unknown') {
+            chan.postMessage({
+              eventType: WalletEventTyep.NETWORK_INCORRECT,
+            } as WalletEvent);
+          }
+        });
+      }
+
+      walletListenerSetted.value = true;
+    }
 
     closeLoadingMask(maskId);
 
