@@ -214,14 +214,23 @@ export class Syncer {
   }
 
   public removeAccount(accountPublicKey: PublicKey) {
+    this.log.info(
+      'syncer - start remove account: ',
+      accountPublicKey.toBase58()
+    );
     let catchupProcessorIndex = -1;
     for (let i = 0; i < this.noteProcessorsToCatchUp.length; i++) {
       const processor = this.noteProcessorsToCatchUp[i];
+      this.log.debug(
+        'catchProcessor accountPk: ',
+        processor.accountPublicKey.toBase58()
+      );
       if (processor.accountPublicKey.equals(accountPublicKey).toBoolean()) {
         catchupProcessorIndex = i;
         break;
       }
     }
+    this.log.debug('catchupProcessorIndex: ', catchupProcessorIndex);
     if (catchupProcessorIndex >= 0) {
       this.log.info('Removing account from syncer (catchup)');
       this.noteProcessorsToCatchUp.splice(catchupProcessorIndex, 1);
@@ -230,11 +239,17 @@ export class Syncer {
     let processorIndex = -1;
     for (let i = 0; i < this.noteProcessors.length; i++) {
       const processor = this.noteProcessors[i];
+      this.log.debug(
+        'processor accountPk: ',
+        processor.accountPublicKey.toBase58()
+      );
       if (processor.accountPublicKey.equals(accountPublicKey).toBoolean()) {
         processorIndex = i;
         break;
       }
     }
+
+    this.log.debug('processorIndex: ', processorIndex);
     if (processorIndex >= 0) {
       this.log.info('Removing account from syncer');
       this.noteProcessors.splice(processorIndex, 1);
@@ -243,6 +258,8 @@ export class Syncer {
 
   public async isAccountSynced(accountPk: string) {
     const result = await this.db.getUserState(accountPk);
+    this.log.info('isAccountSynced - get user state from db: ', result);
+
     if (!result) {
       return false;
     }
@@ -250,6 +267,7 @@ export class Syncer {
     const processor = this.noteProcessors.find(
       (x) => x.accountPublicKey.toBase58() === accountPk
     );
+    this.log.info('isAccountSynced - get processor: ', processor);
     if (!processor) {
       return false;
     }
