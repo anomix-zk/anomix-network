@@ -27,13 +27,15 @@ const syncerWrapper = {
             await syncerSdk.stop();
         });
     },
-
+    removeAccount: async (accountPk: string) => {
+        await syncerSdk.removeAccount(accountPk);
+    },
     addAccount: async (
         accountPrivateKey58: string,
         pwd: string,
         signingPrivateKey1_58: string | undefined,
         signingPrivateKey2_58: string | undefined,
-        alias: string | undefined
+        alias: string | undefined,
     ) => {
         const { PrivateKey } = await import("o1js");
         const accountPrivateKey = PrivateKey.fromBase58(accountPrivateKey58);
@@ -49,7 +51,7 @@ const syncerWrapper = {
             pwd,
             signingPrivateKey1,
             signingPrivateKey2,
-            alias
+            alias,
         );
     },
     loginAccount: async (accountPk: string, pwd: string, alias?: string) => {

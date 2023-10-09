@@ -106,7 +106,7 @@
 import auroLogo from "@/assets/auro.png";
 import { useMessage } from "naive-ui";
 import { AccountStatus, CHANNEL_MINA, WalletEventType } from "../../../common/constants";
-import type { WalletEvent } from "../../../common/types"; 
+import type { WalletEvent } from "../../../common/types";
 
 const emit = defineEmits<{
     (e: 'nextStep', step: number): void;
@@ -182,30 +182,30 @@ onMounted(() => {
     walletChannel = new BroadcastChannel(CHANNEL_MINA);
     if (!walletListenerSetted.value) {
         walletChannel.onmessage = async (e: any) => {
-        const event = e.data as WalletEvent;
-        console.log('step1 - walletChannel.onmessage: ', event);
-        if(event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
-          
-          if(event.connectedAddress) {
-            setConnectedWallet(event.connectedAddress);
+            const event = e.data as WalletEvent;
+            console.log('step1 - walletChannel.onmessage: ', event);
+            if (event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
 
-          } else {
-            message.error('Please connect your wallet', {
-              closable: true,
-              duration: 0
-            });
-            await disconnect();
-          }
+                if (event.connectedAddress) {
+                    setConnectedWallet(event.connectedAddress);
 
-        } else if(event.eventType === WalletEventType.NETWORK_INCORRECT) {
-          message.error('Please switch to Berkeley network', {
-            closable: true,
-            duration: 0
-          });
-        }
-      };
+                } else {
+                    message.error('Please connect your wallet', {
+                        closable: true,
+                        duration: 2000
+                    });
+                    await disconnect();
+                }
 
-      walletListenerSetted.value = true;
+            } else if (event.eventType === WalletEventType.NETWORK_INCORRECT) {
+                message.error('Please switch to Berkeley network', {
+                    closable: true,
+                    duration: 3000
+                });
+            }
+        };
+
+        walletListenerSetted.value = true;
     }
 });
 

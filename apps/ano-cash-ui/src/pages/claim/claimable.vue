@@ -132,7 +132,7 @@ const connect = async () => {
   showLoadingMask({ text: 'Connecting...', id: maskId, closable: true });
   try {
     const currentNetwork = await window.mina.requestNetwork();
-    if (appState.value.minaNetwork !== currentNetwork) {
+    if (appState.value.minaNetwork !== currentNetwork && currentNetwork !== 'Unknown') {
       closeLoadingMask(maskId);
       message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
       return;
@@ -166,24 +166,24 @@ onMounted(async () => {
       walletChannel.onmessage = async (e: any) => {
         const event = e.data as WalletEvent;
         console.log('claimable - walletChannel.onmessage: ', event);
-        if(event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
-          
-          if(event.connectedAddress) {
+        if (event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
+
+          if (event.connectedAddress) {
             setConnectedWallet(event.connectedAddress);
             await loadClaimableNotesByConnectedWallet();
 
           } else {
             message.error('Please connect your wallet', {
               closable: true,
-              duration: 0
+              duration: 2000
             });
             disconnect();
           }
 
-        } else if(event.eventType === WalletEventType.NETWORK_INCORRECT) {
+        } else if (event.eventType === WalletEventType.NETWORK_INCORRECT) {
           message.error('Please switch to Berkeley network', {
             closable: true,
-            duration: 0
+            duration: 3000
           });
         }
       };

@@ -31,7 +31,7 @@ export default function () {
             new URL("../worker/sdk_worker.ts", import.meta.url),
             {
                 type: "module",
-            }
+            },
         );
         SdkState.remoteSdk = wrap<SdkWrapper>(SdkState.sdkWorker!);
         await SdkState.remoteSdk.createSdk(config);
@@ -58,7 +58,7 @@ export default function () {
             new URL("../worker/api_worker.ts", import.meta.url),
             {
                 type: "module",
-            }
+            },
         );
         SdkState.remoteApi = wrap<ApiWrapper>(SdkState.apiWorker!);
         await SdkState.remoteApi.createApiService(config);
@@ -77,7 +77,7 @@ export default function () {
             new URL("../worker/syncer_worker.ts", import.meta.url),
             {
                 type: "module",
-            }
+            },
         );
         SdkState.remoteSyncer = wrap<SyncerWrapper>(SdkState.syncerWorker!);
         await SdkState.remoteSyncer.startSyncer(config);
@@ -91,7 +91,7 @@ export default function () {
         pwd: string,
         signingPrivateKey1_58: string | undefined,
         signingPrivateKey2_58: string | undefined,
-        alias: string | undefined
+        alias: string | undefined,
     ) => {
         const { accountPk, signingPubKey1, signingPubKey2 } =
             await SdkState.remoteSyncer!.addAccount(
@@ -99,7 +99,7 @@ export default function () {
                 pwd,
                 signingPrivateKey1_58,
                 signingPrivateKey2_58,
-                alias
+                alias,
             );
         console.log("useSdk-addAccount: ", accountPk);
 
@@ -118,12 +118,12 @@ export default function () {
     const loginAccount = async (
         accountPk: string,
         pwd: string,
-        alias?: string
+        alias?: string,
     ) => {
         const { pubKeys } = await SdkState.remoteSyncer!.loginAccount(
             accountPk,
             pwd,
-            alias
+            alias,
         );
 
         await SdkState.remoteSdk!.unlockKeyStore(pubKeys, pwd);
@@ -141,7 +141,7 @@ export default function () {
 
     const clearAccount = async (accountPk58: string) => {
         console.log("clear account...");
-        await SdkState.remoteApi!.removeAccount(accountPk58);
+        await SdkState.remoteSyncer!.removeAccount(accountPk58);
         await exitAccount();
         console.log("clear account success");
     };

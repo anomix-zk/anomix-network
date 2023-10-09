@@ -17,7 +17,7 @@ export default defineNuxtConfig({
             public: {
                 entryContractAddress: KeyConfig.entryContract.publicKey,
                 vaultContractAddress: KeyConfig.vaultContract.publicKey,
-                nodeUrl: "http://198.135.49.102",
+                nodeUrl: "http://198.135.49.102:8084",
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
                 l2BlockPollingIntervalMS: 15 * 1000,
                 minaEndpoint: "https://berkeley.minascan.io/graphql",
@@ -33,7 +33,7 @@ export default defineNuxtConfig({
             public: {
                 entryContractAddress: KeyConfig.entryContract.publicKey,
                 vaultContractAddress: KeyConfig.vaultContract.publicKey,
-                nodeUrl: "http://198.135.49.102",
+                nodeUrl: "http://198.135.49.102:8084",
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
                 l2BlockPollingIntervalMS: 15 * 1000,
                 minaEndpoint: "https://berkeley.minascan.io/graphql",

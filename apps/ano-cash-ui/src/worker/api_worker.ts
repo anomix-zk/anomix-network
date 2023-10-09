@@ -188,9 +188,6 @@ const apiWrapper = {
     isUserTxSettled: async (txId: string) => {
         return await apiSdk.isUserTxSettled(txId);
     },
-    removeAccount: async (accountPk: string) => {
-        await apiSdk.removeAccount(accountPk);
-    },
     getAnalysisOfNotes: async (accountPk: string) => {
         return await apiSdk.getAnalysisOfNotes(accountPk);
     },

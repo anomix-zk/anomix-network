@@ -207,28 +207,28 @@ onMounted(async () => {
   walletChannel = new BroadcastChannel(CHANNEL_MINA);
   if (!walletListenerSetted.value) {
     walletChannel.onmessage = async (e: any) => {
-        const event = e.data as WalletEvent;
-        console.log('deposit - walletChannel.onmessage: ', event);
-        if(event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
-          
-          if(event.connectedAddress) {
-            setConnectedWallet(event.connectedAddress);
-            await loadConnectedWalletStatus();
-          } else {
-            message.error('Please connect your wallet', {
-              closable: true,
-              duration: 0
-            });
-            disconnect();
-          }
+      const event = e.data as WalletEvent;
+      console.log('deposit - walletChannel.onmessage: ', event);
+      if (event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
 
-        } else if(event.eventType === WalletEventType.NETWORK_INCORRECT) {
-          message.error('Please switch to Berkeley network', {
+        if (event.connectedAddress) {
+          setConnectedWallet(event.connectedAddress);
+          await loadConnectedWalletStatus();
+        } else {
+          message.error('Please connect your wallet', {
             closable: true,
-            duration: 0
+            duration: 2000
           });
+          disconnect();
         }
-      };
+
+      } else if (event.eventType === WalletEventType.NETWORK_INCORRECT) {
+        message.error('Please switch to Berkeley network', {
+          closable: true,
+          duration: 3000
+        });
+      }
+    };
 
     walletListenerSetted.value = true;
   }
@@ -378,7 +378,7 @@ const connect = async () => {
   try {
     showLoadingMask({ id: maskId, text: 'Connecting wallet...', closable: true });
     const currentNetwork = await window.mina.requestNetwork();
-    if (appState.value.minaNetwork !== currentNetwork) {
+    if (appState.value.minaNetwork !== currentNetwork && currentNetwork !== 'Unknown') {
       message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
       closeLoadingMask(maskId);
       return;

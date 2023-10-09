@@ -72,7 +72,7 @@ const connectWallet = async (action: string) => {
         showLoadingMask({ id: maskId, text: 'Connecting wallet...', closable: false });
         const currentNetwork = await window.mina.requestNetwork();
         console.log({ currentNetwork });
-        if (appState.value.minaNetwork !== currentNetwork) {
+        if (appState.value.minaNetwork !== currentNetwork && currentNetwork !== 'Unknown') {
             closeLoadingMask(maskId);
             message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
             return;

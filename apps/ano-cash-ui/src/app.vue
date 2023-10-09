@@ -23,7 +23,7 @@ import type { WalletEvent } from './common/types';
 const { createRemoteSdk, createRemoteApi, startRemoteSyncer, compileCircuits, SdkState } = useSdk();
 const runtimeConfig = useRuntimeConfig();
 const route = useRoute();
-const { setTokenPrices, showLoadingMask, closeLoadingMask, setMinaNetwork } = useStatus();
+const { setTokenPrices, showLoadingMask, closeLoadingMask, setMinaNetwork, appState } = useStatus();
 
 const themeOverrides: GlobalThemeOverrides = {
   Input: {
@@ -153,26 +153,26 @@ onMounted(async () => {
         const chan = new BroadcastChannel(CHANNEL_MINA);
         window.mina.on('accountsChanged', (accounts: string[]) => {
           console.log('App - connected account change: ', accounts);
-          
-            if (accounts.length === 0) {
-              chan.postMessage({
-                eventType: WalletEventType.ACCOUNTS_CHANGED,
-                connectedAddress: undefined,
-              } as WalletEvent);
-            } else {
-              chan.postMessage({
-                eventType: WalletEventType.ACCOUNTS_CHANGED,
-                connectedAddress: accounts[0],
-              } as WalletEvent);
-            }
+
+          if (accounts.length === 0) {
+            chan.postMessage({
+              eventType: WalletEventType.ACCOUNTS_CHANGED,
+              connectedAddress: undefined,
+            } as WalletEvent);
+          } else {
+            chan.postMessage({
+              eventType: WalletEventType.ACCOUNTS_CHANGED,
+              connectedAddress: accounts[0],
+            } as WalletEvent);
+          }
 
         });
 
         window.mina.on('chainChanged', (chainType: string) => {
           console.log('App - current chain: ', chainType);
-          if (chainType !== appState.value.minaNetwork || chainType !== 'Unknown') {
+          if (chainType !== appState.value.minaNetwork && chainType !== 'Unknown') {
             chan.postMessage({
-              eventType: WalletEventTyep.NETWORK_INCORRECT,
+              eventType: WalletEventType.NETWORK_INCORRECT,
             } as WalletEvent);
           }
         });

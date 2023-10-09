@@ -86,18 +86,18 @@
 
       <div class="fee-box">
         <div class="title">Tx Fee</div>
-        <n-radio-group v-model:value="feeValue" name="radiogroup" style="width: 100%;">
-          <div v-for="fee in fees" class="radio-item">
-            <div class="left">{{ fee.kind }}</div>
 
-            <div class="right">
-              <div class="price">{{ fee.value }} MINA</div>
-              <!-- <n-radio v-if="fee.kind === 'Normal'" default-checked :key="fee.kind" :value="fee.value" size="large" /> -->
-              <n-radio :key="fee.kind" :value="fee.value" size="large" />
-            </div>
+        <div v-for="fee in fees" class="radio-item">
+          <div class="left">{{ fee.kind }}</div>
 
+          <div class="right">
+            <div class="price">{{ fee.value }} MINA</div>
+            <n-radio name="fee" @change="handleFeeChange" :checked="feeValue === fee.value" :key="fee.kind"
+              :value="fee.value" size="large" />
           </div>
-        </n-radio-group>
+
+        </div>
+
       </div>
 
       <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="toConfirm">
@@ -246,18 +246,23 @@ const checkAliasExist = async () => {
 
 
 const feeValue = ref<number | undefined>(undefined);
-const fees = ref<{ kind: string; value: string }[]>([
+const fees = ref<{ kind: string; value: number }[]>([
   {
     kind: 'Normal',
-    value: '0.03'
+    value: 0.001
   },
   {
     kind: 'Faster',
-    value: '0.09'
+    value: 0.09
   }
 ]);
 
 feeValue.value = Number(fees.value[0].value);
+
+const handleFeeChange = (e: Event) => {
+  feeValue.value = Number((e.target as HTMLInputElement).value);
+};
+
 const maskId = 'send';
 const maskListenerSetted = ref(false);
 
@@ -359,11 +364,13 @@ onMounted(async () => {
   const txFees = await remoteApi.getTxFees();
   fees.value = [{
     kind: 'Normal',
-    value: convertToMinaUnit(txFees.normal)!.toString()
+    value: convertToMinaUnit(txFees.normal)!.toNumber()
   }, {
     kind: 'Faster',
-    value: convertToMinaUnit(txFees.faster)!.toString()
+    value: convertToMinaUnit(txFees.faster)!.toNumber()
   }];
+  feeValue.value = Number(fees.value[0].value);
+  console.log('feeValue: ', feeValue.value);
 
   const analysisInfo = await remoteApi.getAnalysisOfNotes(appState.value.accountPk58!);
   console.log('analysisInfo: ', analysisInfo);

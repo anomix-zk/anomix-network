@@ -147,7 +147,7 @@ const login = async () => {
     } catch (err: any) {
         closeLoadingMask(maskId);
         console.error(err);
-        message.error(err.message, { duration: 0, closable: true });
+        message.error(err.message, { duration: 3000, closable: true });
     }
 
 }

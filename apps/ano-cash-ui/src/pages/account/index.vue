@@ -52,7 +52,8 @@
                             <div v-if="alias !== null" class="alias">{{ alias }}</div>
                             <div class="address">
                                 <span>{{ accountPk58 }}</span>
-                                <van-icon style="margin-left: 5px;" :name="copyIcon" size="20px" @click="copyAddress(appState.accountPk58!)" />
+                                <van-icon style="margin-left: 5px;" :name="copyIcon" size="20px"
+                                    @click="copyAddress(appState.accountPk58!)" />
                             </div>
                         </div>
                     </div>
@@ -87,7 +88,7 @@
 
                 <div>Synced / Latest Block: {{ appState.syncedBlock }} / {{ appState.latestBlock }}</div>
                 <div v-if="appState.syncedBlock !== appState.latestBlock" style="font-size: 13px;">Estimated synced: <n-time
-                        :to="toTime" type="relative" /></div>
+                        :time="expectSyncedSpendTime" :to="0" type="relative" /></div>
 
                 <n-tag v-if="appState.accountStatus === AccountStatus.REGISTERING" type="warning" round strong>
                     Alias registration pending
@@ -168,9 +169,11 @@
 
                                 <div class="tx-info">
                                     <div class="tx-address">
-                                        <span @click="copyAddress(item.receiver)" v-if="item.isSender">{{ omitAddress(item.receiver) }}</span>
-                                        <span @click="copyAddress(item.sender)" v-else>{{ item.sender !== emptyPublicKey ? omitAddress(item.sender) : 'unknown' }}</span>
-                        
+                                        <span @click="copyAddress(item.receiver)" v-if="item.isSender">{{
+                                            omitAddress(item.receiver) }}</span>
+                                        <span @click="copyAddress(item.sender)" v-else>{{ item.sender !== emptyPublicKey ?
+                                            omitAddress(item.sender) : 'unknown' }}</span>
+
                                         <div v-if="item.actionType === '1'" class="tx-label">
                                             deposit
                                         </div>
@@ -309,7 +312,6 @@ const clearAccountAndLogout = async () => {
 };
 
 const expectSyncedSpendTime = ref(20_000); // default 20s
-const toTime = computed(() => Date.now() - expectSyncedSpendTime.value);
 const lastBlockProcessDoneTime = ref(Date.now());
 const syncerListenerSetted = ref(false);
 const userTimezone = ref("Asia/Shanghai");
@@ -409,6 +411,8 @@ onMounted(async () => {
                         if (diffBlock > 0 && oneBlockSpendTime > 0) {
                             expectSyncedSpendTime.value = oneBlockSpendTime * diffBlock;
                         }
+                        console.log('expectSyncedSpendTime: ', expectSyncedSpendTime.value);
+                        console.log('lastBlockProcessDoneTime: ', lastBlockProcessDoneTime.value);
 
                         // get latest balance
                         const balance = await remoteApi.getBalance(appState.value.accountPk58!);
@@ -444,7 +448,7 @@ onMounted(async () => {
 });
 
 const copyAddress = (address: string) => {
-    if(address === emptyPublicKey) {
+    if (address === emptyPublicKey) {
         console.log('address is emptyPublicKey, return');
         return;
     }
