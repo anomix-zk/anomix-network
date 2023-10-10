@@ -269,6 +269,7 @@ const remoteSyncer = SdkState.remoteSyncer!;
 const emptyPublicKey = EMPTY_PUBLICKEY;
 
 let copyFunc: (text: string) => void;
+let syncerChannel: BroadcastChannel | null = null;
 const maskId = "account";
 
 const showExitDialog = ref(false);
@@ -284,6 +285,7 @@ const logOut = async () => {
     closeExitDialog();
     showLoadingMask({ text: 'Log out...', id: maskId, closable: false });
     try {
+        syncerChannel?.close();
         await exitAccount();
         await navigateTo("/login/session");
         message.success('Log out successfully');
@@ -300,6 +302,7 @@ const clearAccountAndLogout = async () => {
     closeExitDialog();
     showLoadingMask({ text: 'Clear account...', id: maskId, closable: false });
     try {
+        syncerChannel?.close();
         await clearAccount(appState.value.accountPk58!);
         await navigateTo("/");
         message.success('Clear account successfully');
@@ -393,8 +396,9 @@ onMounted(async () => {
         console.log('set syncer listener...');
         // set syncer listener
         if (!syncerListenerSetted.value) {
-            listenSyncerChannel(async (event: SdkEvent) => {
+            listenSyncerChannel(async (event: SdkEvent, chan: BroadcastChannel) => {
                 console.log('syncer event: ', event);
+                syncerChannel = chan;
                 if (event.eventType === SdkEventType.UPDATED_ACCOUNT_STATE) {
                     if (event.data.accountPk === appState.value.accountPk58) {
                         const oneBlockSpendTime = Date.now() - lastBlockProcessDoneTime.value;
@@ -458,21 +462,25 @@ const copyAddress = (address: string) => {
 
 const toClaimPage = async (actionType: string, finalizedTs: number, commitment: string | null) => {
     if (actionType === '3' && finalizedTs !== 0 && commitment !== null) {
+        syncerChannel?.close();
         await navigateTo(`/claim/${commitment}`);
     }
 
 };
 
 const toDeposit = async () => {
+    syncerChannel?.close();
     await navigateTo("/operation/deposit");
 };
 
 const toSend = async () => {
+    syncerChannel?.close();
     setPageParams(PageAction.SEND_TOKEN, null);
     await navigateTo("/operation/send");
 };
 
 const toWithdraw = async () => {
+    syncerChannel?.close();
     setPageParams(PageAction.WITHDRAW_TOKEN, null);
     await navigateTo("/operation/send");
 };

@@ -158,11 +158,13 @@ export default function () {
         };
     };
 
-    const listenSyncerChannel = (func: (event: SdkEvent) => void) => {
+    const listenSyncerChannel = (
+        func: (event: SdkEvent, chan: BroadcastChannel) => void,
+    ) => {
         console.log("set listenSyncerChannel...");
         const chan = new BroadcastChannel(CHANNEL_SYNCER);
         chan.onmessage = (ev: any) => {
-            func(ev.data);
+            func(ev.data, chan);
         };
         console.log("set listenSyncerChannel success");
     };

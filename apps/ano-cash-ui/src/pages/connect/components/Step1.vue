@@ -179,8 +179,8 @@ onMounted(() => {
     const { copyText } = useClientUtils();
     copyFunc = copyText;
 
-    walletChannel = new BroadcastChannel(CHANNEL_MINA);
     if (!walletListenerSetted.value) {
+        walletChannel = new BroadcastChannel(CHANNEL_MINA);
         walletChannel.onmessage = async (e: any) => {
             const event = e.data as WalletEvent;
             console.log('step1 - walletChannel.onmessage: ', event);
@@ -224,11 +224,11 @@ const toAccountPage = async () => {
 };
 
 const addAnomixAccount = async () => {
-    if (pwd.value.length === 0) {
+    if (pwd.value.length === 0 || pwd.value.trim().length === 0) {
         message.error('Please enter a password');
         return;
     }
-    if (pwdAgain.value.length === 0) {
+    if (pwdAgain.value.length === 0 || pwdAgain.value.trim().length === 0) {
         message.error('Please enter a password again');
         return;
     }

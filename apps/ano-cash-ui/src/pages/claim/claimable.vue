@@ -158,11 +158,10 @@ onMounted(async () => {
   console.log('claimable.vue - onMounted: ', appState.value.connectedWallet58);
 
   try {
-    walletChannel = new BroadcastChannel(CHANNEL_MINA);
-
     await loadClaimableNotesByConnectedWallet();
 
     if (!walletListenerSetted.value) {
+      walletChannel = new BroadcastChannel(CHANNEL_MINA);
       walletChannel.onmessage = async (e: any) => {
         const event = e.data as WalletEvent;
         console.log('claimable - walletChannel.onmessage: ', event);

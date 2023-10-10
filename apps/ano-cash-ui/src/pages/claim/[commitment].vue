@@ -223,10 +223,12 @@ const claim = async () => {
     const isContractReady = await remoteSdk.isVaultContractCompiled();
     if (!isContractReady) {
       if (syncerListenerSetted.value === false) {
-        listenSyncerChannel((e: SdkEvent) => {
+        listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
           if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
             closeLoadingMask(maskId);
             message.info('Circuits compling done, please continue your deposit', { duration: 0, closable: true });
+            chan.close();
+            console.log('Syncer listener channel close success');
           }
         });
         syncerListenerSetted.value = true;
@@ -280,10 +282,12 @@ const createWithdrawalAccount = async () => {
     const isContractReady = await remoteSdk.isVaultContractCompiled();
     if (!isContractReady) {
       if (syncerListenerSetted.value === false) {
-        listenSyncerChannel((e: SdkEvent) => {
+        listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
           if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
             closeLoadingMask(maskId);
             message.info('Circuits compling done, please continue your operation.', { duration: 0, closable: true });
+            chan.close();
+            console.log('Syncer listener channel close success');
           }
         });
         syncerListenerSetted.value = true;
@@ -389,7 +393,6 @@ onMounted(async () => {
   console.log('onMounted...');
 
   try {
-    walletChannel = new BroadcastChannel(CHANNEL_MINA);
 
     const notes = await remoteApi.getClaimableNotes([commitment]);
     if (notes.length !== 1) {
@@ -406,6 +409,7 @@ onMounted(async () => {
     await loadAccountInfoByConnectedWallet();
 
     if (!walletListenerSetted.value) {
+      walletChannel = new BroadcastChannel(CHANNEL_MINA);
       walletChannel.onmessage = (e: any) => {
         const event = e.data as WalletEvent;
         console.log('claim - walletChannel.onmessage: ', event);

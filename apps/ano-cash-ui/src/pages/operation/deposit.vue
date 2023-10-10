@@ -82,7 +82,7 @@
           <n-input-number placeholder="Deposit amount" size="large" clearable :show-button="false"
             :validator="checkPositiveNumber" v-model:value="depositAmount">
             <template #suffix>
-              <div class="max-btn" @click="maxInputAmount">MAX</div>
+              <div class="max-btn" @click="maxInputAmount">Max</div>
             </template>
           </n-input-number>
         </div>
@@ -97,6 +97,7 @@
               <template #suffix>
                 <van-icon v-show="checkAlias === 1" name="passed" color="green" size="20" />
                 <van-icon v-show="checkAlias === 0" name="close" color="red" size="20" />
+                <div class="input-user-btn" @click="inputCurrentAccount">Me</div>
               </template>
             </n-input>
           </div>
@@ -204,8 +205,8 @@ onMounted(async () => {
 
   await loadConnectedWalletStatus();
 
-  walletChannel = new BroadcastChannel(CHANNEL_MINA);
   if (!walletListenerSetted.value) {
+    walletChannel = new BroadcastChannel(CHANNEL_MINA);
     walletChannel.onmessage = async (e: any) => {
       const event = e.data as WalletEvent;
       console.log('deposit - walletChannel.onmessage: ', event);
@@ -237,6 +238,7 @@ onMounted(async () => {
 
 const toBack = () => {
   walletChannel?.close();
+  console.log('walletChannel close success');
   router.back();
 };
 const checkPositiveNumber = (x: number) => x > 0;
@@ -304,10 +306,12 @@ const deposit = async () => {
     const isContractReady = await remoteSdk.isEntryContractCompiled();
     if (!isContractReady) {
       if (maskListenerSetted.value === false) {
-        listenSyncerChannel((e: SdkEvent) => {
+        listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
           if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
             closeLoadingMask(maskId);
             message.info('Circuits compling done, please continue your deposit', { duration: 0, closable: true });
+            chan.close();
+            console.log('Syncer listener channel close success');
           }
         });
         maskListenerSetted.value = true;
@@ -413,11 +417,30 @@ const maxInputAmount = () => {
   depositAmount.value = Number(L1TokenBalance.value?.balance);
 };
 
+const inputCurrentAccount = () => {
+  receiver.value = appState.value.alias !== null ? appState.value.alias + '.ano' : appState.value.accountPk58!;
+}
+
 
 </script>
 
 <style lang="scss" scoped>
 .send-form {
+
+  .input-user-btn {
+    border-left-width: 0.1px;
+    border-left-style: dotted;
+    border-left-color: var(--ano-border);
+    padding-left: 14px;
+    padding-right: 6px;
+    margin-left: 5px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .input-user-btn:hover {
+    color: var(--ano-primary);
+  }
 
   .form-main {
     margin-top: 20px;

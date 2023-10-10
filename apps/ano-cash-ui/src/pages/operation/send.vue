@@ -29,7 +29,7 @@
                 v-if="notesInfo !== null"> ({{
                   notesInfo.availableNotesNum }} <template
                   v-if="notesInfo.availableNotesNum === 0 || notesInfo.availableNotesNum === 1">note</template><template
-                  v-else>notes</template>, max per tx: {{
+                  v-else>notes</template>, max spend: {{
                     convertToMinaUnit(notesInfo.maxSpendValuePerTx) }} )</template></div>
           </div>
 
@@ -39,7 +39,7 @@
           <n-input-number :placeholder="currPageAction === PageAction.SEND_TOKEN ? 'Send amount' : 'Withdraw amount'"
             size="large" clearable :show-button="false" :validator="checkPositiveNumber" v-model:value="sendAmount">
             <template #suffix>
-              <div class="max-btn" @click="maxInputAmount">MAX</div>
+              <div class="max-btn" @click="maxInputAmount">Max</div>
             </template>
           </n-input-number>
         </div>
@@ -290,10 +290,12 @@ const toConfirm = async () => {
     const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
     if (!isPrivateCircuitReady) {
       if (maskListenerSetted.value === false) {
-        listenSyncerChannel((e: SdkEvent) => {
+        listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
           if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
             closeLoadingMask(maskId);
             message.info('Circuits compling done, please continue your operation', { duration: 0, closable: true });
+            chan.close();
+            console.log('Syncer listener channel close success');
           }
         });
         maskListenerSetted.value = true;

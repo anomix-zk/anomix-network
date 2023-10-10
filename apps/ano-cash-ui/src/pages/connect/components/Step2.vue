@@ -53,6 +53,8 @@ const handleInput = (v: string) => {
     if (canRegsiter.value !== -1) {
         canRegsiter.value = -1;
     }
+
+    inputAlias.value = inputAlias.value.toLowerCase();
 };
 
 const checkAliasIsRegistered = async () => {
@@ -112,10 +114,12 @@ const registerAccount = async () => {
         const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
         if (!isPrivateCircuitReady) {
             if (maskListenerSetted.value === false) {
-                listenSyncerChannel((e: SdkEvent) => {
+                listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
                     if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
                         message.info('Circuits compling done, please continue your registration', { duration: 0, closable: true });
                         closeLoadingMask(maskId);
+                        chan.close();
+                        console.log('Syncer listener channel close success');
                     }
                 });
                 maskListenerSetted.value = true;
