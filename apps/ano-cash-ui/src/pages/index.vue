@@ -23,6 +23,14 @@
                     </div>
                 </n-button>
             </div>
+
+            <div v-if="existLocalAccount" class="auth-item">
+                <n-button color="#f4f4f4" block type="primary" @click="sessionLogin" class="auth-btn">
+                    <div style="display:flex; align-items: center;">
+                        <span style="color:#1f202a">Login With Local Account</span>
+                    </div>
+                </n-button>
+            </div>
         </div>
 
         <div class="or-box">
@@ -56,7 +64,27 @@ import { useMessage } from "naive-ui";
 
 const message = useMessage();
 const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
+const { SdkState } = useSdk();
+
 const maskId = "index";
+const existLocalAccount = ref(false);
+
+onMounted(async () => {
+    console.log('App index onMounted...');
+    try {
+        const accounts = await SdkState.remoteApi!.getLocalAccounts();
+        if (accounts.length > 0) {
+            existLocalAccount.value = true;
+        }
+    } catch (err: any) {
+        console.error(err);
+    }
+
+});
+
+const sessionLogin = async () => {
+    await navigateTo("/login/session");
+};
 
 const login = async () => {
     await navigateTo("/login");
@@ -215,7 +243,7 @@ const connectWallet = async (action: string) => {
     left: 0;
     width: 100%;
     //height: 20px;
-    line-height: 80px;
+    line-height: 50px;
     text-align: center;
     color: gray;
     font-size: 16px;

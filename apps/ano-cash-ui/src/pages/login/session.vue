@@ -3,6 +3,9 @@
 
         <div class="page-login">
 
+            <div class="logo">
+                <img :src="loginImage" class="arrow" alt="" />
+            </div>
             <div class="login-title">
                 Login Ano.Cash
             </div>
@@ -39,6 +42,7 @@
 </template>
 
 <script lang="ts" setup>
+import loginImage from "@/assets/anomix.svg";
 import { SelectOption, useMessage } from 'naive-ui';
 import { AccountStatus } from '../../common/constants';
 
@@ -108,6 +112,11 @@ const toAccountPage = async () => {
     await navigateTo("/account", { replace: true });
 };
 
+const toRegisterAliasPage = async () => {
+    console.log("to register alias page");
+    await navigateTo("/connect/step-2");
+};
+
 const login = async () => {
     if (pwd.value.length === 0) {
         message.error('Please input password');
@@ -136,12 +145,13 @@ const login = async () => {
             if (alias) {
                 setAlias(alias);
                 setAccountStatus(AccountStatus.REGISTERED);
+                message.success('Login successfully');
+                await toAccountPage();
             } else {
                 setAccountStatus(AccountStatus.UNREGISTERED);
+                await toRegisterAliasPage();
             }
 
-            message.success('Login successfully');
-            await toAccountPage();
             closeLoadingMask(maskId);
         }
     } catch (err: any) {
@@ -168,6 +178,18 @@ const login = async () => {
     //         height: 100%;
     //     }
     // }
+    .logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 5px;
+        width: 100%;
+        height: 140px;
+
+        img {
+            height: 100%;
+        }
+    }
 
     .login-title {
         // margin-top: 28px;
