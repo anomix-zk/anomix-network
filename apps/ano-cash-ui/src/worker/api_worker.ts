@@ -27,7 +27,7 @@ const apiWrapper = {
         return await tryFunc(async () => {
             const keypair = apiSdk.generateKeyPairByProviderSignature(
                 sign,
-                accountIndex
+                accountIndex,
             );
             return {
                 privateKey: keypair.privateKey.toBase58(),
@@ -43,7 +43,7 @@ const apiWrapper = {
     },
     getAliasByAccountPublicKey: async (
         accountPk: string,
-        accountPrivateKey: string
+        accountPrivateKey: string,
     ) => {
         log("getAliasByAccountPublicKey: " + accountPk);
         return await tryFunc(async () => {
@@ -79,6 +79,15 @@ const apiWrapper = {
             publicKey: publicKey.toBase58(),
         };
     },
+    getRandomKeypair: async () => {
+        const { PrivateKey } = await import("o1js");
+        const privateKey = PrivateKey.random();
+        const publicKey = privateKey.toPublicKey();
+        return {
+            privateKey: privateKey.toBase58(),
+            publicKey: publicKey.toBase58(),
+        };
+    },
     getLocalAccounts: async () => {
         return await apiSdk.getAccounts();
     },
@@ -86,7 +95,7 @@ const apiWrapper = {
         const { PublicKey } = await import("o1js");
         const sk = await apiSdk.getSecretKey(
             PublicKey.fromBase58(accountPk58),
-            pwd
+            pwd,
         );
         if (sk) {
             return sk.toBase58();
@@ -110,7 +119,7 @@ const apiWrapper = {
     },
     checkTx: async (
         txId: string,
-        options?: { maxAttempts?: number; interval?: number }
+        options?: { maxAttempts?: number; interval?: number },
     ) => {
         const { Mina, checkZkappTransaction } = await import("o1js");
         let Blockchain = Mina.Network(minaEndpoint);
@@ -120,7 +129,7 @@ const apiWrapper = {
         let attempts = 0;
         const executePoll = async (
             resolve: () => void,
-            reject: (err: Error) => void | Error
+            reject: (err: Error) => void | Error,
         ) => {
             let res;
             try {
@@ -134,14 +143,14 @@ const apiWrapper = {
             } else if (res.failureReason) {
                 return reject(
                     new Error(
-                        `Transaction failed.\nTransactionId: ${txId}\nAttempts: ${attempts}\nfailureReason(s): ${res.failureReason}`
-                    )
+                        `Transaction failed.\nTransactionId: ${txId}\nAttempts: ${attempts}\nfailureReason(s): ${res.failureReason}`,
+                    ),
                 );
             } else if (maxAttempts && attempts === maxAttempts) {
                 return reject(
                     new Error(
-                        `Exceeded max attempts.\nTransactionId: ${txId}\nAttempts: ${attempts}\nLast received status: ${res}`
-                    )
+                        `Exceeded max attempts.\nTransactionId: ${txId}\nAttempts: ${attempts}\nLast received status: ${res}`,
+                    ),
                 );
             } else {
                 setTimeout(executePoll, interval, resolve, reject);

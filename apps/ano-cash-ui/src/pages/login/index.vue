@@ -72,7 +72,7 @@ import { AccountStatus } from "../../common/constants";
 const message = useMessage();
 const { SdkState, addAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
-const { setAlias, setAccountStatus, appState, setAccountPk58, showLoadingMask, closeLoadingMask } = useStatus();
+const { setAlias, setAccountStatus, appState, setAccountPk58, showLoadingMask, closeLoadingMask, setSigningPk1_58, setSigningPk2_58 } = useStatus();
 const router = useRouter();
 
 const toBack = () => router.back();
@@ -145,23 +145,27 @@ const inputPwdAgain = () => {
 const maskId = "login-index";
 
 const login = async () => {
-    if (accountPrivateKey.value.length === 0) {
+    const accountPrivateKeyTrim = accountPrivateKey.value.trim();
+    if (accountPrivateKeyTrim.length === 0) {
         message.error("Account Private Key is required");
         return;
     }
-    if (accountSigningKey.value.length === 0) {
+    const accountSigningKeyTrim = accountSigningKey.value.trim();
+    if (accountSigningKeyTrim.length === 0) {
         message.error("Account Signing Key is required");
         return;
     }
-    if (pwd.value.length === 0) {
+    const pwdTrim = pwd.value.trim();
+    if (pwdTrim.length === 0) {
         message.error("Password is required");
         return;
     }
-    if (pwdAgain.value.length === 0) {
+    const pwdAgainTrim = pwdAgain.value.trim();
+    if (pwdAgainTrim.length === 0) {
         message.error("Password Again is required");
         return;
     }
-    if (pwd.value !== pwdAgain.value) {
+    if (pwdTrim !== pwdAgainTrim) {
         message.error("Password and Password Again must be the same");
         return;
     }
@@ -169,13 +173,15 @@ const login = async () => {
     try {
         showLoadingMask({ id: maskId, text: "Login...", closable: false });
         // check account is registered
-        const accountPk58 = (await remoteApi.getKeypair(accountPrivateKey.value)).publicKey;
+        const accountPk58 = (await remoteApi.getKeypair(accountPrivateKeyTrim)).publicKey;
+        const signingPk1_58 = (await remoteApi.getKeypair(accountSigningKeyTrim)).publicKey;
+        const signingKeypair2 = await remoteApi.getRandomKeypair();
 
         // get alias
-        let alias = await remoteApi.getAliasByAccountPublicKey(accountPk58, accountPrivateKey.value);
+        let alias = await remoteApi.getAliasByAccountPublicKey(accountPk58, accountPrivateKeyTrim);
 
-        const accountPk = await addAccount(accountPrivateKey.value, pwd.value, accountSigningKey.value,
-            undefined, alias);
+        const accountPk = await addAccount(accountPrivateKeyTrim, pwdTrim, accountSigningKeyTrim,
+            signingKeypair2.privateKey, alias);
         if (accountPk) {
             if (alias) {
                 setAlias(alias);
@@ -186,6 +192,8 @@ const login = async () => {
             }
 
             setAccountPk58(accountPk58);
+            setSigningPk1_58(signingPk1_58);
+            setSigningPk2_58(signingKeypair2.publicKey);
             message.success('Account saved successfully');
 
             if (appState.value.accountStatus !== AccountStatus.UNREGISTERED) {
