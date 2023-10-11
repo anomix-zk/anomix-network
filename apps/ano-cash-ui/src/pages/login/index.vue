@@ -78,7 +78,7 @@ const router = useRouter();
 const toBack = () => router.back();
 
 const toRegisterAliasPage = async () => {
-    await navigateTo({ path: "/connect", query: { step: 2 } });
+    await navigateTo("/connect/step-2");
 };
 
 const toAccountPage = async () => {
