@@ -60,8 +60,10 @@ import loginImage from "@/assets/anomix.svg";
 import auroLogo from "@/assets/auro.png";
 import keyImage from "@/assets/key2.png";
 import claimImage from "@/assets/claim.svg";
-import { useMessage } from "naive-ui";
+import { h } from "vue";
+import { useMessage, useNotification } from "naive-ui";
 
+const notification = useNotification();
 const message = useMessage();
 const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
 const { SdkState } = useSdk();
@@ -76,6 +78,26 @@ onMounted(async () => {
         if (accounts.length > 0) {
             existLocalAccount.value = true;
         }
+
+        notification.info({
+            title: () => h('div', {
+                innerHTML: `<div style="color: red;font-weight:600;">AnoCash Test Reminder</div>`,
+            }),
+            //description: 'This is a test network, do not use your mainnet funds for testing',
+            content: () => h('div', {
+                innerHTML: `<div style="font-weight:600;">This is a very early MVP test version of AnoCash, do not use your Mainnet wallet keys or funds for testing!!<br/><br/>After you install Auro wallet extension, switch to the "Berkeley" network:<br/><a href='https://www.aurowallet.com/' target='_blank'>Install Auro Wallet ></a><br/><br/>Claim test funds (Berkeley) for your auro wallet address:<br/><a href='https://faucet.minaprotocol.com/' target='_blank'>Testnet Faucet ></a></div>`
+            }),
+            //meta: '2019-5-27 15:11',
+            // avatar: () =>
+            //     h(NAvatar, {
+            //         size: 'small',
+            //         round: true,
+            //         src: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg'
+            //     }),
+            // onAfterLeave: () => {
+            //     message.success("Wouldn't it be Nice")
+            // }
+        });
     } catch (err: any) {
         console.error(err);
     }

@@ -31,11 +31,11 @@ const emit = defineEmits<{
     (e: 'finish'): void;
 }>();
 
-const { SdkState, listenSyncerChannel } = useSdk();
+const { SdkState, listenSyncerChannel, compileCircuits } = useSdk();
 const remoteSdk = SdkState.remoteSdk!;
 const remoteApi = SdkState.remoteApi!;
 const message = useMessage();
-const { showLoadingMask, closeLoadingMask, appState, setAlias, setAccountStatus } = useStatus();
+const { showLoadingMask, closeLoadingMask, appState, setAlias, setAccountStatus, setStartCompileCircuits } = useStatus();
 
 const canRegsiter = ref(-1);
 const inputAlias = ref("");
@@ -48,6 +48,16 @@ const toAccountPage = () => {
 };
 
 const maskId = 'registerAccount';
+
+onMounted(() => {
+    console.log('Step2 mounted...');
+    if (!appState.value.startCompileCircuits) {
+        console.log('start compile circuits...');
+        compileCircuits();
+        setStartCompileCircuits(true);
+    }
+    console.log('Step2 mounted end');
+});
 
 const handleInput = (v: string) => {
     if (canRegsiter.value !== -1) {

@@ -169,9 +169,10 @@
 
                                 <div class="tx-info">
                                     <div class="tx-address">
-                                        <span @click="copyAddress(item.receiver)" v-if="item.isSender">{{
+                                        <span @click.stop="copyAddress(item.receiver)" v-if="item.isSender">{{
                                             omitAddress(item.receiver) }}</span>
-                                        <span @click="copyAddress(item.sender)" v-else>{{ item.sender !== emptyPublicKey ?
+                                        <span @click.stop="copyAddress(item.sender)" v-else>{{ item.sender !==
+                                            emptyPublicKey ?
                                             omitAddress(item.sender) : 'unknown' }}</span>
 
                                         <div v-if="item.actionType === '1'" class="tx-label">
@@ -260,10 +261,11 @@ import exitIcon from '@/assets/exit.svg';
 import { AccountStatus, PageAction, SdkEventType, EMPTY_PUBLICKEY } from '../../common/constants';
 import { SdkEvent, TxHis } from '../../common/types';
 
-const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setAccountStatus, setSyncedBlock, setLatestBlock, pageParams, showLoadingMask, closeLoadingMask } = useStatus();
+const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setAccountStatus, setSyncedBlock,
+    setLatestBlock, pageParams, showLoadingMask, closeLoadingMask, setStartCompileCircuits } = useStatus();
 const { convertToMinaUnit, calculateUsdAmount, omitAddress, getUserTimezone } = useUtils();
 const message = useMessage();
-const { SdkState, exitAccount, listenSyncerChannel, clearAccount } = useSdk();
+const { SdkState, exitAccount, listenSyncerChannel, clearAccount, compileCircuits } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const remoteSyncer = SdkState.remoteSyncer!;
 const emptyPublicKey = EMPTY_PUBLICKEY;
@@ -448,6 +450,11 @@ onMounted(async () => {
         message.error(err.message, { duration: 3000, closable: true });
     }
 
+    if (!appState.value.startCompileCircuits) {
+        console.log('start compile circuits...');
+        compileCircuits();
+        setStartCompileCircuits(true);
+    }
     console.log('account onMounted done');
 });
 

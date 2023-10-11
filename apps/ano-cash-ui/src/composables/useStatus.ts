@@ -24,6 +24,7 @@ export default function () {
         sdkExist: boolean;
         syncerStarted: boolean;
         apiExist: boolean;
+        startCompileCircuits: boolean;
         mask: {
             id: string | undefined;
             show: boolean;
@@ -57,6 +58,7 @@ export default function () {
             sdkExist: false,
             syncerStarted: false,
             apiExist: false,
+            startCompileCircuits: false,
             mask: {
                 id: "appInit",
                 show: true,
@@ -211,6 +213,10 @@ export default function () {
         appState.value.minaNetwork = network;
     };
 
+    const setStartCompileCircuits = (startCompileCircuits: boolean) => {
+        appState.value.startCompileCircuits = startCompileCircuits;
+    };
+
     return {
         appState,
         pageParams,
@@ -235,5 +241,6 @@ export default function () {
         setSyncedBlock,
         setLatestBlock,
         setMinaNetwork,
+        setStartCompileCircuits,
     };
 }

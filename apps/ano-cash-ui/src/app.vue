@@ -1,11 +1,13 @@
 <template>
   <n-config-provider :theme-overrides="themeOverrides" v-if="supportStatus === 'supported'">
     <n-dialog-provider>
-      <n-message-provider>
-        <NuxtLayout>
-          <NuxtPage />
-        </NuxtLayout>
-      </n-message-provider>
+      <n-notification-provider>
+        <n-message-provider>
+          <NuxtLayout>
+            <NuxtPage />
+          </NuxtLayout>
+        </n-message-provider>
+      </n-notification-provider>
     </n-dialog-provider>
   </n-config-provider>
 
@@ -20,7 +22,7 @@ import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui';
 import { CHANNEL_SYNCER, CHANNEL_MINA, WalletEventType } from './common/constants';
 import type { WalletEvent } from './common/types';
 
-const { createRemoteSdk, createRemoteApi, startRemoteSyncer, compileCircuits, SdkState } = useSdk();
+const { createRemoteSdk, createRemoteApi, startRemoteSyncer, SdkState } = useSdk();
 const runtimeConfig = useRuntimeConfig();
 const route = useRoute();
 const { setTokenPrices, showLoadingMask, closeLoadingMask, setMinaNetwork, appState } = useStatus();
@@ -195,7 +197,6 @@ onMounted(async () => {
     closeLoadingMask(maskId);
   }
 
-  compileCircuits();
   console.log('App mounted end');
 });
 </script>
