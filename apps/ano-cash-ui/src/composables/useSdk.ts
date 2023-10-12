@@ -131,18 +131,19 @@ export default function () {
         return pubKeys;
     };
 
-    const exitAccount = async () => {
+    const exitAccount = async (accountPk58: string) => {
         console.log("exit account...");
         await SdkState.remoteSdk!.lockKeyStore();
         await SdkState.remoteSyncer!.lockKeyStore();
+        await SdkState.remoteSyncer!.syncerRemoveAccount(accountPk58);
         resetStatusForLogOut();
         console.log("exit account success");
     };
 
     const clearAccount = async (accountPk58: string) => {
         console.log("clear account...");
-        await SdkState.remoteSyncer!.removeAccount(accountPk58);
-        await exitAccount();
+        await SdkState.remoteSyncer!.removeUserState(accountPk58);
+        await exitAccount(accountPk58);
         console.log("clear account success");
     };
 

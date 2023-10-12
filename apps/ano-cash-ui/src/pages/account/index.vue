@@ -289,7 +289,7 @@ const logOut = async () => {
     showLoadingMask({ text: 'Log out...', id: maskId, closable: false });
     try {
         syncerChannel?.close();
-        await exitAccount();
+        await exitAccount(appState.value.accountPk58!);
         await navigateTo("/login/session");
         message.success('Log out successfully');
         closeLoadingMask(maskId);

@@ -21,8 +21,11 @@ const syncerWrapper = {
 
         await syncerSdk.stop();
     },
-    removeAccount: async (accountPk: string) => {
-        await syncerSdk.removeAccount(accountPk);
+    syncerRemoveAccount: async (accountPk: string) => {
+        await syncerSdk.syncerRemoveAccount(accountPk);
+    },
+    removeUserState: async (accountPk: string) => {
+        await syncerSdk.removeUserState(accountPk);
     },
     addAccount: async (
         accountPrivateKey58: string,

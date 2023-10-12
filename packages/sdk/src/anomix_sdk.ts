@@ -589,15 +589,20 @@ export class AnomixSdk {
     };
   }
 
-  public async removeAccount(accountPk58: string) {
-    this.log.info('Removing account...');
+  public async removeUserState(accountPk58: string) {
+    this.log.info('Removing user state...');
+    await this.db.removeUserState(accountPk58);
+    this.log.info('User state removed');
+  }
+
+  public async syncerRemoveAccount(accountPk58: string) {
+    this.log.info('Syncer removing account...');
     if (this.useSyncerWorker) {
       await this.remoteSyncer.removeAccount(accountPk58);
     } else {
       this.syncer.removeAccount(PublicKey.fromBase58(accountPk58));
     }
-    await this.db.removeUserState(accountPk58);
-    this.log.info('Account removed');
+    this.log.info('Syncer account removed');
   }
 
   public async addAccount(

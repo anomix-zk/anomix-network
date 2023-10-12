@@ -183,6 +183,11 @@ export default function () {
         setAlias(null);
         setAccountStatus(AccountStatus.UNREGISTERED);
         setTotalNanoBalance(null);
+        setSigningPk1_58(null);
+        setSigningPk2_58(null);
+        setSyncedBlock(0);
+        setLatestBlock(0);
+        appState.value.isHideInfo = false;
     };
 
     const setSigningPk1_58 = (pk58: string | null | undefined) => {
