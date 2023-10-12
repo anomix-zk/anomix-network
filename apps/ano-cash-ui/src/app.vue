@@ -1,7 +1,7 @@
 <template>
   <n-config-provider :theme-overrides="themeOverrides" v-if="supportStatus === 'supported'">
     <n-dialog-provider>
-      <n-notification-provider>
+      <n-notification-provider :max="1">
         <n-message-provider>
           <NuxtLayout>
             <NuxtPage />
@@ -124,11 +124,9 @@ onMounted(async () => {
       }
     }
 
-    closeLoadingMask(maskId);
-
-    if (!appState.value.syncerStarted) {
-      console.log('App mounted-start remote syncer');
-      await startRemoteSyncer({
+    if (!appState.value.sdkExist) {
+      console.log('App mounted-start remote sdk');
+      await createRemoteSdk({
         entryContractAddress,
         vaultContractAddress,
         options: {
@@ -142,9 +140,11 @@ onMounted(async () => {
       });
     }
 
-    if (!appState.value.sdkExist) {
-      console.log('App mounted-start remote sdk');
-      await createRemoteSdk({
+    closeLoadingMask(maskId);
+
+    if (!appState.value.syncerStarted) {
+      console.log('App mounted-start remote syncer');
+      await startRemoteSyncer({
         entryContractAddress,
         vaultContractAddress,
         options: {
