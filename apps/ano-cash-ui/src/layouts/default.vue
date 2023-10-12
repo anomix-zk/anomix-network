@@ -5,7 +5,11 @@
 
             <div v-if="appState.mask.show" class="ano-mask" @click="closeCurrentLoadingMask">
                 <n-spin v-if="appState.mask.showLoading" :description="appState.mask.loadingText" stroke="white"
-                    size="large" style="z-index: 1000; color:#fff; font-size: 20px;" />
+                    size="large"
+                    style="z-index: 1000; color:#fff; font-size: 20px;padding-left: 30px;padding-right: 30px;" />
+                <div v-if="appState.mask.showLoading === false && appState.mask.show"
+                    style="z-index: 1000; color:#fff; font-size: 20px;">App Loading...</div>
+
             </div>
         </div>
     </div>
@@ -19,4 +23,3 @@ const closeCurrentLoadingMask = () => {
 };
 
 </script>
-

@@ -63,7 +63,7 @@ export default function () {
                 id: "appInit",
                 show: true,
                 closable: false, // Users can close by clicking
-                showLoading: true,
+                showLoading: false,
                 loadingText: "App Initializing...",
             },
         };

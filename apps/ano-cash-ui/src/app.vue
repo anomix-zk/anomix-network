@@ -87,18 +87,20 @@ onMounted(async () => {
     const l2BlockPollingIntervalMS = runtimeConfig.public.l2BlockPollingIntervalMS as number;
     const broadcastChannelName = CHANNEL_SYNCER;
 
-    await createRemoteApi({
-      entryContractAddress,
-      vaultContractAddress,
-      options: {
-        nodeUrl,
-        minaEndpoint,
-        nodeRequestTimeoutMS,
-        l2BlockPollingIntervalMS,
-        broadcastChannelName,
-        debug,
-      },
-    });
+    if (!appState.value.apiExist) {
+      await createRemoteApi({
+        entryContractAddress,
+        vaultContractAddress,
+        options: {
+          nodeUrl,
+          minaEndpoint,
+          nodeRequestTimeoutMS,
+          l2BlockPollingIntervalMS,
+          broadcastChannelName,
+          debug,
+        },
+      });
+    }
 
     const accounts = await SdkState.remoteApi!.getLocalAccounts();
     if (accounts.length > 0) {
@@ -122,33 +124,39 @@ onMounted(async () => {
       }
     }
 
-    console.log('App mounted-start remote syncer');
-    await startRemoteSyncer({
-      entryContractAddress,
-      vaultContractAddress,
-      options: {
-        nodeUrl,
-        minaEndpoint,
-        nodeRequestTimeoutMS,
-        l2BlockPollingIntervalMS,
-        broadcastChannelName,
-        debug,
-      },
-    });
+    if (!appState.value.syncerStarted) {
+      console.log('App mounted-start remote syncer');
+      await startRemoteSyncer({
+        entryContractAddress,
+        vaultContractAddress,
+        options: {
+          nodeUrl,
+          minaEndpoint,
+          nodeRequestTimeoutMS,
+          l2BlockPollingIntervalMS,
+          broadcastChannelName,
+          debug,
+        },
+      });
+    }
 
-    console.log('App mounted-start remote sdk');
-    await createRemoteSdk({
-      entryContractAddress,
-      vaultContractAddress,
-      options: {
-        nodeUrl,
-        minaEndpoint,
-        nodeRequestTimeoutMS,
-        l2BlockPollingIntervalMS,
-        broadcastChannelName,
-        debug,
-      },
-    });
+    if (!appState.value.sdkExist) {
+      console.log('App mounted-start remote sdk');
+      await createRemoteSdk({
+        entryContractAddress,
+        vaultContractAddress,
+        options: {
+          nodeUrl,
+          minaEndpoint,
+          nodeRequestTimeoutMS,
+          l2BlockPollingIntervalMS,
+          broadcastChannelName,
+          debug,
+        },
+      });
+    }
+
+    closeLoadingMask(maskId);
 
     if (!walletListenerSetted.value) {
       if (window.mina) {
@@ -183,20 +191,17 @@ onMounted(async () => {
       walletListenerSetted.value = true;
     }
 
-    closeLoadingMask(maskId);
-
     const { data } = await useFetch('https://api.coingecko.com/api/v3/simple/price?ids=mina-protocol&vs_currencies=usd%2Ccny');
     const price = data.value as any;
     console.log('get price info: ', price);
 
     setTokenPrices([{ tokenName: 'MINA', usd: price['mina-protocol']['usd'] + '', cny: price['mina-protocol']['cny'] + '' }]);
-    closeLoadingMask(maskId);
 
   } catch (err: any) {
     console.error(err);
-    closeLoadingMask(maskId);
   }
 
+  closeLoadingMask(maskId);
   console.log('App mounted end');
 });
 </script>

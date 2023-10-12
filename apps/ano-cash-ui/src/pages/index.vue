@@ -8,7 +8,8 @@
         <!---->
         <div class="oauth-box">
             <div class="auth-item">
-                <n-button color="#f4f4f4" block type="primary" class="auth-btn" @click="connectWallet('connect')">
+                <n-button color="#f4f4f4" :bordered="false" block type="primary" class="auth-btn"
+                    @click="connectWallet('connect')">
                     <div style="display:flex; align-items: center;">
                         <img :src="auroLogo" alt="" style="width: 30px; height: 30px;" />
                         <span style="color:#1f202a">Connect Wallet</span>
@@ -16,7 +17,7 @@
                 </n-button>
             </div>
             <div class="auth-item">
-                <n-button color="#f4f4f4" block type="primary" @click="login" class="auth-btn">
+                <n-button color="#f4f4f4" :bordered="false" block type="primary" @click="login" class="auth-btn">
                     <div style="display:flex; align-items: center;">
                         <img :src="keyImage" alt="" style="width: 36px; height: 36px;" />
                         <span style="color:#1f202a">Login With Key</span>
@@ -25,7 +26,7 @@
             </div>
 
             <div v-if="existLocalAccount" class="auth-item">
-                <n-button color="#f4f4f4" block type="primary" @click="sessionLogin" class="auth-btn">
+                <n-button color="#f4f4f4" :bordered="false" block type="primary" @click="sessionLogin" class="auth-btn">
                     <div style="display:flex; align-items: center;">
                         <span style="color:#1f202a">Login With Local Account</span>
                     </div>
@@ -41,7 +42,8 @@
 
         <div class="oauth-box" style="margin-top: 30px;">
             <div class="auth-item">
-                <n-button color="#f4f4f4" block type="primary" @click="connectWallet('claim')" class="auth-btn">
+                <n-button color="#f4f4f4" :bordered="false" block type="primary" @click="connectWallet('claim')"
+                    class="auth-btn">
                     <div style="display:flex; align-items: center;">
                         <img :src="claimImage" alt="" style="width: 35px; height: 35px;" />
                         <span style="color:#1f202a">Claim Assets</span>
@@ -70,34 +72,30 @@ const { SdkState } = useSdk();
 
 const maskId = "index";
 const existLocalAccount = ref(false);
+const showTestReminder = ref(false);
 
 onMounted(async () => {
     console.log('App index onMounted...');
     try {
-        const accounts = await SdkState.remoteApi!.getLocalAccounts();
-        if (accounts.length > 0) {
-            existLocalAccount.value = true;
+        if (!showTestReminder.value) {
+            notification.info({
+                title: () => h('div', {
+                    innerHTML: `<div style="color: red;font-weight:600;">AnoCash Test Reminder</div>`,
+                }),
+                content: () => h('div', {
+                    innerHTML: `<div style="font-weight:600;">This is a very early MVP test version of AnoCash, do not use your Mainnet wallet keys or funds for testing!!<br/><br/>After you install Auro wallet extension, switch to the "Berkeley" network:<br/><a href='https://www.aurowallet.com/' target='_blank'>Install Auro Wallet ></a><br/><br/>Claim test funds (Berkeley) for your auro wallet address:<br/><a href='https://faucet.minaprotocol.com/' target='_blank'>Testnet Faucet ></a></div>`
+                }),
+            });
+            showTestReminder.value = true;
         }
 
-        notification.info({
-            title: () => h('div', {
-                innerHTML: `<div style="color: red;font-weight:600;">AnoCash Test Reminder</div>`,
-            }),
-            //description: 'This is a test network, do not use your mainnet funds for testing',
-            content: () => h('div', {
-                innerHTML: `<div style="font-weight:600;">This is a very early MVP test version of AnoCash, do not use your Mainnet wallet keys or funds for testing!!<br/><br/>After you install Auro wallet extension, switch to the "Berkeley" network:<br/><a href='https://www.aurowallet.com/' target='_blank'>Install Auro Wallet ></a><br/><br/>Claim test funds (Berkeley) for your auro wallet address:<br/><a href='https://faucet.minaprotocol.com/' target='_blank'>Testnet Faucet ></a></div>`
-            }),
-            //meta: '2019-5-27 15:11',
-            // avatar: () =>
-            //     h(NAvatar, {
-            //         size: 'small',
-            //         round: true,
-            //         src: 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg'
-            //     }),
-            // onAfterLeave: () => {
-            //     message.success("Wouldn't it be Nice")
-            // }
-        });
+        if (SdkState.remoteApi !== null) {
+            const accounts = await SdkState.remoteApi.getLocalAccounts();
+            if (accounts.length > 0) {
+                existLocalAccount.value = true;
+            }
+        }
+
     } catch (err: any) {
         console.error(err);
     }
