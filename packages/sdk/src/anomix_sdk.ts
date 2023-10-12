@@ -1105,10 +1105,9 @@ export class AnomixSdk {
         accountPrivateKey,
         Bool(true)
       );
-      let randomZeroValueNote = ValueNote.zero();
-      randomZeroValueNote.secret = Field.random();
+      inputValueNote2.secret = Field.random();
       nullifier2 = calculateNoteNullifier(
-        randomZeroValueNote.commitment(),
+        inputValueNote2.commitment(),
         accountPrivateKey,
         Bool(false)
       );
