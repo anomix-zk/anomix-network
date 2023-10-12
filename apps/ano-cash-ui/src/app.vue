@@ -124,6 +124,8 @@ onMounted(async () => {
       }
     }
 
+    closeLoadingMask(maskId);
+
     if (!appState.value.syncerStarted) {
       console.log('App mounted-start remote syncer');
       await startRemoteSyncer({
@@ -155,8 +157,6 @@ onMounted(async () => {
         },
       });
     }
-
-    closeLoadingMask(maskId);
 
     if (!walletListenerSetted.value) {
       if (window.mina) {
