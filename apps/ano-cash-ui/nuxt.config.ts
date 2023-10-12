@@ -20,7 +20,7 @@ export default defineNuxtConfig({
                 nodeUrl: "https://api.ano.cash",
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
                 l2BlockPollingIntervalMS: 15 * 1000,
-                synceBlocksPerPoll: 5,
+                synceBlocksPerPoll: 16,
                 minaEndpoint: "https://berkeley.minascan.io/graphql",
                 debug: false,
                 minaNetwork: "Berkeley", // auro wallet network config
@@ -37,7 +37,7 @@ export default defineNuxtConfig({
                 nodeUrl: "https://api.ano.cash",
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
                 l2BlockPollingIntervalMS: 15 * 1000,
-                synceBlocksPerPoll: 5,
+                synceBlocksPerPoll: 16,
                 minaEndpoint: "https://berkeley.minascan.io/graphql",
                 debug: true,
                 minaNetwork: "Berkeley", // auro wallet network config

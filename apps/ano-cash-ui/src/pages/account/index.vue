@@ -266,6 +266,7 @@ const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setA
 const { convertToMinaUnit, calculateUsdAmount, omitAddress, getUserTimezone } = useUtils();
 const message = useMessage();
 const { SdkState, exitAccount, listenSyncerChannel, clearAccount, compileCircuits } = useSdk();
+const runtimeConfig = useRuntimeConfig();
 const remoteApi = SdkState.remoteApi!;
 const remoteSyncer = SdkState.remoteSyncer!;
 const emptyPublicKey = EMPTY_PUBLICKEY;
@@ -317,7 +318,7 @@ const clearAccountAndLogout = async () => {
 };
 
 const expectSyncedSpendTime = ref(20_000); // default 20s
-const lastBlockProcessDoneTime = ref(Date.now());
+const lastBatchProcessDoneTime = ref(Date.now());
 const syncerListenerSetted = ref(false);
 const userTimezone = ref("Asia/Shanghai");
 const tokenList = computed(() => {
@@ -356,6 +357,8 @@ const userTx2TxHis = (tx: any) => {
 };
 
 const currentTab = ref(pageParams.value.action === PageAction.ACCOUNT_PAGE && pageParams.value.params !== null ? pageParams.value.params : 'tokens');
+const synceBlocksPerPoll = runtimeConfig.public.synceBlocksPerPoll as number;
+
 onMounted(async () => {
     console.log('account onMounted...');
     try {
@@ -403,22 +406,26 @@ onMounted(async () => {
                 syncerChannel = chan;
                 if (event.eventType === SdkEventType.UPDATED_ACCOUNT_STATE) {
                     if (event.data.accountPk === appState.value.accountPk58) {
-                        const oneBlockSpendTime = Date.now() - lastBlockProcessDoneTime.value;
-                        console.log('oneBlockSpendTime: ', oneBlockSpendTime);
-                        lastBlockProcessDoneTime.value = Date.now();
+                        const oneBatchSpendTime = Date.now() - lastBatchProcessDoneTime.value;
+                        console.log('oneBatchSpendTime: ', oneBatchSpendTime);
+                        lastBatchProcessDoneTime.value = Date.now();
 
                         // get latest block
                         const blockHeight = await remoteApi.getBlockHeight();
                         setLatestBlock(blockHeight);
                         setSyncedBlock(event.data.synchedToBlock);
 
-
                         const diffBlock = blockHeight - event.data.synchedToBlock;
-                        if (diffBlock > 0 && oneBlockSpendTime > 0) {
-                            expectSyncedSpendTime.value = oneBlockSpendTime * diffBlock;
+                        let diffBatch = diffBlock / synceBlocksPerPoll;
+                        const diffBatchMod = diffBlock % synceBlocksPerPoll;
+                        if (diffBatchMod > 0) {
+                            diffBatch += 1;
+                        }
+                        if (diffBatch > 0 && oneBatchSpendTime > 0) {
+                            expectSyncedSpendTime.value = oneBatchSpendTime * diffBatch;
                         }
                         console.log('expectSyncedSpendTime: ', expectSyncedSpendTime.value);
-                        console.log('lastBlockProcessDoneTime: ', lastBlockProcessDoneTime.value);
+                        console.log('lastBatchProcessDoneTime: ', lastBatchProcessDoneTime.value);
 
                         // get latest balance
                         const balance = await remoteApi.getBalance(appState.value.accountPk58!);

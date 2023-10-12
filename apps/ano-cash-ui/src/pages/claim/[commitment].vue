@@ -448,7 +448,7 @@ onMounted(async () => {
 
   } catch (err: any) {
     console.error(err);
-    message.error(err.message, { duration: 5000, closable: true });
+    message.error(err.message, { duration: 6000, closable: true });
   }
 
   closeLoadingMask(maskId);
