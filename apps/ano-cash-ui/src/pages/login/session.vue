@@ -4,7 +4,7 @@
         <div class="page-login">
 
             <div class="logo">
-                <img :src="loginImage" class="arrow" alt="" />
+                <img :src="loginImage" alt="Ano.Cash" />
             </div>
             <div class="login-title">
                 Login Ano.Cash

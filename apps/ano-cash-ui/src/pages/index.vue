@@ -2,7 +2,7 @@
     <div class="header">Ano.Cash</div>
     <div class="login">
         <div class="logo">
-            <img :src="loginImage" class="arrow" alt="" />
+            <img :src="loginImage" alt="Ano.Cash" />
         </div>
         <h1 class="title">Login AnoCash</h1>
         <!---->
@@ -60,7 +60,7 @@
 <script lang="ts" setup>
 import loginImage from "@/assets/anomix.svg";
 import auroLogo from "@/assets/auro.png";
-import keyImage from "@/assets/key2.png";
+import keyImage from "@/assets/key.png";
 import claimImage from "@/assets/claim.svg";
 import { h } from "vue";
 import { useMessage, useNotification } from "naive-ui";
