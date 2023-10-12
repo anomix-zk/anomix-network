@@ -136,7 +136,7 @@ import claimImage from "@/assets/claim.svg";
 import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
 import { SdkEvent, TxInfo } from '../../common/types';
-import { PageAction, SdkEventType } from '../../common/constants';
+import { PageAction, SdkEventType, TIPS_WAIT_FOR_CIRCUITS_COMPILING } from '../../common/constants';
 
 const router = useRouter();
 const { appState, showLoadingMask, closeLoadingMask, setPageParams, setConnectedWallet, pageParams, setTotalNanoBalance } = useStatus();
@@ -286,7 +286,7 @@ const toConfirm = async () => {
   }
 
   try {
-    showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: true });
+    showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
     const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
     if (!isPrivateCircuitReady) {
       if (maskListenerSetted.value === false) {

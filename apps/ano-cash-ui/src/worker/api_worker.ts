@@ -1,6 +1,6 @@
 import type { AnomixSdk, ProviderSignature, SdkConfig, Tx } from "@anomix/sdk";
 import { expose } from "comlink";
-import { log, tryFunc } from "../utils";
+import { log } from "../utils";
 
 let apiSdk: AnomixSdk;
 let minaEndpoint: string;
@@ -14,26 +14,23 @@ const apiWrapper = {
         const { createAnomixSdk } = await import("@anomix/sdk");
         log("api service loaded");
 
-        await tryFunc(async () => {
-            minaEndpoint = config.options.minaEndpoint;
-            apiSdk = await createAnomixSdk(config);
-        });
+        minaEndpoint = config.options.minaEndpoint;
+        apiSdk = await createAnomixSdk(config);
+
         log("api service created");
     },
 
     generateKeyPair: async (sign: ProviderSignature, accountIndex = 0) => {
         log("generate key pair: " + JSON.stringify(sign));
 
-        return await tryFunc(async () => {
-            const keypair = apiSdk.generateKeyPairByProviderSignature(
-                sign,
-                accountIndex,
-            );
-            return {
-                privateKey: keypair.privateKey.toBase58(),
-                publicKey: keypair.publicKey.toBase58(),
-            };
-        });
+        const keypair = apiSdk.generateKeyPairByProviderSignature(
+            sign,
+            accountIndex,
+        );
+        return {
+            privateKey: keypair.privateKey.toBase58(),
+            publicKey: keypair.publicKey.toBase58(),
+        };
     },
     getAccountKeySigningData: () => {
         return apiSdk.getAccountKeySigningData();
@@ -46,29 +43,22 @@ const apiWrapper = {
         accountPrivateKey: string,
     ) => {
         log("getAliasByAccountPublicKey: " + accountPk);
-        return await tryFunc(async () => {
-            const { PrivateKey } = await import("o1js");
-            const priKey = PrivateKey.fromBase58(accountPrivateKey);
-            return await apiSdk.getAliasByAccountPublicKey(accountPk, priKey);
-        });
+
+        const { PrivateKey } = await import("o1js");
+        const priKey = PrivateKey.fromBase58(accountPrivateKey);
+        return await apiSdk.getAliasByAccountPublicKey(accountPk, priKey);
     },
 
     updateAliasForUserState: async (accountPk: string, alias: string) => {
-        await tryFunc(async () => {
-            await apiSdk.updateAliasForUserState(accountPk, alias);
-        });
+        await apiSdk.updateAliasForUserState(accountPk, alias);
     },
 
     isAliasRegistered: async (alias: string, includePending: boolean) => {
-        return await tryFunc(async () => {
-            return await apiSdk.isAliasRegistered(alias, includePending);
-        });
+        return await apiSdk.isAliasRegistered(alias, includePending);
     },
 
     sendTx: async (tx: Tx) => {
-        await tryFunc(async () => {
-            await apiSdk.sendTx(tx);
-        });
+        await apiSdk.sendTx(tx);
     },
     getKeypair: async (privateKey58: string) => {
         const { PrivateKey } = await import("o1js");

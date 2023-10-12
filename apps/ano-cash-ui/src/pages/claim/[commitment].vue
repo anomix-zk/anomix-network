@@ -146,6 +146,7 @@ import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
 import auroLogo from "@/assets/auro.png";
 import type { SdkEvent, WalletEvent } from '../../common/types';
+import { TIPS_WAIT_FOR_CIRCUITS_COMPILING } from '../../common/constants';
 import { SdkEventType, CHANNEL_MINA, WalletEventType } from '../../common/constants';
 
 const router = useRouter();
@@ -216,7 +217,7 @@ const claim = async () => {
     return;
   }
 
-  showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: false });
+  showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: false });
   disabledClaim.value = true;
   claimLoading.value = true;
   try {
@@ -276,7 +277,7 @@ const createWithdrawalAccount = async () => {
     return;
   }
 
-  showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: true });
+  showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
   createWithdrawalAccountLoading.value = true;
   try {
     const isContractReady = await remoteSdk.isVaultContractCompiled();

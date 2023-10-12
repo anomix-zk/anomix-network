@@ -133,7 +133,7 @@ import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
 import auroLogo from "@/assets/auro.png";
 import { SdkEvent } from '../../common/types';
-import { SdkEventType, CHANNEL_MINA, WalletEventType } from '../../common/constants';
+import { SdkEventType, CHANNEL_MINA, WalletEventType, TIPS_WAIT_FOR_CIRCUITS_COMPILING } from '../../common/constants';
 import type { WalletEvent } from '../../common/types';
 
 const router = useRouter();
@@ -302,7 +302,7 @@ const deposit = async () => {
     return;
   }
   try {
-    showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: true });
+    showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
     const isContractReady = await remoteSdk.isEntryContractCompiled();
     if (!isContractReady) {
       if (maskListenerSetted.value === false) {

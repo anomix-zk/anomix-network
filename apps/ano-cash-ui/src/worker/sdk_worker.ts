@@ -1,6 +1,6 @@
 import type { AnomixSdk, SdkConfig } from "@anomix/sdk";
 import { expose } from "comlink";
-import { log, tryFunc } from "../utils";
+import { log } from "../utils";
 
 let sdk: AnomixSdk;
 //const logLabel = "sdk_worker";
@@ -13,9 +13,8 @@ const sdkWrapper = {
         const { createAnomixSdk } = await import("@anomix/sdk");
         log("sdk loaded");
 
-        await tryFunc(async () => {
-            sdk = await createAnomixSdk(config);
-        });
+        sdk = await createAnomixSdk(config);
+
         log("sdk created");
     },
 
@@ -41,21 +40,19 @@ const sdkWrapper = {
         accountPk58: string,
         alias: string,
         newSigningPk1_58: string,
-        newSigningPk2_58: string
+        newSigningPk2_58: string,
     ) => {
         log("createAccountRegisterTx...");
         const { PublicKey } = await import("o1js");
 
-        return await tryFunc(async () => {
-            const accountPk = PublicKey.fromBase58(accountPk58);
-            const newSigningPk1 = PublicKey.fromBase58(newSigningPk1_58);
-            const newSigningPk2 = PublicKey.fromBase58(newSigningPk2_58);
-            return await sdk.createAccountRegisterTx({
-                accountPk,
-                alias,
-                newSigningPk1,
-                newSigningPk2,
-            });
+        const accountPk = PublicKey.fromBase58(accountPk58);
+        const newSigningPk1 = PublicKey.fromBase58(newSigningPk1_58);
+        const newSigningPk2 = PublicKey.fromBase58(newSigningPk2_58);
+        return await sdk.createAccountRegisterTx({
+            accountPk,
+            alias,
+            newSigningPk1,
+            newSigningPk2,
         });
     },
 
@@ -76,7 +73,7 @@ const sdkWrapper = {
     createWithdrawalAccount: async (
         userPk: string,
         feePayerPk: string,
-        txFee?: string
+        txFee?: string,
     ) => {
         const { PublicKey, UInt64 } = await import("o1js");
         const feePayerAddress = PublicKey.fromBase58(feePayerPk);
@@ -91,7 +88,7 @@ const sdkWrapper = {
     createClaimFundsTx: async (
         withdrawNoteCommitment: string,
         feePayer: string,
-        txFee?: string
+        txFee?: string,
     ) => {
         const { PublicKey, UInt64 } = await import("o1js");
         const feePayerAddress = PublicKey.fromBase58(feePayer);
