@@ -82,6 +82,7 @@ onMounted(async () => {
     const entryContractAddress = runtimeConfig.public.entryContractAddress as string;
     const vaultContractAddress = runtimeConfig.public.vaultContractAddress as string;
     const nodeUrl = runtimeConfig.public.nodeUrl as string;
+    const synceBlocksPerPoll = runtimeConfig.public.synceBlocksPerPoll as number;
     const minaEndpoint = runtimeConfig.public.minaEndpoint as string;
     const nodeRequestTimeoutMS = runtimeConfig.public.nodeRequestTimeoutMS as number;
     const l2BlockPollingIntervalMS = runtimeConfig.public.l2BlockPollingIntervalMS as number;
@@ -94,6 +95,7 @@ onMounted(async () => {
         options: {
           nodeUrl,
           minaEndpoint,
+          synceBlocksPerPoll,
           nodeRequestTimeoutMS,
           l2BlockPollingIntervalMS,
           broadcastChannelName,
@@ -132,6 +134,7 @@ onMounted(async () => {
         options: {
           nodeUrl,
           minaEndpoint,
+          synceBlocksPerPoll,
           nodeRequestTimeoutMS,
           l2BlockPollingIntervalMS,
           broadcastChannelName,
@@ -148,6 +151,7 @@ onMounted(async () => {
         options: {
           nodeUrl,
           minaEndpoint,
+          synceBlocksPerPoll,
           nodeRequestTimeoutMS,
           l2BlockPollingIntervalMS,
           broadcastChannelName,

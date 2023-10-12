@@ -62,7 +62,9 @@ const syncerWrapper = {
       log('Starting syncer...');
       await currSyncer.start(
         1,
-        1,
+        sdkOptions.synceBlocksPerPoll !== undefined
+          ? sdkOptions.synceBlocksPerPoll
+          : 1,
         sdkOptions.l2BlockPollingIntervalMS
           ? sdkOptions.l2BlockPollingIntervalMS
           : 1000

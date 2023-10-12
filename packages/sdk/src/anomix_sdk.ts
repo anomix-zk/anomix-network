@@ -264,7 +264,9 @@ export class AnomixSdk {
     } else {
       await this.syncer.start(
         1,
-        1,
+        this.options.synceBlocksPerPoll !== undefined
+          ? this.options.synceBlocksPerPoll
+          : 1,
         this.options.l2BlockPollingIntervalMS
           ? this.options.l2BlockPollingIntervalMS
           : 1000
