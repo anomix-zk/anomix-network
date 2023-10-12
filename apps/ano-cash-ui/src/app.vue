@@ -140,8 +140,6 @@ onMounted(async () => {
       });
     }
 
-    closeLoadingMask(maskId);
-
     if (!appState.value.syncerStarted) {
       console.log('App mounted-start remote syncer');
       await startRemoteSyncer({
