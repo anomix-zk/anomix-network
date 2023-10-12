@@ -128,7 +128,7 @@ export default function () {
 
         await SdkState.remoteSdk!.unlockKeyStore(pubKeys, pwd);
 
-        return accountPk;
+        return pubKeys;
     };
 
     const exitAccount = async () => {

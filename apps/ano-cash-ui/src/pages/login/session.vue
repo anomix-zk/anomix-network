@@ -50,7 +50,7 @@ const { SdkState, loginAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const { omitAddress } = useUtils();
 const message = useMessage();
-const { showLoadingMask, closeLoadingMask, setAccountPk58, setAlias, setAccountStatus } = useStatus();
+const { showLoadingMask, closeLoadingMask, setAccountPk58, setAlias, setAccountStatus, setSigningPk1_58, setSigningPk2_58 } = useStatus();
 
 const maskId = 'session-login';
 let selectedAccount = ref<string | undefined>(undefined);
@@ -118,7 +118,8 @@ const toRegisterAliasPage = async () => {
 };
 
 const login = async () => {
-    if (pwd.value.length === 0) {
+    const pwdTrim = pwd.value.trim();
+    if (pwdTrim.length === 0) {
         message.error('Please input password');
         return;
     }
@@ -130,7 +131,7 @@ const login = async () => {
     try {
         showLoadingMask({ text: 'Login...', id: maskId, closable: false });
         const accountPk58 = selectedAccount.value!;
-        const accountPrivateKey58 = await remoteApi.getSercetKey(accountPk58, pwd.value);
+        const accountPrivateKey58 = await remoteApi.getSercetKey(accountPk58, pwdTrim);
         if (!accountPrivateKey58) {
             message.error('Password wrong');
             return;
@@ -139,9 +140,9 @@ const login = async () => {
         // get alias
         const alias = await remoteApi.getAliasByAccountPublicKey(accountPk58, accountPrivateKey58);
 
-        const accountPk = await loginAccount(accountPk58, pwd.value, alias);
-        if (accountPk) {
-            setAccountPk58(accountPk);
+        const pubKeys = await loginAccount(accountPk58, pwd.value, alias);
+        if (pubKeys.length > 0) {
+            setAccountPk58(accountPk58);
             if (alias) {
                 setAlias(alias);
                 setAccountStatus(AccountStatus.REGISTERED);
@@ -149,6 +150,8 @@ const login = async () => {
                 await toAccountPage();
             } else {
                 setAccountStatus(AccountStatus.UNREGISTERED);
+                setSigningPk1_58(pubKeys[0]);
+                setSigningPk2_58(pubKeys[1]);
                 await toRegisterAliasPage();
             }
 
