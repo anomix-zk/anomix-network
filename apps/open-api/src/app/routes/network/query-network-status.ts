@@ -5,6 +5,9 @@ import { RequestHandler } from '@/lib/types'
 import { BaseResponse, BlockStatus, LatestBlockDto, NetworkStatusDto, NetworkStatusDtoSchema } from "@anomix/types";
 import { Block } from "@anomix/dao";
 import { getConnection } from 'typeorm';
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('networkStatus');
 
 /**
  * check the network status
@@ -77,7 +80,8 @@ export const handler: RequestHandler<null, null> = async function (
         }
         return { code: 0, data: networkStatusDto, msg: '' };
     } catch (err) {
-        console.error(err)
+        logger.error(err);
+        console.error(err);
 
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }

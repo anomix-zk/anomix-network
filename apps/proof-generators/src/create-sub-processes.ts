@@ -13,6 +13,7 @@ import { getLogger } from "./lib/logUtils";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { randomUUID } from 'crypto';
+import config from './lib/config';
 
 
 const logger = getLogger('create-sub-processes');
@@ -53,12 +54,12 @@ const CircuitName_InnerRollupProver = 'InnerRollupProver';
 const CircuitName_BlockProver = 'BlockProver';
 const CircuitName_AnomixRollupContract = 'AnomixRollupContract';
 
-const cnt_DepositRollupProver = 1;
-const cnt_AnomixEntryContract = 3;
-const cnt_JoinSplitProver = 1;
-const cnt_InnerRollupProver = 1;
-const cnt_BlockProver = 1;
-const cnt_AnomixRollupContract = 5;
+const cnt_DepositRollupProver = config.cnt_DepositRollupProver;
+const cnt_AnomixEntryContract = config.cnt_AnomixEntryContract;
+const cnt_JoinSplitProver = config.cnt_JoinSplitProver;
+const cnt_InnerRollupProver = config.cnt_InnerRollupProver;
+const cnt_BlockProver = config.cnt_BlockProver;
+const cnt_AnomixRollupContract = config.cnt_AnomixRollupContract;
 
 /* 
 const cnt_DepositRollupProver = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.floor((3 / 16) * cores);
@@ -156,7 +157,7 @@ export const createSubProcesses = async (n: number) => {
                     const data = (proofPayload.payload as {
                         blockId: number,
                         data: {
-                            txId: number,
+                            txId: string,
                             data: string //???
                         }[]
                     }).data;
@@ -177,6 +178,9 @@ export const createSubProcesses = async (n: number) => {
                             let worker = workerEntity as { worker: Worker, status: WorkerStatus, type: string };
 
                             const handler = (message: any) => {
+                                if (message.type == 'error') {// when meet errors (it's wasm32memory issue at great probability), defaultly restart the childProcess
+                                    return;
+                                }
                                 workerMap.get(CircuitName_JoinSplitProver)!.find(
                                     // (w) => w.worker.process.pid == worker!.worker.process.pid
                                     (w) => w.worker.pid == worker!.worker.pid
@@ -523,6 +527,10 @@ function generateProof(
         let workerE = workerEntity as { worker: Worker, status: WorkerStatus, type: string };
 
         const handler = (message: any) => {
+            if (message.type == 'error') {// when meet errors (it's wasm32memory issue at great probability), defaultly restart the childProcess
+                return;
+            }
+
             if (workerE.type != CircuitName_AnomixRollupContract && workerE.type != CircuitName_AnomixEntryContract) {
                 workerE.status = 'IsReady';
             }

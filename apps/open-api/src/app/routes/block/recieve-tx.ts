@@ -2,7 +2,7 @@ import { BaseResponse, L2TxReqDtoSchema, L2TxReqDto, EncryptedNote, SequencerSta
 import { getConnection, In } from 'typeorm';
 import { FastifyPlugin } from "fastify";
 import httpCodes from "@inip/http-codes";
-import { Account, MemPlL2Tx, WithdrawInfo } from '@anomix/dao'
+import { Account, L2Tx, MemPlL2Tx, WithdrawInfo } from '@anomix/dao'
 import { RequestHandler } from '@/lib/types';
 import { ActionType, JoinSplitProof, ValueNote } from "@anomix/circuits";
 import config from "@/lib/config";
@@ -52,9 +52,20 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
         return { code: 1, data: undefined, msg: 'proof verify failed!' }
     }
 
+    // check if data_tree root is valid
+    const dataRoot = joinSplitProof.publicOutput.dataRoot;
+    const rs0 = await $axiosSeq.post<BaseResponse<any>>('/existence/data-roots', [dataRoot.toString()]).then(r => {
+        return new Map(Object.entries(r.data.data));
+    })
+    if (rs0!.get(dataRoot.toString()) == '') {
+        logger.info('invalid dataRoot!');
+
+        return { code: 1, data: undefined, msg: 'invalid dataRoot' }
+    }
+
     const actionType = joinSplitProof.publicOutput.actionType;
     if (actionType.equals(ActionType.ACCOUNT).not().toBoolean()
-        && Number(joinSplitProof.publicOutput.txFee) < config.floorMpTxFee) {
+        && Number(joinSplitProof.publicOutput.txFee) < config.txFeeFloor) {
         logger.info('txFee not enough!');
 
         return { code: 1, data: undefined, msg: 'txFee not enough!' }
@@ -158,7 +169,6 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
                 withdrawInfo.inputNullifier = withdrawNote.inputNullifier.toString();
                 withdrawInfo.noteType = withdrawNote.noteType.toString();
                 withdrawInfo.l2TxHash = mpL2Tx.txHash;
-                withdrawInfo.l2TxId = mpL2Tx.id;
                 withdrawInfo.status = WithdrawNoteStatus.PENDING;
                 withdrawInfo.outputNoteCommitment = joinSplitProof.publicOutput.outputNoteCommitment1.toString();
                 withdrawInfo = await queryRunner.manager.save(withdrawInfo);
@@ -171,7 +181,6 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
                     account.aliasHash = aliasHash;
                     account.acctPk = acctPk;
                     account.l2TxHash = mpL2Tx.txHash;
-                    account.l2TxId = mpL2Tx.id;
                     account.encrptedAlias = l2TxReqDto.extraData.aliasInfo!;
                     account = await queryRunner.manager.save(account);
                 }

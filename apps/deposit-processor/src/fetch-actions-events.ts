@@ -33,7 +33,7 @@ await initORM();
 
 await fetchActionsAndEvents();
 
-setInterval(fetchActionsAndEvents, 5 * 60 * 1000);// exec/5mins
+setInterval(fetchActionsAndEvents, 1 * 60 * 1000);// exec/5mins
 
 async function fetchActionsAndEvents() {
     logger.info('... a new ROUND to fetchActionsAndEvents ...');

@@ -9,7 +9,7 @@ function getLogLevel(logger: string): string {
 }
 
 // TODO need configure file storage, pattern, etc.
-export function getLogger(name: string): Logger {
+export function getLogger(name: string, logFileName?: string): Logger {
     return pino({
         name,
         level: getLogLevel(name),
@@ -19,7 +19,7 @@ export function getLogger(name: string): Logger {
                 {
                     target: 'pino/file',
                     level: 'info',
-                    options: { destination: config.pinoLogFilePath.concat('/coordinator-log.log') }
+                    options: { destination: config.pinoLogFilePath.concat('/coordinator-log' + (logFileName ? ('-' + logFileName) : '') + '.log') }
                 },
                 { target: 'pino-pretty', level: 'info', options: { destination: '/dev/stdout' } }
             ]

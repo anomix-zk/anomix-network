@@ -16,12 +16,32 @@ export class WithdrawDB {
     private currectTree: WithdrawTreeWrapper
     constructor(dbPath: string) {
         this.userAssetDB = levelup(leveldown(dbPath));
+
+        /*
+        this.userAssetDB.createReadStream().on('data', function (entry) {
+            if (String(entry.key).startsWith('NULLIFIER_TREE:leaf')) {
+                let buf = entry.value;
+                const value0 = toBigIntBE(buf.subarray(0, 32));
+                const nextIndex0 = toBigIntBE(buf.subarray(32, 64));
+                const nextValue0 = toBigIntBE(buf.subarray(64, 96));
+                const data = {
+                    value: Field(value0),
+                    nextIndex: Field(nextIndex0),
+                    nextValue: Field(nextValue0)
+                }
+                console.log(`${entry.key}: ${JSON.stringify(data)}`);
+            } else {
+                console.log(`${entry.key}: ${entry.value}`);
+            }
+        });
+        */
     }
 
     /**
      * a totally new trees if the user address never withdraw
      */
     async initTree(l1Addr: PublicKey, assetId: string) {
+        console.log(`initTree: ${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${assetId}:${l1Addr.toBase58()}...`);
         let poseidonHasher = new PoseidonHasher();
         const nullifierTree = await newTree(StandardIndexedTree,
             this.userAssetDB,
@@ -30,6 +50,7 @@ export class WithdrawDB {
             USER_NULLIFIER_TREE_HEIGHT);
 
         this.currectTree = { l1Addr: l1Addr.toBase58(), assetId, tree: nullifierTree };
+        this.treeList.push(this.currectTree);
     }
 
     /**
@@ -44,6 +65,9 @@ export class WithdrawDB {
             this.currectTree = x;
             return;
         }
+
+        console.log(`loadTree: ${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${assetId}:${l1Addr.toBase58()}...`);
+
         let poseidonHasher = new PoseidonHasher();
         const nullifierTree = await loadTree(StandardIndexedTree,
             this.userAssetDB,
@@ -51,6 +75,7 @@ export class WithdrawDB {
             `${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${assetId}:${l1Addr.toBase58()}`);
 
         this.currectTree = { l1Addr: l1Addr.toBase58(), assetId, tree: nullifierTree };
+        this.treeList.push(this.currectTree);
     }
 
     /**
@@ -64,7 +89,7 @@ export class WithdrawDB {
      * Appends a set of leaf values to the tree and return leafIdxList
      * @param leaves - The set of leaves to be appended.
      */
-    async appendLeaves(leaves: Field[], includeUnCommit: boolean) {
+    async appendLeaves(leaves: Field[]) {
         if (!this.currectTree) {
             throw new Error("tree is not init...");
         }
@@ -74,8 +99,8 @@ export class WithdrawDB {
      * Appends a leaf value to the tree and return leafIdx
      * @param leaf - The leaves to be appended.
      */
-    async appendLeaf(leaf: Field, includeUnCommit: boolean) {//
-        return (await this.appendLeaves([leaf], includeUnCommit))[0];
+    async appendLeaf(leaf: Field) {//
+        return (await this.appendLeaves([leaf]))[0];
     }
 
     /**

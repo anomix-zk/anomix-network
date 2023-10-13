@@ -6,6 +6,9 @@ import { getConnection } from 'typeorm';
 import { TxFeeSuggestionDto, TxFeeSuggestionDtoSchema, BaseResponse, L2TxStatus } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 import config from '@/lib/config';
+import { getLogger } from '@/lib/logUtils';
+
+const logger = getLogger('queryTxFeeSuggestions');
 
 /**
  * query tx fee suggestions
@@ -57,6 +60,8 @@ export const handler: RequestHandler<null, null> = async function (
             msg: ''
         };
     } catch (err) {
+        logger.error(err);
+        console.error(err);
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }

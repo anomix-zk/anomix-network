@@ -22,12 +22,6 @@ export class Account {
     encrptedAlias: string
 
     /**
-     * entity id of corresponding L2 tx, when account registration
-     */
-    @Column()
-    l2TxId: number
-
-    /**
      * hash of corresponding L2 tx, when account registration
      */
     @Column()

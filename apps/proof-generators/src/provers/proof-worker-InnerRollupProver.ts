@@ -7,7 +7,7 @@ import { ProofTaskType, FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 import { proveTxBatch, merge } from './circuits/inner_rollup_prover';
 
-const logger = getLogger('pWorker-InnerRollupProver');
+const logger = getLogger('pWorker-InnerRollupProver', 'InnerRollupProver');
 
 export { initWorker };
 
@@ -97,6 +97,9 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             id: process.pid,
             payload: {},
         });
+
+        // when meet errors, probably it's about out of wasm32 memory, so restart the process
+        process.exit(0);
     }
 }
 

@@ -5,6 +5,9 @@ import { In, getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { Block, L2Tx, WithdrawInfo } from "@anomix/dao";
 import { WithdrawInfoDtoSchema, BaseResponse, WithdrawInfoDto, WithdrawNoteStatus, BlockStatus } from "@anomix/types";
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('queryWithdrawalNotes');
 
 /**
 * 提现场景中，提供L1Addr来查询相关的所有pending value notes
@@ -47,7 +50,7 @@ export const handler: RequestHandler<{ commitments: string[] }, { l1addr: string
         const rs = await connection.createQueryBuilder()
             .select('wi').addSelect('block.createdAt').addSelect('block.finalizedAt')
             .from(WithdrawInfo, 'wi').addFrom(L2Tx, 'tx').addFrom(Block, 'block')
-            .where('tx.id = wi.l2TxId').andWhere('block.id = tx.blockId')
+            .where('tx.txHash = wi.l2TxHash').andWhere('block.id = tx.blockId')
             .andWhere(`block.status = ${BlockStatus.CONFIRMED}`)
             .andWhere(`wi.ownerPk = ${l1addr}`)
             .andWhere(`wi.assetId = ${1}`)
@@ -56,7 +59,7 @@ export const handler: RequestHandler<{ commitments: string[] }, { l1addr: string
 
         // select the ones whose corresponding L2Block is confirmed on Layer1!
         const queryBuilder = withdrawInfoRepository.createQueryBuilder('wi')
-            .innerJoin(L2Tx, 'tx', 'tx.id = wi.l2TxId')
+            .innerJoin(L2Tx, 'tx', 'tx.txHash = wi.l2TxHash')
             .innerJoinAndSelect(Block, 'block', 'block.id = tx.blockId')
             .where(`block.status = ${BlockStatus.CONFIRMED}`)
             .andWhere(`wi.assetId = '${1}'`);
@@ -81,7 +84,7 @@ export const handler: RequestHandler<{ commitments: string[] }, { l1addr: string
             // then query confirmed tx collection
             const tx = await txRepository.findOne({
                 where: {
-                    id: withdrawInfoDto.l2TxId
+                    txHash: withdrawInfoDto.l2TxHash
                 }
             });
 
@@ -100,6 +103,7 @@ export const handler: RequestHandler<{ commitments: string[] }, { l1addr: string
         };
 
     } catch (err) {
+        logger.error(err);
         console.error(err);
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }

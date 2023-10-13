@@ -5,6 +5,9 @@ import { RequestHandler } from '@/lib/types'
 import { BaseResponse } from "@anomix/types";
 import { Block } from "@anomix/dao";
 import { getConnection } from 'typeorm';
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('queryLatestBlockHeight');
 
 /**
  * query the latest block-height
@@ -60,6 +63,9 @@ export const handler: RequestHandler<null, null> = async function (
 
         return { code: 0, data: blockEntity?.id ?? 0, msg: '' };
     } catch (err) {
+        logger.error(err);
+        console.error(err);
+
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }

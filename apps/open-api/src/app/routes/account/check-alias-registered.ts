@@ -7,7 +7,7 @@ import { Account, L2Tx, MemPlL2Tx } from '@anomix/dao'
 import { BaseResponse, L2TxStatus } from "@anomix/types";
 import { getLogger } from "@/lib/logUtils";
 
-const logger = getLogger('web-server');
+const logger = getLogger('checkAliasRegister');
 
 export const checkAliasRegister: FastifyPlugin = async function (
     instance,
@@ -40,10 +40,10 @@ export const handler: RequestHandler<ReqBody, null> = async function (
         const account = await accountRepository.findOne({ where: { aliasHash: p_aliashash } });
         if (account /* && includePending */) {
             const mpL2TxRepo = connection.getRepository(MemPlL2Tx);
-            const mpL2Tx = await mpL2TxRepo.findOne(account.l2TxId);
+            const mpL2Tx = await mpL2TxRepo.findOne(account.l2TxHash);
             if (!mpL2Tx) {
                 const l2TxRepo = connection.getRepository(L2Tx);
-                const l2Tx = await l2TxRepo.findOne(account.l2TxId);
+                const l2Tx = await l2TxRepo.findOne(account.l2TxHash);
                 if (!l2Tx) {
                     code = 1;// not registered!
                     data = false;
@@ -71,7 +71,7 @@ export const handler: RequestHandler<ReqBody, null> = async function (
         };
 
     } catch (err) {
-        logger.info(err);
+        logger.error(err);
 
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }

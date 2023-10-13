@@ -8,7 +8,7 @@ import { getLogger } from "@/lib/logUtils";
 import { initORM } from "./lib";
 import fs from "fs";
 import { getDateString } from "./lib/timeUtils";
-const logger = getLogger('prover');
+const logger = getLogger('prover', 'prover');
 
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint

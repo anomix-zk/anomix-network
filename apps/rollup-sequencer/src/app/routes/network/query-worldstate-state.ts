@@ -32,6 +32,10 @@ export const handler: RequestHandler<null, null> = async function (
         // query sequencer
         return {
             code: 0, data: {
+                syncDataTree: {
+                    totalNum: this.worldState.worldStateDB.getNumLeaves(MerkleTreeId.SYNC_DATA_TREE, false).toString(),
+                    root: this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, false).toString()
+                },
                 dataTree: {
                     totalNum: this.worldState.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE, false).toString(),
                     root: this.worldState.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false).toString()

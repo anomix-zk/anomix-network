@@ -244,6 +244,7 @@ export class FlowScheduler {
 
             // create a new block
             let block = new Block();
+            block.id = (await queryRunner.manager.count(Block)) + 1;
             block.status = BlockStatus.PENDING;
             block.rollupSize = rollupSize;// TODO non-dummy?
             block.rootTreeRoot0 = this.currentRootTreeRoot.toString();
@@ -292,6 +293,7 @@ export class FlowScheduler {
             block = await queryRunner.manager.save(block);// save it
 
             const cachedUpdates = this.worldStateDB.exportCacheUpdates(MerkleTreeId.DATA_TREE);
+            logger.info(`block.id: ${block.id}, DATA_TREE's cachedUpdates: ${JSON.stringify(cachedUpdates)}`);
             const blockCachedUpdates = new BlockCache();
             blockCachedUpdates.blockId = block.id;
             blockCachedUpdates.cache = JSON.stringify(cachedUpdates);
@@ -333,10 +335,10 @@ export class FlowScheduler {
             await queryRunner.manager.save(txFeeWithdrawInfo);
 
             // del mpL2Tx from memory pool
-            const mpL2TxIds = nonDummyTxList.map(tx => {
-                return tx.id;
+            const mpL2TxHashes = nonDummyTxList.map(tx => {
+                return tx.txHash;
             })
-            await queryRunner.manager.delete(MemPlL2Tx, mpL2TxIds);
+            await queryRunner.manager.delete(MemPlL2Tx, mpL2TxHashes);
 
             // update L2Tx and move to L2Tx table
             const l2TxList = nonDummyTxList.map((mpL2Tx, i) => {
@@ -455,7 +457,7 @@ export class FlowScheduler {
     }
 
     private async preInsertIntoTreeCache(txList: MemPlL2Tx[]) {
-        const innerRollup_proveTxBatchParamList: { txId1: number, txId2: number, innerRollupInput: string, joinSplitProof1: string, joinSplitProof2: string }[] = []
+        const innerRollup_proveTxBatchParamList: { txId1: string, txId2: string, innerRollupInput: string, joinSplitProof1: string, joinSplitProof2: string }[] = []
 
         let depositOldStartIndexTmp = this.depositStartIndexInBlock;
         let depositNewStartIndexTmp = this.depositStartIndexInBlock;
@@ -745,8 +747,8 @@ export class FlowScheduler {
 
             innerRollup_proveTxBatchParamList.push(
                 {
-                    txId1: tx1.id,
-                    txId2: tx2.id,
+                    txId1: tx1.txHash,
+                    txId2: tx2.txHash,
                     joinSplitProof1: tx1.proof,// if tx1 is depositL2Tx, then tx1.proof is undefined currently!
                     joinSplitProof2: tx2.proof,// if tx2 is depositL2Tx, then tx1.proof is undefined currently!
                     innerRollupInput: innerRollupInputStr

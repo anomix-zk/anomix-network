@@ -21,7 +21,7 @@ parentPort?.postMessage({// when it's not a subThread, parentPort == null.
 });
 
 
-const logger = getLogger('task-tracer');
+const logger = getLogger('task-tracer', 'task-tracer-coordinator-log.log');
 logger.info('hi, I am task-tracer!');
 
 await initORM();
@@ -41,58 +41,49 @@ logger.info('task-tracer is ready!');
 
 await traceTasks();
 
-setInterval(traceTasks, 3 * 60 * 1000); // exec/3mins
+setInterval(traceTasks, 1 * 60 * 1000); // exec/3mins
 
 async function traceTasks() {
     logger.info('start a new round...');
 
-
     const connection = getConnection();
 
-    const queryRunner = connection.createQueryRunner();
-    await queryRunner.startTransaction();
-    try {
-        const taskList = await queryRunner.manager.find(Task, { where: { status: TaskStatus.PENDING } }) ?? [];
+    const taskList = await connection.getRepository(Task).find({ where: { status: TaskStatus.PENDING } }) ?? [];
+    for (let index = 0; index < taskList.length; index++) {
+        const task = taskList[index];
 
-        for (let index = 0; index < taskList.length; index++) {
-            const task = taskList[index];
+        logger.info(`processing task info: [task.id: ${task.id}, task.taskType: ${task.taskType}, task.targetId:${task.targetId}]`);
 
-            logger.info(`task info: ${task.id}:${task.taskType}:${task.targetId}`);
+        // check if txHash is confirmed or failed
+        const l1TxHash = task.txHash;
+        // TODO need record the error!
+        const rs: { data: { zkapp: { blockHeight: number, dateTime: string, failureReason: string }; }; } = await fetch("https://berkeley.graphql.minaexplorer.com/", {
+            "headers": {
+                "Accept": "application/json",
+                "Accept-Language": "en-US,en;q=0.5",
+                "Content-Type": "application/json",
+            },
+            "referrer": "https://berkeley.graphql.minaexplorer.com/",
+            "body": "{\"query\":\"query MyQuery {\\n  zkapp(query: {hash: \\\"" + l1TxHash + "\\\"}) {\\n    blockHeight\\n    failureReason {\\n      failures\\n    }\\n    dateTime\\n  }\\n}\\n\",\"variables\":null,\"operationName\":\"MyQuery\"}",
+            "method": "POST",
+            "mode": "cors"
+        }).then(v => v.json()).then(json => {
+            return json;
+        });
 
-            // check if txHash is confirmed or failed
-            const l1TxHash = task.txHash;
-            // TODO need record the error!
-            const rs: { data: { zkapp: { blockHeight: number, dateTime: string, failureReason: string }; }; } = await fetch("https://berkeley.graphql.minaexplorer.com/", {
-                "credentials": "include",
-                "headers": {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0",
-                    "Accept": "application/json",
-                    "Accept-Language": "en-US,en;q=0.5",
-                    "Content-Type": "application/json",
-                    "Sec-Fetch-Dest": "empty",
-                    "Sec-Fetch-Mode": "cors",
-                    "Sec-Fetch-Site": "same-origin",
-                    "Pragma": "no-cache",
-                    "Cache-Control": "no-cache"
-                },
-                "referrer": "https://berkeley.graphql.minaexplorer.com/",
-                "body": "{\"query\":\"query MyQuery {\\n  zkapp(query: {hash: \\\"" + l1TxHash + "\\\"}) {\\n    blockHeight\\n    failureReason {\\n      failures\\n    }\\n    dateTime\\n  }\\n}\\n\",\"variables\":null,\"operationName\":\"MyQuery\"}",
-                "method": "POST",
-                "mode": "cors"
-            }).then(v => v.json()).then(json => {
-                return json;
-            });
+        if (rs.data.zkapp === null) { // ie. l1tx is not included into a l1Block on MINA chain
+            logger.info(`cooresponding l1tx is not included into a l1Block on MINA chain, please wait for it.`);
+            logger.info(`process [task.id:${task.id}] done`);
+            continue;
+        }
 
-            if (rs.data.zkapp === null) { // ie. l1tx is not included into a l1Block on MINA chain
-                logger.info(`cooresponding l1tx is not included into a l1Block on MINA chain, please wait for it.`);
-
-                continue;
-            }
-
+        const queryRunner = connection.createQueryRunner();
+        await queryRunner.startTransaction();
+        try {
             // to here, means task id done, even if L1tx failed.
             task.status = TaskStatus.DONE;
             await queryRunner.manager.save(task);
-            logger.info('task is done, and update it into db...');
+            logger.info('task entity is set done, and update it into db...');
 
             // if Confirmed, then maintain related entites' status            
             switch (task.taskType) {
@@ -166,13 +157,13 @@ async function traceTasks() {
                         logger.info('obtain related block...');
                         await queryRunner.manager.findOne(Block, { where: { id: task.targetId } }).then(async (b) => {
                             if (!rs.data.zkapp.failureReason) {
-                                logger.info('update block’ status to BlockStatus.CONFIRMED...');
+                                logger.info('update block’ status to BlockStatus.CONFIRMED');
                                 b!.status = BlockStatus.CONFIRMED;
-                                logger.info('update block’ finalizedAt to confirmed datetime...');
+                                logger.info(`update block’ finalizedAt to confirmed datetime: ${rs.data.zkapp.dateTime}`);
                                 b!.finalizedAt = new Date(rs.data.zkapp.dateTime);
                                 await queryRunner.manager.save(b!);
 
-                                logger.info('sync data tree...');
+                                logger.info(`sync data tree, from dataTreeRoot0 = ${b!.dataTreeRoot0}...`);
                                 // sync data tree
                                 await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
                                     if (rs.data.code != 0) {
@@ -199,20 +190,22 @@ async function traceTasks() {
                 default:
                     break;
             }
+
+            await queryRunner.commitTransaction();
+
+        } catch (error) {
+            console.error(error);
+            logger.error(error);
+            await queryRunner.rollbackTransaction();
+
+            throw error;
+        } finally {
+            await queryRunner.release();
+            logger.info(`process [task.id:${task.id}] done`);
         }
-
-        await queryRunner.commitTransaction();
-
-    } catch (error) {
-        console.error(error);
-        await queryRunner.rollbackTransaction();
-
-        throw error;
-    } finally {
-        await queryRunner.release();
-        logger.info('this round is done.');
-
     }
+    logger.info('this round is done.');
+
 }
 
 

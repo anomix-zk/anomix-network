@@ -6,6 +6,9 @@ import { getConnection } from 'typeorm';
 import { WorldStateRespDto, WorldStateRespDtoSchema, BaseResponse, L2TxStatus } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 import { $axiosSeq } from '@/lib/api';
+import { getLogger } from '@/lib/logUtils';
+
+const logger = getLogger('queryWorldStateworldState');
 
 /**
  * query all trees' roots
@@ -36,6 +39,7 @@ export const handler: RequestHandler<null, null> = async function (
         const rs = await $axiosSeq.get<BaseResponse<WorldStateRespDto>>('/network/worldstate').then(r => { return r.data });
         return rs;
     } catch (err) {
+        logger.error(err);
         console.error(err);
 
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")

@@ -30,11 +30,6 @@ export interface WithdrawInfoDto {
     noteType: string
 
     /**
-     * entity id of corresponding L2 tx
-     */
-    l2TxId: number
-
-    /**
      * hash of corresponding L2 tx
      */
     l2TxHash: string

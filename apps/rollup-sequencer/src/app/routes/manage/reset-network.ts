@@ -62,6 +62,7 @@ export const handler: RequestHandler<{ authCode: string, targetActionState: stri
         await queryRunner.clearTable('tb_deposit_prover_output');
         await queryRunner.clearTable('tb_deposit_rollup_batch');
         await queryRunner.clearTable('tb_deposit_tree_trans');
+        await queryRunner.clearTable('tb_deposit_tree_trans_cache');
         await queryRunner.clearTable('tb_inner_rollup_batch');
         await queryRunner.clearTable('tb_l2_tx');
         await queryRunner.clearTable('tb_mempl_l2_tx');
@@ -73,52 +74,52 @@ export const handler: RequestHandler<{ authCode: string, targetActionState: stri
         depositProcessorSignal.signal = 0;
         depositProcessorSignal.type = 0;
         await queryRunner.manager.save(depositProcessorSignal);
-
-        // read event & actions & encryptedNote into db
-        let depositActionEventFetchRecord = new DepositActionEventFetchRecord();
-        depositActionEventFetchRecord.id = 1;
-        depositActionEventFetchRecord.startBlock = 0;
-        depositActionEventFetchRecord.endBlock = endBlockHeight;//--------
-        depositActionEventFetchRecord.startActionHash = Reducer.initialActionState.toString();
-        depositActionEventFetchRecord.nextActionHash = targetActionState;
-        depositActionEventFetchRecord.startActionIndex = '0';
-        depositActionEventFetchRecord.nextActionIndex = '3';
-        depositActionEventFetchRecord = await queryRunner.manager.save(depositActionEventFetchRecord);
-
-        const depositActionEventFetchRecordId = depositActionEventFetchRecord.id;
-
-        let userDepositL1TxHash = '5JuviMjJ18Fvk6TUFknnuSSnQNxwCjv4TEQfVFmd4kaTEW2b9Vy5';//
-        const dc1 = await genDc('./deposit1.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
-
-        userDepositL1TxHash = '5JvAYRpjTxrEUfdcsP5RcDWDNPaVR4PuTDiatJf6a1gGgZicWq74';//
-        const dc2 = await genDc('./deposit2.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
-
-        userDepositL1TxHash = '5JuYLttr3kwHFewj6kyFedJAnzw5nCxJ68R3LkYPd7DzvZscFwrC';//
-        const dc3 = await genDc('./deposit3.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
-
-        const cs1 = [dc3, dc1, dc2];
-        console.log(cs1.map(dc => dc.depositNoteCommitment));
-        const reActionState = cs1.map(dc => Field(dc.depositNoteCommitment)).reduce((p, c, i) => {
-            let currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
-                p,
-                AccountUpdate.Actions.hash([c.toFields()]) // 
-            );
-            console.log('currentActionsHashX:' + currentActionsHashX.toString());
-            return currentActionsHashX;
-        }, Reducer.initialActionState);
-
-        if (targetActionState != reActionState.toString()) {
-            throw new Error("calc action state is not aligned with targetActionState");
-        }
-
-        cs1.forEach((v, i) => v.depositNoteIndex = `${i}`);
-        await queryRunner.manager.save(cs1);
-
-
-        // rm leveldb
-
-        // rm req-resp log files
-
+        /*
+               // read event & actions & encryptedNote into db
+               let depositActionEventFetchRecord = new DepositActionEventFetchRecord();
+               depositActionEventFetchRecord.id = 1;
+               depositActionEventFetchRecord.startBlock = 0;
+               depositActionEventFetchRecord.endBlock = endBlockHeight;//--------
+               depositActionEventFetchRecord.startActionHash = Reducer.initialActionState.toString();
+               depositActionEventFetchRecord.nextActionHash = targetActionState;
+               depositActionEventFetchRecord.startActionIndex = '0';
+               depositActionEventFetchRecord.nextActionIndex = '3';
+               depositActionEventFetchRecord = await queryRunner.manager.save(depositActionEventFetchRecord);
+       
+               const depositActionEventFetchRecordId = depositActionEventFetchRecord.id;
+       
+               let userDepositL1TxHash = '5JuG7NyJMRvA6172hewytYKH1kBhDEUyb4jQPJb3CYR1XhJP7BZF';//
+               const dc1 = await genDc('./deposit1.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
+       
+               userDepositL1TxHash = '5Ju82fQdWvJsBe3j7CMxxACQqg6P7p4F3pc8QUoudzbctj6J2Rzi';//
+               const dc2 = await genDc('./deposit2.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
+       
+               userDepositL1TxHash = '5JuwXsFPCWYSXENVqpBH8YKieKwgisGsHPwUBTB3pGtdakvvonwv';//
+               const dc3 = await genDc('./deposit3.txt', depositActionEventFetchRecordId, userDepositL1TxHash);
+       
+               const cs1 = [dc2, dc1, dc3];
+               console.log(cs1.map(dc => dc.depositNoteCommitment));
+               const reActionState = cs1.map(dc => Field(dc.depositNoteCommitment)).reduce((p, c, i) => {
+                   let currentActionsHashX = AccountUpdate.Actions.updateSequenceState(
+                       p,
+                       AccountUpdate.Actions.hash([c.toFields()]) // 
+                   );
+                   console.log('currentActionsHashX:' + currentActionsHashX.toString());
+                   return currentActionsHashX;
+               }, Reducer.initialActionState);
+       
+               if (targetActionState != reActionState.toString()) {
+                   throw new Error("calc action state is not aligned with targetActionState");
+               }
+       
+               cs1.forEach((v, i) => v.depositNoteIndex = `${i}`);
+               await queryRunner.manager.save(cs1);
+       
+       
+               // rm leveldb
+       
+               // rm req-resp log files
+       */
 
         await queryRunner.commitTransaction();
 

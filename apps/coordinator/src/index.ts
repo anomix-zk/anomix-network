@@ -92,6 +92,27 @@ function bootWebServerThread() {
 
     workerMap.set('WebServer', worker);
 }
+
+
+function bootFetchWithdrawEventThread() {
+    const worker = cp.fork(`${__dirname}/fetch-withdrawal-events.js`);// TODO
+
+    worker.on('message', (msg: { type: any, data: any }) => {
+        if (msg.type == 'online') {
+            logger.info('FetchWithdrawEvent is online...');
+        } else if (msg.type == 'isReady') {
+            logger.info('FetchWithdrawEvent is isReady...');
+        }
+    })
+
+    worker.on('exit', (exitCode: number) => {
+        // create a new worker for FetchWithdrawEvent
+        bootFetchWithdrawEventThread();
+    })
+
+    workerMap.set('FetchWithdrawEvent', worker);
+}
+
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
@@ -102,5 +123,7 @@ bootProofTriggerThread();
 bootMempoolWatcherThread();
 
 bootWebServerThread();
+
+bootFetchWithdrawEventThread();
 
 logger.info('all workers are created...');

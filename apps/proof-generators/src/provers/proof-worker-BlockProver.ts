@@ -7,7 +7,7 @@ import { ProofTaskType, FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 import { prove } from "./circuits/block_prover";
 
-const logger = getLogger('pWorker-BlockProver');
+const logger = getLogger('pWorker-BlockProver', 'BlockProver');
 
 export { initWorker };
 
@@ -75,6 +75,9 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             id: process.pid,
             payload: {},
         });
+
+        // when meet errors, probably it's about out of wasm32 memory, so restart the process
+        process.exit(0);
     }
 }
 

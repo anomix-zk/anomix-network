@@ -5,7 +5,7 @@ import { ProofTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 import { deposit } from "./circuits/join-split-prover";
 
-const logger = getLogger('pWorker-JoinSplitProver');
+const logger = getLogger('pWorker-JoinSplitProver', 'JoinSplitProver');
 
 export { initWorker };
 
@@ -69,6 +69,9 @@ const execCircuit = async (message: any, func: () => Promise<any>) => {
             id: process.pid,
             payload: {},
         });
+
+        // when meet errors, probably it's about out of wasm32 memory, so restart the process
+        process.exit(0);
     }
 }
 

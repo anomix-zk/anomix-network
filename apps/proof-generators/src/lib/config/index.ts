@@ -56,7 +56,14 @@ const config = {
     rollupContractAddress: <string>KeyConfig.rollupContract.publicKey,
 
     subProcessCnt: <number>Number(<string>process.env.PROOR_GENERATOR_SUB_PROCESSOR_COUNT ?? 1),
-    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http'
+    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http',
+
+    cnt_DepositRollupProver: <number>Number(<string>process.env.CNT_DepositRollupProver ?? 1),
+    cnt_AnomixEntryContract: <number>Number(<string>process.env.CNT_AnomixEntryContract ?? 1),
+    cnt_JoinSplitProver: <number>Number(<string>process.env.CNT_JoinSplitProver ?? 1),
+    cnt_InnerRollupProver: <number>Number(<string>process.env.CNT_InnerRollupProver ?? 1),
+    cnt_BlockProver: <number>Number(<string>process.env.CNT_BlockProver ?? 1),
+    cnt_AnomixRollupContract: <number>Number(<string>process.env.CNT_AnomixRollupContract ?? 1),
 }
 
 export default config

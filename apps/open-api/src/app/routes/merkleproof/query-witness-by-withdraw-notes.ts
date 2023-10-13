@@ -4,6 +4,9 @@ import { FastifyPlugin } from "fastify"
 import { BaseResponse, WithdrawalWitnessDto, WithdrawalWitnessDtoSchema } from "@anomix/types";
 import { $axiosSeq } from "@/lib/api";
 import { RequestHandler } from "@/lib/types";
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('queryWitnessByWithdrawNotes');
 
 /**
  * query all Witness By WithdrawNotes
@@ -34,6 +37,9 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
         })
         return rs;
     } catch (err) {
+        console.error(err);
+        logger.error(err);
+
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }

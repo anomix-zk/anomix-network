@@ -40,10 +40,12 @@ export class FastifyCore {
 
         // Core plugins
         this.server.register(helmet, config.helmet)
+        /*
         this.server.register(fastifyCors, {
             origin: "*",
             methods: ["GET", "POST"]
         });
+        */
 
         // Documentation
         this.server.register(import("fastify-swagger"), {

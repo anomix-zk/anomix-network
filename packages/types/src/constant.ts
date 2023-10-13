@@ -159,3 +159,11 @@ export enum BlockCacheType {
 export enum DepositTransCacheType {
     DEPOSIT_TREE_UPDATES
 }
+
+/**
+ * indicate if the related withdrawed notes within this record are recorded(synced) on user_nullfier_tree
+ */
+export enum WithdrawEventFetchRecordStatus {
+    NOT_SYNC,
+    SYNCED
+}

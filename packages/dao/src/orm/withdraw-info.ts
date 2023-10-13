@@ -44,12 +44,6 @@ export class WithdrawInfo {
     noteType: string
 
     /**
-     * entity id of corresponding L2 tx
-     */
-    @Column()
-    l2TxId: number
-
-    /**
      * hash of corresponding L2 tx
      */
     @Column()
@@ -66,6 +60,24 @@ export class WithdrawInfo {
      */
     @Column()
     outputNoteCommitmentIdx: string
+
+    /**
+     * the leaf index on user_nullifier_tree
+     */
+    @Column()
+    nullifierIdx: string
+
+    /**
+     * receiverNulliferRootBefore
+     */
+    @Column()
+    nullifierTreeRoot0: string
+
+    /**
+     * receiverNulliferRootAfter
+     */
+    @Column()
+    nullifierTreeRoot1: string
 
     /**
      * record the L1TxHash when it's claimed

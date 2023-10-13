@@ -1,9 +1,13 @@
 export interface WorldStateRespDto {
-    nullifierTree: {
+    syncDataTree: {
         root: string,
         totalNum: string
     },
     dataTree: {
+        root: string,
+        totalNum: string
+    },
+    nullifierTree: {
         root: string,
         totalNum: string
     },

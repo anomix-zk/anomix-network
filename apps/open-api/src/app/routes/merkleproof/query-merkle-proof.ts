@@ -4,7 +4,9 @@ import { FastifyPlugin } from "fastify"
 import { BaseResponse, MerkleProofDto, MerkleProofDtoSchema } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
 import { $axiosSeq } from "@/lib/api"
+import { getLogger } from "@/lib/logUtils"
 
+const logger = getLogger('queryMerkleProof');
 
 /**
  * obtain existence-proof on data_tree for note_commitment, <br>
@@ -35,6 +37,8 @@ export const handler: RequestHandler<string[], null> = async function (
 
         return rs;
     } catch (err) {
+        console.error(err);
+        logger.error(err);
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }

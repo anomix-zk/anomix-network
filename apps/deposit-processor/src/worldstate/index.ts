@@ -106,7 +106,7 @@ export class WorldState {
 
         const txIdJoinSplitDepositInputList = depositL2TxList.map(tx => {
             return {
-                txId: tx.id,
+                txId: tx.txHash,
                 data: {
                     publicValue: tx.publicValue,
                     publicOwner: tx.publicOwner,
@@ -139,7 +139,7 @@ export class WorldState {
     /**
      * when depositTxList(ie. JoinSplitProof list) comes back, need to go on further 
      */
-    private async whenDepositL2TxListComeBack(payload: { blockId: number, data: { txId: number, data: any }[] }) {
+    private async whenDepositL2TxListComeBack(payload: { blockId: number, data: { txId: string, data: any }[] }) {
         // verify proof ??
         //
         const blockId = payload.blockId;
@@ -153,7 +153,7 @@ export class WorldState {
             payload.data.forEach(async d => {
                 promises.push(
                     (async () => {
-                        await queryRunner.manager.update(L2Tx, { id: d.txId }, { proof: JSON.stringify(d.data) });
+                        await queryRunner.manager.update(L2Tx, { txHash: d.txId }, { proof: JSON.stringify(d.data) });
                     })()
                 )
             })

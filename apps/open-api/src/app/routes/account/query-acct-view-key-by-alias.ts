@@ -54,7 +54,7 @@ export const handler: RequestHandler<null, AliasHashParam> = async function (
         };
 
     } catch (err) {
-        logger.info(err);
+        logger.error(err);
 
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }

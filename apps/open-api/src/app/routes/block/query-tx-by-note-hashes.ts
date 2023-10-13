@@ -8,6 +8,9 @@ import { $axiosSeq } from "@/lib/api"
 import { getConnection, In } from "typeorm"
 import { L2Tx, Block, WithdrawInfo, Account } from "@anomix/dao"
 import { ActionType } from "@anomix/circuits"
+import { getLogger } from "@/lib/logUtils"
+
+const logger = getLogger('queryTxByNoteHash');
 
 /**
 * 根据alias_nullifier/account_viewing_key/valueNote_commitment/nullifier查询L2Tx
@@ -62,14 +65,14 @@ export const handler: RequestHandler<string[], null> = async function (
             if (tx.actionType == ActionType.WITHDRAW.toString()) {// if Withdrawal
                 // query WithdrawInfoDto
                 const withdrawNoteRepo = connection.getRepository(WithdrawInfo);
-                const { createdAt, updatedAt, finalizedAt, blockIdWhenL1Tx, ...restPro } = (await withdrawNoteRepo.findOne({ where: { l2TxId: txDto.id } }))!;
+                const { createdAt, updatedAt, finalizedAt, blockIdWhenL1Tx, ...restPro } = (await withdrawNoteRepo.findOne({ where: { l2TxHash: txDto.txHash } }))!;
                 txDto.extraData.withdrawNote = restPro as any as WithdrawInfoDto;
                 txDto.extraData.withdrawNote.createdTs = txDto.createdTs;// !!!
 
             } else if (tx.actionType == ActionType.ACCOUNT.toString()) {// if Account
                 // query Account
                 const accountRepo = connection.getRepository(Account);
-                const account = await accountRepo.findOne({ where: { l2TxId: txDto.id } });
+                const account = await accountRepo.findOne({ where: { l2TxHash: txDto.txHash } });
                 txDto.extraData.acctPk = account?.acctPk;
                 txDto.extraData.aliasHash = account?.aliasHash;
                 txDto.extraData.aliasInfo = account?.encrptedAlias;
@@ -84,6 +87,9 @@ export const handler: RequestHandler<string[], null> = async function (
             msg: ''
         };
     } catch (err) {
+        logger.error(err);
+        console.error(err);
+
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
