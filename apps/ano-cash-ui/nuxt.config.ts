@@ -56,19 +56,7 @@ export default defineNuxtConfig({
                   ]
                 : ["@juggle/resize-observer"],
     },
-    // build: {
-    //     transpile:
-    //         process.env.NODE_ENV === "production"
-    //             ? [
-    //                   "naive-ui",
-    //                   "vueuc",
-    //                   "@css-render/vue3-ssr",
-    //                   "@juggle/resize-observer",
-    //                   "date-fns",
-    //                   "@css-render/plugin-bem",
-    //               ]
-    //             : ["@juggle/resize-observer"],
-    // },
+
     modules: ["@vant/nuxt"],
     nitro: {
         esbuild: {
@@ -76,6 +64,7 @@ export default defineNuxtConfig({
                 target: "esnext",
             },
         },
+        compressPublicAssets: true,
     },
     vite: {
         worker: {
@@ -93,7 +82,6 @@ export default defineNuxtConfig({
                 },
             },
             include:
-                // development: ["naive-ui", "vueuc", "date-fns-tz/esm/formatInTimeZone"]
                 process.env.NODE_ENV === "development"
                     ? ["naive-ui", "vueuc", "date-fns-tz/esm/formatInTimeZone"]
                     : [],
@@ -114,16 +102,6 @@ export default defineNuxtConfig({
                 resolvers: [NaiveUiResolver()], // Automatically register all components in the `components` directory
             }),
         ],
-
-        // resolve: {
-        //     alias: {
-        //         crypto: "crypto-browserify",
-        //         util: "util",
-        //         buffer: "buffer",
-        //         stream: "stream-browserify",
-        //         path: "path-browserify",
-        //     },
-        // },
     },
     css: ["@/assets/styles/global.scss"],
 

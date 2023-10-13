@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
+    "prod": "cd ../../packages/sdk && npm run lib:build && cd ../../apps/ano-cash-ui && npm install && nuxt build && node .output/server/index.mjs",
     "dev": "cd ../../packages/sdk && npm run lib:build && cd ../circuits && npm run lib:build && cd ../../apps/ano-cash-ui && npm install && nuxt dev",
     "sdkUpdate": "cd ../../packages/sdk && npm run lib:build && cd ../../apps/ano-cash-ui && npm install",
     "generate": "nuxt generate",

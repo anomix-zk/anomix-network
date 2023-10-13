@@ -194,8 +194,7 @@
                                     </div>
                                     <div class="tx-time">
                                         <template v-if="item.createdTs !== 0">
-                                            <n-time :time-zone="userTimezone" :time="item.createdTs"
-                                                format="yyyy-MM-dd HH:mm" />
+                                            <n-time :time="item.createdTs" format="yyyy-MM-dd HH:mm" />
                                             <span v-if="item.finalizedTs !== 0">
                                                 (finalized)
                                             </span>
@@ -263,7 +262,7 @@ import { SdkEvent, TxHis } from '../../common/types';
 
 const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setAccountStatus, setSyncedBlock,
     setLatestBlock, pageParams, showLoadingMask, closeLoadingMask, setStartCompileCircuits } = useStatus();
-const { convertToMinaUnit, calculateUsdAmount, omitAddress, getUserTimezone } = useUtils();
+const { convertToMinaUnit, calculateUsdAmount, omitAddress } = useUtils();
 const message = useMessage();
 const { SdkState, exitAccount, listenSyncerChannel, clearAccount, compileCircuits } = useSdk();
 const runtimeConfig = useRuntimeConfig();
@@ -320,7 +319,6 @@ const clearAccountAndLogout = async () => {
 const expectSyncedSpendTime = ref(20_000); // default 20s
 const lastBatchProcessDoneTime = ref(Date.now());
 const syncerListenerSetted = ref(false);
-const userTimezone = ref("Asia/Shanghai");
 const tokenList = computed(() => {
     return [
         { tokenId: 1, tokenName: "MINA", tokenNetwork: "Anomix", balance: appState.value.totalNanoBalance },
@@ -365,7 +363,6 @@ onMounted(async () => {
         const { copyText } = useClientUtils();
         copyFunc = copyText;
 
-        userTimezone.value = getUserTimezone();
         // get history
         const txs = await remoteApi.getTxs(appState.value.accountPk58!);
         console.log('txs length: ', txs.length);
