@@ -250,6 +250,14 @@ h6 {
   }
 }
 
+.header-bg-img {
+  background-color: var(--uno-background);
+  background-image: url(@/assets/bg.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position-x: center;
+}
+
 
 @media screen and (min-width: 480px) {
   .ano-app {
