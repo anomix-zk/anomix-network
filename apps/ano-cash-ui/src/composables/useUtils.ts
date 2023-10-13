@@ -17,7 +17,7 @@ export default function () {
 
     const MINA = 1000_000_000;
     const convertToMinaUnit = (
-        nanomina: string | number | bigint | null | undefined
+        nanomina: string | number | bigint | null | undefined,
     ) => {
         if (nanomina === undefined || nanomina === null) {
             return null;
@@ -43,7 +43,7 @@ export default function () {
     };
 
     const convertToNanoMinaUnit = (
-        mina: string | number | bigint | null | undefined
+        mina: string | number | bigint | null | undefined,
     ) => {
         if (mina === undefined || mina === null) {
             return null;
@@ -70,7 +70,7 @@ export default function () {
 
     const calculateUsdAmount = (
         tokenName: string,
-        tokenBalance: BigNumber | string | undefined | null
+        tokenBalance: BigNumber | string | undefined | null,
     ) => {
         if (!tokenBalance || tokenBalance === null) {
             return null;
@@ -88,7 +88,7 @@ export default function () {
 
     const omitAddress = (
         address: string | null | undefined,
-        cutLength: number = 5
+        cutLength: number = 5,
     ) => {
         if (address === null || address === undefined) {
             return null;
@@ -107,13 +107,6 @@ export default function () {
     const checkNoSideSpace = (value: string) =>
         !value.startsWith(" ") && !value.endsWith(" ");
 
-    const getUserTimezone = () => {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-        console.log("user timezone:", timezone);
-        return timezone;
-    };
-
     return {
         convertToMinaUnit,
         convertToNanoMinaUnit,
@@ -121,6 +114,5 @@ export default function () {
         omitAddress,
         checkOnlyNumber,
         checkNoSideSpace,
-        getUserTimezone,
     };
 }

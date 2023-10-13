@@ -3,6 +3,7 @@ export type SdkOptions = {
   minaEndpoint: string;
   nodeRequestTimeoutMS?: number;
   l2BlockPollingIntervalMS?: number;
+  synceBlocksPerPoll?: number;
   debug?: boolean;
   broadcastChannelName?: string;
   logChannelName?: string;

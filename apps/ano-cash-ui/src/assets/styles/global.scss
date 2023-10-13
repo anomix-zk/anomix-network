@@ -69,6 +69,8 @@ textarea {
   font-family: Open Sans, PingFang SC, Source Sans, Microsoft Yahei, sans-serif;
 }
 
+button { border: none; }
+
 a {
   cursor: pointer;
   color: var(--ano-primary);
@@ -248,6 +250,14 @@ h6 {
   }
 }
 
+.header-bg-img {
+  background-color: var(--uno-background);
+  background-image: url(@/assets/bg.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position-x: center;
+}
+
 
 @media screen and (min-width: 480px) {
   .ano-app {
@@ -256,7 +266,7 @@ h6 {
   }
 
   .ano-app>.page {
-      min-height: 760px;
+      min-height: 780px;
       border-radius: 28px;
       padding-left: 40px;
       padding-right: 40px;

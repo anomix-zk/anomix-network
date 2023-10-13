@@ -2,13 +2,14 @@
     <div class="header">Ano.Cash</div>
     <div class="login">
         <div class="logo">
-            <img :src="loginImage" class="arrow" alt="" />
+            <img :src="loginImage" alt="Ano.Cash" />
         </div>
         <h1 class="title">Login AnoCash</h1>
         <!---->
         <div class="oauth-box">
             <div class="auth-item">
-                <n-button color="#f4f4f4" block type="primary" class="auth-btn" @click="connectWallet('connect')">
+                <n-button color="#f4f4f4" :bordered="false" block type="primary" class="auth-btn"
+                    @click="connectWallet('connect')">
                     <div style="display:flex; align-items: center;">
                         <img :src="auroLogo" alt="" style="width: 30px; height: 30px;" />
                         <span style="color:#1f202a">Connect Wallet</span>
@@ -16,10 +17,18 @@
                 </n-button>
             </div>
             <div class="auth-item">
-                <n-button color="#f4f4f4" block type="primary" @click="login" class="auth-btn">
+                <n-button color="#f4f4f4" :bordered="false" block type="primary" @click="login" class="auth-btn">
                     <div style="display:flex; align-items: center;">
                         <img :src="keyImage" alt="" style="width: 36px; height: 36px;" />
                         <span style="color:#1f202a">Login With Key</span>
+                    </div>
+                </n-button>
+            </div>
+
+            <div v-if="existLocalAccount" class="auth-item">
+                <n-button color="#f4f4f4" :bordered="false" block type="primary" @click="sessionLogin" class="auth-btn">
+                    <div style="display:flex; align-items: center;">
+                        <span style="color:#1f202a">Login With Local Account</span>
                     </div>
                 </n-button>
             </div>
@@ -33,7 +42,8 @@
 
         <div class="oauth-box" style="margin-top: 30px;">
             <div class="auth-item">
-                <n-button color="#f4f4f4" block type="primary" @click="connectWallet('claim')" class="auth-btn">
+                <n-button color="#f4f4f4" :bordered="false" block type="primary" @click="connectWallet('claim')"
+                    class="auth-btn">
                     <div style="display:flex; align-items: center;">
                         <img :src="claimImage" alt="" style="width: 35px; height: 35px;" />
                         <span style="color:#1f202a">Claim Assets</span>
@@ -50,13 +60,51 @@
 <script lang="ts" setup>
 import loginImage from "@/assets/anomix.svg";
 import auroLogo from "@/assets/auro.png";
-import keyImage from "@/assets/key2.png";
+import keyImage from "@/assets/key.png";
 import claimImage from "@/assets/claim.svg";
-import { useMessage } from "naive-ui";
+import { h } from "vue";
+import { useMessage, useNotification } from "naive-ui";
 
+const notification = useNotification();
 const message = useMessage();
 const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
+const { SdkState } = useSdk();
+
 const maskId = "index";
+const existLocalAccount = ref(false);
+const showTestReminder = ref(false);
+
+onMounted(async () => {
+    console.log('App index onMounted...');
+    try {
+        if (!showTestReminder.value) {
+            notification.info({
+                title: () => h('div', {
+                    innerHTML: `<div style="color: red;font-weight:600;">AnoCash Test Reminder</div>`,
+                }),
+                content: () => h('div', {
+                    innerHTML: `<div style="font-weight:600;">This is a very early MVP test version of AnoCash, do not use your Mainnet wallet keys or funds for testing!!<br/><br/>After you install Auro wallet extension, switch to the "Berkeley" network:<br/><a href='https://www.aurowallet.com/' target='_blank'>Install Auro Wallet ></a><br/><br/>Claim test funds (Berkeley) for your auro wallet address:<br/><a href='https://faucet.minaprotocol.com/' target='_blank'>Testnet Faucet ></a></div>`
+                }),
+            });
+            showTestReminder.value = true;
+        }
+
+        if (SdkState.remoteApi !== null) {
+            const accounts = await SdkState.remoteApi.getLocalAccounts();
+            if (accounts.length > 0) {
+                existLocalAccount.value = true;
+            }
+        }
+
+    } catch (err: any) {
+        console.error(err);
+    }
+
+});
+
+const sessionLogin = async () => {
+    await navigateTo("/login/session");
+};
 
 const login = async () => {
     await navigateTo("/login");
@@ -72,7 +120,7 @@ const connectWallet = async (action: string) => {
         showLoadingMask({ id: maskId, text: 'Connecting wallet...', closable: false });
         const currentNetwork = await window.mina.requestNetwork();
         console.log({ currentNetwork });
-        if (appState.value.minaNetwork !== currentNetwork) {
+        if (appState.value.minaNetwork !== currentNetwork && currentNetwork !== 'Unknown') {
             closeLoadingMask(maskId);
             message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
             return;
@@ -215,7 +263,7 @@ const connectWallet = async (action: string) => {
     left: 0;
     width: 100%;
     //height: 20px;
-    line-height: 80px;
+    line-height: 50px;
     text-align: center;
     color: gray;
     font-size: 16px;

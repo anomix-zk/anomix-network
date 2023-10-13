@@ -44,6 +44,10 @@
           </div>
         </div>
 
+        <div v-if="currPageAction === PageAction.SEND_TOKEN" class="anon"><span style="font-weight: 600;">Anonymous to
+            receiver:</span> {{ params.anonToReceiver ? 'Yes' :
+              'No' }}</div>
+
       </div>
 
 
@@ -221,6 +225,12 @@ const sendTx = async () => {
         font-size: 15px;
         font-weight: 500;
       }
+    }
+
+    .anon {
+      margin-top: 25px;
+      font-size: 15px;
+      font-weight: 500;
     }
 
 

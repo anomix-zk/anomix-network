@@ -24,6 +24,7 @@ export default function () {
         sdkExist: boolean;
         syncerStarted: boolean;
         apiExist: boolean;
+        startCompileCircuits: boolean;
         mask: {
             id: string | undefined;
             show: boolean;
@@ -57,11 +58,12 @@ export default function () {
             sdkExist: false,
             syncerStarted: false,
             apiExist: false,
+            startCompileCircuits: false,
             mask: {
                 id: "appInit",
                 show: true,
                 closable: false, // Users can close by clicking
-                showLoading: true,
+                showLoading: false,
                 loadingText: "App Initializing...",
             },
         };
@@ -181,6 +183,11 @@ export default function () {
         setAlias(null);
         setAccountStatus(AccountStatus.UNREGISTERED);
         setTotalNanoBalance(null);
+        setSigningPk1_58(null);
+        setSigningPk2_58(null);
+        setSyncedBlock(0);
+        setLatestBlock(0);
+        appState.value.isHideInfo = false;
     };
 
     const setSigningPk1_58 = (pk58: string | null | undefined) => {
@@ -211,6 +218,10 @@ export default function () {
         appState.value.minaNetwork = network;
     };
 
+    const setStartCompileCircuits = (startCompileCircuits: boolean) => {
+        appState.value.startCompileCircuits = startCompileCircuits;
+    };
+
     return {
         appState,
         pageParams,
@@ -235,5 +246,6 @@ export default function () {
         setSyncedBlock,
         setLatestBlock,
         setMinaNetwork,
+        setStartCompileCircuits,
     };
 }

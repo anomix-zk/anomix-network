@@ -62,7 +62,9 @@ const syncerWrapper = {
       log('Starting syncer...');
       await currSyncer.start(
         1,
-        1,
+        sdkOptions.synceBlocksPerPoll !== undefined
+          ? sdkOptions.synceBlocksPerPoll
+          : 1,
         sdkOptions.l2BlockPollingIntervalMS
           ? sdkOptions.l2BlockPollingIntervalMS
           : 1000
@@ -111,6 +113,14 @@ const syncerWrapper = {
       clog.info('Adding account...');
       log('Adding account...');
       currSyncer.addAccount(PublicKey.fromBase58(accountPk));
+    });
+  },
+
+  removeAccount: async (accountPk: string) => {
+    await tryFunc(async () => {
+      clog.info('Removing account...');
+      log('Removing account...');
+      currSyncer.removeAccount(PublicKey.fromBase58(accountPk));
     });
   },
 };

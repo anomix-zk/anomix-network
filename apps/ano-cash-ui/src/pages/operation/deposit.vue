@@ -82,7 +82,7 @@
           <n-input-number placeholder="Deposit amount" size="large" clearable :show-button="false"
             :validator="checkPositiveNumber" v-model:value="depositAmount">
             <template #suffix>
-              <div class="max-btn" @click="maxInputAmount">MAX</div>
+              <div class="max-btn" @click="maxInputAmount">Max</div>
             </template>
           </n-input-number>
         </div>
@@ -97,6 +97,7 @@
               <template #suffix>
                 <van-icon v-show="checkAlias === 1" name="passed" color="green" size="20" />
                 <van-icon v-show="checkAlias === 0" name="close" color="red" size="20" />
+                <div class="input-user-btn" @click="inputCurrentAccount">Me</div>
               </template>
             </n-input>
           </div>
@@ -132,7 +133,8 @@ import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
 import auroLogo from "@/assets/auro.png";
 import { SdkEvent } from '../../common/types';
-import { SdkEventType } from '../../common/constants';
+import { SdkEventType, CHANNEL_MINA, WalletEventType, TIPS_WAIT_FOR_CIRCUITS_COMPILING } from '../../common/constants';
+import type { WalletEvent } from '../../common/types';
 
 const router = useRouter();
 const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
@@ -141,6 +143,8 @@ const message = useMessage();
 const { SdkState, listenSyncerChannel } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const remoteSdk = SdkState.remoteSdk!;
+
+let walletChannel: BroadcastChannel | null = null;
 
 const showTxDialog = ref(false);
 const dialogLoading = ref(true);
@@ -198,44 +202,45 @@ const walletListenerSetted = ref(false);
 const route = useRoute();
 onMounted(async () => {
   console.log('deposit page onMounted...');
+
   await loadConnectedWalletStatus();
 
   if (!walletListenerSetted.value) {
-    if (window.mina) {
-      window.mina.on('accountsChanged', async (accounts: string[]) => {
-        console.log('deposit.vue - connected account change: ', accounts);
-        if (route.path === '/operation/deposit') {
-          if (accounts.length === 0) {
-            message.error('Please connect your wallet', {
-              closable: true,
-              duration: 0
-            });
-            disconnect();
-          } else {
-            setConnectedWallet(accounts[0]);
-            await loadConnectedWalletStatus();
-          }
-        }
+    walletChannel = new BroadcastChannel(CHANNEL_MINA);
+    walletChannel.onmessage = async (e: any) => {
+      const event = e.data as WalletEvent;
+      console.log('deposit - walletChannel.onmessage: ', event);
+      if (event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
 
-      });
-
-      window.mina.on('chainChanged', (chainType: string) => {
-        console.log('deposit.vue - current chain: ', chainType);
-        if (chainType !== appState.value.minaNetwork) {
-          message.error('Please switch to Berkeley network', {
+        if (event.connectedAddress) {
+          setConnectedWallet(event.connectedAddress);
+          await loadConnectedWalletStatus();
+        } else {
+          message.error('Please connect your wallet', {
             closable: true,
-            duration: 0
+            duration: 2000
           });
+          disconnect();
         }
-      });
-    }
+
+      } else if (event.eventType === WalletEventType.NETWORK_INCORRECT) {
+        message.error('Please switch to Berkeley network', {
+          closable: true,
+          duration: 3000
+        });
+      }
+    };
 
     walletListenerSetted.value = true;
   }
 
 });
 
-const toBack = () => router.back();
+const toBack = () => {
+  walletChannel?.close();
+  console.log('walletChannel close success');
+  router.back();
+};
 const checkPositiveNumber = (x: number) => x > 0;
 
 const depositAmount = ref<number | undefined>(undefined);
@@ -297,14 +302,16 @@ const deposit = async () => {
     return;
   }
   try {
-    showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: true });
+    showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
     const isContractReady = await remoteSdk.isEntryContractCompiled();
     if (!isContractReady) {
       if (maskListenerSetted.value === false) {
-        listenSyncerChannel((e: SdkEvent) => {
+        listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
           if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
             closeLoadingMask(maskId);
             message.info('Circuits compling done, please continue your deposit', { duration: 0, closable: true });
+            chan.close();
+            console.log('Syncer listener channel close success');
           }
         });
         maskListenerSetted.value = true;
@@ -375,7 +382,7 @@ const connect = async () => {
   try {
     showLoadingMask({ id: maskId, text: 'Connecting wallet...', closable: true });
     const currentNetwork = await window.mina.requestNetwork();
-    if (appState.value.minaNetwork !== currentNetwork) {
+    if (appState.value.minaNetwork !== currentNetwork && currentNetwork !== 'Unknown') {
       message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
       closeLoadingMask(maskId);
       return;
@@ -410,11 +417,30 @@ const maxInputAmount = () => {
   depositAmount.value = Number(L1TokenBalance.value?.balance);
 };
 
+const inputCurrentAccount = () => {
+  receiver.value = appState.value.alias !== null ? appState.value.alias + '.ano' : appState.value.accountPk58!;
+}
+
 
 </script>
 
 <style lang="scss" scoped>
 .send-form {
+
+  .input-user-btn {
+    border-left-width: 0.1px;
+    border-left-style: dotted;
+    border-left-color: var(--ano-border);
+    padding-left: 14px;
+    padding-right: 6px;
+    margin-left: 5px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .input-user-btn:hover {
+    color: var(--ano-primary);
+  }
 
   .form-main {
     margin-top: 20px;

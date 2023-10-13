@@ -1,6 +1,6 @@
 import type { AnomixSdk, ProviderSignature, SdkConfig, Tx } from "@anomix/sdk";
 import { expose } from "comlink";
-import { log, tryFunc } from "../utils";
+import { log } from "../utils";
 
 let apiSdk: AnomixSdk;
 let minaEndpoint: string;
@@ -14,26 +14,23 @@ const apiWrapper = {
         const { createAnomixSdk } = await import("@anomix/sdk");
         log("api service loaded");
 
-        await tryFunc(async () => {
-            minaEndpoint = config.options.minaEndpoint;
-            apiSdk = await createAnomixSdk(config);
-        });
+        minaEndpoint = config.options.minaEndpoint;
+        apiSdk = await createAnomixSdk(config);
+
         log("api service created");
     },
 
     generateKeyPair: async (sign: ProviderSignature, accountIndex = 0) => {
         log("generate key pair: " + JSON.stringify(sign));
 
-        return await tryFunc(async () => {
-            const keypair = apiSdk.generateKeyPairByProviderSignature(
-                sign,
-                accountIndex
-            );
-            return {
-                privateKey: keypair.privateKey.toBase58(),
-                publicKey: keypair.publicKey.toBase58(),
-            };
-        });
+        const keypair = apiSdk.generateKeyPairByProviderSignature(
+            sign,
+            accountIndex,
+        );
+        return {
+            privateKey: keypair.privateKey.toBase58(),
+            publicKey: keypair.publicKey.toBase58(),
+        };
     },
     getAccountKeySigningData: () => {
         return apiSdk.getAccountKeySigningData();
@@ -43,32 +40,25 @@ const apiWrapper = {
     },
     getAliasByAccountPublicKey: async (
         accountPk: string,
-        accountPrivateKey: string
+        accountPrivateKey: string,
     ) => {
         log("getAliasByAccountPublicKey: " + accountPk);
-        return await tryFunc(async () => {
-            const { PrivateKey } = await import("o1js");
-            const priKey = PrivateKey.fromBase58(accountPrivateKey);
-            return await apiSdk.getAliasByAccountPublicKey(accountPk, priKey);
-        });
+
+        const { PrivateKey } = await import("o1js");
+        const priKey = PrivateKey.fromBase58(accountPrivateKey);
+        return await apiSdk.getAliasByAccountPublicKey(accountPk, priKey);
     },
 
     updateAliasForUserState: async (accountPk: string, alias: string) => {
-        await tryFunc(async () => {
-            await apiSdk.updateAliasForUserState(accountPk, alias);
-        });
+        await apiSdk.updateAliasForUserState(accountPk, alias);
     },
 
     isAliasRegistered: async (alias: string, includePending: boolean) => {
-        return await tryFunc(async () => {
-            return await apiSdk.isAliasRegistered(alias, includePending);
-        });
+        return await apiSdk.isAliasRegistered(alias, includePending);
     },
 
     sendTx: async (tx: Tx) => {
-        await tryFunc(async () => {
-            await apiSdk.sendTx(tx);
-        });
+        await apiSdk.sendTx(tx);
     },
     getKeypair: async (privateKey58: string) => {
         const { PrivateKey } = await import("o1js");
@@ -79,6 +69,15 @@ const apiWrapper = {
             publicKey: publicKey.toBase58(),
         };
     },
+    getRandomKeypair: async () => {
+        const { PrivateKey } = await import("o1js");
+        const privateKey = PrivateKey.random();
+        const publicKey = privateKey.toPublicKey();
+        return {
+            privateKey: privateKey.toBase58(),
+            publicKey: publicKey.toBase58(),
+        };
+    },
     getLocalAccounts: async () => {
         return await apiSdk.getAccounts();
     },
@@ -86,7 +85,7 @@ const apiWrapper = {
         const { PublicKey } = await import("o1js");
         const sk = await apiSdk.getSecretKey(
             PublicKey.fromBase58(accountPk58),
-            pwd
+            pwd,
         );
         if (sk) {
             return sk.toBase58();
@@ -110,7 +109,7 @@ const apiWrapper = {
     },
     checkTx: async (
         txId: string,
-        options?: { maxAttempts?: number; interval?: number }
+        options?: { maxAttempts?: number; interval?: number },
     ) => {
         const { Mina, checkZkappTransaction } = await import("o1js");
         let Blockchain = Mina.Network(minaEndpoint);
@@ -120,7 +119,7 @@ const apiWrapper = {
         let attempts = 0;
         const executePoll = async (
             resolve: () => void,
-            reject: (err: Error) => void | Error
+            reject: (err: Error) => void | Error,
         ) => {
             let res;
             try {
@@ -134,14 +133,14 @@ const apiWrapper = {
             } else if (res.failureReason) {
                 return reject(
                     new Error(
-                        `Transaction failed.\nTransactionId: ${txId}\nAttempts: ${attempts}\nfailureReason(s): ${res.failureReason}`
-                    )
+                        `Transaction failed.\nTransactionId: ${txId}\nAttempts: ${attempts}\nfailureReason(s): ${res.failureReason}`,
+                    ),
                 );
             } else if (maxAttempts && attempts === maxAttempts) {
                 return reject(
                     new Error(
-                        `Exceeded max attempts.\nTransactionId: ${txId}\nAttempts: ${attempts}\nLast received status: ${res}`
-                    )
+                        `Exceeded max attempts.\nTransactionId: ${txId}\nAttempts: ${attempts}\nLast received status: ${res}`,
+                    ),
                 );
             } else {
                 setTimeout(executePoll, interval, resolve, reject);
@@ -187,9 +186,6 @@ const apiWrapper = {
     },
     isUserTxSettled: async (txId: string) => {
         return await apiSdk.isUserTxSettled(txId);
-    },
-    removeAccount: async (accountPk: string) => {
-        await apiSdk.removeAccount(accountPk);
     },
     getAnalysisOfNotes: async (accountPk: string) => {
         return await apiSdk.getAnalysisOfNotes(accountPk);

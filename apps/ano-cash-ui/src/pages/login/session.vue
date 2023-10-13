@@ -3,6 +3,9 @@
 
         <div class="page-login">
 
+            <div class="logo">
+                <img :src="loginImage" alt="Ano.Cash" />
+            </div>
             <div class="login-title">
                 Login Ano.Cash
             </div>
@@ -39,6 +42,7 @@
 </template>
 
 <script lang="ts" setup>
+import loginImage from "@/assets/anomix.svg";
 import { SelectOption, useMessage } from 'naive-ui';
 import { AccountStatus } from '../../common/constants';
 
@@ -46,7 +50,7 @@ const { SdkState, loginAccount } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const { omitAddress } = useUtils();
 const message = useMessage();
-const { showLoadingMask, closeLoadingMask, setAccountPk58, setAlias, setAccountStatus } = useStatus();
+const { showLoadingMask, closeLoadingMask, setAccountPk58, setAlias, setAccountStatus, setSigningPk1_58, setSigningPk2_58 } = useStatus();
 
 const maskId = 'session-login';
 let selectedAccount = ref<string | undefined>(undefined);
@@ -64,7 +68,7 @@ onMounted(async () => {
     localAccounts.forEach((account) => {
         const address = omitAddress(account.accountPk)!;
         acs.push({
-            label: account.alias ? account.alias + ' (' + address + ')' : address,
+            label: account.alias ? account.alias + '.ano (' + address + ')' : address,
             value: account.accountPk,
             style: {
                 'height': '56px',
@@ -108,8 +112,14 @@ const toAccountPage = async () => {
     await navigateTo("/account", { replace: true });
 };
 
+const toRegisterAliasPage = async () => {
+    console.log("to register alias page");
+    await navigateTo("/connect/step-2");
+};
+
 const login = async () => {
-    if (pwd.value.length === 0) {
+    const pwdTrim = pwd.value.trim();
+    if (pwdTrim.length === 0) {
         message.error('Please input password');
         return;
     }
@@ -121,7 +131,7 @@ const login = async () => {
     try {
         showLoadingMask({ text: 'Login...', id: maskId, closable: false });
         const accountPk58 = selectedAccount.value!;
-        const accountPrivateKey58 = await remoteApi.getSercetKey(accountPk58, pwd.value);
+        const accountPrivateKey58 = await remoteApi.getSercetKey(accountPk58, pwdTrim);
         if (!accountPrivateKey58) {
             message.error('Password wrong');
             return;
@@ -130,24 +140,27 @@ const login = async () => {
         // get alias
         const alias = await remoteApi.getAliasByAccountPublicKey(accountPk58, accountPrivateKey58);
 
-        const accountPk = await loginAccount(accountPk58, pwd.value, alias);
-        if (accountPk) {
-            setAccountPk58(accountPk);
+        const pubKeys = await loginAccount(accountPk58, pwd.value, alias);
+        if (pubKeys.length > 0) {
+            setAccountPk58(accountPk58);
             if (alias) {
                 setAlias(alias);
                 setAccountStatus(AccountStatus.REGISTERED);
+                message.success('Login successfully');
+                await toAccountPage();
             } else {
                 setAccountStatus(AccountStatus.UNREGISTERED);
+                setSigningPk1_58(pubKeys[0]);
+                setSigningPk2_58(pubKeys[1]);
+                await toRegisterAliasPage();
             }
 
-            message.success('Login successfully');
-            await toAccountPage();
             closeLoadingMask(maskId);
         }
     } catch (err: any) {
         closeLoadingMask(maskId);
         console.error(err);
-        message.error(err.message, { duration: 0, closable: true });
+        message.error(err.message, { duration: 3000, closable: true });
     }
 
 }
@@ -168,6 +181,18 @@ const login = async () => {
     //         height: 100%;
     //     }
     // }
+    .logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 5px;
+        width: 100%;
+        height: 140px;
+
+        img {
+            height: 100%;
+        }
+    }
 
     .login-title {
         // margin-top: 28px;

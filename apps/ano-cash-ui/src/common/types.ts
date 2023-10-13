@@ -1,8 +1,13 @@
-import { SdkEventType } from "./constants";
+import { SdkEventType, WalletEventType } from "./constants";
 
 export interface SdkEvent {
     eventType: SdkEventType;
     data?: any;
+}
+
+export interface WalletEvent {
+    eventType: WalletEventType;
+    connectedAddress?: string;
 }
 
 export interface TxInfo {

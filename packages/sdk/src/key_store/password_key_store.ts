@@ -60,8 +60,13 @@ export class PasswordKeyStore implements KeyStore {
     } else {
       const priKeyCipherText = await this.db.getSecretKey(pubKey.toBase58());
       if (priKeyCipherText) {
-        const priKeyBase58 = await decrypt(priKeyCipherText, KEY_SALT, pwd);
-        return PrivateKey.fromBase58(priKeyBase58);
+        try {
+          const priKeyBase58 = await decrypt(priKeyCipherText, KEY_SALT, pwd);
+          return PrivateKey.fromBase58(priKeyBase58);
+        } catch (err: any) {
+          console.error(err);
+          throw new Error('Password wrong');
+        }
       }
 
       return undefined;

@@ -1,39 +1,38 @@
 import type { AnomixSdk, SdkConfig } from "@anomix/sdk";
 import { expose } from "comlink";
-import { tryFunc, log } from "../utils";
+import { log } from "../utils";
 
 let syncerSdk: AnomixSdk;
-//const logLabel = "sdk_worker";
-// const chan = new BroadcastChannel(CHANNEL_LOG);
 
-// Use syncer related methods from the SDK
 const syncerWrapper = {
     startSyncer: async (config: SdkConfig) => {
         log("create syncer...");
         const { createAnomixSdk } = await import("@anomix/sdk");
         log("syncer loaded");
 
-        await tryFunc(async () => {
-            syncerSdk = await createAnomixSdk(config);
-            await syncerSdk.start(false);
-        });
+        syncerSdk = await createAnomixSdk(config);
+        await syncerSdk.start(false);
+
         log("syncer created");
     },
 
     stopSyncer: async () => {
         log("stop syncer...");
 
-        await tryFunc(async () => {
-            await syncerSdk.stop();
-        });
+        await syncerSdk.stop();
     },
-
+    syncerRemoveAccount: async (accountPk: string) => {
+        await syncerSdk.syncerRemoveAccount(accountPk);
+    },
+    removeUserState: async (accountPk: string) => {
+        await syncerSdk.removeUserState(accountPk);
+    },
     addAccount: async (
         accountPrivateKey58: string,
         pwd: string,
         signingPrivateKey1_58: string | undefined,
         signingPrivateKey2_58: string | undefined,
-        alias: string | undefined
+        alias: string | undefined,
     ) => {
         const { PrivateKey } = await import("o1js");
         const accountPrivateKey = PrivateKey.fromBase58(accountPrivateKey58);
@@ -49,7 +48,7 @@ const syncerWrapper = {
             pwd,
             signingPrivateKey1,
             signingPrivateKey2,
-            alias
+            alias,
         );
     },
     loginAccount: async (accountPk: string, pwd: string, alias?: string) => {

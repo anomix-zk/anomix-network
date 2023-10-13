@@ -29,7 +29,7 @@
                 v-if="notesInfo !== null"> ({{
                   notesInfo.availableNotesNum }} <template
                   v-if="notesInfo.availableNotesNum === 0 || notesInfo.availableNotesNum === 1">note</template><template
-                  v-else>notes</template>, max per tx: {{
+                  v-else>notes</template>, max spend: {{
                     convertToMinaUnit(notesInfo.maxSpendValuePerTx) }} )</template></div>
           </div>
 
@@ -39,7 +39,7 @@
           <n-input-number :placeholder="currPageAction === PageAction.SEND_TOKEN ? 'Send amount' : 'Withdraw amount'"
             size="large" clearable :show-button="false" :validator="checkPositiveNumber" v-model:value="sendAmount">
             <template #suffix>
-              <div class="max-btn" @click="maxInputAmount">MAX</div>
+              <div class="max-btn" @click="maxInputAmount">Max</div>
             </template>
           </n-input-number>
         </div>
@@ -86,18 +86,18 @@
 
       <div class="fee-box">
         <div class="title">Tx Fee</div>
-        <n-radio-group v-model:value="feeValue" name="radiogroup" style="width: 100%;">
-          <div v-for="fee in fees" class="radio-item">
-            <div class="left">{{ fee.kind }}</div>
 
-            <div class="right">
-              <div class="price">{{ fee.value }} MINA</div>
-              <!-- <n-radio v-if="fee.kind === 'Normal'" default-checked :key="fee.kind" :value="fee.value" size="large" /> -->
-              <n-radio :key="fee.kind" :value="fee.value" size="large" />
-            </div>
+        <div v-for="fee in fees" class="radio-item">
+          <div class="left">{{ fee.kind }}</div>
 
+          <div class="right">
+            <div class="price">{{ fee.value }} MINA</div>
+            <n-radio name="fee" @change="handleFeeChange" :checked="feeValue === fee.value" :key="fee.kind"
+              :value="fee.value" size="large" />
           </div>
-        </n-radio-group>
+
+        </div>
+
       </div>
 
       <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="toConfirm">
@@ -136,7 +136,7 @@ import claimImage from "@/assets/claim.svg";
 import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
 import { SdkEvent, TxInfo } from '../../common/types';
-import { PageAction, SdkEventType } from '../../common/constants';
+import { PageAction, SdkEventType, TIPS_WAIT_FOR_CIRCUITS_COMPILING } from '../../common/constants';
 
 const router = useRouter();
 const { appState, showLoadingMask, closeLoadingMask, setPageParams, setConnectedWallet, pageParams, setTotalNanoBalance } = useStatus();
@@ -246,18 +246,23 @@ const checkAliasExist = async () => {
 
 
 const feeValue = ref<number | undefined>(undefined);
-const fees = ref<{ kind: string; value: string }[]>([
+const fees = ref<{ kind: string; value: number }[]>([
   {
     kind: 'Normal',
-    value: '0.03'
+    value: 0.001
   },
   {
     kind: 'Faster',
-    value: '0.09'
+    value: 0.09
   }
 ]);
 
 feeValue.value = Number(fees.value[0].value);
+
+const handleFeeChange = (e: Event) => {
+  feeValue.value = Number((e.target as HTMLInputElement).value);
+};
+
 const maskId = 'send';
 const maskListenerSetted = ref(false);
 
@@ -281,14 +286,16 @@ const toConfirm = async () => {
   }
 
   try {
-    showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: true });
+    showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
     const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
     if (!isPrivateCircuitReady) {
       if (maskListenerSetted.value === false) {
-        listenSyncerChannel((e: SdkEvent) => {
+        listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
           if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
             closeLoadingMask(maskId);
             message.info('Circuits compling done, please continue your operation', { duration: 0, closable: true });
+            chan.close();
+            console.log('Syncer listener channel close success');
           }
         });
         maskListenerSetted.value = true;
@@ -359,11 +366,13 @@ onMounted(async () => {
   const txFees = await remoteApi.getTxFees();
   fees.value = [{
     kind: 'Normal',
-    value: convertToMinaUnit(txFees.normal)!.toString()
+    value: convertToMinaUnit(txFees.normal)!.toNumber()
   }, {
     kind: 'Faster',
-    value: convertToMinaUnit(txFees.faster)!.toString()
+    value: convertToMinaUnit(txFees.faster)!.toNumber()
   }];
+  feeValue.value = Number(fees.value[0].value);
+  console.log('feeValue: ', feeValue.value);
 
   const analysisInfo = await remoteApi.getAnalysisOfNotes(appState.value.accountPk58!);
   console.log('analysisInfo: ', analysisInfo);

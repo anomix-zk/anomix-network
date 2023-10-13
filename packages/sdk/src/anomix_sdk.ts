@@ -264,7 +264,9 @@ export class AnomixSdk {
     } else {
       await this.syncer.start(
         1,
-        1,
+        this.options.synceBlocksPerPoll !== undefined
+          ? this.options.synceBlocksPerPoll
+          : 1,
         this.options.l2BlockPollingIntervalMS
           ? this.options.l2BlockPollingIntervalMS
           : 1000
@@ -587,10 +589,20 @@ export class AnomixSdk {
     };
   }
 
-  public async removeAccount(accountPk58: string) {
-    this.log.info('Removing account...');
+  public async removeUserState(accountPk58: string) {
+    this.log.info('Removing user state...');
     await this.db.removeUserState(accountPk58);
-    this.log.info('Account removed');
+    this.log.info('User state removed');
+  }
+
+  public async syncerRemoveAccount(accountPk58: string) {
+    this.log.info('Syncer removing account...');
+    if (this.useSyncerWorker) {
+      await this.remoteSyncer.removeAccount(accountPk58);
+    } else {
+      this.syncer.removeAccount(PublicKey.fromBase58(accountPk58));
+    }
+    this.log.info('Syncer account removed');
   }
 
   public async addAccount(
@@ -1100,10 +1112,9 @@ export class AnomixSdk {
         accountPrivateKey,
         Bool(true)
       );
-      let randomZeroValueNote = ValueNote.zero();
-      randomZeroValueNote.secret = Field.random();
+      inputValueNote2.secret = Field.random();
       nullifier2 = calculateNoteNullifier(
-        randomZeroValueNote.commitment(),
+        inputValueNote2.commitment(),
         accountPrivateKey,
         Bool(false)
       );
@@ -1235,6 +1246,7 @@ export class AnomixSdk {
         });
       }
     }
+    outputNote2.inputNullifier = nullifier2;
 
     let outputNote2Commitment = outputNote2.commitment();
 

@@ -24,18 +24,18 @@
 <script lang="ts" setup>
 import type { Tx } from '@anomix/sdk';
 import { useMessage } from 'naive-ui';
-import { AccountStatus, SdkEventType } from '../../../common/constants';
+import { AccountStatus, SdkEventType, TIPS_WAIT_FOR_CIRCUITS_COMPILING } from '../../../common/constants';
 import { SdkEvent } from '../../../common/types';
 
 const emit = defineEmits<{
     (e: 'finish'): void;
 }>();
 
-const { SdkState, listenSyncerChannel } = useSdk();
+const { SdkState, listenSyncerChannel, compileCircuits } = useSdk();
 const remoteSdk = SdkState.remoteSdk!;
 const remoteApi = SdkState.remoteApi!;
 const message = useMessage();
-const { showLoadingMask, closeLoadingMask, appState, setAlias, setAccountStatus } = useStatus();
+const { showLoadingMask, closeLoadingMask, appState, setAlias, setAccountStatus, setStartCompileCircuits } = useStatus();
 
 const canRegsiter = ref(-1);
 const inputAlias = ref("");
@@ -49,10 +49,22 @@ const toAccountPage = () => {
 
 const maskId = 'registerAccount';
 
+onMounted(() => {
+    console.log('Step2 mounted...');
+    if (!appState.value.startCompileCircuits) {
+        console.log('start compile circuits...');
+        compileCircuits();
+        setStartCompileCircuits(true);
+    }
+    console.log('Step2 mounted end');
+});
+
 const handleInput = (v: string) => {
     if (canRegsiter.value !== -1) {
         canRegsiter.value = -1;
     }
+
+    inputAlias.value = inputAlias.value.toLowerCase();
 };
 
 const checkAliasIsRegistered = async () => {
@@ -108,14 +120,16 @@ const registerAccount = async () => {
 
     let tx: Tx | null = null;
     try {
-        showLoadingMask({ text: 'Waiting for circuits compling...', id: maskId, closable: true });
+        showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
         const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
         if (!isPrivateCircuitReady) {
             if (maskListenerSetted.value === false) {
-                listenSyncerChannel((e: SdkEvent) => {
+                listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
                     if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
                         message.info('Circuits compling done, please continue your registration', { duration: 0, closable: true });
                         closeLoadingMask(maskId);
+                        chan.close();
+                        console.log('Syncer listener channel close success');
                     }
                 });
                 maskListenerSetted.value = true;
