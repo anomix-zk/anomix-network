@@ -5,7 +5,7 @@
         <div class="form-item">
             <!-- <div class="item-label">Alias</div> -->
             <n-input v-model:value="inputAlias" class="item" type="text" size="large" placeholder="Alias"
-                @blur="checkAliasIsRegistered" @input="handleInput">
+                @input="handleInput">
                 <template #suffix>
                     <van-icon v-show="canRegsiter === 1" name="passed" color="green" size="20" />
                     <van-icon v-show="canRegsiter === 0" name="close" color="red" size="20" />
@@ -59,12 +59,32 @@ onMounted(() => {
     console.log('Step2 mounted end');
 });
 
-const handleInput = (v: string) => {
+const handleInput = async (v: string) => {
     if (canRegsiter.value !== -1) {
         canRegsiter.value = -1;
     }
+    const aliasTrim = inputAlias.value.trim().toLowerCase();
+    inputAlias.value = aliasTrim;
 
-    inputAlias.value = inputAlias.value.toLowerCase();
+    console.log('checkAliasIsRegistered...');
+    if (aliasTrim.length === 0) {
+        canRegsiter.value = -1;
+        return;
+    }
+
+    try {
+        const isRegistered = await remoteApi.isAliasRegistered(inputAlias.value, true);
+        if (isRegistered) {
+            console.log('isRegistered: true');
+            canRegsiter.value = 0;
+        } else {
+            console.log('isRegistered: false');
+            canRegsiter.value = 1;
+        }
+    } catch (err) {
+        console.error(err)
+        message.error('Failed to check if alias can be registered', { closable: true });
+    }
 };
 
 const checkAliasIsRegistered = async () => {
