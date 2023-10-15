@@ -12,7 +12,7 @@
   </n-config-provider>
 
   <div v-else
-    style="display:flex;justify-content:center;align-items:center;height:100vh;font-size: 20px;font-weight: 600;">
+    style="display: flex;justify-content: center;align-items: center;height: 100vh;width: 100%;font-size: 20px;font-weight: 600;">
     Your device or browser is not supported, reason: {{ supportStatus }}
   </div>
 </template>

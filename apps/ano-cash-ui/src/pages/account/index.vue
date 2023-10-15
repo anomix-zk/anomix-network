@@ -60,7 +60,9 @@
                     <div class="right-icons">
                         <!-- <van-icon name="comment-o" dot class="dot" @click="showNotiy" />
                         <van-icon name="setting-o" class="dot" @click="toSetting" /> -->
-                        <van-icon :name="exitIcon" color="#5e5f6e" size="20" @click="openExitDialog" />
+                        <van-icon class="icon-btn" style="margin-right: 15px;" :name="keyIcon" color="#5e5f6e" size="24"
+                            @click="openExitDialog" />
+                        <van-icon class="icon-btn" :name="exitIcon" color="#5e5f6e" size="20" @click="openExitDialog" />
                     </div>
                 </div>
 
@@ -257,6 +259,7 @@ import withdrawIcon from '@/assets/withdraw.svg';
 import transferIcon from '@/assets/round_transfer.svg';
 import copyIcon from '@/assets/copy.svg';
 import exitIcon from '@/assets/exit.svg';
+import keyIcon from '@/assets/key2.svg';
 import { AccountStatus, PageAction, SdkEventType, EMPTY_PUBLICKEY } from '../../common/constants';
 import { SdkEvent, TxHis } from '../../common/types';
 
@@ -504,6 +507,9 @@ const toWithdraw = async () => {
 //     font-size: 23px;
 //     margin-left: 20px;
 // }
+.icon-btn:hover {
+    cursor: pointer;
+}
 
 .ano-home-page-header {
     position: absolute;

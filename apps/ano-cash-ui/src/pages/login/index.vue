@@ -22,7 +22,7 @@
                     <div class="form-item">
                         <div v-show="showAccountPrivateKeyTitle" class="placeholder">{{ placeholderAccountPrivateKey }}
                         </div>
-                        <n-input v-model:value="accountPrivateKey" class="item" type="text" size="large"
+                        <n-input v-model:value="accountPrivateKey" clearable class="item" type="text" size="large"
                             :placeholder="placeholderAccountPrivateKey" @blur="blurAccountPrivateKey"
                             @input="inputAccountPrivateKey" />
                     </div>
@@ -30,7 +30,7 @@
                     <div class="form-item">
                         <div v-show="showAccountSigningKeyTitle" class="placeholder">{{ placeholderAccountSigningKey }}
                         </div>
-                        <n-input v-model:value="accountSigningKey" class="item" type="text" size="large"
+                        <n-input v-model:value="accountSigningKey" clearable class="item" type="text" size="large"
                             :placeholder="placeholderAccountSigningKey" @blur="blurAccountSigningKey"
                             @input="inputAccountSigningKey" />
                     </div>
@@ -51,6 +51,10 @@
                             @blur="blurPwdAgain" @input="inputPwdAgain" />
                     </div>
                 </n-space>
+
+                <n-button type="info" class="form-btn" style="margin-bottom: 5px;" @click="generateAccountKeys">
+                    Generate Account Keys
+                </n-button>
 
                 <n-button type="info" class="form-btn" style="margin-bottom: 20px;" @click="login">
                     Login
@@ -143,6 +147,20 @@ const inputPwdAgain = () => {
 };
 
 const maskId = "login-index";
+
+const generateAccountKeys = async () => {
+    try {
+        const accountKeys = await remoteApi.getRandomKeypair();
+        const signingKeys = await remoteApi.getRandomKeypair();
+        accountPrivateKey.value = accountKeys.privateKey;
+        accountSigningKey.value = signingKeys.privateKey;
+        showAccountPrivateKeyTitle.value = true;
+        showAccountSigningKeyTitle.value = true;
+    } catch (err: any) {
+        console.error(err);
+        message.error(err.message);
+    }
+};
 
 const login = async () => {
     const accountPrivateKeyTrim = accountPrivateKey.value.trim();

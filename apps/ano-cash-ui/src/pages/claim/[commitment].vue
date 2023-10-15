@@ -205,6 +205,25 @@ const toBack = () => {
 };
 const syncerListenerSetted = ref(false);
 
+const genClaimTxAndSend = async () => {
+  showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
+  const txJson = await remoteSdk.createClaimFundsTx(commitment, appState.value.connectedWallet58!);
+
+  console.log('createClaimFundsTx txJson: ', txJson);
+  const { hash: txHash } = await window.mina.sendTransaction({
+    transaction: txJson,
+  });
+  console.log('tx send success, txHash: ', txHash);
+  closeLoadingMask(maskId);
+
+  openTxDialog(txHash);
+  await remoteApi.checkTx(txHash);
+  txDialogLoadingDone();
+
+  claimBtnText.value = 'Claimed';
+  claimLoading.value = false;
+};
+
 const claim = async () => {
   console.log('start claim funds...');
   if (!window.mina) {
@@ -224,10 +243,19 @@ const claim = async () => {
     const isContractReady = await remoteSdk.isVaultContractCompiled();
     if (!isContractReady) {
       if (syncerListenerSetted.value === false) {
-        listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
-          if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
+        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
+          if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE) {
             closeLoadingMask(maskId);
-            message.info('Circuits compling done, please continue your deposit', { duration: 0, closable: true });
+            message.info('Circuits compling done', { closable: true });
+
+            try {
+              await genClaimTxAndSend();
+            } catch (err: any) {
+              console.error(err);
+              message.error(err.message, { duration: 0, closable: true });
+              closeLoadingMask(maskId);
+            }
+
             chan.close();
             console.log('Syncer listener channel close success');
           }
@@ -239,22 +267,7 @@ const claim = async () => {
       return;
     }
 
-    showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
-    const txJson = await remoteSdk.createClaimFundsTx(commitment, appState.value.connectedWallet58!);
-
-    console.log('createClaimFundsTx txJson: ', txJson);
-    const { hash: txHash } = await window.mina.sendTransaction({
-      transaction: txJson,
-    });
-    console.log('tx send success, txHash: ', txHash);
-    closeLoadingMask(maskId);
-
-    openTxDialog(txHash);
-    await remoteApi.checkTx(txHash);
-    txDialogLoadingDone();
-
-    claimBtnText.value = 'Claimed';
-    claimLoading.value = false;
+    await genClaimTxAndSend();
 
   } catch (err: any) {
     console.error(err);
@@ -263,6 +276,28 @@ const claim = async () => {
     disabledClaim.value = false;
     closeLoadingMask(maskId);
   }
+};
+
+const genDeployWithdrawalAccountTxAndSned = async () => {
+  showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
+  const txJson = await remoteSdk.createWithdrawalAccount(withdrawNote.value?.ownerAddress!,
+    appState.value.connectedWallet58!);
+
+  console.log('createWithdrawalAccount txJson: ', txJson);
+
+  showLoadingMask({ id: maskId, text: 'Wait for sending transaction...', closable: false });
+  const { hash: txHash } = await window.mina.sendTransaction({
+    transaction: txJson,
+  });
+  console.log('tx send success, txHash: ', txHash);
+  closeLoadingMask(maskId);
+
+  openTxDialog(txHash);
+  await remoteApi.checkTx(txHash);
+  txDialogLoadingDone();
+
+  withdrawAccountExists.value = true;
+  createWithdrawalAccountLoading.value = false;
 };
 
 const createWithdrawalAccount = async () => {
@@ -283,10 +318,19 @@ const createWithdrawalAccount = async () => {
     const isContractReady = await remoteSdk.isVaultContractCompiled();
     if (!isContractReady) {
       if (syncerListenerSetted.value === false) {
-        listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
+        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
           if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
             closeLoadingMask(maskId);
-            message.info('Circuits compling done, please continue your operation.', { duration: 0, closable: true });
+            message.info('Circuits compling done', { closable: true });
+
+            try {
+              await genDeployWithdrawalAccountTxAndSned();
+            } catch (err: any) {
+              console.error(err);
+              message.error(err.message, { duration: 0, closable: true });
+              closeLoadingMask(maskId);
+            }
+
             chan.close();
             console.log('Syncer listener channel close success');
           }
@@ -298,25 +342,8 @@ const createWithdrawalAccount = async () => {
       return;
     }
 
-    showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
-    const txJson = await remoteSdk.createWithdrawalAccount(withdrawNote.value?.ownerAddress!,
-      appState.value.connectedWallet58!);
+    await genDeployWithdrawalAccountTxAndSned();
 
-    console.log('createWithdrawalAccount txJson: ', txJson);
-
-    showLoadingMask({ id: maskId, text: 'Wait for sending transaction...', closable: false });
-    const { hash: txHash } = await window.mina.sendTransaction({
-      transaction: txJson,
-    });
-    console.log('tx send success, txHash: ', txHash);
-    closeLoadingMask(maskId);
-
-    openTxDialog(txHash);
-    await remoteApi.checkTx(txHash);
-    txDialogLoadingDone();
-
-    withdrawAccountExists.value = true;
-    createWithdrawalAccountLoading.value = false;
   } catch (err: any) {
     console.error(err);
     message.error(err.message, { duration: 0, closable: true });

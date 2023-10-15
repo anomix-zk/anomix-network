@@ -118,16 +118,17 @@ const registerAccount = async () => {
         return;
     }
 
-    let tx: Tx | null = null;
     try {
-        showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
+        showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: false });
         const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
         if (!isPrivateCircuitReady) {
             if (maskListenerSetted.value === false) {
-                listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
+                listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
                     if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
-                        message.info('Circuits compling done, please continue your registration', { duration: 0, closable: true });
-                        closeLoadingMask(maskId);
+                        message.info('Circuits compling done', { closable: true });
+
+                        await genRegisterProofAndSend();
+
                         chan.close();
                         console.log('Syncer listener channel close success');
                     }
@@ -138,13 +139,8 @@ const registerAccount = async () => {
             return;
         }
 
-        showLoadingMask({ text: 'Registering account...', id: maskId, closable: false });
-        tx = await remoteSdk.createAccountRegisterTx(appState.value.accountPk58!, inputAlias.value, appState.value.signingPk1_58!, appState.value.signingPk2_58!);
-        lastInputAlias.value = inputAlias.value;
-        lastTx = tx;
-        console.log('tx: ', JSON.stringify(tx));
+        await genRegisterProofAndSend();
 
-        await sendRegisterTx(tx);
     } catch (err: any) {
         closeLoadingMask(maskId);
         console.error(err);
@@ -152,6 +148,18 @@ const registerAccount = async () => {
         return;
     }
 }
+
+const genRegisterProofAndSend = async () => {
+    let tx: Tx | null = null;
+
+    showLoadingMask({ text: 'Registering account...', id: maskId, closable: false });
+    tx = await remoteSdk.createAccountRegisterTx(appState.value.accountPk58!, inputAlias.value, appState.value.signingPk1_58!, appState.value.signingPk2_58!);
+    lastInputAlias.value = inputAlias.value;
+    lastTx = tx;
+    console.log('tx: ', JSON.stringify(tx));
+
+    await sendRegisterTx(tx);
+};
 
 const sendRegisterTx = async (tx: Tx) => {
     try {
@@ -163,14 +171,14 @@ const sendRegisterTx = async (tx: Tx) => {
 
         message.success('Account registration tx send successful');
         toAccountPage();
-        closeLoadingMask(maskId);
 
     } catch (err: any) {
-        closeLoadingMask(maskId);
         console.error(err);
         message.error(err.message, { duration: 2000, closable: true });
-        message.info('Please try again later', { duration: 3000, closable: true });
+        message.info('Please try again later', { closable: true });
     }
+
+    closeLoadingMask(maskId);
 }
 
 </script>

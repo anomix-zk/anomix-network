@@ -93,7 +93,7 @@
 
           <div class="to-input">
             <n-input placeholder="Alias (xxx.ano) or Anomix address (B62)" size="large" clearable
-              :allow-input="checkNoSideSpace" v-model:value="receiver" @blur="checkAliasExist" @input="handleInput">
+              :allow-input="checkNoSideSpace" v-model:value="receiver" @input="handleInput">
               <template #suffix>
                 <van-icon v-show="checkAlias === 1" name="passed" color="green" size="20" />
                 <van-icon v-show="checkAlias === 0" name="close" color="red" size="20" />
@@ -250,38 +250,81 @@ const maskListenerSetted = ref(false);
 
 // -1: not alias, 0: alias not exist, 1: alias exist
 const checkAlias = ref(-1);
-const handleInput = (v: string) => {
+const handleInput = async (v: string) => {
   if (checkAlias.value !== -1) {
     checkAlias.value = -1;
   }
-};
-const checkAliasExist = async () => {
+
   console.log('checkAliasExist...');
-  showLoadingMask({ id: maskId, text: 'Checking if input valid...', closable: false });
-  if (!receiver.value.endsWith('.ano')) {
-    if (receiver.value.startsWith('B62')) {
+  const receiverValue = receiver.value.trim();
+  if (!receiverValue.endsWith('.ano')) {
+    if (receiverValue.startsWith('B62')) {
       if (checkAlias.value !== -1) {
         checkAlias.value = -1;
       }
 
     } else {
       checkAlias.value = 0;
-      message.error(`Please input anomix address or alias.`, { duration: 5000, closable: true });
     }
-    closeLoadingMask(maskId);
     return;
   }
 
-  const isRegistered = await remoteApi.isAliasRegistered(receiver.value.replace('.ano', ''), false);
+  const isRegistered = await remoteApi.isAliasRegistered(receiverValue.replace('.ano', ''), false);
   if (isRegistered) {
-    console.log(`${receiver.value} exists`);
+    console.log(`${receiverValue} exists`);
     checkAlias.value = 1;
   } else {
-    console.log(`${receiver.value} not exists`);
+    console.log(`${receiverValue} not exists`);
     checkAlias.value = 0;
-    message.error(`${receiver.value} not exists`, { duration: 5000, closable: true });
+    message.error(`${receiverValue} not exists`, { closable: true });
   }
+
+};
+
+const genDepositTxAndSend = async (receiverValue: string) => {
+  showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
+  let receiverPk: string | undefined = undefined;
+
+  if (receiverValue.endsWith('.ano')) {
+    receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiverValue.replace('.ano', ''));
+    if (receiverPk === undefined) {
+      closeLoadingMask(maskId);
+      message.error(`Receiver: ${receiverValue} not found.`, { duration: 3000, closable: true });
+      return;
+    }
+  } else {
+    receiverPk = receiverValue;
+  }
+
+  const depositAmountNano = convertToNanoMinaUnit(depositAmount.value)!.toString();
+
+  console.log('connectedWallet58: ', appState.value.connectedWallet58);
+  if (appState.value.connectedWallet58 === null) {
+    closeLoadingMask(maskId);
+    message.error('Please connect wallet first.', { duration: 0, closable: true });
+    return;
+  }
+  const txJson = await remoteSdk.createDepositTx({
+    payerAddress: appState.value.connectedWallet58!,
+    receiverAddress: receiverPk!,
+    feePayerAddress: appState.value.connectedWallet58!,
+    amount: depositAmountNano,
+    anonymousToReceiver: false,
+  });
+  console.log('deposit txJson: ', txJson);
+
+  showLoadingMask({ id: maskId, text: 'Wait for sending transaction...', closable: false });
+  const { hash: txHash } = await window.mina.sendTransaction({
+    transaction: txJson,
+  });
+  console.log('tx send success, txHash: ', txHash);
   closeLoadingMask(maskId);
+
+  openTxDialog(txHash);
+  await remoteApi.checkTx(txHash);
+  txDialogLoadingDone();
+
+  message.success('Deposit success! You can check this sent transaction in the Auro wallet. AnoCash usually takes around ten minutes or so to update.', { duration: 3000, closable: true });
 };
 
 const deposit = async () => {
@@ -293,12 +336,13 @@ const deposit = async () => {
     message.error('Insufficient balance.');
     return;
   }
-  if (receiver.value === '') {
+  const receiverValue = receiver.value.trim();
+  if (receiverValue.length === 0) {
     message.error('Please input receiver.');
     return;
   }
   if (checkAlias.value === 0) {
-    message.error(`${receiver.value} not exists, please input a valid address or alias.`, { duration: 5000, closable: true });
+    message.error(`${receiverValue} not exists, please input a valid address or alias.`, { duration: 5000, closable: true });
     return;
   }
   try {
@@ -306,10 +350,20 @@ const deposit = async () => {
     const isContractReady = await remoteSdk.isEntryContractCompiled();
     if (!isContractReady) {
       if (maskListenerSetted.value === false) {
-        listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
+        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
           if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
             closeLoadingMask(maskId);
-            message.info('Circuits compling done, please continue your deposit', { duration: 0, closable: true });
+            message.info('Circuits compling done', { closable: true });
+
+            try {
+              await genDepositTxAndSend(receiverValue);
+            } catch (err: any) {
+              console.error(err);
+              message.error(err.message, { duration: 0, closable: true });
+              closeLoadingMask(maskId);
+            }
+
+
             chan.close();
             console.log('Syncer listener channel close success');
           }
@@ -320,50 +374,7 @@ const deposit = async () => {
       return;
     }
 
-    showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
-    let receiverPk: string | undefined = undefined;
-    const receiverValue = receiver.value.trim();
-    if (receiverValue.endsWith('.ano')) {
-      receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiverValue.replace('.ano', ''));
-      if (receiverPk === undefined) {
-        closeLoadingMask(maskId);
-        message.error(`Receiver: ${receiver.value} not found.`, { duration: 0, closable: true });
-        return;
-      }
-    } else {
-      receiverPk = receiverValue;
-    }
-
-    const depositAmountNano = convertToNanoMinaUnit(depositAmount.value)!.toString();
-
-    console.log('connectedWallet58: ', appState.value.connectedWallet58);
-    if (appState.value.connectedWallet58 === null) {
-      closeLoadingMask(maskId);
-      message.error('Please connect wallet first.', { duration: 0, closable: true });
-      return;
-    }
-    const txJson = await remoteSdk.createDepositTx({
-      payerAddress: appState.value.connectedWallet58!,
-      receiverAddress: receiverPk!,
-      feePayerAddress: appState.value.connectedWallet58!,
-      amount: depositAmountNano,
-      anonymousToReceiver: false,
-    });
-    console.log('deposit txJson: ', txJson);
-
-    showLoadingMask({ id: maskId, text: 'Wait for sending transaction...', closable: false });
-    const { hash: txHash } = await window.mina.sendTransaction({
-      transaction: txJson,
-    });
-    console.log('tx send success, txHash: ', txHash);
-    closeLoadingMask(maskId);
-
-    openTxDialog(txHash);
-    await remoteApi.checkTx(txHash);
-    txDialogLoadingDone();
-
-    message.success('Deposit success! You can view the deposit transaction just sent in auro wallet, Ano.Cash will be updated in about half an hour.', { duration: 0, closable: true });
-
+    await genDepositTxAndSend(receiverValue);
   } catch (err: any) {
     console.error(err);
     message.error(err.message, { duration: 0, closable: true });
@@ -419,6 +430,7 @@ const maxInputAmount = () => {
 
 const inputCurrentAccount = () => {
   receiver.value = appState.value.alias !== null ? appState.value.alias + '.ano' : appState.value.accountPk58!;
+  handleInput(receiver.value);
 }
 
 
