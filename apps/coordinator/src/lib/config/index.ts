@@ -4,6 +4,11 @@ import {
 } from 'o1js';
 import { JoinSplitProof } from "@anomix/circuits"
 import * as dotenv from "dotenv"
+import fs from "fs";
+
+const KeyConfig = JSON.parse(fs.readFileSync('../../packages/circuits/scripts/keys-private.json', 'utf8'));
+
+
 dotenv.config({ path: '../../.env' })
 
 const config = {
@@ -77,9 +82,9 @@ const config = {
 
     pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/',
 
-    entryContractAddress: <string>process.env.ENTRY_CONTRACT_ADDRESS || 'B62785kfljj8784990kj0kj90kjjiekljk',
-    rollupContractAddress: <string>process.env.ROLLUP_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
-    vaultContractAddress: <string>process.env.VAULT_CONTRACT_ADDRESS || 'B62785kfljjj490kljk87j90kj90kjiekl878',
+    vaultContractAddress: <string>KeyConfig.vaultContract.publicKey,
+    entryContractAddress: <string>KeyConfig.entryContract.publicKey,
+    rollupContractAddress: <string>KeyConfig.rollupContract.publicKey,
 
     // criterion to trigger seq
     maxMpTxCnt: <number>Number(<string>process.env.MAX_MP_TX_CNT) || 300,

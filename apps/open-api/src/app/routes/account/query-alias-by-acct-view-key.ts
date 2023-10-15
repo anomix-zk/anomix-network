@@ -9,6 +9,9 @@ import { getConnection } from 'typeorm';
 import { RequestHandler } from '@/lib/types'
 import { Account } from '@anomix/dao'
 import { BaseResponse } from "@anomix/types";
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('queryAliasByAcctViewKey');
 
 export const queryAliasByAcctViewKey: FastifyPlugin = async function (
     instance,
@@ -46,6 +49,8 @@ export const handler: RequestHandler<null, AcctvkParam> = async function (
             code: 0, data: undefined, msg: ''
         }
     } catch (err) {
+        logger.error(err);
+
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }

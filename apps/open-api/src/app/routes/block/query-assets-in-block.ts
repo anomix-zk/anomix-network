@@ -6,7 +6,7 @@ import { Account, Block, L2Tx, WithdrawInfo } from "@anomix/dao";
 import { BaseResponse, EncryptedNote, AssetInBlockReqDto, AssetInBlockReqDtoSchema, AssetsInBlockDto, AssetsInBlockDtoSchema, L2TxSimpleDto, WithdrawNoteStatus, WithdrawInfoDto } from '@anomix/types'
 import { getLogger } from "@/lib/logUtils";
 
-const logger = getLogger('web-server');
+const logger = getLogger('queryAssetsInBlocks');
 export const queryAssetsInBlocks: FastifyPlugin = async function (
     instance,
     options,
@@ -63,6 +63,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
         }))[0];
 
         if (!blockEntity) {
+            logger.info('blockEntity is undefined.')
             return {
                 code: 0,
                 data: [],
@@ -109,7 +110,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
 
                     let withdrawInfoDto: any = undefined;
                     const withdrawInfoRepository = connection.getRepository(WithdrawInfo);
-                    const wInfo = await withdrawInfoRepository.findOne({ where: { l2TxId: tx.id } });
+                    const wInfo = await withdrawInfoRepository.findOne({ where: { l2TxHash: tx.txHash } });
                     if (wInfo) {
                         const { createdAt: createdAtW, updatedAt: updatedAtW, ...restObjW } = wInfo!;
                         withdrawInfoDto = (restObjW as any) as WithdrawInfoDto;
@@ -119,7 +120,7 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
                     }
 
                     const accountRepository = connection.getRepository(Account)
-                    const account = await accountRepository.findOne({ where: { l2TxId: tx.id } });
+                    const account = await accountRepository.findOne({ where: { l2TxHash: tx.txHash } });
 
                     dto.extraData = {
                         outputNote1: encryptedData1 ? JSON.parse(encryptedData1) : undefined,
@@ -163,20 +164,44 @@ export const handler: RequestHandler<AssetInBlockReqDto, null> = async function 
 
         }
 
+        // to refresh cached 
+        const unfinalizedBlockIdList = new Array<number>();
+        blockTxListMap1.forEach(function (value, key, map) {
+            if (value.txList.length > 0) {
+                if (value.finalizedTs == 0 && !blockNumList1.includes(value.blockHeight)) {
+                    unfinalizedBlockIdList.push(value.blockHeight);
+                }
+            }
+        });
+        const checkIfUnfinalizedBlocks = unfinalizedBlockIdList.length == 0 ? [] : (await blockRepository.find({
+            select: [
+                'id',
+                'finalizedAt'
+            ],
+            where: {
+                id: In(unfinalizedBlockIdList)
+            }
+        }) ?? []);
+
         const data = new Array<AssetsInBlockDto>();
         blockTxListMap1.forEach(function (value, key, map) {
             if (value.txList.length > 0) {
+                value.finalizedTs = checkIfUnfinalizedBlocks.find(b => b.id == value.blockHeight)?.finalizedAt?.getTime() ?? value.finalizedTs;
+
                 data.push(value);
 
                 cachedBlockTxListMap.set(key, value);// record valid new ones into cache
             }
         });
+
         return {
             code: 0,
             data,
             msg: ''
         };
     } catch (err) {
+        logger.error(err);
+
         console.error(err);
 
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")

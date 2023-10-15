@@ -7,7 +7,7 @@ import { Account, L2Tx, MemPlL2Tx } from '@anomix/dao'
 import { BaseResponse, L2TxStatus } from "@anomix/types";
 import { getLogger } from "@/lib/logUtils";
 
-const logger = getLogger('web-server');
+const logger = getLogger('checkAliasAlignWithViewKey');
 export const checkAliasAlignWithViewKey: FastifyPlugin = async function (
     instance,
     options,
@@ -42,7 +42,7 @@ export const handler: RequestHandler<ReqBody, null> = async function (
         if (account) {
             if (account.acctPk == acctViewKey) {
                 const mpL2TxRepo = connection.getRepository(MemPlL2Tx);
-                const mpL2tx = await mpL2TxRepo.findOne(account.l2TxId);
+                const mpL2tx = await mpL2TxRepo.findOne(account.l2TxHash);
                 if (mpL2tx) {
                     const status = mpL2tx.status;
                     if (status == L2TxStatus.FAILED) {
@@ -71,7 +71,7 @@ export const handler: RequestHandler<ReqBody, null> = async function (
         };
 
     } catch (err) {
-        logger.info(err);
+        logger.error(err);
 
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }

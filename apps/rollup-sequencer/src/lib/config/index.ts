@@ -91,7 +91,8 @@ const config = {
     coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT ?? 8083),
 
     proofSchedulerWorkerNum: <number>Number(<string>process.env.PROOF_SCHEDULER_WORKER_NUM ?? 3),
-    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http'
+    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http',
+    networkStatus: <string>process.env.NETWORK_STATUS || 'SIMULATING_PRODUCTION',
 
 }
 

@@ -7,11 +7,14 @@
 import { FastifyPlugin } from "fastify"
 import { changeInput } from "./change-input";
 import { resetNetwork } from './reset-network'
+import config from "@/lib/config";
 
 export const managerEndpoints: FastifyPlugin = async (
     instance,
     options,
     done
 ): Promise<void> => {
-    // instance.register(resetNetwork);
+    if (config.networkStatus == 'SIMULATING_PRODUCTION') {
+        instance.register(resetNetwork);
+    }
 }

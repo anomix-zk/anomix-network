@@ -49,12 +49,6 @@ export class DepositCommitment {
     userDepositL1TxHash: string
 
     /**
-     * entity id of corresponding L2 tx, when join-split_deposit circuit
-     */
-    @Column()
-    l2TxId: number
-
-    /**
      * L2Tx hash after join-split_deposit circuit
      */
     @Column()

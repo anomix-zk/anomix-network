@@ -9,7 +9,7 @@ dotenv.config({ path: '../../.env' })
 
 // const JoinSplitProverVK: string = fs.readFileSync('./circuit-JoinSplitProverVK.string', 'utf8');
 const { verificationKey: JoinSplitProverVK } = await JoinSplitProver.compile();
-
+// const JoinSplitProverVK = ''
 const config = {
     port: <number>Number(<string>process.env.OPENAPI_PORT) || 80,
     logger: {
@@ -45,8 +45,8 @@ const config = {
             title: "Anomix Network - openAPI api documentation",
             version: "0.1.0"
         },
-        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost').concat(':').concat(<string>process.env.OPENAPI_PORT),
-        schemes: ["http"],
+        host: ((<string>process.env.SWAGGER_HOST) ?? 'localhost') == 'localhost' ? 'localhost'.concat(':').concat(<string>process.env.OPENAPI_PORT) : (<string>process.env.SWAGGER_HOST),
+        schemes: [<string>process.env.SWAGGER_SCHEME ?? 'http'],
         consumes: ["application/json"],
         produces: ["application/json"],
         securityDefinitions: {
@@ -60,7 +60,7 @@ const config = {
     },
     pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/',
     joinSplitProverVK: JoinSplitProverVK,
-    txFeeFloor: <number>Number(<string>process.env.TxFeeFloor) || 1000 * 1000, // default 0.01Mina
+    txFeeFloor: <number>Number(<string>process.env.TxFeeFloor) || 1000 * 1000, // default 0.001Mina
     sequencerHost: <string>process.env.ROLLUP_SEQUENCER_HOST || '127.0.0.1',
     sequencerPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
     coordinatorHost: <string>process.env.COORDINATOR_HOST || '127.0.0.1',

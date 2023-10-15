@@ -55,17 +55,17 @@ export class ProofScheduler {
                 throw new Error(`cannot find innerRollupBatch by blockId:${blockId}`);
             }
             const innerRollupBatchParamList: {
-                txId1: number,
-                txId2: number,
+                txId1: string,
+                txId2: string,
                 innerRollupInput: any,
                 joinSplitProof1: any,
                 joinSplitProof2: any
             }[] = JSON.parse(innerRollupBatch.inputParam);
 
             if (hasDeposit) {
-                const map = new Map<number, string>();
+                const map = new Map<string, string>();
                 txList.forEach(tx => {
-                    map.set(tx.id, tx.proof);
+                    map.set(tx.txHash, tx.proof);
                 });
 
                 // change to latest deposit tree root

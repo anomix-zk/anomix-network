@@ -3,16 +3,14 @@ import {
     Column,
     CreateDateColumn,
     Entity,
-    PrimaryGeneratedColumn,
+    PrimaryColumn,
     UpdateDateColumn
 } from 'typeorm'
 
 @Entity("tb_l2_tx")
 export class L2Tx {
-    @PrimaryGeneratedColumn("increment")
-    id: number
 
-    @Column()
+    @PrimaryColumn()
     txHash: string
 
     @Column()

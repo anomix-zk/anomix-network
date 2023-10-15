@@ -6,6 +6,9 @@ import { FindOperator, getConnection, In } from 'typeorm';
 
 import { L2TxRespDto, BaseResponse, L2TxRespDtoSchema, L2TxStatus, L2TxSimpleDto, WithdrawInfoDto, WithdrawNoteStatus } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
+import { getLogger } from '@/lib/logUtils';
+
+const logger = getLogger('queryPendingTxs');
 
 /**
  * return pending txs by tx hashes
@@ -49,7 +52,7 @@ export const handler: RequestHandler<string[], null> = async function (
 
             let withdrawInfoDto = undefined as any as WithdrawInfoDto;
             const withdrawInfoRepository = connection.getRepository(WithdrawInfo);
-            const wInfo = await withdrawInfoRepository.findOne({ where: { l2TxId: tx.id } });
+            const wInfo = await withdrawInfoRepository.findOne({ where: { l2TxHash: tx.txHash } });
             if (wInfo) {
                 const { createdAt: createdAtW, updatedAt: updatedAtW, ...restObjW } = wInfo;
                 withdrawInfoDto = (restObjW as any) as WithdrawInfoDto;
@@ -60,7 +63,7 @@ export const handler: RequestHandler<string[], null> = async function (
             }
 
             const accountRepository = connection.getRepository(Account)
-            const account = await accountRepository.findOne({ where: { l2TxId: tx.id } });
+            const account = await accountRepository.findOne({ where: { l2TxHash: tx.txHash } });
 
             dto.extraData = {
                 outputNote1: JSON.parse(encryptedData1),
@@ -78,6 +81,8 @@ export const handler: RequestHandler<string[], null> = async function (
             msg: ''
         };
     } catch (err) {
+        logger.error(err);
+        console.error(err);
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }

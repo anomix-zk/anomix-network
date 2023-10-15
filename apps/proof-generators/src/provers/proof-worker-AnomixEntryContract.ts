@@ -6,7 +6,7 @@ import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
 import { FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 
-const logger = getLogger(`pWorker-AnomixEntryContract`);
+const logger = getLogger(`pWorker-AnomixEntryContract`, 'AnomixEntryContract');
 
 export { initWorker };
 

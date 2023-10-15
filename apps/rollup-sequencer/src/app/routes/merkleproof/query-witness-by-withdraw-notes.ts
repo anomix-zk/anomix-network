@@ -83,7 +83,9 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
         */
 
         // check if already init
-        if ((await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk.toBase58}:${tokenId}`)) != '1') {
+        const firstFlag = await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk.toBase58}:${tokenId}`);
+        logger.info(`check if already init: firstFlag=${firstFlag}`);
+        if (!firstFlag) {
             logger.info(`it's the first withdraw, init tree...`);
             // init a 'USER_NULLIFIER_TREE' tree for it
             await this.withdrawDB.initTree(ownerPk, tokenId);

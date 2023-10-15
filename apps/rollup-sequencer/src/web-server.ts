@@ -21,9 +21,10 @@ const indexDB = new IndexDB(config.indexedDBPath);
 const existDB = fs.existsSync(config.worldStateDBPath);
 const worldStateDB = new WorldStateDB(config.worldStateDBPath);
 if (!existDB) {
-    // reset mysql db
-    await rollupDB.resetDB();
-
+    if (config.networkStatus != 'SIMULATING_PRODUCTION') {// if dev are simulating production to make issues debug, then no need resetDB.
+        // reset mysql db
+        await rollupDB.resetDB();
+    }
     await worldStateDB.initTrees();
 
     // prepare data_tree root into indexDB & dataTreeRootsTree

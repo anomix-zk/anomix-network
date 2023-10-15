@@ -17,7 +17,7 @@ parentPort?.postMessage({// when it's not a subThread, parentPort == null.
     data: 'online'
 });
 
-const logger = getLogger('proof-trigger');
+const logger = getLogger('proof-trigger', 'proof-trigger-coordinator-log.log');
 logger.info('hi, I am proof-trigger!');
 
 await initORM();
