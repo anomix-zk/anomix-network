@@ -69,7 +69,9 @@ textarea {
   font-family: Open Sans, PingFang SC, Source Sans, Microsoft Yahei, sans-serif;
 }
 
-button { border: none; }
+button {
+  border: none;
+}
 
 a {
   cursor: pointer;
@@ -155,92 +157,93 @@ h6 {
         left: 0;
         right: 0;
         z-index: 1000;
-    
+
         .dialog-container {
-            border-radius: 15px;
-            background-color: var(--ano-background);
+          border-radius: 15px;
+          background-color: var(--ano-background);
+          width: 100%;
+          max-height: 350px;
+          display: flex;
+          flex-direction: column;
+
+          .header {
             width: 100%;
-            max-height: 350px;
+            display: flex;
+            justify-content: space-between;
+            padding-left: 20px;
+            padding-right: 20px;
+            padding-top: 15px;
+            padding-bottom: 15px;
+            font-size: 18px;
+            font-weight: 500;
+
+            .title {}
+
+            .close {}
+          }
+
+          .content {
+            width: 100%;
             display: flex;
             flex-direction: column;
-    
-            .header {
-                width: 100%;
+            padding-left: 20px;
+            padding-right: 20px;
+            font-size: 14px;
+            color: rgb(18, 19, 20);
+
+
+            .processing-tx-hash {
+              display: flex;
+              align-items: center;
+              justify-content: left;
+              font-size: 13px;
+              font-weight: 600;
+              color: #b0b8bf;
+              line-height: 14px;
+              margin-top: 10px;
+            }
+          }
+
+          .bottom {
+            width: 100%;
+            padding-top: 32px;
+            padding-left: 20px;
+            padding-right: 20px;
+            padding-bottom: 15px;
+
+            .confirm {
+              display: flex;
+              flex-wrap: wrap;
+              justify-content: center;
+
+              .dialog-btn {
+                height: 33px;
+                border-radius: 8px;
+              }
+            }
+
+            .processing {
+              height: 52px;
+              background: #d6efe7;
+              border-radius: 60px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 14px;
+              font-weight: 600;
+              color: #22c493;
+              cursor: pointer;
+
+
+              .loading {
                 display: flex;
-                justify-content: space-between;
-                padding-left: 20px;
-                padding-right: 20px;
-                padding-top: 15px;
-                padding-bottom: 15px;
-                font-size: 18px;
-                font-weight: 500;
-    
-                .title {}
-    
-                .close {}
+                align-items: center;
+                justify-content: center;
+              }
             }
-    
-            .content {
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-                padding-left: 20px;
-                padding-right: 20px;
-                font-size: 14px;
-                color: rgb(18, 19, 20);
-
-                
-                .processing-tx-hash {
-                  display: flex;
-                  align-items: center;
-                  justify-content: left;
-                  font-size: 13px;
-                  font-weight: 600;
-                  color: #b0b8bf;
-                  line-height: 14px;
-                  margin-top: 10px;
-                }
-            }
-    
-            .bottom {
-                width: 100%;
-                padding-top: 32px;
-                padding-left: 20px;
-                padding-right: 20px;
-                padding-bottom: 15px;
-
-                .confirm {
-                  display: flex;
-                  justify-content: flex-end;
-
-                  .dialog-btn {
-                    height: 33px;
-                    border-radius: 8px;
-                  }
-                }
-                
-                .processing {
-                  height: 52px;
-                  background: #d6efe7;
-                  border-radius: 60px;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  font-size: 14px;
-                  font-weight: 600;
-                  color: #22c493;
-                  cursor: pointer;
-
-
-                  .loading {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                  }
-                }
-            }
+          }
         }
-    }
+      }
     }
   }
 
@@ -261,45 +264,51 @@ h6 {
 
 @media screen and (min-width: 480px) {
   .ano-app {
-      padding-top:60px;
-      padding-bottom: 60px
+    padding-top: 60px;
+    padding-bottom: 60px
   }
 
   .ano-app>.page {
-      min-height: 780px;
+    min-height: 780px;
+    border-radius: 28px;
+    padding-left: 40px;
+    padding-right: 40px;
+
+    .home {
+      justify-content: flex-start;
+      margin-left: -40px;
+      margin-right: -40px;
+      overflow: hidden;
+    }
+
+    .ano-mask {
       border-radius: 28px;
-      padding-left: 40px;
-      padding-right: 40px;
-
-      .home {
-        justify-content: flex-start;
-        margin-left: -40px;
-        margin-right: -40px;
-        overflow: hidden;
-      } 
-
-      .ano-mask {
-        border-radius: 28px;
-      }
+    }
   }
 
   html.dark .ano-app {
-      background: var(--ano-app-background)
+    background: var(--ano-app-background)
+  }
+}
+
+@media screen and (max-width:400px) {
+  .ano-app .page {
+    padding: 0 0;
   }
 }
 
 @media(orientation: landscape)and (max-width:980px) {
   .ano-app {
-      padding-top:0;
-      padding-bottom: 0
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
-  .ano-app > .page {
-      max-width: 100%;
-      border-radius: 0;
-      min-height: 100vh;
+  .ano-app>.page {
+    max-width: 100%;
+    border-radius: 0;
+    min-height: 100vh;
 
-      
+
     .home {
       justify-content: flex-start;
       padding-left: 0;

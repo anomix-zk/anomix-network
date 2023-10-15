@@ -40,7 +40,7 @@
             <div class="line"></div>
         </div>
 
-        <div class="oauth-box" style="margin-top: 30px;">
+        <div class="oauth-box" style="margin-top: 30px;margin-bottom:50px">
             <div class="auth-item">
                 <n-button color="#f4f4f4" :bordered="false" block type="primary" @click="connectWallet('claim')"
                     class="auth-btn">
@@ -252,6 +252,7 @@ const connectWallet = async (action: string) => {
             margin: 0 10px;
             font-size: 12px;
             font-weight: 400;
+            white-space: nowrap;
         }
     }
 

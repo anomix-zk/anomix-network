@@ -24,14 +24,14 @@
 
                 <div class="bottom">
                     <div class="confirm">
-                        <n-button type="error" class="dialog-btn" @click="clearAccountAndLogout">
-                            Clear Account
-                        </n-button>
-                        <n-button style="margin-left: 10px;" type="info" class="dialog-btn" @click="logOut">
+                        <n-button style="margin: 0 10px 10px;" type="info" class="dialog-btn" @click="logOut">
                             Log out
                         </n-button>
-                        <n-button style="margin-left: 10px;" type="info" class="dialog-btn" @click="closeExitDialog">
+                        <n-button style="margin: 0 10px 10px; " type="info" class="dialog-btn" @click="closeExitDialog">
                             Cancel
+                        </n-button>
+                        <n-button type="error" class="dialog-btn" @click="clearAccountAndLogout">
+                            Clear Account
                         </n-button>
                     </div>
                 </div>
@@ -90,8 +90,9 @@
                 </div>
 
                 <div>Synced / Latest Block: {{ appState.syncedBlock }} / {{ appState.latestBlock }}</div>
-                <div v-if="appState.syncedBlock !== appState.latestBlock" style="font-size: 13px;">Estimated synced: <n-time
-                        :time="expectSyncedSpendTime" :to="0" type="relative" /></div>
+                <div v-if="appState.syncedBlock !== appState.latestBlock" style="font-size: 13px;">Estimated synced:
+                    <n-time :time="expectSyncedSpendTime" :to="0" type="relative" />
+                </div>
 
                 <n-tag v-if="appState.accountStatus === AccountStatus.REGISTERING" type="warning" round strong>
                     Alias registration pending
@@ -165,9 +166,10 @@
                         <div v-if="txList.length > 0" v-for="item in txList" :key="item.txHash" class="tx"
                             @click="toClaimPage(item.actionType, item.finalizedTs, item.withdrawNoteCommitment)">
                             <div class="tx-left">
+
                                 <div class="action-icon">
-                                    <van-icon v-if="item.isSender" :name="transferOut" size="40" />
-                                    <van-icon v-else :name="transferIn" size="40" />
+                                    <van-icon v-if="item.isSender" :name="transferOut" />
+                                    <van-icon v-else :name="transferIn" />
                                 </div>
 
                                 <div class="tx-info">
@@ -178,22 +180,24 @@
                                             emptyPublicKey ?
                                             omitAddress(item.sender) : 'unknown' }}</span>
 
+
                                         <div v-if="item.actionType === '1'" class="tx-label">
                                             deposit
                                         </div>
                                         <div v-if="item.actionType === '2'" class="tx-label">
-                                            send
+                                            transfer
                                         </div>
                                         <div v-if="item.actionType === '3' && item.finalizedTs === 0" class="tx-label">
                                             withdraw
                                         </div>
                                         <div v-if="item.actionType === '3' && item.finalizedTs !== 0" class="tx-label"
-                                            style="background-color:#22c493">
+                                            style="color:#22c493">
                                             claimable
                                         </div>
                                         <div v-if="item.actionType === '4'" class="tx-label">
                                             account
                                         </div>
+
                                     </div>
                                     <div class="tx-time">
                                         <template v-if="item.createdTs !== 0">
@@ -337,7 +341,7 @@ const txList = ref<TxHis[]>([]);
 const alias = computed(() => appState.value.alias !== null ? appState.value.alias + '.ano' : null);
 const accountPk58 = computed(() => omitAddress(appState.value.accountPk58));
 const tabStyle = {
-    'font-size': '20px',
+    'font-size': '18px',
     'font-weight': '500',
 };
 
@@ -694,19 +698,21 @@ const toWithdraw = async () => {
     backdrop-filter: blur(8px);
     display: flex;
     justify-content: space-between;
+    align-items: center;
 
     .tx-left {
         display: flex;
         align-items: center;
+        justify-content: center;
 
         .action-icon {
             position: relative;
-            height: 40px;
-            width: 40px;
+            font-size: 40px;
+            margin-bottom: -15px;
         }
 
         .tx-info {
-            margin-left: 18px;
+            margin-left: 5px;
             align-items: flex-start;
 
             .tx-address {
@@ -720,12 +726,14 @@ const toWithdraw = async () => {
                 .tx-label {
                     margin-left: 10px;
                     font-size: 12px;
-                    font-weight: 400;
-                    color: #fff;
-                    background-color: #4098fc;
+                    font-weight: 600;
+                    // color: #fff;
+                    color: #4098fc;
                     padding-left: 5px;
                     padding-right: 5px;
                     border-radius: 5px;
+                    border-width: 0.5px;
+                    border-style: solid;
                 }
             }
 
@@ -764,6 +772,39 @@ const toWithdraw = async () => {
         }
 
 
+    }
+
+}
+
+@media screen and (max-width:400px) {
+
+    .tx {
+        padding-left: 15px;
+        padding-right: 15px;
+        margin-left: -22px;
+        margin-right: -22px;
+
+        .tx-left {
+            .action-icon {
+                font-size: 38px;
+            }
+
+            .tx-info {
+                .tx-address {
+                    font-size: 14px;
+
+                    .tx-label {
+                        margin-left: 0px;
+                    }
+                }
+            }
+        }
+
+        .tx-right {
+            .balance {
+                font-size: 14px;
+            }
+        }
     }
 
 }
@@ -838,5 +879,13 @@ const toWithdraw = async () => {
 
     }
 
+}
+
+@media screen and (max-width:400px) {
+    .token {
+        padding: 15px;
+        margin-left: -22px;
+        margin-right: -22px;
+    }
 }
 </style>
