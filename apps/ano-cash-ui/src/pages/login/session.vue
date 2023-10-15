@@ -25,7 +25,7 @@
                     <div class="form-item" style="margin-top: 10px;">
                         <div v-show="showPwdTitle" class="placeholder">{{ placeholderPwd }}
                         </div>
-                        <n-input v-model:value="pwd" class="item" clearable type="password" show-password-on="mousedown"
+                        <n-input v-model:value="pwd" class="item" clearable type="password" show-password-on="click"
                             size="large" :placeholder="placeholderPwd" :maxlength="30" @blur="blurPwd" @input="inputPwd" />
                     </div>
                 </n-space>
@@ -171,16 +171,7 @@ const login = async () => {
     flex-direction: column;
     margin-top: 46px;
     width: 100%;
-    // .logo {
-    //     display: block;
-    //     margin-top: 60px;
-    //     width: 100%;
-    //     height: 160px;
 
-    //     img {
-    //         height: 100%;
-    //     }
-    // }
     .logo {
         display: flex;
         align-items: center;

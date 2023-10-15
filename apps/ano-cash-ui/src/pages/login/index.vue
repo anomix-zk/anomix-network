@@ -227,7 +227,7 @@ const login = async () => {
         console.error(err);
         message.error(err.message, {
             closable: true,
-            duration: 0
+            duration: 3000,
         });
     }
 

@@ -57,11 +57,12 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="right-icons">
                         <!-- <van-icon name="comment-o" dot class="dot" @click="showNotiy" />
                         <van-icon name="setting-o" class="dot" @click="toSetting" /> -->
                         <van-icon class="icon-btn" style="margin-right: 15px;" :name="keyIcon" color="#5e5f6e" size="24"
-                            @click="openExitDialog" />
+                            @click="toExportKeys" />
                         <van-icon class="icon-btn" :name="exitIcon" color="#5e5f6e" size="20" @click="openExitDialog" />
                     </div>
                 </div>
@@ -249,7 +250,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useMessage, useDialog } from 'naive-ui';
+import { useMessage } from 'naive-ui';
 
 import minaIcon from "@/assets/mina.svg";
 import transferIn from '@/assets/transfer-in.svg';
@@ -480,6 +481,11 @@ const toClaimPage = async (actionType: string, finalizedTs: number, commitment: 
         await navigateTo(`/claim/${commitment}`);
     }
 
+};
+
+const toExportKeys = async () => {
+    syncerChannel?.close();
+    await navigateTo("/operation/export-keys");
 };
 
 const toDeposit = async () => {
