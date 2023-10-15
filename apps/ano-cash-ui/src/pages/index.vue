@@ -136,13 +136,12 @@ const connectWallet = async (action: string) => {
             await navigateTo("/claim/claimable");
         }
         closeLoadingMask(maskId);
-    } catch (error: any) {
+    } catch (err: any) {
         // if user reject, requestAccounts will throw an error with code and message filed
-        console.log(error.message, error.code);
-        message.error(error.message);
-        closeLoadingMask(maskId);
+        console.error(err);
+        message.error(err.message);
     }
-    //showLoadingMask({ text: 'Account registration service is not ready yet', closable: false });
+    closeLoadingMask(maskId);
 };
 
 </script>

@@ -177,9 +177,6 @@ h6 {
             font-size: 18px;
             font-weight: 500;
 
-            .title {}
-
-            .close {}
           }
 
           .content {
@@ -292,8 +289,16 @@ h6 {
 }
 
 @media screen and (max-width:400px) {
-  .ano-app .page {
-    padding: 0 0;
+  .ano-app {
+    .page {
+      padding-left: 24px;
+      padding-right: 24px;
+
+      .header-bg-img {
+        margin-left: -24px;
+        margin-right: -24px;
+      }
+    }
   }
 }
 

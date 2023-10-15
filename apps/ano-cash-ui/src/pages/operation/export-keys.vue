@@ -79,7 +79,7 @@
             {{ accountSigningKey2 }}
           </div>
 
-          <div class="btn-box" style="padding-bottom: 15px;">
+          <div class="btn-box" style="padding-bottom: 15px;margin-bottom: 45px;">
             <div class="btn-item">
               <n-button color="#f4f4f4" block type="primary" @click="copyKey(accountSigningKey2)" class="copy-btn">
                 <div style="display:flex; align-items: center;">
@@ -132,12 +132,12 @@ const inputPwd = () => {
 
 
 const toBack = () => {
-  router.back();
   showKeys.value = false;
+  clearInterval(timer!);
+  router.back();
   accountKey.value = "";
   accountSigningKey1.value = "";
   accountSigningKey2.value = "";
-  clearInterval(timer!);
   removeUserOperationListenr();
   console.log("to back success");
 };
@@ -146,8 +146,6 @@ const copyKey = (key: string) => {
   copyFunc(key);
   message.success("Copied to clipboard");
 };
-
-const maskId = "exportKeys";
 
 const exportKeys = async () => {
   const pwdTrim = pwd.value.trim();
