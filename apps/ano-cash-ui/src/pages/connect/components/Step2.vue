@@ -24,7 +24,7 @@
 <script lang="ts" setup>
 import type { Tx } from '@anomix/sdk';
 import { useMessage } from 'naive-ui';
-import { AccountStatus, SdkEventType, TIPS_WAIT_FOR_CIRCUITS_COMPILING } from '../../../common/constants';
+import { AccountStatus, SdkEventType } from '../../../common/constants';
 import { SdkEvent } from '../../../common/types';
 
 const emit = defineEmits<{
@@ -129,7 +129,7 @@ const registerAccount = async () => {
     }
 
     try {
-        showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: false });
+        showLoadingMask({ text: 'tx circuit compiling... cost minutes, but only once', id: maskId, closable: false });
         const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
         if (!isPrivateCircuitReady) {
             if (maskListenerSetted.value === false) {

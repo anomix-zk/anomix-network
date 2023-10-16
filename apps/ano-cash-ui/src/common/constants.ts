@@ -2,9 +2,6 @@ export const CHANNEL_LOG = "log";
 export const CHANNEL_SYNCER = "syncer";
 export const CHANNEL_MINA = "mina";
 
-export const TIPS_WAIT_FOR_CIRCUITS_COMPILING =
-    "Circuits compling...It may take a few minutes, only needs to be executed once";
-
 export const MINA = 1000_000_000;
 
 export const EMPTY_PUBLICKEY =

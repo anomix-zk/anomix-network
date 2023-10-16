@@ -82,7 +82,7 @@
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
-import { PageAction, SdkEventType, TIPS_WAIT_FOR_CIRCUITS_COMPILING } from '../../common/constants';
+import { PageAction, SdkEventType } from '../../common/constants';
 import { SdkEvent, TxInfo } from '../../common/types';
 
 
@@ -130,7 +130,7 @@ const sendTx = async () => {
   try {
     console.log('Prove and send tx...');
 
-    showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
+    showLoadingMask({ text: 'tx circuit compiling... cost minutes, but only once', id: maskId, closable: true });
     const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
     if (!isPrivateCircuitReady) {
       if (compileListenrSetted.value === false) {
