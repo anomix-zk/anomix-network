@@ -138,12 +138,14 @@ import { TxInfo } from '../../common/types';
 import { PageAction } from '../../common/constants';
 
 const router = useRouter();
-const { appState, showLoadingMask, closeLoadingMask, setPageParams, setConnectedWallet, pageParams, setTotalNanoBalance } = useStatus();
+const { appState, showLoadingMask, closeLoadingMask, setPageParams, setStartCompilePrivateCircuit,
+  setConnectedWallet, pageParams, setTotalNanoBalance } = useStatus();
 const { checkNoSideSpace, convertToMinaUnit } = useUtils();
 const message = useMessage();
 const { SdkState } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const remoteSyncer = SdkState.remoteSyncer!;
+const remoteSdk = SdkState.remoteSdk!;
 
 const checkPositiveNumber = (x: number) => x > 0;
 const toBack = () => router.back();
@@ -319,28 +321,43 @@ onMounted(async () => {
   console.log('send onMounted...');
   console.log('currPageAction: ', currPageAction.value);
 
-  balanceLoading.value = true;
-  const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
-  if (synced) {
-    const balance = await remoteApi.getBalance(appState.value.accountPk58!);
-    setTotalNanoBalance(balance.toString());
-    balanceLoading.value = false;
+  try {
+    balanceLoading.value = true;
+    const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
+    if (synced) {
+      const balance = await remoteApi.getBalance(appState.value.accountPk58!);
+      setTotalNanoBalance(balance.toString());
+      balanceLoading.value = false;
+    }
+
+    const txFees = await remoteApi.getTxFees();
+    fees.value = [{
+      kind: 'Normal',
+      value: convertToMinaUnit(txFees.normal)!.toNumber()
+    }, {
+      kind: 'Faster',
+      value: convertToMinaUnit(txFees.faster)!.toNumber()
+    }];
+    feeValue.value = Number(fees.value[0].value);
+    console.log('feeValue: ', feeValue.value);
+
+    const analysisInfo = await remoteApi.getAnalysisOfNotes(appState.value.accountPk58!);
+    console.log('analysisInfo: ', analysisInfo);
+    notesInfo.value = analysisInfo;
+
+    if (!appState.value.startCompilePrivateCircuit) {
+      console.log('PrivateCircuit not found to start compilation, will start soon');
+      setStartCompilePrivateCircuit(true);
+      remoteSdk.compilePrivateCircuit();
+    } else {
+      console.log('PrivateCircuit is already being compiled, no need to recompile')
+    }
+  } catch (err: any) {
+    console.error(err);
+    message.error(err.message, { duration: 0, closable: true });
   }
 
-  const txFees = await remoteApi.getTxFees();
-  fees.value = [{
-    kind: 'Normal',
-    value: convertToMinaUnit(txFees.normal)!.toNumber()
-  }, {
-    kind: 'Faster',
-    value: convertToMinaUnit(txFees.faster)!.toNumber()
-  }];
-  feeValue.value = Number(fees.value[0].value);
-  console.log('feeValue: ', feeValue.value);
 
-  const analysisInfo = await remoteApi.getAnalysisOfNotes(appState.value.accountPk58!);
-  console.log('analysisInfo: ', analysisInfo);
-  notesInfo.value = analysisInfo;
 });
 
 </script>

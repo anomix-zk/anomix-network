@@ -31,11 +31,12 @@ const emit = defineEmits<{
     (e: 'finish'): void;
 }>();
 
-const { SdkState, listenSyncerChannel, compileCircuits } = useSdk();
+const { SdkState, listenSyncerChannel } = useSdk();
 const remoteSdk = SdkState.remoteSdk!;
 const remoteApi = SdkState.remoteApi!;
 const message = useMessage();
-const { showLoadingMask, closeLoadingMask, appState, setAlias, setAccountStatus, setStartCompileCircuits } = useStatus();
+const { showLoadingMask, closeLoadingMask, appState, setAlias,
+    setAccountStatus, setStartCompilePrivateCircuit } = useStatus();
 
 const canRegsiter = ref(-1);
 const inputAlias = ref("");
@@ -50,15 +51,22 @@ const toAccountPage = () => {
 const maskId = 'registerAccount';
 
 onMounted(() => {
-    console.log('Step2 mounted...');
-    if (!appState.value.startCompileCircuits) {
-        console.log('start compile circuits...');
-        compileCircuits();
-        setStartCompileCircuits(true);
+    try {
+        if (!appState.value.startCompilePrivateCircuit) {
+            console.log('PrivateCircuit not found to start compilation, will start soon');
+            setStartCompilePrivateCircuit(true);
+            remoteSdk.compilePrivateCircuit();
+        } else {
+            console.log('PrivateCircuit is already being compiled, no need to recompile')
+        }
+    } catch (err: any) {
+        console.error(err);
+        setStartCompilePrivateCircuit(false);
+        message.error(err.message, { duration: 0, closable: true });
     }
-    console.log('Step2 mounted end');
 });
 
+let timer: NodeJS.Timeout | null = null;
 const handleInput = async (v: string) => {
     if (canRegsiter.value !== -1) {
         canRegsiter.value = -1;
@@ -66,51 +74,33 @@ const handleInput = async (v: string) => {
     const aliasTrim = inputAlias.value.trim().toLowerCase();
     inputAlias.value = aliasTrim;
 
-    console.log('checkAliasIsRegistered...');
-    if (aliasTrim.length === 0) {
-        canRegsiter.value = -1;
-        return;
+    if (timer !== null) {
+        console.log('cancel timer...');
+        clearTimeout(timer!); // cancel the previous timer.
     }
 
-    try {
-        const isRegistered = await remoteApi.isAliasRegistered(inputAlias.value, true);
-        if (isRegistered) {
-            console.log('isRegistered: true');
-            canRegsiter.value = 0;
-        } else {
-            console.log('isRegistered: false');
-            canRegsiter.value = 1;
+    timer = setTimeout(async () => {
+        try {
+            const aliasTrim = inputAlias.value.trim().toLowerCase();
+            console.log('checkAliasIsRegistered...');
+            if (aliasTrim.length === 0) {
+                canRegsiter.value = -1;
+                return;
+            }
+            console.log('send request to check alias...');
+            const isRegistered = await remoteApi.isAliasRegistered(aliasTrim, true);
+            if (isRegistered) {
+                console.log('isRegistered: true');
+                canRegsiter.value = 0;
+            } else {
+                console.log('isRegistered: false');
+                canRegsiter.value = 1;
+            }
+        } catch (err) {
+            console.error(err)
+            message.error('Failed to check if alias can be registered', { closable: true });
         }
-    } catch (err) {
-        console.error(err)
-        message.error('Failed to check if alias can be registered', { closable: true });
-    }
-};
-
-const checkAliasIsRegistered = async () => {
-    console.log('checkAliasIsRegistered...');
-    if (inputAlias.value.length === 0) {
-        canRegsiter.value = -1;
-        return;
-    }
-    showLoadingMask({ text: 'Check if alias can be registered...', id: maskId, closable: false });
-    try {
-        const isRegistered = await remoteApi.isAliasRegistered(inputAlias.value, true);
-        if (isRegistered) {
-            console.log('isRegistered: true');
-            canRegsiter.value = 0;
-        } else {
-            console.log('isRegistered: false');
-            canRegsiter.value = 1;
-        }
-    } catch (err) {
-        console.error(err)
-        message.error('Failed to check if alias can be registered', { duration: 0, closable: true });
-        closeLoadingMask(maskId);
-        return;
-    }
-
-    closeLoadingMask(maskId);
+    }, 400);
 };
 
 const registerAccount = async () => {
@@ -146,7 +136,7 @@ const registerAccount = async () => {
                 listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
                     if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
                         message.info('Circuits compling done', { closable: true });
-
+                        console.log('circuits compile done, start register...');
                         await genRegisterProofAndSend();
 
                         chan.close();

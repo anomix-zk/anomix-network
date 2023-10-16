@@ -150,7 +150,7 @@ import { TIPS_WAIT_FOR_CIRCUITS_COMPILING } from '../../common/constants';
 import { SdkEventType, CHANNEL_MINA, WalletEventType } from '../../common/constants';
 
 const router = useRouter();
-const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
+const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask, setStartCompileVaultContract } = useStatus();
 const { omitAddress, convertToMinaUnit } = useUtils();
 const message = useMessage();
 const route = useRoute();
@@ -247,14 +247,14 @@ const claim = async () => {
           if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE) {
             closeLoadingMask(maskId);
             message.info('Circuits compling done', { closable: true });
-
+            console.log('circuits compile done, start claim...');
             try {
               await genClaimTxAndSend();
             } catch (err: any) {
               console.error(err);
               message.error(err.message, { duration: 0, closable: true });
-              closeLoadingMask(maskId);
             }
+            closeLoadingMask(maskId);
 
             chan.close();
             console.log('Syncer listener channel close success');
@@ -319,10 +319,10 @@ const createWithdrawalAccount = async () => {
     if (!isContractReady) {
       if (syncerListenerSetted.value === false) {
         listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
-          if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
+          if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE) {
             closeLoadingMask(maskId);
             message.info('Circuits compling done', { closable: true });
-
+            console.log('circuits compile done, start deploy withdrawal account...');
             try {
               await genDeployWithdrawalAccountTxAndSned();
             } catch (err: any) {
@@ -479,6 +479,13 @@ onMounted(async () => {
   }
 
   closeLoadingMask(maskId);
+  if (!appState.value.startCompileVaultContract) {
+    console.log('VaultContract not found to start compilation, will start soon');
+    setStartCompileVaultContract(true);
+    remoteSdk.compileVaultContract();
+  } else {
+    console.log('VaultContract is already being compiled, no need to recompile')
+  }
 
 });
 

@@ -138,7 +138,7 @@ const sendTx = async () => {
           if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
             closeLoadingMask(maskId);
             message.info('Circuits compling done', { closable: true });
-
+            console.log('circuits compile done, start send or withdraw...');
             try {
               await genProofAndSend();
             } catch (err: any) {

@@ -52,7 +52,7 @@
                     </div>
                 </n-space>
 
-                <n-button type="info" class="form-btn" style="margin-bottom: 5px;" @click="generateAccountKeys">
+                <n-button type="info" class="form-btn" @click="generateAccountKeys">
                     Generate Account Keys
                 </n-button>
 

@@ -137,7 +137,7 @@ import { SdkEventType, CHANNEL_MINA, WalletEventType, TIPS_WAIT_FOR_CIRCUITS_COM
 import type { WalletEvent } from '../../common/types';
 
 const router = useRouter();
-const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
+const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask, setStartCompileEntryContract, setStartCompileVaultContract } = useStatus();
 const { omitAddress, checkNoSideSpace, convertToMinaUnit, convertToNanoMinaUnit } = useUtils();
 const message = useMessage();
 const { SdkState, listenSyncerChannel } = useSdk();
@@ -199,7 +199,6 @@ const loadConnectedWalletStatus = async () => {
 
 const walletListenerSetted = ref(false);
 
-const route = useRoute();
 onMounted(async () => {
   console.log('deposit page onMounted...');
 
@@ -232,6 +231,16 @@ onMounted(async () => {
     };
 
     walletListenerSetted.value = true;
+  }
+
+  if (!appState.value.startCompileEntryContract) {
+    console.log('EntryContract not found to start compilation, will start soon');
+    // EntryContract is dependent on VaultContract, so we will compile VaultContract first in sdk.
+    setStartCompileVaultContract(true);
+    setStartCompileEntryContract(true);
+    remoteSdk.compileEntryContract();
+  } else {
+    console.log('EntryContract is already being compiled, no need to recompile')
   }
 
 });
@@ -354,7 +363,7 @@ const deposit = async () => {
           if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
             closeLoadingMask(maskId);
             message.info('Circuits compling done', { closable: true });
-
+            console.log('circuits compile done, start deposit...');
             try {
               await genDepositTxAndSend(receiverValue);
             } catch (err: any) {

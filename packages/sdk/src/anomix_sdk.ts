@@ -140,9 +140,8 @@ export class AnomixSdk {
     return this.vaultContract.token.id;
   }
 
-  public async compileEntryVaultContract() {
-    this.log.info('Compile EntryContract and VaultContract Circuits...');
-
+  public async compileVaultContract() {
+    this.log.info('Compile VaultContract...');
     if (!this.isVaultContractCompiled) {
       console.time('compile withdrawAccount');
       await WithdrawAccount.compile();
@@ -166,7 +165,18 @@ export class AnomixSdk {
         'vaultContract vk hash: ',
         AnomixVaultContract._verificationKey!.hash.toString()
       );
+
+      this.log.info('Compile VaultContract done');
+    } else {
+      this.log.info('VaultContract already compiled');
     }
+  }
+
+  public async compileEntryContract() {
+    this.log.info('Compile EntryContract...');
+
+    this.log.info('Compile EntryContract dependencies...');
+    await this.compileVaultContract();
 
     if (!this.isEntryContractCompiled) {
       console.time('compile depositRollupProver');
@@ -187,9 +197,13 @@ export class AnomixSdk {
         'anomixEntryContract vk hash: ',
         AnomixEntryContract._verificationKey!.hash.toString()
       );
-    }
 
-    this.log.info('Compile EntryContract and VaultContract Circuits done!');
+      this.log.info(
+        'Compile EntryContract(contain dependency: VaultContract) done'
+      );
+    } else {
+      this.log.info('EntryContract already compiled');
+    }
   }
 
   public async compilePrivateCircuit() {
@@ -205,9 +219,10 @@ export class AnomixSdk {
       } as SdkEvent);
       console.timeEnd('compile private circuit');
       this.log.info('private circuit vk: ', verificationKey);
+      this.log.info('Compile Private Circuit done');
+    } else {
+      this.log.info('Private Circuit already compiled');
     }
-
-    this.log.info('Compile Private Circuit= done');
   }
 
   public privateCircuitCompiled() {

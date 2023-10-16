@@ -270,13 +270,14 @@ import { AccountStatus, PageAction, SdkEventType, EMPTY_PUBLICKEY } from '../../
 import { SdkEvent, TxHis } from '../../common/types';
 
 const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setAccountStatus, setSyncedBlock,
-    setLatestBlock, pageParams, showLoadingMask, closeLoadingMask, setStartCompileCircuits } = useStatus();
+    setLatestBlock, pageParams, showLoadingMask, closeLoadingMask, setStartCompilePrivateCircuit } = useStatus();
 const { convertToMinaUnit, calculateUsdAmount, omitAddress } = useUtils();
 const message = useMessage();
-const { SdkState, exitAccount, listenSyncerChannel, clearAccount, compileCircuits } = useSdk();
+const { SdkState, exitAccount, listenSyncerChannel, clearAccount } = useSdk();
 const runtimeConfig = useRuntimeConfig();
 const remoteApi = SdkState.remoteApi!;
 const remoteSyncer = SdkState.remoteSyncer!;
+const remoteSdk = SdkState.remoteSdk!;
 const emptyPublicKey = EMPTY_PUBLICKEY;
 
 let copyFunc: (text: string) => void;
@@ -458,16 +459,19 @@ onMounted(async () => {
             syncerListenerSetted.value = true;
         }
 
+        if (!appState.value.startCompilePrivateCircuit) {
+            console.log('PrivateCircuit not found to start compilation, will start soon');
+            setStartCompilePrivateCircuit(true);
+            remoteSdk.compilePrivateCircuit();
+        } else {
+            console.log('PrivateCircuit is already being compiled, no need to recompile')
+        }
+
     } catch (err: any) {
         console.error(err);
         message.error(err.message, { duration: 3000, closable: true });
     }
 
-    if (!appState.value.startCompileCircuits) {
-        console.log('start compile circuits...');
-        compileCircuits();
-        setStartCompileCircuits(true);
-    }
     console.log('account onMounted done');
 });
 

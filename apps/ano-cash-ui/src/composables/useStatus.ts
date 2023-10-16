@@ -24,7 +24,9 @@ export default function () {
         sdkExist: boolean;
         syncerStarted: boolean;
         apiExist: boolean;
-        startCompileCircuits: boolean;
+        startCompilePrivateCircuit: boolean;
+        startCompileVaultContract: boolean;
+        startCompileEntryContract: boolean;
         mask: {
             id: string | undefined;
             show: boolean;
@@ -58,7 +60,9 @@ export default function () {
             sdkExist: false,
             syncerStarted: false,
             apiExist: false,
-            startCompileCircuits: false,
+            startCompilePrivateCircuit: false,
+            startCompileEntryContract: false,
+            startCompileVaultContract: false,
             mask: {
                 id: "appInit",
                 show: true,
@@ -218,8 +222,16 @@ export default function () {
         appState.value.minaNetwork = network;
     };
 
-    const setStartCompileCircuits = (startCompileCircuits: boolean) => {
-        appState.value.startCompileCircuits = startCompileCircuits;
+    const setStartCompilePrivateCircuit = (start: boolean) => {
+        appState.value.startCompilePrivateCircuit = start;
+    };
+
+    const setStartCompileVaultContract = (start: boolean) => {
+        appState.value.startCompileVaultContract = start;
+    };
+
+    const setStartCompileEntryContract = (start: boolean) => {
+        appState.value.startCompileEntryContract = start;
     };
 
     return {
@@ -246,6 +258,8 @@ export default function () {
         setSyncedBlock,
         setLatestBlock,
         setMinaNetwork,
-        setStartCompileCircuits,
+        setStartCompileEntryContract,
+        setStartCompilePrivateCircuit,
+        setStartCompileVaultContract,
     };
 }
