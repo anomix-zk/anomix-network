@@ -346,7 +346,7 @@ const deposit = async () => {
     return;
   }
   try {
-    showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
+    showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: false });
     const isContractReady = await remoteSdk.isEntryContractCompiled();
     if (!isContractReady) {
       if (maskListenerSetted.value === false) {

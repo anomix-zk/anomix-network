@@ -3,7 +3,7 @@ export const CHANNEL_SYNCER = "syncer";
 export const CHANNEL_MINA = "mina";
 
 export const TIPS_WAIT_FOR_CIRCUITS_COMPILING =
-    "Waiting for circuits compling...";
+    "Circuits compling...It may take a few minutes, only needs to be executed once";
 
 export const MINA = 1000_000_000;
 

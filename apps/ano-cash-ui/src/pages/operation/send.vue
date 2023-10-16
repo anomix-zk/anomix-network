@@ -134,15 +134,14 @@
 import claimImage from "@/assets/claim.svg";
 import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
-import { SdkEvent, TxInfo } from '../../common/types';
-import { PageAction, SdkEventType, TIPS_WAIT_FOR_CIRCUITS_COMPILING } from '../../common/constants';
+import { TxInfo } from '../../common/types';
+import { PageAction } from '../../common/constants';
 
 const router = useRouter();
 const { appState, showLoadingMask, closeLoadingMask, setPageParams, setConnectedWallet, pageParams, setTotalNanoBalance } = useStatus();
 const { checkNoSideSpace, convertToMinaUnit } = useUtils();
 const message = useMessage();
-const { SdkState, listenSyncerChannel } = useSdk();
-const remoteSdk = SdkState.remoteSdk!;
+const { SdkState } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const remoteSyncer = SdkState.remoteSyncer!;
 
@@ -152,10 +151,6 @@ const toBack = () => router.back();
 const currPageAction = ref(pageParams.value.action);
 const balanceLoading = ref(false);
 const totalMinaBalance = computed(() => convertToMinaUnit(appState.value.totalNanoBalance));
-// const tokenInfo = ref<{ token: string; balance: string }>({
-//   token: 'MINA',
-//   balance: '0.0',
-// });
 
 const anonToReceiver = ref(false);
 const handleSwitchValue = (value: boolean) => {
@@ -257,41 +252,6 @@ const handleFeeChange = (e: Event) => {
 };
 
 const maskId = 'send';
-const maskListenerSetted = ref(false);
-
-const genTxParamsAndToConfirm = async (receiverValue: string) => {
-  showLoadingMask({ id: maskId, text: 'Processing...', closable: false });
-  let receiverPk: string | undefined = undefined;
-  let receiverAlias: string | null = null;
-  if (receiverValue.endsWith('.ano')) {
-    receiverAlias = receiverValue;
-    receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiverAlias.replace('.ano', ''));
-    if (!receiverPk) {
-      message.error(`Receiver: ${receiverAlias} not exists`, { duration: 3000, closable: true });
-      closeLoadingMask(maskId);
-      return;
-    }
-  } else {
-    receiverPk = receiverValue;
-  }
-
-  const params: TxInfo = {
-    sender: appState.value.accountPk58!,
-    senderAlias: appState.value.alias,
-    receiver: receiverPk!,
-    receiverAlias,
-    amountOfMinaUnit: sendAmount.value!.toString(),
-    sendToken: 'MINA',
-    feeOfMinaUnit: feeValue.value!.toString(),
-    feeToken: 'MINA',
-    anonToReceiver: anonToReceiver.value,
-    isWithdraw: currPageAction.value === PageAction.WITHDRAW_TOKEN,
-  };
-  setPageParams(currPageAction.value, params);
-
-  await navigateTo("/operation/confirm");
-  closeLoadingMask(maskId);
-};
 
 const toConfirm = async () => {
   console.log('toConfirm...');
@@ -314,34 +274,37 @@ const toConfirm = async () => {
   }
 
   try {
-    showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
-    const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
-    if (!isPrivateCircuitReady) {
-      if (maskListenerSetted.value === false) {
-        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
-          if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
-            closeLoadingMask(maskId);
-            message.info('Circuits compling done', { closable: true });
-
-            try {
-              await genTxParamsAndToConfirm(receiverValue);
-            } catch (err: any) {
-              console.error(err);
-              message.error(err.message, { duration: 0, closable: true });
-              closeLoadingMask(maskId);
-            }
-
-            chan.close();
-            console.log('Syncer listener channel close success');
-          }
-        });
-        maskListenerSetted.value = true;
+    showLoadingMask({ id: maskId, text: 'Processing...', closable: false });
+    let receiverPk: string | undefined = undefined;
+    let receiverAlias: string | null = null;
+    if (receiverValue.endsWith('.ano')) {
+      receiverAlias = receiverValue;
+      receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiverAlias.replace('.ano', ''));
+      if (!receiverPk) {
+        message.error(`Receiver: ${receiverAlias} not exists`, { duration: 3000, closable: true });
+        closeLoadingMask(maskId);
+        return;
       }
-
-      return;
+    } else {
+      receiverPk = receiverValue;
     }
 
-    await genTxParamsAndToConfirm(receiverValue);
+    const params: TxInfo = {
+      sender: appState.value.accountPk58!,
+      senderAlias: appState.value.alias,
+      receiver: receiverPk!,
+      receiverAlias,
+      amountOfMinaUnit: sendAmount.value!.toString(),
+      sendToken: 'MINA',
+      feeOfMinaUnit: feeValue.value!.toString(),
+      feeToken: 'MINA',
+      anonToReceiver: anonToReceiver.value,
+      isWithdraw: currPageAction.value === PageAction.WITHDRAW_TOKEN,
+    };
+    setPageParams(currPageAction.value, params);
+
+    await navigateTo("/operation/confirm");
+    closeLoadingMask(maskId);
   } catch (err: any) {
     console.error(err);
     message.error(err.message, { duration: 0, closable: true });
@@ -354,19 +317,13 @@ const notesInfo = ref<{ availableNotesNum: number; maxSpendValuePerTx: string } 
 
 onMounted(async () => {
   console.log('send onMounted...');
-  // currPageAction.value = pageParams.value.action!;
   console.log('currPageAction: ', currPageAction.value);
-  // clearPageParams();
 
   balanceLoading.value = true;
   const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
   if (synced) {
     const balance = await remoteApi.getBalance(appState.value.accountPk58!);
     setTotalNanoBalance(balance.toString());
-    // tokenInfo.value = {
-    //   token: 'MINA',
-    //   balance: balance.toString()
-    // };
     balanceLoading.value = false;
   }
 

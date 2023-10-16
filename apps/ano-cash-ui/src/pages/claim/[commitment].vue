@@ -312,7 +312,7 @@ const createWithdrawalAccount = async () => {
     return;
   }
 
-  showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
+  showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: false });
   createWithdrawalAccountLoading.value = true;
   try {
     const isContractReady = await remoteSdk.isVaultContractCompiled();
