@@ -130,7 +130,7 @@ const sendTx = async () => {
   try {
     console.log('Prove and send tx...');
 
-    showLoadingMask({ text: 'tx circuit compiling... cost minutes, but only once', id: maskId, closable: true });
+    showLoadingMask({ text: 'Tx circuit compiling... cost minutes, but only once', id: maskId, closable: true });
     const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
     if (!isPrivateCircuitReady) {
       if (compileListenrSetted.value === false) {

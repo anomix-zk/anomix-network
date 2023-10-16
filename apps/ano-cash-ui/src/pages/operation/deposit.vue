@@ -355,7 +355,7 @@ const deposit = async () => {
     return;
   }
   try {
-    showLoadingMask({ text: 'deposit circuit compiling... cost minutes, but only once', id: maskId, closable: false });
+    showLoadingMask({ text: 'Deposit circuit compiling... cost minutes, but only once', id: maskId, closable: false });
     const isContractReady = await remoteSdk.isEntryContractCompiled();
     if (!isContractReady) {
       if (maskListenerSetted.value === false) {

@@ -178,7 +178,7 @@
                                                 omitAddress(item.receiver) }}</span>
                                             <span @click.stop="copyAddress(item.sender)" v-else>{{ item.sender !==
                                                 emptyPublicKey ?
-                                                omitAddress(item.sender) : 'unknown' }}</span>
+                                                omitAddress(item.sender) : 'Anonymous' }}</span>
 
 
                                             <div v-if="item.actionType === '1'" class="tx-label">

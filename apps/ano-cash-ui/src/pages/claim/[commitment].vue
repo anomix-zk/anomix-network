@@ -235,7 +235,7 @@ const claim = async () => {
     return;
   }
 
-  showLoadingMask({ text: 'claim circuit compiling... cost minutes, but only once', id: maskId, closable: false });
+  showLoadingMask({ text: 'Claim circuit compiling... cost minutes, but only once', id: maskId, closable: false });
   disabledClaim.value = true;
   claimLoading.value = true;
   try {
@@ -311,7 +311,7 @@ const createWithdrawalAccount = async () => {
     return;
   }
 
-  showLoadingMask({ text: 'claim circuit compiling... cost minutes, but only once', id: maskId, closable: false });
+  showLoadingMask({ text: 'Claim circuit compiling... cost minutes, but only once', id: maskId, closable: false });
   createWithdrawalAccountLoading.value = true;
   try {
     const isContractReady = await remoteSdk.isVaultContractCompiled();
