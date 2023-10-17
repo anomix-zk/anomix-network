@@ -86,6 +86,14 @@ async function fetchWithdrawalEvents() {
 
         if (!(result.data.events?.length > 0)) {
             logger.info('fetch back no events!');
+
+            // trigger sync into user_nullifier_tree SEPERATELY
+            await $axiosSeq.get<BaseResponse<string>>(`/note/withdrawal-batch-sync`).then(r => {
+                if (r.data.code == 1) {
+                    logger.error(r.data.msg);
+                }
+            });
+
             return;
         }
 
@@ -123,7 +131,7 @@ async function fetchWithdrawalEvents() {
                         continue;
                     }
 
-                    wInfo.nullifierIdx = withdrawFundEvent[3];
+                    wInfo.nullifierIdx = (Number(withdrawFundEvent[3]) - 1).toString();
                     wInfo.nullifierTreeRoot0 = withdrawFundEvent[4];
                     wInfo.nullifierTreeRoot1 = withdrawFundEvent[5];
                     wInfo.blockIdWhenL1Tx = blockHeight;
@@ -154,7 +162,7 @@ async function fetchWithdrawalEvents() {
 
         if (record?.id) {
             // trigger sync into user_nullifier_tree SEPERATELY
-            await $axiosSeq.post<BaseResponse<string>>(`/note/withdrawal-batch-sync`).then(r => {
+            await $axiosSeq.get<BaseResponse<string>>(`/note/withdrawal-batch-sync`).then(r => {
                 if (r.data.code == 1) {
                     logger.error(r.data.msg);
                 }
