@@ -21,7 +21,7 @@ export default defineNuxtConfig({
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
                 l2BlockPollingIntervalMS: 15 * 1000,
                 synceBlocksPerPoll: 20,
-                minaEndpoint: "https://berkeley.minascan.io/graphql",
+                minaEndpoint: "https://proxy.berkeley.minaexplorer.com", // "https://berkeley.minascan.io/graphql",
                 debug: false,
                 minaNetwork: "Berkeley", // auro wallet network config
             },
@@ -38,7 +38,7 @@ export default defineNuxtConfig({
                 nodeRequestTimeoutMS: 5 * 60 * 1000,
                 l2BlockPollingIntervalMS: 15 * 1000,
                 synceBlocksPerPoll: 20,
-                minaEndpoint: "https://berkeley.minascan.io/graphql",
+                minaEndpoint: "https://proxy.berkeley.minaexplorer.com", //"https://berkeley.minascan.io/graphql",
                 debug: true,
                 minaNetwork: "Berkeley", // auro wallet network config
             },
