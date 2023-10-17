@@ -129,7 +129,7 @@ const registerAccount = async () => {
     }
 
     try {
-        showLoadingMask({ text: 'Tx circuit compiling... cost minutes, but only once', id: maskId, closable: false });
+        showLoadingMask({ text: 'Tx circuit compiling...<br/>Cost minutes, but only once', id: maskId, closable: false });
         const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
         if (!isPrivateCircuitReady) {
             if (maskListenerSetted.value === false) {

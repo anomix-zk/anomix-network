@@ -4,9 +4,15 @@
             <slot />
 
             <div v-if="appState.mask.show" class="ano-mask" @click="closeCurrentLoadingMask">
-                <n-spin v-if="appState.mask.showLoading" :description="appState.mask.loadingText" stroke="white"
-                    size="large"
-                    style="z-index: 1000; color:#fff; font-size: 18px;padding-left: 30px;padding-right: 30px;" />
+                <template v-if="appState.mask.showLoading">
+                    <n-spin stroke="white" size="large" style="z-index: 1000; color:#fff; font-size: 18px;" />
+
+                    <div v-if="appState.mask.loadingText !== null"
+                        style="text-align: center; z-index: 1000; color:#fff; font-size: 18px; margin-top: 16px; margin-left: 30px; margin-right: 30px;">
+                        <div v-html="appState.mask.loadingText"></div>
+                    </div>
+                </template>
+
                 <div v-if="appState.mask.showLoading === false && appState.mask.show"
                     style="z-index: 1000; color:#fff; font-size: 18px;">App Loading...</div>
 

@@ -555,11 +555,11 @@ export class AnomixSdk {
       tokenId,
     });
 
-    if (res.account) {
-      return res.account;
+    if (res.error) {
+      throw new Error(JSON.stringify(res.error));
     }
 
-    return undefined;
+    return res.account;
   }
 
   public async getAccounts() {

@@ -235,7 +235,7 @@ const claim = async () => {
     return;
   }
 
-  showLoadingMask({ text: 'Claim circuit compiling... cost minutes, but only once', id: maskId, closable: false });
+  showLoadingMask({ text: 'Claim circuit compiling...<br/>Cost minutes, but only once', id: maskId, closable: false });
   disabledClaim.value = true;
   claimLoading.value = true;
   try {
@@ -311,7 +311,7 @@ const createWithdrawalAccount = async () => {
     return;
   }
 
-  showLoadingMask({ text: 'Claim circuit compiling... cost minutes, but only once', id: maskId, closable: false });
+  showLoadingMask({ text: 'Claim circuit compiling...<br/>Cost minutes, but only once', id: maskId, closable: false });
   createWithdrawalAccountLoading.value = true;
   try {
     const isContractReady = await remoteSdk.isVaultContractCompiled();
@@ -363,13 +363,20 @@ const loadAccountInfoByConnectedWallet = async () => {
     console.log('L1TokenBalance: ', L1TokenBalance.value);
 
     // check withdrawAccount if exists
-    const tokenId = await remoteSdk.getWithdrawAccountTokenId();
-    const withdrawAccount = await remoteApi.getL1Account(appState.value.connectedWallet58!, tokenId);
-    if (withdrawAccount !== undefined) {
-      withdrawAccountExists.value = true;
-    } else {
-      withdrawAccountExists.value = false;
+    try {
+      const tokenId = await remoteSdk.getWithdrawAccountTokenId();
+      const withdrawAccount = await remoteApi.getL1Account(appState.value.connectedWallet58!, tokenId);
+      if (withdrawAccount !== undefined) {
+        withdrawAccountExists.value = true;
+      } else {
+        withdrawAccountExists.value = false;
+      }
+    } catch (err: any) {
+      console.error(err);
+      message.error(err.message, { duration: 0, closable: true });
+      message.error('Unable to obtain current withdrawal account information, please try again later', { duration: 0, closable: true });
     }
+
   }
 };
 
@@ -474,7 +481,7 @@ onMounted(async () => {
 
   } catch (err: any) {
     console.error(err);
-    message.error(err.message, { duration: 6000, closable: true });
+    message.error(err.message, { duration: 0, closable: true });
   }
 
   closeLoadingMask(maskId);

@@ -369,6 +369,7 @@ const synceBlocksPerPoll = runtimeConfig.public.synceBlocksPerPoll as number;
 
 onMounted(async () => {
     console.log('account onMounted...');
+
     try {
         const { copyText } = useClientUtils();
         copyFunc = copyText;

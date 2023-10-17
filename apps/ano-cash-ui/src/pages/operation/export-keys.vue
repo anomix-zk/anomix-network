@@ -187,7 +187,7 @@ const exportKeys = async () => {
 
 
 const inactivityTime = ref(0);
-const maxInactivityTime = ref(2 * 60); // 2 minutes inactivity
+const maxInactivityTime = ref(1 * 60); // 1 minutes inactivity
 const resetTimer = () => {
   inactivityTime.value = 0;
 };
@@ -195,7 +195,7 @@ const checkInactivity = () => {
   inactivityTime.value = inactivityTime.value + 1;
 
   if (inactivityTime.value > maxInactivityTime.value && showKeys.value) {
-    message.info("The keys export page has been closed due to inactivity for 2 minutes", { duration: 0, closable: true });
+    message.info("The keys export page has been closed due to inactivity for 1 minute", { duration: 0, closable: true });
     toBack();
   }
 };

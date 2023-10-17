@@ -192,7 +192,7 @@ const loadConnectedWalletStatus = async () => {
 
     } catch (err: any) {
       console.error(err);
-      message.error(err.message);
+      message.error(err.message, { duration: 0, closable: true });
     }
   }
 };
@@ -355,7 +355,7 @@ const deposit = async () => {
     return;
   }
   try {
-    showLoadingMask({ text: 'Deposit circuit compiling... cost minutes, but only once', id: maskId, closable: false });
+    showLoadingMask({ text: 'Deposit circuit compiling...<br/>Cost minutes, but only once', id: maskId, closable: false });
     const isContractReady = await remoteSdk.isEntryContractCompiled();
     if (!isContractReady) {
       if (maskListenerSetted.value === false) {
