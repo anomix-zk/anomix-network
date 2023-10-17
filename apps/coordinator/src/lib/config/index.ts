@@ -87,9 +87,9 @@ const config = {
     rollupContractAddress: <string>KeyConfig.rollupContract.publicKey,
 
     // criterion to trigger seq
-    maxMpTxCnt: <number>Number(<string>process.env.MAX_MP_TX_CNT) || 300,
+    maxMpTxCnt: <number>Number(<string>process.env.MAX_MP_TX_CNT) || 50,
     maxMpTxFeeSUM: <number>Number(<string>process.env.MAX_MP_TX_FEE_SUM) || 5 * 1000_000_000,
-    maxBlockInterval: <number>Number(<string>process.env.MAX_BLOCK_INTERVAL) || 3 * 60 * 1000,
+    maxBlockInterval: <number>Number(<string>process.env.MAX_BLOCK_INTERVAL) || 1.5 * 60 * 1000,
 
     // L2Tx Fee suggestion
     minMpTxFeeToGenBlock: <number>Number(<string>process.env.MIN_MP_TX_FEE_TO_GEN_BLOCK) || 0.09 * 1000_000_000,
