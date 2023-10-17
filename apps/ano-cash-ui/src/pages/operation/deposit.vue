@@ -291,7 +291,7 @@ const handleInput = async (v: string) => {
 };
 
 const genDepositTxAndSend = async (receiverValue: string) => {
-  showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
+  showLoadingMask({ id: maskId, text: 'Generating transaction...<br/>This could take several minutes', closable: false });
   let receiverPk: string | undefined = undefined;
 
   if (receiverValue.endsWith('.ano')) {
@@ -326,7 +326,7 @@ const genDepositTxAndSend = async (receiverValue: string) => {
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
     feePayer: {
-      fee: 0.102,
+      fee: 0.196,
       memo: "deposit to anomix"
     },
   });

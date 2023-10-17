@@ -205,14 +205,14 @@ const toBack = () => {
 const syncerListenerSetted = ref(false);
 
 const genClaimTxAndSend = async () => {
-  showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
+  showLoadingMask({ id: maskId, text: 'Generating transaction...<br/>This could take several minutes', closable: false });
   const txJson = await remoteSdk.createClaimFundsTx(commitment, appState.value.connectedWallet58!);
 
   console.log('createClaimFundsTx txJson: ', txJson);
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
     feePayer: {
-      fee: 0.102,
+      fee: 0.196,
       memo: "claim from anomix"
     },
   });
@@ -296,7 +296,7 @@ const claim = async () => {
 };
 
 const genDeployWithdrawalAccountTxAndSend = async () => {
-  showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
+  showLoadingMask({ id: maskId, text: 'Generating transaction...<br/>This could take several minutes', closable: false });
   const txJson = await remoteSdk.createWithdrawalAccount(withdrawNote.value?.ownerAddress!,
     appState.value.connectedWallet58!);
 
@@ -306,7 +306,7 @@ const genDeployWithdrawalAccountTxAndSend = async () => {
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
     feePayer: {
-      fee: 0.102,
+      fee: 0.196,
       memo: "create withdrawal account"
     },
   });

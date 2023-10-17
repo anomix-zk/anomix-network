@@ -102,7 +102,7 @@ const toBack = () => router.back();
 const compileListenrSetted = ref(false);
 
 const genProofAndSend = async () => {
-  showLoadingMask({ id: maskId, text: 'Generating Proof...', closable: false });
+  showLoadingMask({ id: maskId, text: 'Generating transaction...<br/>This could take several minutes', closable: false });
   console.log("tx params: ", params.value);
   const tx = await remoteSdk.createPaymentTx({
     accountPk58: params.value!.sender,
