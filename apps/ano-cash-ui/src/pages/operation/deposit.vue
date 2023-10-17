@@ -325,6 +325,10 @@ const genDepositTxAndSend = async (receiverValue: string) => {
   showLoadingMask({ id: maskId, text: 'Wait for sending transaction...', closable: false });
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
+    feePayer: {
+      fee: 0.102,
+      memo: "deposit to anomix"
+    },
   });
   console.log('tx send success, txHash: ', txHash);
   closeLoadingMask(maskId);

@@ -211,6 +211,10 @@ const genClaimTxAndSend = async () => {
   console.log('createClaimFundsTx txJson: ', txJson);
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
+    feePayer: {
+      fee: 0.102,
+      memo: "claim from anomix"
+    },
   });
   console.log('tx send success, txHash: ', txHash);
   closeLoadingMask(maskId);
@@ -296,6 +300,10 @@ const genDeployWithdrawalAccountTxAndSend = async () => {
   showLoadingMask({ id: maskId, text: 'Wait for sending transaction...', closable: false });
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
+    feePayer: {
+      fee: 0.102,
+      memo: "create withdrawal account"
+    },
   });
   console.log('tx send success, txHash: ', txHash);
   closeLoadingMask(maskId);
@@ -379,18 +387,18 @@ const loadAccountInfoByConnectedWallet = async () => {
     console.log('L1TokenBalance: ', L1TokenBalance.value);
 
     // check withdrawAccount if exists
+    let withdrawAccount = undefined;
+    const tokenId = await remoteSdk.getWithdrawAccountTokenId();
     try {
-      const tokenId = await remoteSdk.getWithdrawAccountTokenId();
-      const withdrawAccount = await remoteApi.getL1Account(appState.value.connectedWallet58!, tokenId);
-      if (withdrawAccount !== undefined) {
-        withdrawAccountExists.value = true;
-      } else {
-        withdrawAccountExists.value = false;
-      }
+      withdrawAccount = await remoteApi.getL1Account(appState.value.connectedWallet58!, tokenId);
     } catch (err: any) {
       console.error(err);
-      message.error(err.message, { duration: 0, closable: true });
-      message.error('Unable to obtain current withdrawal account information, please try again later', { duration: 0, closable: true });
+    }
+
+    if (withdrawAccount !== undefined) {
+      withdrawAccountExists.value = true;
+    } else {
+      withdrawAccountExists.value = false;
     }
 
   }
