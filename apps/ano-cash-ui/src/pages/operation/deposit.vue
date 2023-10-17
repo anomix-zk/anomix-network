@@ -333,11 +333,16 @@ const genDepositTxAndSend = async (receiverValue: string) => {
   console.log('tx send success, txHash: ', txHash);
   closeLoadingMask(maskId);
 
-  openTxDialog(txHash);
-  await remoteApi.checkTx(txHash);
-  txDialogLoadingDone();
-
-  message.success('Deposit success! You can check this sent transaction in the Auro wallet. AnoCash usually takes around ten minutes or so to update.', { duration: 3000, closable: true });
+  try {
+    openTxDialog(txHash);
+    await remoteApi.checkTx(txHash);
+    txDialogLoadingDone();
+    message.success('Deposit success! You can check this sent transaction in the Auro wallet. AnoCash usually takes around ten minutes or so to update.', { duration: 3000, closable: true });
+  } catch (err: any) {
+    console.error(err);
+    closeTxDialog();
+    message.error(err.message, { duration: 0, closable: true });
+  }
 };
 
 const deposit = async () => {

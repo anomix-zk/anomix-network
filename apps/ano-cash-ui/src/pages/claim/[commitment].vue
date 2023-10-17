@@ -219,11 +219,16 @@ const genClaimTxAndSend = async () => {
   console.log('tx send success, txHash: ', txHash);
   closeLoadingMask(maskId);
 
-  openTxDialog(txHash);
-  await remoteApi.checkTx(txHash);
-  txDialogLoadingDone();
-
-  claimBtnText.value = 'Claimed';
+  try {
+    openTxDialog(txHash);
+    await remoteApi.checkTx(txHash);
+    txDialogLoadingDone();
+    claimBtnText.value = 'Claimed';
+  } catch (err: any) {
+    console.error(err);
+    closeTxDialog();
+    message.error(err.message, { duration: 0, closable: true });
+  }
   claimLoading.value = false;
 };
 
@@ -308,11 +313,17 @@ const genDeployWithdrawalAccountTxAndSend = async () => {
   console.log('tx send success, txHash: ', txHash);
   closeLoadingMask(maskId);
 
-  openTxDialog(txHash);
-  await remoteApi.checkTx(txHash);
-  txDialogLoadingDone();
+  try {
+    openTxDialog(txHash);
+    await remoteApi.checkTx(txHash);
+    txDialogLoadingDone();
+    withdrawAccountExists.value = true;
+  } catch (err: any) {
+    console.error(err);
+    closeTxDialog();
+    message.error(err.message, { duration: 0, closable: true });
+  }
 
-  withdrawAccountExists.value = true;
   createWithdrawalAccountLoading.value = false;
 };
 
