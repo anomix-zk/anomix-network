@@ -356,34 +356,42 @@ const deposit = async () => {
   }
   try {
     showLoadingMask({ text: 'Deposit circuit compiling...<br/>Cost minutes, but only once', id: maskId, closable: false });
+
+    let processStarted: boolean = false;
+    let syncerChan: BroadcastChannel | null = null;
+    if (maskListenerSetted.value === false) {
+      syncerChan = listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
+        if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE && processStarted === false) {
+          processStarted = true;
+          closeLoadingMask(maskId);
+          message.info('Circuits compling done', { closable: true });
+          console.log('circuits compile done, start deposit...');
+          try {
+            await genDepositTxAndSend(receiverValue);
+          } catch (err: any) {
+            console.error(err);
+            message.error(err.message, { duration: 0, closable: true });
+            closeLoadingMask(maskId);
+          }
+
+
+          chan.close();
+          console.log('Syncer listener channel close success');
+        }
+      });
+      maskListenerSetted.value = true;
+    }
+
     const isContractReady = await remoteSdk.isEntryContractCompiled();
     if (!isContractReady) {
-      if (maskListenerSetted.value === false) {
-        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
-          if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
-            closeLoadingMask(maskId);
-            message.info('Circuits compling done', { closable: true });
-            console.log('circuits compile done, start deposit...');
-            try {
-              await genDepositTxAndSend(receiverValue);
-            } catch (err: any) {
-              console.error(err);
-              message.error(err.message, { duration: 0, closable: true });
-              closeLoadingMask(maskId);
-            }
-
-
-            chan.close();
-            console.log('Syncer listener channel close success');
-          }
-        });
-        maskListenerSetted.value = true;
-      }
-
       return;
     }
 
-    await genDepositTxAndSend(receiverValue);
+    if (processStarted === false) {
+      processStarted = true;
+      syncerChan?.close();
+      await genDepositTxAndSend(receiverValue);
+    }
   } catch (err: any) {
     console.error(err);
     message.error(err.message, { duration: 0, closable: true });

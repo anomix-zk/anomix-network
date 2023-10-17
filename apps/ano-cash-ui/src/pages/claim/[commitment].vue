@@ -239,34 +239,43 @@ const claim = async () => {
   disabledClaim.value = true;
   claimLoading.value = true;
   try {
+
+    let processStarted: boolean = false;
+    let syncerChan: BroadcastChannel | null = null;
+    if (syncerListenerSetted.value === false) {
+      syncerChan = listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
+        if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE && processStarted === false) {
+          processStarted = true;
+          closeLoadingMask(maskId);
+          message.info('Circuits compling done', { closable: true });
+          console.log('circuits compile done, start claim...');
+          try {
+            await genClaimTxAndSend();
+          } catch (err: any) {
+            console.error(err);
+            message.error(err.message, { duration: 0, closable: true });
+          }
+          closeLoadingMask(maskId);
+
+          chan.close();
+          console.log('Syncer listener channel close success');
+        }
+      });
+      syncerListenerSetted.value = true;
+    }
+
     const isContractReady = await remoteSdk.isVaultContractCompiled();
     if (!isContractReady) {
-      if (syncerListenerSetted.value === false) {
-        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
-          if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE) {
-            closeLoadingMask(maskId);
-            message.info('Circuits compling done', { closable: true });
-            console.log('circuits compile done, start claim...');
-            try {
-              await genClaimTxAndSend();
-            } catch (err: any) {
-              console.error(err);
-              message.error(err.message, { duration: 0, closable: true });
-            }
-            closeLoadingMask(maskId);
-
-            chan.close();
-            console.log('Syncer listener channel close success');
-          }
-        });
-        syncerListenerSetted.value = true;
-      }
       disabledClaim.value = false;
       claimLoading.value = false;
       return;
     }
 
-    await genClaimTxAndSend();
+    if (processStarted === false) {
+      processStarted = true;
+      syncerChan?.close();
+      await genClaimTxAndSend();
+    }
 
   } catch (err: any) {
     console.error(err);
@@ -277,7 +286,7 @@ const claim = async () => {
   }
 };
 
-const genDeployWithdrawalAccountTxAndSned = async () => {
+const genDeployWithdrawalAccountTxAndSend = async () => {
   showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
   const txJson = await remoteSdk.createWithdrawalAccount(withdrawNote.value?.ownerAddress!,
     appState.value.connectedWallet58!);
@@ -314,34 +323,41 @@ const createWithdrawalAccount = async () => {
   showLoadingMask({ text: 'Claim circuit compiling...<br/>Cost minutes, but only once', id: maskId, closable: false });
   createWithdrawalAccountLoading.value = true;
   try {
+    let processStarted: boolean = false;
+    let syncerChan: BroadcastChannel | null = null;
+    if (syncerListenerSetted.value === false) {
+      syncerChan = listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
+        if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE && processStarted === false) {
+          processStarted = true;
+          closeLoadingMask(maskId);
+          message.info('Circuits compling done', { closable: true });
+          console.log('circuits compile done, start deploy withdrawal account...');
+          try {
+            await genDeployWithdrawalAccountTxAndSend();
+          } catch (err: any) {
+            console.error(err);
+            message.error(err.message, { duration: 0, closable: true });
+            closeLoadingMask(maskId);
+          }
+
+          chan.close();
+          console.log('Syncer listener channel close success');
+        }
+      });
+      syncerListenerSetted.value = true;
+    }
+
     const isContractReady = await remoteSdk.isVaultContractCompiled();
     if (!isContractReady) {
-      if (syncerListenerSetted.value === false) {
-        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
-          if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE) {
-            closeLoadingMask(maskId);
-            message.info('Circuits compling done', { closable: true });
-            console.log('circuits compile done, start deploy withdrawal account...');
-            try {
-              await genDeployWithdrawalAccountTxAndSned();
-            } catch (err: any) {
-              console.error(err);
-              message.error(err.message, { duration: 0, closable: true });
-              closeLoadingMask(maskId);
-            }
-
-            chan.close();
-            console.log('Syncer listener channel close success');
-          }
-        });
-        syncerListenerSetted.value = true;
-      }
-
       createWithdrawalAccountLoading.value = false;
       return;
     }
 
-    await genDeployWithdrawalAccountTxAndSned();
+    if (processStarted === false) {
+      processStarted = true;
+      syncerChan?.close();
+      await genDeployWithdrawalAccountTxAndSend();
+    }
 
   } catch (err: any) {
     console.error(err);
