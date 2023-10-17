@@ -77,11 +77,12 @@ import auroLogo from "@/assets/auro.png";
 import { CHANNEL_MINA, WalletEventType } from '../../common/constants';
 import type { WalletEvent } from '../../common/types';
 const router = useRouter();
-const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask } = useStatus();
+const { appState, setConnectedWallet, showLoadingMask, closeLoadingMask, setStartCompileVaultContract } = useStatus();
 const { omitAddress, convertToMinaUnit } = useUtils();
 const message = useMessage();
 const { SdkState } = useSdk();
 const remoteApi = SdkState.remoteApi!;
+const remoteSdk = SdkState.remoteSdk!;
 
 // show laoding mask when init
 const maskId = "claimable";
@@ -153,7 +154,6 @@ const connect = async () => {
 };
 
 const walletListenerSetted = ref(false);
-const route = useRoute();
 onMounted(async () => {
   console.log('claimable.vue - onMounted: ', appState.value.connectedWallet58);
 
@@ -188,6 +188,14 @@ onMounted(async () => {
       };
 
       walletListenerSetted.value = true;
+    }
+
+    if (!appState.value.startCompileVaultContract) {
+      console.log('VaultContract not found to start compilation, will start soon');
+      setStartCompileVaultContract(true);
+      remoteSdk.compileVaultContract();
+    } else {
+      console.log('VaultContract is already being compiled, no need to recompile')
     }
 
   } catch (err: any) {

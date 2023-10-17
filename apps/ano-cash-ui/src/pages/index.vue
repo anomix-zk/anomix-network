@@ -40,7 +40,7 @@
             <div class="line"></div>
         </div>
 
-        <div class="oauth-box" style="margin-top: 30px;">
+        <div class="oauth-box" style="margin-top: 30px;margin-bottom:50px">
             <div class="auth-item">
                 <n-button color="#f4f4f4" :bordered="false" block type="primary" @click="connectWallet('claim')"
                     class="auth-btn">
@@ -136,13 +136,12 @@ const connectWallet = async (action: string) => {
             await navigateTo("/claim/claimable");
         }
         closeLoadingMask(maskId);
-    } catch (error: any) {
+    } catch (err: any) {
         // if user reject, requestAccounts will throw an error with code and message filed
-        console.log(error.message, error.code);
-        message.error(error.message);
-        closeLoadingMask(maskId);
+        console.error(err);
+        message.error(err.message);
     }
-    //showLoadingMask({ text: 'Account registration service is not ready yet', closable: false });
+    closeLoadingMask(maskId);
 };
 
 </script>
@@ -252,6 +251,7 @@ const connectWallet = async (action: string) => {
             margin: 0 10px;
             font-size: 12px;
             font-weight: 400;
+            white-space: nowrap;
         }
     }
 

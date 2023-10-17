@@ -51,8 +51,7 @@
           <div class="to-input">
             <n-input
               :placeholder="currPageAction === PageAction.SEND_TOKEN ? 'Alias (xxx.ano) or Anomix address (B62)' : 'Mina address (B62)'"
-              size="large" clearable :allow-input="checkNoSideSpace" v-model:value="receiver" @blur="checkAliasExist"
-              @input="handleInput">
+              size="large" clearable :allow-input="checkNoSideSpace" v-model:value="receiver" @input="handleInput">
               <template #suffix>
                 <van-icon v-show="checkAlias === 1" name="passed" color="green" size="20" />
                 <van-icon v-show="checkAlias === 0" name="close" color="red" size="20" />
@@ -135,17 +134,18 @@
 import claimImage from "@/assets/claim.svg";
 import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
-import { SdkEvent, TxInfo } from '../../common/types';
-import { PageAction, SdkEventType, TIPS_WAIT_FOR_CIRCUITS_COMPILING } from '../../common/constants';
+import { TxInfo } from '../../common/types';
+import { PageAction } from '../../common/constants';
 
 const router = useRouter();
-const { appState, showLoadingMask, closeLoadingMask, setPageParams, setConnectedWallet, pageParams, setTotalNanoBalance } = useStatus();
+const { appState, showLoadingMask, closeLoadingMask, setPageParams, setStartCompilePrivateCircuit,
+  setConnectedWallet, pageParams, setTotalNanoBalance } = useStatus();
 const { checkNoSideSpace, convertToMinaUnit } = useUtils();
 const message = useMessage();
-const { SdkState, listenSyncerChannel } = useSdk();
-const remoteSdk = SdkState.remoteSdk!;
+const { SdkState } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const remoteSyncer = SdkState.remoteSyncer!;
+const remoteSdk = SdkState.remoteSdk!;
 
 const checkPositiveNumber = (x: number) => x > 0;
 const toBack = () => router.back();
@@ -153,10 +153,6 @@ const toBack = () => router.back();
 const currPageAction = ref(pageParams.value.action);
 const balanceLoading = ref(false);
 const totalMinaBalance = computed(() => convertToMinaUnit(appState.value.totalNanoBalance));
-// const tokenInfo = ref<{ token: string; balance: string }>({
-//   token: 'MINA',
-//   balance: '0.0',
-// });
 
 const anonToReceiver = ref(false);
 const handleSwitchValue = (value: boolean) => {
@@ -199,26 +195,24 @@ const connectToClaim = async () => {
   }
 };
 
-const handleInput = (v: string) => {
+// -1: not alias, 0: alias not exist, 1: alias exist
+const checkAlias = ref(-1);
+const handleInput = async (v: string) => {
   if (checkAlias.value !== -1) {
     checkAlias.value = -1;
   }
-};
-// -1: not alias, 0: alias not exist, 1: alias exist
-const checkAlias = ref(-1);
-const checkAliasExist = async () => {
+
   console.log('checkAliasExist...');
-  showLoadingMask({ id: maskId, text: 'Checking if input valid...', closable: false });
+  const receiverValue = receiver.value.trim();
+
   if (currPageAction.value === PageAction.WITHDRAW_TOKEN) {
-    if (receiver.value === '' || !receiver.value.trim().startsWith('B62')) {
+    if (receiverValue.length === 0 || !receiverValue.startsWith('B62')) {
       checkAlias.value = 0;
-      closeLoadingMask(maskId);
-      message.error(`Please input mina address.`, { duration: 5000, closable: true });
       return;
     }
   }
 
-  if (!receiver.value.endsWith('.ano')) {
+  if (!receiverValue.endsWith('.ano')) {
     if (receiver.value.startsWith('B62')) {
       if (checkAlias.value !== -1) {
         checkAlias.value = -1;
@@ -226,24 +220,20 @@ const checkAliasExist = async () => {
 
     } else {
       checkAlias.value = 0;
-      message.error(`Please input anomix address or alias.`, { duration: 5000, closable: true });
     }
-    closeLoadingMask(maskId);
     return;
   }
 
-  const isRegistered = await remoteApi.isAliasRegistered(receiver.value.replace('.ano', ''), false);
+  const isRegistered = await remoteApi.isAliasRegistered(receiverValue.replace('.ano', ''), false);
   if (isRegistered) {
-    console.log(`${receiver.value} exists`);
+    console.log(`${receiverValue} exists`);
     checkAlias.value = 1;
   } else {
-    console.log(`${receiver.value} not exists`);
+    console.log(`${receiverValue} not exists`);
     checkAlias.value = 0;
-    message.error(`${receiver.value} not exists`, { duration: 5000, closable: true });
+    message.error(`${receiverValue} not exists`, { closable: true });
   }
-  closeLoadingMask(maskId);
 };
-
 
 const feeValue = ref<number | undefined>(undefined);
 const fees = ref<{ kind: string; value: number }[]>([
@@ -264,7 +254,6 @@ const handleFeeChange = (e: Event) => {
 };
 
 const maskId = 'send';
-const maskListenerSetted = ref(false);
 
 const toConfirm = async () => {
   console.log('toConfirm...');
@@ -276,7 +265,8 @@ const toConfirm = async () => {
     message.error('Insufficient balance.');
     return;
   }
-  if (receiver.value === '') {
+  const receiverValue = receiver.value.trim();
+  if (receiverValue.length === 0) {
     message.error('Please input receiver.');
     return;
   }
@@ -286,37 +276,19 @@ const toConfirm = async () => {
   }
 
   try {
-    showLoadingMask({ text: TIPS_WAIT_FOR_CIRCUITS_COMPILING, id: maskId, closable: true });
-    const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
-    if (!isPrivateCircuitReady) {
-      if (maskListenerSetted.value === false) {
-        listenSyncerChannel((e: SdkEvent, chan: BroadcastChannel) => {
-          if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
-            closeLoadingMask(maskId);
-            message.info('Circuits compling done, please continue your operation', { duration: 0, closable: true });
-            chan.close();
-            console.log('Syncer listener channel close success');
-          }
-        });
-        maskListenerSetted.value = true;
-      }
-
-      return;
-    }
-
     showLoadingMask({ id: maskId, text: 'Processing...', closable: false });
     let receiverPk: string | undefined = undefined;
     let receiverAlias: string | null = null;
-    if (receiver.value.trim().endsWith('.ano')) {
-      receiverAlias = receiver.value.trim();
-      receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiver.value.trim().replace('.ano', ''));
+    if (receiverValue.endsWith('.ano')) {
+      receiverAlias = receiverValue;
+      receiverPk = await remoteApi.getAccountPublicKeyByAlias(receiverAlias.replace('.ano', ''));
       if (!receiverPk) {
-        message.error(`Receiver: ${receiver.value} not exists`, { duration: 0, closable: true });
+        message.error(`Receiver: ${receiverAlias} not exists`, { duration: 3000, closable: true });
         closeLoadingMask(maskId);
         return;
       }
     } else {
-      receiverPk = receiver.value;
+      receiverPk = receiverValue;
     }
 
     const params: TxInfo = {
@@ -324,7 +296,7 @@ const toConfirm = async () => {
       senderAlias: appState.value.alias,
       receiver: receiverPk!,
       receiverAlias,
-      amountOfMinaUnit: sendAmount.value.toString(),
+      amountOfMinaUnit: sendAmount.value!.toString(),
       sendToken: 'MINA',
       feeOfMinaUnit: feeValue.value!.toString(),
       feeToken: 'MINA',
@@ -347,36 +319,45 @@ const notesInfo = ref<{ availableNotesNum: number; maxSpendValuePerTx: string } 
 
 onMounted(async () => {
   console.log('send onMounted...');
-  // currPageAction.value = pageParams.value.action!;
   console.log('currPageAction: ', currPageAction.value);
-  // clearPageParams();
 
-  balanceLoading.value = true;
-  const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
-  if (synced) {
-    const balance = await remoteApi.getBalance(appState.value.accountPk58!);
-    setTotalNanoBalance(balance.toString());
-    // tokenInfo.value = {
-    //   token: 'MINA',
-    //   balance: balance.toString()
-    // };
-    balanceLoading.value = false;
+  try {
+    balanceLoading.value = true;
+    const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
+    if (synced) {
+      const balance = await remoteApi.getBalance(appState.value.accountPk58!);
+      setTotalNanoBalance(balance.toString());
+      balanceLoading.value = false;
+    }
+
+    const txFees = await remoteApi.getTxFees();
+    fees.value = [{
+      kind: 'Normal',
+      value: convertToMinaUnit(txFees.normal)!.toNumber()
+    }, {
+      kind: 'Faster',
+      value: convertToMinaUnit(txFees.faster)!.toNumber()
+    }];
+    feeValue.value = Number(fees.value[0].value);
+    console.log('feeValue: ', feeValue.value);
+
+    const analysisInfo = await remoteApi.getAnalysisOfNotes(appState.value.accountPk58!);
+    console.log('analysisInfo: ', analysisInfo);
+    notesInfo.value = analysisInfo;
+
+    if (!appState.value.startCompilePrivateCircuit) {
+      console.log('PrivateCircuit not found to start compilation, will start soon');
+      setStartCompilePrivateCircuit(true);
+      remoteSdk.compilePrivateCircuit();
+    } else {
+      console.log('PrivateCircuit is already being compiled, no need to recompile')
+    }
+  } catch (err: any) {
+    console.error(err);
+    message.error(err.message, { duration: 0, closable: true });
   }
 
-  const txFees = await remoteApi.getTxFees();
-  fees.value = [{
-    kind: 'Normal',
-    value: convertToMinaUnit(txFees.normal)!.toNumber()
-  }, {
-    kind: 'Faster',
-    value: convertToMinaUnit(txFees.faster)!.toNumber()
-  }];
-  feeValue.value = Number(fees.value[0].value);
-  console.log('feeValue: ', feeValue.value);
 
-  const analysisInfo = await remoteApi.getAnalysisOfNotes(appState.value.accountPk58!);
-  console.log('analysisInfo: ', analysisInfo);
-  notesInfo.value = analysisInfo;
 });
 
 </script>

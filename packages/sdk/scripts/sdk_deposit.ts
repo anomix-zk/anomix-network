@@ -103,7 +103,7 @@ async function run() {
   });
 
   //await sdk.start(false);
-  await sdk.compileEntryVaultContract();
+  await sdk.compileEntryContract();
 
   const accountKeyPair = sdk.generateKeyPairByProviderSignature(accountKeySign);
   const accountPk = accountKeyPair.publicKey;

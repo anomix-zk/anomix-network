@@ -82,8 +82,8 @@
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
-import { PageAction } from '../../common/constants';
-import { TxInfo } from '../../common/types';
+import { PageAction, SdkEventType } from '../../common/constants';
+import { SdkEvent, TxInfo } from '../../common/types';
 
 
 const router = useRouter();
@@ -93,39 +93,71 @@ const { convertToNanoMinaUnit } = useUtils();
 const currPageAction = ref(pageParams.value.action);
 const params = ref<TxInfo>(pageParams.value.params);
 
-const { SdkState } = useSdk();
+const { SdkState, listenSyncerChannel } = useSdk();
 const remoteSdk = SdkState.remoteSdk!;
 const remoteApi = SdkState.remoteApi!;
 const maskId = 'confirm';
 
 const toBack = () => router.back();
+const compileListenrSetted = ref(false);
+
+const genProofAndSend = async () => {
+  showLoadingMask({ id: maskId, text: 'Generating Proof...', closable: false });
+  console.log("tx params: ", params.value);
+  const tx = await remoteSdk.createPaymentTx({
+    accountPk58: params.value!.sender,
+    alias: params.value!.senderAlias,
+    senderAccountRequiredBool: appState.value.alias !== null,
+    receiverPk58: params.value!.receiver,
+    receiverAccountRequiredBool: params.value!.receiverAlias !== null,
+    anonToReceiver: params.value!.anonToReceiver,
+    amount: convertToNanoMinaUnit(params.value!.amountOfMinaUnit)!.toString(),
+    txFeeAmount: convertToNanoMinaUnit(params.value!.feeOfMinaUnit)!.toString(),
+    isWithdraw: params.value!.isWithdraw,
+  });
+
+  console.log('paymentTx json: ', tx);
+  showLoadingMask({ id: maskId, text: 'Sending Tx...', closable: false });
+  await remoteApi.sendTx(tx);
+
+  message.success('Transaction sent successfully!');
+  setPageParams(PageAction.ACCOUNT_PAGE, 'history');
+  await navigateTo("/account", { replace: true });
+  closeLoadingMask(maskId);
+};
 
 const sendTx = async () => {
   try {
     console.log('Prove and send tx...');
-    showLoadingMask({ id: maskId, text: 'Generating Proof...', closable: false });
-    console.log("tx params: ", params.value);
-    const tx = await remoteSdk.createPaymentTx({
-      accountPk58: params.value!.sender,
-      alias: params.value!.senderAlias,
-      senderAccountRequiredBool: appState.value.alias !== null,
-      receiverPk58: params.value!.receiver,
-      receiverAccountRequiredBool: params.value!.receiverAlias !== null,
-      anonToReceiver: params.value!.anonToReceiver,
-      amount: convertToNanoMinaUnit(params.value!.amountOfMinaUnit)!.toString(),
-      txFeeAmount: convertToNanoMinaUnit(params.value!.feeOfMinaUnit)!.toString(),
-      isWithdraw: params.value!.isWithdraw,
-    });
 
-    console.log('paymentTx json: ', tx);
-    showLoadingMask({ id: maskId, text: 'Sending Tx...', closable: false });
-    await remoteApi.sendTx(tx);
+    showLoadingMask({ text: 'Tx circuit compiling...<br/>Cost minutes, but only once', id: maskId, closable: false });
+    const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
+    if (!isPrivateCircuitReady) {
+      if (compileListenrSetted.value === false) {
+        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
+          if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
+            closeLoadingMask(maskId);
+            message.info('Circuits compling done', { closable: true });
+            console.log('circuits compile done, start send or withdraw...');
+            try {
+              await genProofAndSend();
+            } catch (err: any) {
+              console.error(err);
+              message.error(err.message, { duration: 0, closable: true });
+              closeLoadingMask(maskId);
+            }
 
-    message.success('Transaction sent successfully!');
-    setPageParams(PageAction.ACCOUNT_PAGE, 'history');
-    await navigateTo("/account", { replace: true });
-    closeLoadingMask(maskId);
+            chan.close();
+            console.log('Syncer listener channel close success');
+          }
+        });
+        compileListenrSetted.value = true;
+      }
 
+      return;
+    }
+
+    await genProofAndSend();
   } catch (err: any) {
     console.error(err);
     message.error(err.message, { duration: 0, closable: true });

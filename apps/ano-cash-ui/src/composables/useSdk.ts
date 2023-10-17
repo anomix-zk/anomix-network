@@ -40,14 +40,6 @@ export default function () {
         console.log("remote sdk create success");
     };
 
-    const compileCircuits = () => {
-        if (SdkState.remoteSdk === null) {
-            throw new Error("remote sdk is null");
-        }
-        // async compile circuits
-        SdkState.remoteSdk.compileCircuits();
-    };
-
     const createRemoteApi = async (config: SdkConfig) => {
         console.log("create remote api...");
         if (SdkState.apiWorker !== null) {
@@ -179,7 +171,6 @@ export default function () {
         createRemoteApi,
         addAccount,
         exitAccount,
-        compileCircuits,
         loginAccount,
         clearAccount,
     };
