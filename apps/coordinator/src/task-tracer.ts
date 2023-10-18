@@ -1,7 +1,7 @@
 
 import { getConnection } from 'typeorm';
-import { Block, DepositCommitment, DepositTreeTrans, MemPlL2Tx, Task, TaskStatus, TaskType, WithdrawInfo } from '@anomix/dao';
-import { L1TxStatus, BlockStatus, WithdrawNoteStatus, DepositStatus, L2TxStatus, DepositTreeTransStatus, BaseResponse } from "@anomix/types";
+import { Block, BlockCache, DepositCommitment, DepositTreeTrans, MemPlL2Tx, Task, TaskStatus, TaskType, WithdrawInfo } from '@anomix/dao';
+import { L1TxStatus, BlockStatus, WithdrawNoteStatus, DepositStatus, L2TxStatus, DepositTreeTransStatus, BaseResponse, BlockCacheType, BlockCacheStatus } from "@anomix/types";
 import { ActionType, DUMMY_FIELD, JoinSplitOutput } from '@anomix/circuits';
 import { getLogger } from "./lib/logUtils";
 import { $axiosDeposit, $axiosSeq } from './lib/api';
@@ -163,13 +163,11 @@ async function traceTasks() {
                                 b!.finalizedAt = new Date(rs.data.zkapp.dateTime);
                                 await queryRunner.manager.save(b!);
 
-                                logger.info(`sync data tree, from dataTreeRoot0 = ${b!.dataTreeRoot0}...`);
+                                await queryRunner.manager.update(BlockCache, { blockId: b!.id }, { status: BlockCacheStatus.CONFIRMED });
+
                                 // sync data tree
-                                await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
-                                    if (rs.data.code != 0) {
-                                        throw new Error(`cannot sync sync_data_tree, due to: [${rs.data.msg}]`);
-                                    }
-                                })
+                                await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync-data-tree`);
+                                logger.info(`sync data tree done.`);
                             } else {
                                 logger.warn('ALERT: this block failed at Layer1!!!!!');// TODO extreme case, need alert operator!
                             }

@@ -4,7 +4,7 @@ import "reflect-metadata"
 import { createConnection } from 'typeorm'
 import { MysqlConnectionOptions } from "typeorm/driver/mysql/MysqlConnectionOptions";
 import { getLogger } from "@/lib/logUtils";
-import { WithdrawEventFetchRecord, DepositActionEventFetchRecord, DepositProcessorSignal, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockCache, BlockProverOutput, InnerRollupBatch, DepositTreeTransCache } from '@anomix/dao';
+import { L2TxDtoOrigin, WithdrawEventFetchRecord, DepositActionEventFetchRecord, DepositProcessorSignal, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockCache, BlockProverOutput, InnerRollupBatch, DepositTreeTransCache } from '@anomix/dao';
 
 const logger = getLogger('deposit-processor');
 export const initORM = async (connectionOverrides?: Partial<MysqlConnectionOptions>) => {
@@ -13,8 +13,8 @@ export const initORM = async (connectionOverrides?: Partial<MysqlConnectionOptio
         const connection = await createConnection(<MysqlConnectionOptions>{
             ...config.typeORM,
             // 【error1】 ...entities
-            // 【error2】 entities: [...entities]
-            entities: [WithdrawEventFetchRecord, DepositActionEventFetchRecord, DepositProcessorSignal, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockCache, BlockProverOutput, InnerRollupBatch, DepositTreeTransCache],
+            // 【error2】 entities: [L2TxDtoOrigin, ...entities]
+            entities: [L2TxDtoOrigin, WithdrawEventFetchRecord, DepositActionEventFetchRecord, DepositProcessorSignal, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockCache, BlockProverOutput, InnerRollupBatch, DepositTreeTransCache],
             ...connectionOverrides,
             timezone: '+00:00'
         });
