@@ -291,7 +291,7 @@ const handleInput = async (v: string) => {
 };
 
 const genDepositTxAndSend = async (receiverValue: string) => {
-  showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
+  showLoadingMask({ id: maskId, text: 'Generating transaction...<br/>This could take several minutes', closable: false });
   let receiverPk: string | undefined = undefined;
 
   if (receiverValue.endsWith('.ano')) {
@@ -325,15 +325,24 @@ const genDepositTxAndSend = async (receiverValue: string) => {
   showLoadingMask({ id: maskId, text: 'Wait for sending transaction...', closable: false });
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
+    feePayer: {
+      fee: 0.196,
+      memo: "deposit to anomix"
+    },
   });
   console.log('tx send success, txHash: ', txHash);
   closeLoadingMask(maskId);
 
-  openTxDialog(txHash);
-  await remoteApi.checkTx(txHash);
-  txDialogLoadingDone();
-
-  message.success('Deposit success! You can check this sent transaction in the Auro wallet. AnoCash usually takes around ten minutes or so to update.', { duration: 3000, closable: true });
+  try {
+    openTxDialog(txHash);
+    await remoteApi.checkTx(txHash);
+    txDialogLoadingDone();
+    message.success('Deposit success! You can check this sent transaction in the Auro wallet. AnoCash usually takes around ten minutes or so to update.', { duration: 3000, closable: true });
+  } catch (err: any) {
+    console.error(err);
+    closeTxDialog();
+    message.error(err.message, { duration: 0, closable: true });
+  }
 };
 
 const deposit = async () => {
@@ -356,34 +365,42 @@ const deposit = async () => {
   }
   try {
     showLoadingMask({ text: 'Deposit circuit compiling...<br/>Cost minutes, but only once', id: maskId, closable: false });
+
+    let processStarted: boolean = false;
+    let syncerChan: BroadcastChannel | null = null;
+    if (maskListenerSetted.value === false) {
+      syncerChan = listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
+        if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE && processStarted === false) {
+          processStarted = true;
+          closeLoadingMask(maskId);
+          message.info('Circuits compling done', { closable: true });
+          console.log('circuits compile done, start deposit...');
+          try {
+            await genDepositTxAndSend(receiverValue);
+          } catch (err: any) {
+            console.error(err);
+            message.error(err.message, { duration: 0, closable: true });
+            closeLoadingMask(maskId);
+          }
+
+
+          chan.close();
+          console.log('Syncer listener channel close success');
+        }
+      });
+      maskListenerSetted.value = true;
+    }
+
     const isContractReady = await remoteSdk.isEntryContractCompiled();
     if (!isContractReady) {
-      if (maskListenerSetted.value === false) {
-        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
-          if (e.eventType === SdkEventType.ENTRY_CONTRACT_COMPILED_DONE) {
-            closeLoadingMask(maskId);
-            message.info('Circuits compling done', { closable: true });
-            console.log('circuits compile done, start deposit...');
-            try {
-              await genDepositTxAndSend(receiverValue);
-            } catch (err: any) {
-              console.error(err);
-              message.error(err.message, { duration: 0, closable: true });
-              closeLoadingMask(maskId);
-            }
-
-
-            chan.close();
-            console.log('Syncer listener channel close success');
-          }
-        });
-        maskListenerSetted.value = true;
-      }
-
       return;
     }
 
-    await genDepositTxAndSend(receiverValue);
+    if (processStarted === false) {
+      processStarted = true;
+      syncerChan?.close();
+      await genDepositTxAndSend(receiverValue);
+    }
   } catch (err: any) {
     console.error(err);
     message.error(err.message, { duration: 0, closable: true });

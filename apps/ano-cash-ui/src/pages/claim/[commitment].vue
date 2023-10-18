@@ -205,21 +205,30 @@ const toBack = () => {
 const syncerListenerSetted = ref(false);
 
 const genClaimTxAndSend = async () => {
-  showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
+  showLoadingMask({ id: maskId, text: 'Generating transaction...<br/>This could take several minutes', closable: false });
   const txJson = await remoteSdk.createClaimFundsTx(commitment, appState.value.connectedWallet58!);
 
   console.log('createClaimFundsTx txJson: ', txJson);
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
+    feePayer: {
+      fee: 0.196,
+      memo: "claim from anomix"
+    },
   });
   console.log('tx send success, txHash: ', txHash);
   closeLoadingMask(maskId);
 
-  openTxDialog(txHash);
-  await remoteApi.checkTx(txHash);
-  txDialogLoadingDone();
-
-  claimBtnText.value = 'Claimed';
+  try {
+    openTxDialog(txHash);
+    await remoteApi.checkTx(txHash);
+    txDialogLoadingDone();
+    claimBtnText.value = 'Claimed';
+  } catch (err: any) {
+    console.error(err);
+    closeTxDialog();
+    message.error(err.message, { duration: 0, closable: true });
+  }
   claimLoading.value = false;
 };
 
@@ -239,34 +248,43 @@ const claim = async () => {
   disabledClaim.value = true;
   claimLoading.value = true;
   try {
+
+    let processStarted: boolean = false;
+    let syncerChan: BroadcastChannel | null = null;
+    if (syncerListenerSetted.value === false) {
+      syncerChan = listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
+        if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE && processStarted === false) {
+          processStarted = true;
+          closeLoadingMask(maskId);
+          message.info('Circuits compling done', { closable: true });
+          console.log('circuits compile done, start claim...');
+          try {
+            await genClaimTxAndSend();
+          } catch (err: any) {
+            console.error(err);
+            message.error(err.message, { duration: 0, closable: true });
+          }
+          closeLoadingMask(maskId);
+
+          chan.close();
+          console.log('Syncer listener channel close success');
+        }
+      });
+      syncerListenerSetted.value = true;
+    }
+
     const isContractReady = await remoteSdk.isVaultContractCompiled();
     if (!isContractReady) {
-      if (syncerListenerSetted.value === false) {
-        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
-          if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE) {
-            closeLoadingMask(maskId);
-            message.info('Circuits compling done', { closable: true });
-            console.log('circuits compile done, start claim...');
-            try {
-              await genClaimTxAndSend();
-            } catch (err: any) {
-              console.error(err);
-              message.error(err.message, { duration: 0, closable: true });
-            }
-            closeLoadingMask(maskId);
-
-            chan.close();
-            console.log('Syncer listener channel close success');
-          }
-        });
-        syncerListenerSetted.value = true;
-      }
       disabledClaim.value = false;
       claimLoading.value = false;
       return;
     }
 
-    await genClaimTxAndSend();
+    if (processStarted === false) {
+      processStarted = true;
+      syncerChan?.close();
+      await genClaimTxAndSend();
+    }
 
   } catch (err: any) {
     console.error(err);
@@ -277,8 +295,8 @@ const claim = async () => {
   }
 };
 
-const genDeployWithdrawalAccountTxAndSned = async () => {
-  showLoadingMask({ id: maskId, text: 'Generating proof...', closable: false });
+const genDeployWithdrawalAccountTxAndSend = async () => {
+  showLoadingMask({ id: maskId, text: 'Generating transaction...<br/>This could take several minutes', closable: false });
   const txJson = await remoteSdk.createWithdrawalAccount(withdrawNote.value?.ownerAddress!,
     appState.value.connectedWallet58!);
 
@@ -287,15 +305,25 @@ const genDeployWithdrawalAccountTxAndSned = async () => {
   showLoadingMask({ id: maskId, text: 'Wait for sending transaction...', closable: false });
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
+    feePayer: {
+      fee: 0.196,
+      memo: "create withdrawal account"
+    },
   });
   console.log('tx send success, txHash: ', txHash);
   closeLoadingMask(maskId);
 
-  openTxDialog(txHash);
-  await remoteApi.checkTx(txHash);
-  txDialogLoadingDone();
+  try {
+    openTxDialog(txHash);
+    await remoteApi.checkTx(txHash);
+    txDialogLoadingDone();
+    withdrawAccountExists.value = true;
+  } catch (err: any) {
+    console.error(err);
+    closeTxDialog();
+    message.error(err.message, { duration: 0, closable: true });
+  }
 
-  withdrawAccountExists.value = true;
   createWithdrawalAccountLoading.value = false;
 };
 
@@ -314,34 +342,41 @@ const createWithdrawalAccount = async () => {
   showLoadingMask({ text: 'Claim circuit compiling...<br/>Cost minutes, but only once', id: maskId, closable: false });
   createWithdrawalAccountLoading.value = true;
   try {
+    let processStarted: boolean = false;
+    let syncerChan: BroadcastChannel | null = null;
+    if (syncerListenerSetted.value === false) {
+      syncerChan = listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
+        if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE && processStarted === false) {
+          processStarted = true;
+          closeLoadingMask(maskId);
+          message.info('Circuits compling done', { closable: true });
+          console.log('circuits compile done, start deploy withdrawal account...');
+          try {
+            await genDeployWithdrawalAccountTxAndSend();
+          } catch (err: any) {
+            console.error(err);
+            message.error(err.message, { duration: 0, closable: true });
+            closeLoadingMask(maskId);
+          }
+
+          chan.close();
+          console.log('Syncer listener channel close success');
+        }
+      });
+      syncerListenerSetted.value = true;
+    }
+
     const isContractReady = await remoteSdk.isVaultContractCompiled();
     if (!isContractReady) {
-      if (syncerListenerSetted.value === false) {
-        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
-          if (e.eventType === SdkEventType.VAULT_CONTRACT_COMPILED_DONE) {
-            closeLoadingMask(maskId);
-            message.info('Circuits compling done', { closable: true });
-            console.log('circuits compile done, start deploy withdrawal account...');
-            try {
-              await genDeployWithdrawalAccountTxAndSned();
-            } catch (err: any) {
-              console.error(err);
-              message.error(err.message, { duration: 0, closable: true });
-              closeLoadingMask(maskId);
-            }
-
-            chan.close();
-            console.log('Syncer listener channel close success');
-          }
-        });
-        syncerListenerSetted.value = true;
-      }
-
       createWithdrawalAccountLoading.value = false;
       return;
     }
 
-    await genDeployWithdrawalAccountTxAndSned();
+    if (processStarted === false) {
+      processStarted = true;
+      syncerChan?.close();
+      await genDeployWithdrawalAccountTxAndSend();
+    }
 
   } catch (err: any) {
     console.error(err);
@@ -363,18 +398,18 @@ const loadAccountInfoByConnectedWallet = async () => {
     console.log('L1TokenBalance: ', L1TokenBalance.value);
 
     // check withdrawAccount if exists
+    let withdrawAccount = undefined;
+    const tokenId = await remoteSdk.getWithdrawAccountTokenId();
     try {
-      const tokenId = await remoteSdk.getWithdrawAccountTokenId();
-      const withdrawAccount = await remoteApi.getL1Account(appState.value.connectedWallet58!, tokenId);
-      if (withdrawAccount !== undefined) {
-        withdrawAccountExists.value = true;
-      } else {
-        withdrawAccountExists.value = false;
-      }
+      withdrawAccount = await remoteApi.getL1Account(appState.value.connectedWallet58!, tokenId);
     } catch (err: any) {
       console.error(err);
-      message.error(err.message, { duration: 0, closable: true });
-      message.error('Unable to obtain current withdrawal account information, please try again later', { duration: 0, closable: true });
+    }
+
+    if (withdrawAccount !== undefined) {
+      withdrawAccountExists.value = true;
+    } else {
+      withdrawAccountExists.value = false;
     }
 
   }

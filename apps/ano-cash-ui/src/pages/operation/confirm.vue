@@ -102,7 +102,7 @@ const toBack = () => router.back();
 const compileListenrSetted = ref(false);
 
 const genProofAndSend = async () => {
-  showLoadingMask({ id: maskId, text: 'Generating Proof...', closable: false });
+  showLoadingMask({ id: maskId, text: 'Generating transaction...<br/>This could take several minutes', closable: false });
   console.log("tx params: ", params.value);
   const tx = await remoteSdk.createPaymentTx({
     accountPk58: params.value!.sender,
@@ -131,33 +131,42 @@ const sendTx = async () => {
     console.log('Prove and send tx...');
 
     showLoadingMask({ text: 'Tx circuit compiling...<br/>Cost minutes, but only once', id: maskId, closable: false });
+
+    let processStarted: boolean = false;
+    let syncerChan: BroadcastChannel | null = null;
+    if (compileListenrSetted.value === false) {
+      syncerChan = listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
+        if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE && processStarted === false) {
+          processStarted = true;
+          closeLoadingMask(maskId);
+          message.info('Circuits compling done', { closable: true });
+          console.log('circuits compile done, start send or withdraw...');
+          try {
+            await genProofAndSend();
+          } catch (err: any) {
+            console.error(err);
+            message.error(err.message, { duration: 0, closable: true });
+            closeLoadingMask(maskId);
+          }
+
+          chan.close();
+          console.log('Syncer listener channel close success');
+        }
+      });
+      compileListenrSetted.value = true;
+    }
+
+
     const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
     if (!isPrivateCircuitReady) {
-      if (compileListenrSetted.value === false) {
-        listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
-          if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
-            closeLoadingMask(maskId);
-            message.info('Circuits compling done', { closable: true });
-            console.log('circuits compile done, start send or withdraw...');
-            try {
-              await genProofAndSend();
-            } catch (err: any) {
-              console.error(err);
-              message.error(err.message, { duration: 0, closable: true });
-              closeLoadingMask(maskId);
-            }
-
-            chan.close();
-            console.log('Syncer listener channel close success');
-          }
-        });
-        compileListenrSetted.value = true;
-      }
-
       return;
     }
 
-    await genProofAndSend();
+    if (processStarted === false) {
+      processStarted = true;
+      syncerChan?.close();
+      await genProofAndSend();
+    }
   } catch (err: any) {
     console.error(err);
     message.error(err.message, { duration: 0, closable: true });

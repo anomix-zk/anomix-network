@@ -103,6 +103,7 @@ const handleInput = async (v: string) => {
     }, 400);
 };
 
+
 const registerAccount = async () => {
     if (canRegsiter.value === 0) {
         message.error('The alias is already registered');
@@ -130,26 +131,34 @@ const registerAccount = async () => {
 
     try {
         showLoadingMask({ text: 'Tx circuit compiling...<br/>Cost minutes, but only once', id: maskId, closable: false });
+
+        let processStarted: boolean = false;
+        let syncerChan: BroadcastChannel | null = null;
+        if (maskListenerSetted.value === false) {
+            syncerChan = listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
+                if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE && processStarted === false) {
+                    processStarted = true;
+                    message.info('Circuits compling done', { closable: true });
+                    console.log('circuits compile done, start register...');
+                    await genRegisterProofAndSend();
+
+                    chan.close();
+                    console.log('Syncer listener channel close success');
+                }
+            });
+            maskListenerSetted.value = true;
+        }
+
         const isPrivateCircuitReady = await remoteSdk.isPrivateCircuitCompiled();
         if (!isPrivateCircuitReady) {
-            if (maskListenerSetted.value === false) {
-                listenSyncerChannel(async (e: SdkEvent, chan: BroadcastChannel) => {
-                    if (e.eventType === SdkEventType.PRIVATE_CIRCUIT_COMPILED_DONE) {
-                        message.info('Circuits compling done', { closable: true });
-                        console.log('circuits compile done, start register...');
-                        await genRegisterProofAndSend();
-
-                        chan.close();
-                        console.log('Syncer listener channel close success');
-                    }
-                });
-                maskListenerSetted.value = true;
-            }
-
             return;
         }
 
-        await genRegisterProofAndSend();
+        if (processStarted === false) {
+            processStarted = true;
+            syncerChan?.close();
+            await genRegisterProofAndSend();
+        }
 
     } catch (err: any) {
         closeLoadingMask(maskId);
