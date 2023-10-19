@@ -19,7 +19,7 @@
 
 <script lang="ts" setup>
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui';
-import { CHANNEL_SYNCER, CHANNEL_MINA, WalletEventType } from './common/constants';
+import { CHANNEL_SYNCER, CHANNEL_MINA, WalletEventType, ANOMIX_NETWORK_LOCAL } from './common/constants';
 import type { WalletEvent } from './common/types';
 
 const { createRemoteSdk, createRemoteApi, startRemoteSyncer, SdkState } = useSdk();
@@ -86,6 +86,7 @@ onMounted(async () => {
     const minaEndpoint = runtimeConfig.public.minaEndpoint as string;
     const nodeRequestTimeoutMS = runtimeConfig.public.nodeRequestTimeoutMS as number;
     const l2BlockPollingIntervalMS = runtimeConfig.public.l2BlockPollingIntervalMS as number;
+    const anomixNetwork = runtimeConfig.public.anomixNetwork as string;
     const broadcastChannelName = CHANNEL_SYNCER;
 
     if (!appState.value.apiExist) {
@@ -102,6 +103,21 @@ onMounted(async () => {
           debug,
         },
       });
+    }
+
+    // check anomix network name, clear local account data if network name changed
+    const localNetworkName = localStorage.getItem(ANOMIX_NETWORK_LOCAL);
+    if (localNetworkName !== null) {
+      if (localNetworkName !== anomixNetwork) {
+        console.log(`The network ID recorded locally is inconsistent with latest Anomix network, local account status data will be cleared and resynchronized (except keys data).
+        local network: ${localNetworkName}, anomix network: ${anomixNetwork}`);
+        await SdkState.remoteApi!.resetLocalAccounts();
+        console.log('reset local accounts done');
+        localStorage.setItem(ANOMIX_NETWORK_LOCAL, anomixNetwork);
+      }
+    } else {
+      console.log(`No network ID recorded locally, set anomix network: ${anomixNetwork}`);
+      localStorage.setItem(ANOMIX_NETWORK_LOCAL, anomixNetwork);
     }
 
     const accounts = await SdkState.remoteApi!.getLocalAccounts();

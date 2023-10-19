@@ -35,15 +35,11 @@
 
         <div class="bottom">
           <div class="commitment">
-            <n-tag :bordered="false" type="info">
-              Note ID: {{ omitAddress(item.commitment, 5) }}
-            </n-tag>
+            Note ID: {{ omitAddress(item.commitment, 5) }}
           </div>
 
           <div class="claim">
-            <n-tag :bordered="false" type="info">
-              claim
-            </n-tag>
+            Claimable
           </div>
 
         </div>
@@ -106,7 +102,7 @@ const disconnect = () => {
   claimableNotes.value = [];
 };
 
-let claimableNotes = ref<{ token: string; value: string; commitment: string }[]>([]);
+const claimableNotes = ref<{ token: string; value: string; commitment: string }[]>([]);
 const loadClaimableNotesByConnectedWallet = async () => {
   console.log('claimable.vue - loadClaimableNotesByConnectedWallet: ', appState.value.connectedWallet58);
   const cs = await remoteApi.getClaimableNotes([], appState.value.connectedWallet58!);
@@ -215,6 +211,9 @@ onMounted(async () => {
   padding: 15px;
   background: var(--ano-bg);
   border-radius: 12px;
+  border-width: 0.5px;
+  border-style: solid;
+  cursor: pointer;
 
   .ano-token {
     display: flex;
@@ -257,12 +256,22 @@ onMounted(async () => {
 
       .commitment {
         margin-top: 12px;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 500;
       }
 
       .claim {
         margin-top: 12px;
+        font-size: 14px;
+        border-radius: 12px;
+        border-width: 0.5px;
+        border-style: solid;
+        border-radius: 5px;
+        padding-left: 4px;
+        padding-right: 4px;
+        padding-top: 2px;
+        padding-bottom: 2px;
+        color: red;
       }
     }
 

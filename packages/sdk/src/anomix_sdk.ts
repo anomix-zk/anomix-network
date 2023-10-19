@@ -44,7 +44,7 @@ import {
   Signature,
   UInt64,
 } from 'o1js';
-import { Database } from './database/database';
+import { Database, PendingNullifier } from './database/database';
 import { KeyStore } from './key_store/key_store';
 import { PasswordKeyStore } from './key_store/password_key_store';
 import { MinaSignerProvider, ProviderSignature } from './mina_provider';
@@ -567,6 +567,10 @@ export class AnomixSdk {
     return userStates;
   }
 
+  public async resetAccounts() {
+    await this.db.resetUserStates();
+  }
+
   public async getSigningKeys(accountPk: string) {
     return await this.db.getSigningKeys(accountPk);
   }
@@ -694,10 +698,11 @@ export class AnomixSdk {
     accountPk: string,
     assetId: string = AssetId.MINA.toString()
   ) {
-    const unspentNotes = await this.db.getNotes(
+    let unspentNotes = await this.db.getNotes(
       accountPk,
       NoteType.NORMAL.toString()
     );
+    unspentNotes = unspentNotes.filter((n) => !n.pending);
     let balance = 0n;
     for (let i = 0; i < unspentNotes.length; i++) {
       const note = unspentNotes[i];
@@ -771,6 +776,16 @@ export class AnomixSdk {
       } else {
         await this.db.upsertUserPaymentTx(tx.txInfo.originTx as UserPaymentTx);
       }
+    }
+
+    if (tx.txInfo.spendNullifiers) {
+      let pendingNullifiers: PendingNullifier[] = [];
+      for (const nullifier of tx.txInfo.spendNullifiers) {
+        pendingNullifiers.push(
+          new PendingNullifier(tx.txInfo.originTx.accountPk, nullifier)
+        );
+      }
+      await this.db.upsertPendingNullifiers(pendingNullifiers);
     }
 
     if (tx.txInfo.originOutputNotes) {
@@ -975,31 +990,51 @@ export class AnomixSdk {
     return encryptedNotes;
   }
 
-  public async getAnalysisOfNotes(
-    accountPk: string
-  ): Promise<{ availableNotesNum: number; maxSpendValuePerTx: string }> {
+  public async getAnalysisOfNotes(accountPk: string): Promise<{
+    availableNotesNum: number;
+    pendingNotesNum: number;
+    maxSpendValuePerTx: string;
+  }> {
     const notes = await this.db.getNotes(accountPk, NoteType.NORMAL.toString());
+    const pendingNullifiers = await this.getPendingNullifiers(accountPk);
     const sortedNotes = notes
       .filter((n) => !n.pending)
+      .filter((n) => !pendingNullifiers.includes(n.nullifier))
       .sort((a, b) => Number(BigInt(b.value) - BigInt(a.value)));
+    const pendingNotes = notes.filter((n) => n.pending);
 
     if (sortedNotes.length === 0) {
       return {
         availableNotesNum: 0,
+        pendingNotesNum: pendingNotes.length,
         maxSpendValuePerTx: '0',
       };
     } else if (sortedNotes.length === 1) {
       return {
         availableNotesNum: 1,
+        pendingNotesNum: pendingNotes.length,
         maxSpendValuePerTx: sortedNotes[0].value,
       };
     } else {
       return {
         availableNotesNum: sortedNotes.length,
+        pendingNotesNum: pendingNotes.length,
         maxSpendValuePerTx:
           BigInt(sortedNotes[0].value) + BigInt(sortedNotes[1].value) + '',
       };
     }
+  }
+
+  public async getPendingNullifiers(accountPk: string) {
+    let pendingNullifiers: string[] = [];
+    const pendingTxs = await this.db.getPendingUserTxs(accountPk);
+    if (pendingTxs.length === 0) {
+      await this.db.removePendingNullifiers(accountPk);
+    } else {
+      pendingNullifiers = await this.db.getPendingNullifiers(accountPk);
+    }
+
+    return pendingNullifiers;
   }
 
   public async createPaymentTx({
@@ -1031,15 +1066,22 @@ export class AnomixSdk {
       throw new Error('Private circuit is not compiled');
     }
 
+    const accountPk58 = accountPk.toBase58();
     const notes = await this.db.getNotes(
-      accountPk.toBase58(),
+      accountPk58,
       NoteType.NORMAL.toString()
     );
+    if (notes.length === 0) {
+      throw new Error('No available notes');
+    }
+
+    const pendingNullifiers = await this.getPendingNullifiers(accountPk58);
     const picker = new NotePicker(notes);
     const unspentNotes = picker.pick(
       payAmount.toBigInt(),
       payAssetId.toString(),
-      senderAccountRequired.toString()
+      senderAccountRequired.toString(),
+      pendingNullifiers
     );
 
     let inputValueNote1: ValueNote = ValueNote.zero();
@@ -1078,7 +1120,6 @@ export class AnomixSdk {
       accountNoteWitness = DataMerkleWitness.fromMerkleProofDTO(witnessDtos[0]);
     }
     let signingPk = accountPk;
-    const accountPk58 = accountPk.toBase58();
 
     const accountPrivateKey = await this.keyStore.getAccountPrivateKey(
       accountPk
@@ -1397,6 +1438,7 @@ export class AnomixSdk {
           originOutputNotes && originOutputNotes.length > 0
             ? originOutputNotes
             : undefined,
+        spendNullifiers: [nullifier1.toString(), nullifier2.toString()],
       },
     } as Tx;
   }

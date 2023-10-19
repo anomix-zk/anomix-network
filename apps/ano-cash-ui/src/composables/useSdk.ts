@@ -153,13 +153,17 @@ export default function () {
 
     const listenSyncerChannel = (
         func: (event: SdkEvent, chan: BroadcastChannel) => void,
+        listenerName?: string,
     ): BroadcastChannel => {
-        console.log("set listenSyncerChannel...");
+        console.log(
+            "Set a listener to listen for SDK events..." +
+                (listenerName ? `  listener: ${listenerName}` : ""),
+        );
         const chan = new BroadcastChannel(CHANNEL_SYNCER);
         chan.onmessage = (ev: any) => {
             func(ev.data, chan);
         };
-        console.log("set listenSyncerChannel success");
+        console.log("Set listener success");
         return chan;
     };
 

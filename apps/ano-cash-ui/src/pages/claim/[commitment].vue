@@ -212,7 +212,7 @@ const genClaimTxAndSend = async () => {
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
     feePayer: {
-      fee: 0.196,
+      fee: 0.101,
       memo: "claim from anomix"
     },
   });
@@ -306,7 +306,7 @@ const genDeployWithdrawalAccountTxAndSend = async () => {
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
     feePayer: {
-      fee: 0.196,
+      fee: 0.101,
       memo: "create withdrawal account"
     },
   });

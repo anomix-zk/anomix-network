@@ -3,7 +3,6 @@
     <div class="ano-header">
       <div class="left" @click="toBack">
         <van-icon name="arrow-left" size="24" />
-        <!-- <div class="title">Deposit</div> -->
       </div>
 
     </div>
@@ -18,20 +17,31 @@
 
         <div class="ano-token">
 
-          <div class="token-icon">
-            <van-icon :name="minaIcon" size="40" />
+          <div class="token">
+            <div class="token-icon">
+              <van-icon :name="minaIcon" size="40" />
+            </div>
+
+            <div class="token-info">
+              <div class="token-name">MINA</div>
+              <div class="token-balance">Balance <template v-if="balanceLoading"><n-spin :size="14"
+                    stroke="#97989d" /></template><template v-else>{{ totalMinaBalance }}</template> </div>
+            </div>
+
           </div>
 
-          <div class="token-info">
-            <div class="token-name">MINA</div>
-            <div class="token-balance">Balance <template v-if="balanceLoading"><n-spin :size="14"
-                  stroke="#97989d" /></template><template v-else>{{ totalMinaBalance }}</template> <template
-                v-if="notesInfo !== null"> ({{
-                  notesInfo.availableNotesNum }} <template
-                  v-if="notesInfo.availableNotesNum === 0 || notesInfo.availableNotesNum === 1">note</template><template
-                  v-else>notes</template>, max spend: {{
-                    convertToMinaUnit(notesInfo.maxSpendValuePerTx) }} )</template></div>
-          </div>
+
+
+          <template v-if="notesInfo !== null">
+            <div class="note-info">
+
+              <div> avail notes: {{ notesInfo.availableNotesNum }}</div>
+
+              <div> avail value: {{
+                convertToMinaUnit(notesInfo.maxSpendValuePerTx) }} </div>
+
+            </div>
+          </template>
 
         </div>
 
@@ -134,21 +144,25 @@
 import claimImage from "@/assets/claim.svg";
 import { useMessage } from 'naive-ui';
 import minaIcon from "@/assets/mina.svg";
-import { TxInfo } from '../../common/types';
-import { PageAction } from '../../common/constants';
+import { SdkEvent, TxInfo } from '../../common/types';
+import { PageAction, SdkEventType } from '../../common/constants';
 
 const router = useRouter();
 const { appState, showLoadingMask, closeLoadingMask, setPageParams, setStartCompilePrivateCircuit,
   setConnectedWallet, pageParams, setTotalNanoBalance } = useStatus();
 const { checkNoSideSpace, convertToMinaUnit } = useUtils();
 const message = useMessage();
-const { SdkState } = useSdk();
+const { SdkState, listenSyncerChannel } = useSdk();
 const remoteApi = SdkState.remoteApi!;
 const remoteSyncer = SdkState.remoteSyncer!;
 const remoteSdk = SdkState.remoteSdk!;
 
+let syncerChannel: BroadcastChannel | null = null;
 const checkPositiveNumber = (x: number) => x > 0;
-const toBack = () => router.back();
+const toBack = () => {
+  syncerChannel?.close();
+  router.back();
+};
 
 const currPageAction = ref(pageParams.value.action);
 const balanceLoading = ref(false);
@@ -164,7 +178,7 @@ const sendAmount = ref<number | undefined>(undefined);
 const receiver = ref('');
 
 const maxInputAmount = () => {
-  sendAmount.value = totalMinaBalance.value?.toNumber();
+  sendAmount.value = convertToMinaUnit(notesInfo.value?.maxSpendValuePerTx)?.toNumber()!;
 };
 
 const connectToClaim = async () => {
@@ -265,6 +279,12 @@ const toConfirm = async () => {
     message.error('Insufficient balance.');
     return;
   }
+  const availvalue = convertToMinaUnit(notesInfo.value?.maxSpendValuePerTx)?.toNumber()!;
+  if (sendAmount.value > availvalue) {
+    message.error(`A single transaction can cost up to two notes, and the sending amount exceeds the total amount of the two notes with the largest amount: ${availvalue} MINA.`);
+    message.info('You can automatically merge your multiple notes by transferring the maximum available amount to yourself. Each transfer can only merge two notes.', { duration: 0, closable: true });
+    return;
+  }
   const receiverValue = receiver.value.trim();
   if (receiverValue.length === 0) {
     message.error('Please input receiver.');
@@ -305,6 +325,7 @@ const toConfirm = async () => {
     };
     setPageParams(currPageAction.value, params);
 
+    syncerChannel?.close();
     await navigateTo("/operation/confirm");
     closeLoadingMask(maskId);
   } catch (err: any) {
@@ -315,12 +336,15 @@ const toConfirm = async () => {
 };
 
 
-const notesInfo = ref<{ availableNotesNum: number; maxSpendValuePerTx: string } | null>(null);
+const notesInfo = ref<{ availableNotesNum: number; pendingNotesNum: number; maxSpendValuePerTx: string } | null>(null);
+const syncerListenerSetted = ref(false);
+
 
 onMounted(async () => {
   console.log('send onMounted...');
   console.log('currPageAction: ', currPageAction.value);
 
+  showLoadingMask({ id: maskId, text: 'Loading...', closable: false });
   try {
     balanceLoading.value = true;
     const synced = await remoteSyncer.isAccountSynced(appState.value.accountPk58!);
@@ -341,9 +365,29 @@ onMounted(async () => {
     feeValue.value = Number(fees.value[0].value);
     console.log('feeValue: ', feeValue.value);
 
+    if (!syncerListenerSetted.value) {
+      syncerChannel = listenSyncerChannel(async (event: SdkEvent, chan: BroadcastChannel) => {
+        console.log('send - syncer event: ', event);
+
+        if (event.eventType === SdkEventType.UPDATED_ACCOUNT_STATE) {
+          if (event.data.accountPk === appState.value.accountPk58) {
+            console.log('send - account state updated, reload note analysis info');
+
+            const analysisInfo = await remoteApi.getAnalysisOfNotes(appState.value.accountPk58!);
+            console.log('analysisInfo: ', analysisInfo);
+            notesInfo.value = analysisInfo;
+          }
+        }
+      }, 'NoteAnalysisInfoListener');
+      syncerListenerSetted.value = true;
+    } else {
+      console.log('send - syncer listener already setted');
+    }
+
     const analysisInfo = await remoteApi.getAnalysisOfNotes(appState.value.accountPk58!);
     console.log('analysisInfo: ', analysisInfo);
     notesInfo.value = analysisInfo;
+
 
     if (!appState.value.startCompilePrivateCircuit) {
       console.log('PrivateCircuit not found to start compilation, will start soon');
@@ -357,7 +401,7 @@ onMounted(async () => {
     message.error(err.message, { duration: 0, closable: true });
   }
 
-
+  closeLoadingMask(maskId);
 });
 
 </script>
@@ -481,31 +525,45 @@ onMounted(async () => {
     .ano-token {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       flex-shrink: 0;
 
-      .token-icon {
-        position: relative;
-        height: 40px;
-        width: 40px;
+      .token {
+        display: flex;
+
+        .token-icon {
+          position: relative;
+          height: 40px;
+          width: 40px;
+        }
+
+        .token-info {
+          text-align: left;
+          margin-left: 18px;
+          //min-width: 30%;
+
+          .token-name {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 24px;
+          }
+
+          .token-balance {
+            margin-top: 2px;
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--ano-text-third);
+            line-height: 20px;
+          }
+        }
       }
 
-      .token-info {
-        text-align: left;
-        margin-left: 18px;
-
-        .token-name {
-          font-size: 16px;
-          font-weight: 600;
-          line-height: 24px;
-        }
-
-        .token-balance {
-          margin-top: 2px;
-          font-size: 14px;
-          font-weight: 400;
-          color: var(--ano-text-third);
-          line-height: 20px;
-        }
+      .note-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex-wrap: wrap;
+        color: var(--ano-text-third);
       }
 
     }

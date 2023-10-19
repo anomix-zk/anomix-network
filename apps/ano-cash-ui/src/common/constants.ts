@@ -2,6 +2,8 @@ export const CHANNEL_LOG = "log";
 export const CHANNEL_SYNCER = "syncer";
 export const CHANNEL_MINA = "mina";
 
+export const ANOMIX_NETWORK_LOCAL = "anomix_network";
+
 export const MINA = 1000_000_000;
 
 export const EMPTY_PUBLICKEY =
