@@ -24,6 +24,7 @@ export default defineNuxtConfig({
                 minaEndpoint: "https://proxy.berkeley.minaexplorer.com", // "https://berkeley.minascan.io/graphql",
                 debug: false,
                 minaNetwork: "Berkeley", // auro wallet network config
+                anomixNetwork: KeyConfig.rollupContract.publicKey,
             },
         },
     },
@@ -41,6 +42,7 @@ export default defineNuxtConfig({
                 minaEndpoint: "https://proxy.berkeley.minaexplorer.com", //"https://berkeley.minascan.io/graphql",
                 debug: true,
                 minaNetwork: "Berkeley", // auro wallet network config
+                anomixNetwork: KeyConfig.rollupContract.publicKey,
             },
         },
     },
