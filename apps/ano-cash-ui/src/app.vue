@@ -105,12 +105,16 @@ onMounted(async () => {
       });
     }
 
-    // check anomix network name, clear local account data if network name changed
+    const chan = new BroadcastChannel('remoteApiReady');
+    chan.postMessage('remoteApi is ready to use');
+    chan.close();
+    // check anomix network id, clear local account data if network id changed
     const localNetworkName = localStorage.getItem(ANOMIX_NETWORK_LOCAL);
     if (localNetworkName !== null) {
       if (localNetworkName !== anomixNetwork) {
         console.log(`The network ID recorded locally is inconsistent with latest Anomix network, local account status data will be cleared and resynchronized (except keys data).
         local network: ${localNetworkName}, anomix network: ${anomixNetwork}`);
+        showLoadingMask({ text: `App Initializing...<br/><div style='color:yellow;'>Notice: Anomix network has been reset</div>`, id: maskId, closable: false });
         await SdkState.remoteApi!.resetLocalAccounts();
         console.log('reset local accounts done');
         localStorage.setItem(ANOMIX_NETWORK_LOCAL, anomixNetwork);

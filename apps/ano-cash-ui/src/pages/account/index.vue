@@ -834,6 +834,10 @@ const toWithdraw = async () => {
             .balance {
                 font-size: 14px;
             }
+
+            .amount {
+                display: none;
+            }
         }
     }
 

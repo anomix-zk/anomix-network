@@ -47,7 +47,6 @@ import { SelectOption, useMessage } from 'naive-ui';
 import { AccountStatus } from '../../common/constants';
 
 const { SdkState, loginAccount } = useSdk();
-const remoteApi = SdkState.remoteApi!;
 const { omitAddress } = useUtils();
 const message = useMessage();
 const { showLoadingMask, closeLoadingMask, setAccountPk58, setAlias, setAccountStatus, setSigningPk1_58, setSigningPk2_58 } = useStatus();
@@ -55,42 +54,67 @@ const { showLoadingMask, closeLoadingMask, setAccountPk58, setAlias, setAccountS
 const maskId = 'session-login';
 let selectedAccount = ref<string | undefined>(undefined);
 let options = ref<SelectOption[]>([]);
+let apiReadyChan: BroadcastChannel | null = null;
+
 const handleUpdateValue = async (value: string, option: SelectOption) => {
     if (value === 'other') {
         await navigateTo("/");
+        apiReadyChan?.close();
         return;
     }
 };
-onMounted(async () => {
-    const localAccounts = await remoteApi.getLocalAccounts();
 
-    let acs: SelectOption[] = [];
-    localAccounts.forEach((account) => {
-        const address = omitAddress(account.accountPk)!;
+const loadAccounts = async () => {
+    console.log('start load accounts...');
+    if (SdkState.remoteApi !== null) {
+        const localAccounts = await SdkState.remoteApi!.getLocalAccounts();
+
+        let acs: SelectOption[] = [];
+        localAccounts.forEach((account) => {
+            const address = omitAddress(account.accountPk)!;
+            acs.push({
+                label: account.alias ? account.alias + '.ano (' + address + ')' : address,
+                value: account.accountPk,
+                style: {
+                    'height': '56px',
+                }
+            });
+        });
+
         acs.push({
-            label: account.alias ? account.alias + '.ano (' + address + ')' : address,
-            value: account.accountPk,
+            label: "+ Use Other Account",
+            value: 'other',
             style: {
-                'height': '56px',
+                'color': '#000',
+                'font-weight': '600',
+                'align-items': 'center',
+                'align-content': 'center',
+                'justify-content': 'center',
+                'height': '60px',
             }
         });
-    });
+        options.value = acs;
 
-    acs.push({
-        label: "+ Use Other Account",
-        value: 'other',
-        style: {
-            'color': '#000',
-            'font-weight': '600',
-            'align-items': 'center',
-            'align-content': 'center',
-            'justify-content': 'center',
-            'height': '60px',
-        }
-    });
-    options.value = acs;
+        selectedAccount.value = options.value[0].value ? options.value[0].value + '' : undefined;
+    } else {
+        console.log('remoteApi is null');
+    }
+};
 
-    selectedAccount.value = options.value[0].value ? options.value[0].value + '' : undefined;
+onMounted(async () => {
+    console.log('session mounted...');
+    await loadAccounts();
+
+    if (options.value.length === 0) {
+        console.log('options is empty, set remoteApiReady listener...');
+        apiReadyChan = new BroadcastChannel('remoteApiReady');
+        apiReadyChan.onmessage = async (ev: any) => {
+            console.log('apiReady listener - receive message:', ev);
+            await loadAccounts();
+            apiReadyChan?.close();
+        };
+    }
+    console.log('session mounted done');
 });
 
 const pwd = ref("");
@@ -131,14 +155,14 @@ const login = async () => {
     try {
         showLoadingMask({ text: 'Login...', id: maskId, closable: false });
         const accountPk58 = selectedAccount.value!;
-        const accountPrivateKey58 = await remoteApi.getSercetKey(accountPk58, pwdTrim);
+        const accountPrivateKey58 = await SdkState.remoteApi!.getSercetKey(accountPk58, pwdTrim);
         if (!accountPrivateKey58) {
             message.error('Password wrong');
             return;
         }
 
         // get alias
-        const alias = await remoteApi.getAliasByAccountPublicKey(accountPk58, accountPrivateKey58);
+        const alias = await SdkState.remoteApi!.getAliasByAccountPublicKey(accountPk58, accountPrivateKey58);
 
         const pubKeys = await loginAccount(accountPk58, pwd.value, alias);
         if (pubKeys.length > 0) {
@@ -162,7 +186,7 @@ const login = async () => {
         console.error(err);
         message.error(err.message, { duration: 3000, closable: true });
     }
-
+    apiReadyChan?.close();
 }
 </script>
 <style scoped lang="scss">
