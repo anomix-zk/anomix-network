@@ -373,9 +373,14 @@ onMounted(async () => {
           if (event.data.accountPk === appState.value.accountPk58) {
             console.log('send - account state updated, reload note analysis info');
 
+            // reload note analysis info
             const analysisInfo = await remoteApi.getAnalysisOfNotes(appState.value.accountPk58!);
-            console.log('analysisInfo: ', analysisInfo);
+            console.log('send - analysisInfo: ', analysisInfo);
             notesInfo.value = analysisInfo;
+
+            // get latest balance
+            const balance = await remoteApi.getBalance(appState.value.accountPk58!);
+            setTotalNanoBalance(balance.toString());
           }
         }
       }, 'NoteAnalysisInfoListener');
