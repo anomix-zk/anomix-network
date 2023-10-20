@@ -8,6 +8,10 @@ export class SigningKey {
   constructor(public accountPk: string, public signingPk: string) {}
 }
 
+export class PendingNullifier {
+  constructor(public accountPk: string, public nullifier: string) {}
+}
+
 export class KeyPair {
   constructor(public publicKey: string, public privateKey: string) {}
 }
@@ -67,6 +71,10 @@ export interface Database {
   upsertSigningKeys(signingKeys: SigningKey[]): Promise<void>;
   getSigningKeys(accountPk: string): Promise<SigningKey[]>;
   removeSigningKeys(accountPk: string): Promise<void>;
+
+  upsertPendingNullifiers(pendingNullifiers: PendingNullifier[]): Promise<void>;
+  getPendingNullifiers(accountPk: string): Promise<string[]>;
+  removePendingNullifiers(accountPk: string): Promise<void>;
 
   upsertAlias(alias: Alias): Promise<void>;
   upsertAliases(alias: Alias[]): Promise<void>;

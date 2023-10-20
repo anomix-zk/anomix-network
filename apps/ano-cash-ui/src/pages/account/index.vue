@@ -207,7 +207,9 @@
                                                 </span>
                                             </template>
 
-                                            <div v-else style="color:#FFAC1C">Pending</div>
+                                            <div v-else class="loader" style="color:#4098fc">Pending</div>
+
+
                                         </div>
                                     </div>
 
@@ -220,8 +222,9 @@
                                                 convertToMinaUnit(item.publicValue) }} MINA
                                         </template>
                                         <template v-else>
-                                            <template v-if="item.isSender">-</template><template v-else>+</template>{{
-                                                convertToMinaUnit(item.privateValue) }} MINA
+                                            <template v-if="item.sender === item.receiver">±</template><template
+                                                v-else-if="item.isSender">-</template><template v-else>+</template>{{
+                                                    convertToMinaUnit(item.privateValue) }} MINA
                                         </template>
 
                                     </div>
@@ -270,7 +273,8 @@ import { AccountStatus, PageAction, SdkEventType, EMPTY_PUBLICKEY } from '../../
 import { SdkEvent, TxHis } from '../../common/types';
 
 const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setAccountStatus, setSyncedBlock,
-    setLatestBlock, pageParams, showLoadingMask, closeLoadingMask, setStartCompilePrivateCircuit } = useStatus();
+    setLatestBlock, pageParams, showLoadingMask, closeLoadingMask, setStartCompilePrivateCircuit,
+    setAccountStatusListenerSetted } = useStatus();
 const { convertToMinaUnit, calculateUsdAmount, omitAddress } = useUtils();
 const message = useMessage();
 const { SdkState, exitAccount, listenSyncerChannel, clearAccount } = useSdk();
@@ -298,6 +302,7 @@ const logOut = async () => {
     showLoadingMask({ text: 'Log out...', id: maskId, closable: false });
     try {
         syncerChannel?.close();
+        setAccountStatusListenerSetted(false);
         await exitAccount(appState.value.accountPk58!);
         await navigateTo("/login/session");
         message.success('Log out successfully');
@@ -315,6 +320,7 @@ const clearAccountAndLogout = async () => {
     showLoadingMask({ text: 'Clear account...', id: maskId, closable: false });
     try {
         syncerChannel?.close();
+        setAccountStatusListenerSetted(false);
         await clearAccount(appState.value.accountPk58!);
         await navigateTo("/");
         message.success('Clear account successfully');
@@ -328,7 +334,6 @@ const clearAccountAndLogout = async () => {
 
 const expectSyncedSpendTime = ref(20_000); // default 20s
 const lastBatchProcessDoneTime = ref(Date.now());
-const syncerListenerSetted = ref(false);
 const tokenList = computed(() => {
     return [
         { tokenId: 1, tokenName: "MINA", tokenNetwork: "Anomix", balance: appState.value.totalNanoBalance },
@@ -374,6 +379,62 @@ onMounted(async () => {
         const { copyText } = useClientUtils();
         copyFunc = copyText;
 
+        console.log('Set account status syncer listener...');
+        // set syncer listener
+        if (!appState.value.accountStatusListenerSetted) {
+            syncerChannel = listenSyncerChannel(async (event: SdkEvent, chan: BroadcastChannel) => {
+                console.log('syncer event: ', event);
+
+                if (event.eventType === SdkEventType.UPDATED_ACCOUNT_STATE) {
+                    if (event.data.accountPk === appState.value.accountPk58) {
+                        const oneBatchSpendTime = Date.now() - lastBatchProcessDoneTime.value;
+                        console.log('listener - oneBatchSpendTime: ', oneBatchSpendTime);
+                        lastBatchProcessDoneTime.value = Date.now();
+
+                        // get latest block
+                        const blockHeight = await remoteApi.getBlockHeight();
+                        setLatestBlock(blockHeight);
+                        setSyncedBlock(event.data.synchedToBlock);
+
+                        const diffBlock = blockHeight - event.data.synchedToBlock;
+                        let diffBatch = diffBlock / synceBlocksPerPoll;
+                        const diffBatchMod = diffBlock % synceBlocksPerPoll;
+                        if (diffBatchMod > 0) {
+                            diffBatch += 1;
+                        }
+                        if (diffBatch > 0 && oneBatchSpendTime > 0) {
+                            expectSyncedSpendTime.value = oneBatchSpendTime * diffBatch;
+                        }
+                        console.log('listener - expectSyncedSpendTime: ', expectSyncedSpendTime.value);
+                        console.log('listener - lastBatchProcessDoneTime: ', lastBatchProcessDoneTime.value);
+
+                        // get latest balance
+                        const balance = await remoteApi.getBalance(appState.value.accountPk58!);
+                        setTotalNanoBalance(balance.toString());
+
+                        // get lastest history
+                        const txs = await remoteApi.getTxs(appState.value.accountPk58!);
+                        let txHis: TxHis[] = [];
+                        txs.forEach(tx => {
+                            txHis.push(userTx2TxHis(tx));
+                        });
+                        txList.value = txHis;
+
+                        if (appState.value.accountStatus === AccountStatus.REGISTERING) {
+                            // check if register success
+                            const registerSuccess = await remoteApi.isAliasRegistered(appState.value.alias!, false);
+                            if (registerSuccess) {
+                                setAccountStatus(AccountStatus.REGISTERED);
+                            }
+                        }
+                    }
+                }
+            }, 'AccountStatusListener');
+            setAccountStatusListenerSetted(true);
+        } else {
+            console.log('Account status syncer listener already setted, no need to set again');
+        }
+
         // get history
         const txs = await remoteApi.getTxs(appState.value.accountPk58!);
         console.log('txs length: ', txs.length);
@@ -406,59 +467,6 @@ onMounted(async () => {
             setTotalNanoBalance(balance.toString());
         }
 
-        console.log('set syncer listener...');
-        // set syncer listener
-        if (!syncerListenerSetted.value) {
-            listenSyncerChannel(async (event: SdkEvent, chan: BroadcastChannel) => {
-                console.log('syncer event: ', event);
-                syncerChannel = chan;
-                if (event.eventType === SdkEventType.UPDATED_ACCOUNT_STATE) {
-                    if (event.data.accountPk === appState.value.accountPk58) {
-                        const oneBatchSpendTime = Date.now() - lastBatchProcessDoneTime.value;
-                        console.log('oneBatchSpendTime: ', oneBatchSpendTime);
-                        lastBatchProcessDoneTime.value = Date.now();
-
-                        // get latest block
-                        const blockHeight = await remoteApi.getBlockHeight();
-                        setLatestBlock(blockHeight);
-                        setSyncedBlock(event.data.synchedToBlock);
-
-                        const diffBlock = blockHeight - event.data.synchedToBlock;
-                        let diffBatch = diffBlock / synceBlocksPerPoll;
-                        const diffBatchMod = diffBlock % synceBlocksPerPoll;
-                        if (diffBatchMod > 0) {
-                            diffBatch += 1;
-                        }
-                        if (diffBatch > 0 && oneBatchSpendTime > 0) {
-                            expectSyncedSpendTime.value = oneBatchSpendTime * diffBatch;
-                        }
-                        console.log('expectSyncedSpendTime: ', expectSyncedSpendTime.value);
-                        console.log('lastBatchProcessDoneTime: ', lastBatchProcessDoneTime.value);
-
-                        // get latest balance
-                        const balance = await remoteApi.getBalance(appState.value.accountPk58!);
-                        setTotalNanoBalance(balance.toString());
-
-                        // get lastest history
-                        const txs = await remoteApi.getTxs(appState.value.accountPk58!);
-                        let txHis: TxHis[] = [];
-                        txs.forEach(tx => {
-                            txHis.push(userTx2TxHis(tx));
-                        });
-                        txList.value = txHis;
-
-                        if (appState.value.accountStatus === AccountStatus.REGISTERING) {
-                            // check if register success
-                            const registerSuccess = await remoteApi.isAliasRegistered(appState.value.alias!, false);
-                            if (registerSuccess) {
-                                setAccountStatus(AccountStatus.REGISTERED);
-                            }
-                        }
-                    }
-                }
-            });
-            syncerListenerSetted.value = true;
-        }
 
         if (!appState.value.startCompilePrivateCircuit) {
             console.log('PrivateCircuit not found to start compilation, will start soon');
@@ -487,30 +495,25 @@ const copyAddress = (address: string) => {
 
 const toClaimPage = async (actionType: string, finalizedTs: number, commitment: string | null) => {
     if (actionType === '3' && finalizedTs !== 0 && commitment !== null) {
-        syncerChannel?.close();
         await navigateTo(`/claim/${commitment}`);
     }
 
 };
 
 const toExportKeys = async () => {
-    syncerChannel?.close();
     await navigateTo("/operation/export-keys");
 };
 
 const toDeposit = async () => {
-    syncerChannel?.close();
     await navigateTo("/operation/deposit");
 };
 
 const toSend = async () => {
-    syncerChannel?.close();
     setPageParams(PageAction.SEND_TOKEN, null);
     await navigateTo("/operation/send");
 };
 
 const toWithdraw = async () => {
-    syncerChannel?.close();
     setPageParams(PageAction.WITHDRAW_TOKEN, null);
     await navigateTo("/operation/send");
 };
@@ -518,11 +521,25 @@ const toWithdraw = async () => {
 </script>
 
 <style lang="scss" scoped>
-// .dot {
-//     font-weight: bold;
-//     font-size: 23px;
-//     margin-left: 20px;
-// }
+.loader {
+    width: fit-content;
+    font-weight: bold;
+    font-family: monospace;
+    font-size: 14px;
+    clip-path: inset(0 3ch 0 0);
+    animation: l4 1s steps(4) infinite;
+}
+
+.loader:after {
+    content: "...";
+}
+
+@keyframes l4 {
+    to {
+        clip-path: inset(0 -1ch 0 0)
+    }
+}
+
 .icon-btn:hover {
     cursor: pointer;
 }
@@ -816,6 +833,10 @@ const toWithdraw = async () => {
         .tx-right {
             .balance {
                 font-size: 14px;
+            }
+
+            .amount {
+                display: none;
             }
         }
     }

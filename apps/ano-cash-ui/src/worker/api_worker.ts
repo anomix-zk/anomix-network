@@ -81,6 +81,9 @@ const apiWrapper = {
     getLocalAccounts: async () => {
         return await apiSdk.getAccounts();
     },
+    resetLocalAccounts: async () => {
+        await apiSdk.resetAccounts();
+    },
     getSercetKey: async (accountPk58: string, pwd: string) => {
         const { PublicKey } = await import("o1js");
         const sk = await apiSdk.getSecretKey(

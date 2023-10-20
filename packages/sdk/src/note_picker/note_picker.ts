@@ -1,4 +1,5 @@
 import { AccountRequired } from '@anomix/circuits';
+import { Database } from '../database/database';
 import { Note } from '../note/note';
 
 export class NotePicker {
@@ -14,15 +15,22 @@ export class NotePicker {
   public pick(
     amount: bigint,
     assetId: string,
-    accountRequired: string
+    accountRequired: string,
+    pendingNullifiers: string[]
   ): Note[] {
     let filterNotes: Note[] = [];
-    if (accountRequired === AccountRequired.REQUIRED.toString()) {
+    if (pendingNullifiers.length > 0) {
       filterNotes = this.sortedNotes.filter(
-        (n) => n.assetId === assetId.toString()
+        (n) => pendingNullifiers.indexOf(n.nullifier) === -1
       );
     } else {
-      filterNotes = this.sortedNotes.filter(
+      filterNotes = this.sortedNotes;
+    }
+
+    if (accountRequired === AccountRequired.REQUIRED.toString()) {
+      filterNotes = filterNotes.filter((n) => n.assetId === assetId.toString());
+    } else {
+      filterNotes = filterNotes.filter(
         (n) =>
           n.assetId === assetId.toString() &&
           n.ownerAccountRequired === AccountRequired.NOTREQUIRED.toString()

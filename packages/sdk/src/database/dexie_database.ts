@@ -5,7 +5,13 @@ import { ActionType } from '@anomix/circuits';
 import { UserAccountTx } from '../user_tx/user_account_tx';
 import { UserPaymentTx } from '../user_tx/user_payment_tx';
 import { UserTx } from '../user_tx/user_tx';
-import { Alias, Database, KeyPair, SigningKey } from './database';
+import {
+  Alias,
+  Database,
+  KeyPair,
+  PendingNullifier,
+  SigningKey,
+} from './database';
 import { sortTxs } from './sort_txs';
 
 class DexieNote {
@@ -220,7 +226,7 @@ export class DexieDatabase implements Database {
   private userTx!: Dexie.Table<DexieUserTx, string>;
   private key!: Dexie.Table<DexieKey, string>;
   private secretKey!: Dexie.Table<KeyPair, string>;
-  // private mutex!: Dexie.Table<DexieMutex, string>;
+  private pendingNullifier!: Dexie.Table<PendingNullifier, string>;
 
   constructor(private dbName = 'anomix', private version = 1) {}
 
@@ -412,6 +418,24 @@ export class DexieDatabase implements Database {
   async removeSigningKeys(accountPk: string): Promise<void> {
     await this.signingKey.where({ accountPk }).delete();
   }
+
+  async upsertPendingNullifiers(
+    pendingNullifiers: PendingNullifier[]
+  ): Promise<void> {
+    await this.pendingNullifier.bulkPut(pendingNullifiers);
+  }
+
+  async getPendingNullifiers(accountPk: string): Promise<string[]> {
+    const pendingNullifiers = await this.pendingNullifier
+      .where({ accountPk })
+      .toArray();
+    return pendingNullifiers.map((p) => p.nullifier);
+  }
+
+  async removePendingNullifiers(accountPk: string): Promise<void> {
+    await this.pendingNullifier.where({ accountPk }).delete();
+  }
+
   async upsertAlias(alias: Alias): Promise<void> {
     await this.alias.put(alias);
   }
@@ -457,12 +481,15 @@ export class DexieDatabase implements Database {
     await this.userTx.where({ accountPk }).delete();
     await this.signingKey.where({ accountPk }).delete();
     await this.note.where({ ownerPk: accountPk }).delete();
+    await this.alias.where({ accountPk }).delete();
   }
   async resetUserStates(): Promise<void> {
-    await this.userState.toCollection().modify({ syncedToBlock: 0 });
+    await this.userState
+      .toCollection()
+      .modify({ syncedToBlock: 0, alias: undefined });
     await this.note.clear();
     await this.userTx.clear();
-    await this.signingKey.clear();
+    await this.alias.clear();
   }
 
   private createTables() {
@@ -473,6 +500,7 @@ export class DexieDatabase implements Database {
       secretKey: '&publicKey',
       note: '&commitment, nullifier, [ownerPk+noteType+nullified], [ownerPk+pending]',
       signingKey: '&[accountPk+signingPk], accountPk',
+      pendingNullifier: '&[accountPk+nullifier], accountPk',
       userState: '&accountPk',
       userTx:
         '&[txHash+accountPk], txHash, [txHash+actionType], [accountPk+actionType], accountPk, [accountPk+createdTs]',
@@ -483,6 +511,7 @@ export class DexieDatabase implements Database {
     this.secretKey = this.dexie.table('secretKey');
     this.note = this.dexie.table('note');
     this.signingKey = this.dexie.table('signingKey');
+    this.pendingNullifier = this.dexie.table('pendingNullifier');
     this.userState = this.dexie.table('userState');
     this.userTx = this.dexie.table('userTx');
   }

@@ -326,7 +326,7 @@ const genDepositTxAndSend = async (receiverValue: string) => {
   const { hash: txHash } = await window.mina.sendTransaction({
     transaction: txJson,
     feePayer: {
-      fee: 0.196,
+      fee: 0.101,
       memo: "deposit to anomix"
     },
   });

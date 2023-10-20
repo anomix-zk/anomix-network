@@ -11,6 +11,7 @@ export interface Tx {
     originTx: UserTx;
     originOutputNotes?: Note[];
     alias?: string;
+    spendNullifiers?: string[];
   };
 }
 
