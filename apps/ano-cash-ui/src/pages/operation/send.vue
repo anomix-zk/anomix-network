@@ -35,9 +35,9 @@
           <template v-if="notesInfo !== null">
             <div class="note-info">
 
-              <div> avail notes: {{ notesInfo.availableNotesNum }}</div>
+              <div> Avail Notes: {{ notesInfo.availableNotesNum }}</div>
 
-              <div> avail value: {{
+              <div> Avail Value: {{
                 convertToMinaUnit(notesInfo.maxSpendValuePerTx) }} </div>
 
             </div>
@@ -572,7 +572,7 @@ onMounted(async () => {
         flex-wrap: wrap;
         color: var(--ano-text-third);
         text-align: left;
-        margin-left: 2px;
+        margin-left: 5px;
       }
 
     }
