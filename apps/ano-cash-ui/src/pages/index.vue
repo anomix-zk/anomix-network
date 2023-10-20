@@ -83,7 +83,7 @@ onMounted(async () => {
                     innerHTML: `<div style="color: red;font-weight:600;">AnoCash Test Reminder</div>`,
                 }),
                 content: () => h('div', {
-                    innerHTML: `<div style="font-weight:600;">This is a very early MVP test version of AnoCash, do not use your Mainnet wallet keys or funds for testing!!<br/><br/>We may reset the network at any time to test and fix issues.Welcome to give us any feedback: <a href='https://forms.gle/tMofzubKeiYece7E9' target='_blank'>https://forms.gle/tMofzubKeiYece7E9</a><br/><br/>After you install Auro wallet extension, switch to the "Berkeley" network:<br/><a href='https://www.aurowallet.com/' target='_blank'>Install Auro Wallet ></a><br/><br/>Claim test funds (Berkeley) for your auro wallet address:<br/><a href='https://faucet.minaprotocol.com/' target='_blank'>Testnet Faucet ></a></div>`
+                    innerHTML: `<div style="font-weight:600;">This is a very early MVP test version of AnoCash, do not use your Mainnet wallet keys or funds for testing!!<br/><br/>We may reset the network at any time to test and fix issues.Welcome to give us any feedback: <a href='https://forms.gle/tMofzubKeiYece7E9' target='_blank'>https://forms.gle/tMofzubKeiYece7E9</a><br/><br/>After you install Auro wallet extension, switch to the "${appState.value.minaNetwork}" network:<br/><a href='https://www.aurowallet.com/' target='_blank'>Install Auro Wallet ></a><br/><br/>Claim test funds (${appState.value.minaNetwork}) for your auro wallet address:<br/><a href='https://faucet.minaprotocol.com/' target='_blank'>Testnet Faucet ></a></div>`
                 }),
             });
             showTestReminder.value = true;
