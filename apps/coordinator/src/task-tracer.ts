@@ -21,7 +21,7 @@ parentPort?.postMessage({// when it's not a subThread, parentPort == null.
 });
 
 
-const logger = getLogger('task-tracer', 'task-tracer-coordinator-log.log');
+const logger = getLogger('task-tracer');
 logger.info('hi, I am task-tracer!');
 
 await initORM();
@@ -141,13 +141,6 @@ async function traceTasks() {
                             // insert depositTx into memorypool
                             await queryRunner.manager.save(vDepositTxList);
                             */
-
-                            logger.info('sync deposit tree...');
-                            await $axiosDeposit.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
-                                if (rs.data.code != 0) {
-                                    throw new Error(`cannot sync sync_deposit_tree, due to: [${rs.data.msg}]`);
-                                }
-                            })
                         }
                     }
                     break;
@@ -165,9 +158,6 @@ async function traceTasks() {
 
                                 await queryRunner.manager.update(BlockCache, { blockId: b!.id }, { status: BlockCacheStatus.CONFIRMED });
 
-                                // sync data tree
-                                await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync-data-tree`);
-                                logger.info(`sync data tree done.`);
                             } else {
                                 logger.warn('ALERT: this block failed at Layer1!!!!!');// TODO extreme case, need alert operator!
                             }
@@ -175,22 +165,39 @@ async function traceTasks() {
                     }
                     break;
 
-                case TaskType.WITHDRAW: // omit currently
-                    {
-                        await queryRunner.manager.findOne(WithdrawInfo, { where: { id: task.targetId } }).then(async (w) => {
-                            w!.status = rs.data.zkapp.failureReason ? w!.status : WithdrawNoteStatus.DONE;// TODO FAILED??
-                            w!.finalizedAt = new Date(rs.data.zkapp.dateTime);
-                            await queryRunner.manager.save(w!);
-                        });
-                    }
-                    break;
-
                 default:
                     break;
             }
-
             await queryRunner.commitTransaction();
 
+            // trigger call
+            if (!rs.data.zkapp.failureReason) {
+                switch (task.taskType) {
+                    case TaskType.DEPOSIT:
+                        {
+                            logger.info('sync deposit tree...');
+                            await $axiosDeposit.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
+                                if (rs.data.code != 0) {
+                                    throw new Error(`cannot sync sync_deposit_tree, due to: [${rs.data.msg}]`);
+                                }
+                            });
+                            logger.info('sync deposit tree done.');
+                        }
+                        break;
+
+                    case TaskType.ROLLUP:
+                        {
+                            // sync data tree
+                            logger.info('sync data tree...');
+                            await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync-data-tree`);
+                            logger.info(`sync data tree done.`);
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
+            }
         } catch (error) {
             console.error(error);
             logger.error(error);
@@ -201,9 +208,6 @@ async function traceTasks() {
             await queryRunner.release();
             logger.info(`process [task.id:${task.id}] done`);
         }
+
     }
-    logger.info('this round is done.');
-
 }
-
-

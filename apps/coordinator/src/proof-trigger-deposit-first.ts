@@ -17,7 +17,7 @@ parentPort?.postMessage({// when it's not a subThread, parentPort == null.
     data: 'online'
 });
 
-const logger = getLogger('proof-trigger', 'proof-trigger-coordinator-log.log');
+const logger = getLogger('proof-trigger');
 logger.info('hi, I am proof-trigger!');
 
 await initORM();
@@ -37,6 +37,8 @@ parentPort?.postMessage({// if it's a subThread
 logger.info('proof-trigger is ready!');
 
 const periodRange = 5 * 60 * 1000
+
+let lastContractCallTimestamp = 0;
 
 await proofTrigger();
 setInterval(proofTrigger, periodRange); // exec/5mins
@@ -74,6 +76,12 @@ async function proofTrigger() {
                 // 1. check timeRange
                 if (0 < timeRange && timeRange < periodRange * 4) {
                     logger.info(`this block was triggered previously, might not completed, skip it.`);
+                    continue;
+                }
+
+                // to control the frequency of contract-call to a approprite range, to let 'Withdraw-claim' more smoothly.
+                if (lastContractCallTimestamp != 0 && (new Date().getTime() - lastContractCallTimestamp) < 10 * 60 * 1000) {
+                    logger.info(`lastContractCallTimestamp = ${lastContractCallTimestamp}, less than 15mins after last contract-call...`);
                     continue;
                 }
 
@@ -149,6 +157,7 @@ async function proofTrigger() {
                         logger.error(r.data.msg);
                         throw new Error(r.data.msg);
                     }
+                    lastContractCallTimestamp = new Date().getTime();
                 });
                 logger.info('done.');
 
