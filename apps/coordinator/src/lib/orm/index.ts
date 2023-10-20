@@ -6,7 +6,7 @@ import { MysqlConnectionOptions } from "typeorm/driver/mysql/MysqlConnectionOpti
 import { getLogger } from "@/lib/logUtils";
 import { L2TxDtoOrigin, WithdrawEventFetchRecord, DepositActionEventFetchRecord, DepositProcessorSignal, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockCache, BlockProverOutput, InnerRollupBatch, DepositTreeTransCache } from '@anomix/dao';
 
-const logger = getLogger('deposit-processor');
+const logger = getLogger('orm');
 export const initORM = async (connectionOverrides?: Partial<MysqlConnectionOptions>) => {
     logger.info('### INFO: Creating Mysql Connection for typeORM')
     try {
