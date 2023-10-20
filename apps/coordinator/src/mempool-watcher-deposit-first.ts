@@ -21,7 +21,7 @@ parentPort?.postMessage({// when it's not a subThread, parentPort == null.
     data: 'online'
 });
 
-const logger = getLogger('mempool-watcher', 'mempool-watcher-coordinator-log.log');
+const logger = getLogger('mempool-watcher');
 logger.info('hi, I am mempool-watcher!');
 
 await initORM();

@@ -14,7 +14,7 @@ const workerMap = new Map<string, Worker>();
 
 function bootTaskTracerThread() {
     // init worker thread A
-    const worker = cp.fork(`${__dirname}/task-tracer.js`);// TODO
+    const worker = cp.fork(`${__dirname}/task-tracer.js`, ['task-tracer']);// TODO
 
     worker.on('message', (msg: { type: any, data: any }) => {
         if (msg.type == 'online') {
@@ -34,7 +34,7 @@ function bootTaskTracerThread() {
 
 function bootMempoolWatcherThread() {
     // init worker thread A
-    const worker = cp.fork(`${__dirname}/mempool-watcher-deposit-first.js`);// TODO
+    const worker = cp.fork(`${__dirname}/mempool-watcher-deposit-first.js`, ['mempool-watcher-deposit-first']);// TODO
 
     worker.on('message', (msg: { type: any, data: any }) => {
         if (msg.type == 'online') {
@@ -54,7 +54,7 @@ function bootMempoolWatcherThread() {
 
 function bootProofTriggerThread() {
     // init worker thread A
-    const worker = cp.fork(`${__dirname}/proof-trigger-deposit-first.js`);// TODO
+    const worker = cp.fork(`${__dirname}/proof-trigger-deposit-first.js`, ['proof-trigger-deposit-first']);// TODO
 
     worker.on('message', (msg: { type: any, data: any }) => {
         if (msg.type == 'online') {
@@ -73,7 +73,7 @@ function bootProofTriggerThread() {
 }
 
 function bootWebServerThread() {
-    const worker = cp.fork(`${__dirname}/web-server.js`);// TODO
+    const worker = cp.fork(`${__dirname}/web-server.js`, ['web-server']);// TODO
 
     worker.on('message', (msg: { type: any, data: any }) => {
         if (msg.type == 'online') {
@@ -95,7 +95,7 @@ function bootWebServerThread() {
 
 
 function bootFetchWithdrawEventThread() {
-    const worker = cp.fork(`${__dirname}/fetch-withdrawal-events.js`);// TODO
+    const worker = cp.fork(`${__dirname}/fetch-withdrawal-events.js`, ['fetch-withdrawal-events']);// TODO
 
     worker.on('message', (msg: { type: any, data: any }) => {
         if (msg.type == 'online') {
