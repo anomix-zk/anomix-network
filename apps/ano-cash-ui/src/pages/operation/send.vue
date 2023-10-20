@@ -532,9 +532,11 @@ onMounted(async () => {
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
+      flex-wrap: wrap;
 
       .token {
         display: flex;
+        flex-wrap: wrap;
 
         .token-icon {
           position: relative;
@@ -545,6 +547,7 @@ onMounted(async () => {
         .token-info {
           text-align: left;
           margin-left: 18px;
+          flex-wrap: wrap;
           //min-width: 30%;
 
           .token-name {
@@ -566,9 +569,10 @@ onMounted(async () => {
       .note-info {
         display: flex;
         flex-direction: column;
-        align-items: center;
         flex-wrap: wrap;
         color: var(--ano-text-third);
+        text-align: left;
+        margin-left: 2px;
       }
 
     }
