@@ -179,6 +179,7 @@ const apiWrapper = {
         let txs = await apiSdk.getUserTxs(accountPk);
         console.log("userTxs length: ", txs.length);
         let pendingTxs = await apiSdk.getPendingUserTxs(accountPk);
+        console.log("userPendingTxs length: ", pendingTxs.length);
         return pendingTxs.concat(txs);
     },
     getBlockHeight: async () => {

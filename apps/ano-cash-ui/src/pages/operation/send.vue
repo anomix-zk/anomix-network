@@ -35,9 +35,9 @@
           <template v-if="notesInfo !== null">
             <div class="note-info">
 
-              <div> avail notes: {{ notesInfo.availableNotesNum }}</div>
+              <div> Avail Notes: {{ notesInfo.availableNotesNum }}</div>
 
-              <div> avail value: {{
+              <div> Avail Value: {{
                 convertToMinaUnit(notesInfo.maxSpendValuePerTx) }} </div>
 
             </div>
@@ -373,9 +373,14 @@ onMounted(async () => {
           if (event.data.accountPk === appState.value.accountPk58) {
             console.log('send - account state updated, reload note analysis info');
 
+            // reload note analysis info
             const analysisInfo = await remoteApi.getAnalysisOfNotes(appState.value.accountPk58!);
-            console.log('analysisInfo: ', analysisInfo);
+            console.log('send - analysisInfo: ', analysisInfo);
             notesInfo.value = analysisInfo;
+
+            // get latest balance
+            const balance = await remoteApi.getBalance(appState.value.accountPk58!);
+            setTotalNanoBalance(balance.toString());
           }
         }
       }, 'NoteAnalysisInfoListener');
@@ -527,9 +532,11 @@ onMounted(async () => {
       align-items: center;
       justify-content: space-between;
       flex-shrink: 0;
+      flex-wrap: wrap;
 
       .token {
         display: flex;
+        flex-wrap: wrap;
 
         .token-icon {
           position: relative;
@@ -540,6 +547,7 @@ onMounted(async () => {
         .token-info {
           text-align: left;
           margin-left: 18px;
+          flex-wrap: wrap;
           //min-width: 30%;
 
           .token-name {
@@ -561,9 +569,10 @@ onMounted(async () => {
       .note-info {
         display: flex;
         flex-direction: column;
-        align-items: center;
         flex-wrap: wrap;
         color: var(--ano-text-third);
+        text-align: left;
+        margin-left: 5px;
       }
 
     }

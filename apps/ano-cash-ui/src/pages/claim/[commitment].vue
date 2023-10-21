@@ -504,7 +504,7 @@ onMounted(async () => {
           }
 
         } else if (event.eventType === WalletEventType.NETWORK_INCORRECT) {
-          message.error('Please switch to Berkeley network', {
+          message.error(`Please switch to ${appState.value.minaNetwork} network`, {
             closable: true,
             duration: 3000
           });

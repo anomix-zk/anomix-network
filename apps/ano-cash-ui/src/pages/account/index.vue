@@ -273,8 +273,7 @@ import { AccountStatus, PageAction, SdkEventType, EMPTY_PUBLICKEY } from '../../
 import { SdkEvent, TxHis } from '../../common/types';
 
 const { appState, switchInfoHideStatus, setPageParams, setTotalNanoBalance, setAccountStatus, setSyncedBlock,
-    setLatestBlock, pageParams, showLoadingMask, closeLoadingMask, setStartCompilePrivateCircuit,
-    setAccountStatusListenerSetted } = useStatus();
+    setLatestBlock, pageParams, showLoadingMask, closeLoadingMask, setStartCompilePrivateCircuit } = useStatus();
 const { convertToMinaUnit, calculateUsdAmount, omitAddress } = useUtils();
 const message = useMessage();
 const { SdkState, exitAccount, listenSyncerChannel, clearAccount } = useSdk();
@@ -302,7 +301,6 @@ const logOut = async () => {
     showLoadingMask({ text: 'Log out...', id: maskId, closable: false });
     try {
         syncerChannel?.close();
-        setAccountStatusListenerSetted(false);
         await exitAccount(appState.value.accountPk58!);
         await navigateTo("/login/session");
         message.success('Log out successfully');
@@ -320,7 +318,6 @@ const clearAccountAndLogout = async () => {
     showLoadingMask({ text: 'Clear account...', id: maskId, closable: false });
     try {
         syncerChannel?.close();
-        setAccountStatusListenerSetted(false);
         await clearAccount(appState.value.accountPk58!);
         await navigateTo("/");
         message.success('Clear account successfully');
@@ -371,6 +368,7 @@ const userTx2TxHis = (tx: any) => {
 
 const currentTab = ref(pageParams.value.action === PageAction.ACCOUNT_PAGE && pageParams.value.params !== null ? pageParams.value.params : 'tokens');
 const synceBlocksPerPoll = runtimeConfig.public.synceBlocksPerPoll as number;
+const accountStatusListenerSetted = ref(false);
 
 onMounted(async () => {
     console.log('account onMounted...');
@@ -381,7 +379,7 @@ onMounted(async () => {
 
         console.log('Set account status syncer listener...');
         // set syncer listener
-        if (!appState.value.accountStatusListenerSetted) {
+        if (!accountStatusListenerSetted.value) {
             syncerChannel = listenSyncerChannel(async (event: SdkEvent, chan: BroadcastChannel) => {
                 console.log('syncer event: ', event);
 
@@ -430,7 +428,7 @@ onMounted(async () => {
                     }
                 }
             }, 'AccountStatusListener');
-            setAccountStatusListenerSetted(true);
+            accountStatusListenerSetted.value = true;
         } else {
             console.log('Account status syncer listener already setted, no need to set again');
         }
@@ -495,25 +493,30 @@ const copyAddress = (address: string) => {
 
 const toClaimPage = async (actionType: string, finalizedTs: number, commitment: string | null) => {
     if (actionType === '3' && finalizedTs !== 0 && commitment !== null) {
+        syncerChannel?.close();
         await navigateTo(`/claim/${commitment}`);
     }
 
 };
 
 const toExportKeys = async () => {
+    syncerChannel?.close();
     await navigateTo("/operation/export-keys");
 };
 
 const toDeposit = async () => {
+    syncerChannel?.close();
     await navigateTo("/operation/deposit");
 };
 
 const toSend = async () => {
+    syncerChannel?.close();
     setPageParams(PageAction.SEND_TOKEN, null);
     await navigateTo("/operation/send");
 };
 
 const toWithdraw = async () => {
+    syncerChannel?.close();
     setPageParams(PageAction.WITHDRAW_TOKEN, null);
     await navigateTo("/operation/send");
 };

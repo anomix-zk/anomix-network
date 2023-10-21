@@ -27,7 +27,6 @@ export default function () {
         startCompilePrivateCircuit: boolean;
         startCompileVaultContract: boolean;
         startCompileEntryContract: boolean;
-        accountStatusListenerSetted: boolean;
         mask: {
             id: string | undefined;
             show: boolean;
@@ -64,7 +63,6 @@ export default function () {
             startCompilePrivateCircuit: false,
             startCompileEntryContract: false,
             startCompileVaultContract: false,
-            accountStatusListenerSetted: false,
             mask: {
                 id: "appInit",
                 show: true,
@@ -236,10 +234,6 @@ export default function () {
         appState.value.startCompileEntryContract = start;
     };
 
-    const setAccountStatusListenerSetted = (setted: boolean) => {
-        appState.value.accountStatusListenerSetted = setted;
-    };
-
     return {
         appState,
         pageParams,
@@ -267,6 +261,5 @@ export default function () {
         setStartCompileEntryContract,
         setStartCompilePrivateCircuit,
         setStartCompileVaultContract,
-        setAccountStatusListenerSetted,
     };
 }
