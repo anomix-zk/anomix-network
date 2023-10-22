@@ -3,8 +3,8 @@
   "deployAliases": {},
   "networks": {
     "berkeley": {
-      "mina": "https://proxy.berkeley.minaexplorer.com",
-      "archive": "https://archive-node-api.p42.xyz/"
+      "mina": "https://proxy.testworld.minaexplorer.com",
+      "archive": "https://archive.testworld.minaexplorer.com"
     }
   }
 }
