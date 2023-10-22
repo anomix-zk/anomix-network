@@ -228,8 +228,10 @@ const genClaimTxAndSend = async () => {
     console.error(err);
     closeTxDialog();
     message.error(err.message, { duration: 0, closable: true });
+    message.info(`When the withdrawal transaction is submitted, if Anomix's rollup status update transaction is also being submitted, the withdrawal transaction may fail. You can try again later.`, { duration: 0, closable: true });
   }
   claimLoading.value = false;
+  disabledClaim.value = false;
 };
 
 const claim = async () => {
@@ -466,6 +468,7 @@ onMounted(async () => {
     const notes = await remoteApi.getClaimableNotes([commitment]);
     if (notes.length !== 1) {
       message.error('Note commitment is invalid', { duration: 0, closable: true });
+      closeLoadingMask(maskId);
       return;
     }
     withdrawNote.value = {
@@ -514,19 +517,20 @@ onMounted(async () => {
       walletListenerSetted.value = true;
     }
 
+    if (!appState.value.startCompileVaultContract) {
+      console.log('VaultContract not found to start compilation, will start soon');
+      setStartCompileVaultContract(true);
+      remoteSdk.compileVaultContract();
+    } else {
+      console.log('VaultContract is already being compiled, no need to recompile')
+    }
+
   } catch (err: any) {
     console.error(err);
     message.error(err.message, { duration: 0, closable: true });
   }
 
   closeLoadingMask(maskId);
-  if (!appState.value.startCompileVaultContract) {
-    console.log('VaultContract not found to start compilation, will start soon');
-    setStartCompileVaultContract(true);
-    remoteSdk.compileVaultContract();
-  } else {
-    console.log('VaultContract is already being compiled, no need to recompile')
-  }
 
 });
 
