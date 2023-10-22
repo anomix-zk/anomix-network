@@ -150,9 +150,21 @@ export enum BlockCacheType {
     DATA_TREE_UPDATES,
     TX_FEE_EMPTY_LEAF_WITNESS,
     DATA_TREE_ROOT_EMPTY_LEAF_WITNESS,
-    DEPOSIT_COMMITMENTS_WITNESS
+    DEPOSIT_COMMITMENTS_WITNESS,
+    NULLIFIER_TREE_UPDATES,
+    DATA_TREE_ROOTS_TREE_UPDATES,
+    INDEXDB_UPDATES,
 }
 
+/**
+ * the status of 'BlockCache'
+ * mainly used on BlockCacheType.DATA_TREE_UPDATES for sync-data-tree
+ */
+export enum BlockCacheStatus {
+    PENDING,
+    CONFIRMED,
+    PROCESSED
+}
 /**
  * the type of 'DepositTransCache'
  */
@@ -166,4 +178,8 @@ export enum DepositTransCacheType {
 export enum WithdrawEventFetchRecordStatus {
     NOT_SYNC,
     SYNCED
+}
+
+export enum ProofVerifyReqType {
+    L2TX
 }

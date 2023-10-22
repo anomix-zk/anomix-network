@@ -13,7 +13,10 @@ export * from './withdraw-asset-req-dto'
 export * from './worldstate-resp-dto';
 export * from './withdrawal-witness-dto';
 export * from './proof-task-dto';
-export * from './rollup-task-dto'
+export * from './proof-verify-req-dto';
+export * from './rollup-task-dto';
+export * from './fetch-events-http-response';
+export * from './fetch-events-standard-response';
 
 import AssetInBlockReqDtoSchema from './asset-in-block-req-dto-schema.json' assert { type: "json" };
 import AssetsInBlockDtoSchema from './asset-in-block-dto-schema.json' assert { type: "json" };
@@ -27,10 +30,11 @@ import WithdrawAssetReqDtoSchema from "./withdraw-asset-req-dto-schema.json" ass
 import WorldStateRespDtoSchema from './worldstate-resp-dto-schema.json' assert { type: "json" };
 import WithdrawalWitnessDtoSchema from './withdrawal-witness-dto-schema.json' assert { type: "json" };
 import ProofTaskDtoSchma from './proof-task-dto-schema.json' assert { type: "json" };
+import ProofVerifyReqDtoSchma from './proof-verify-req-dto-schema.json' assert { type: "json" };
 import RollupTaskDtoSchma from './rollup-task-dto-schema.json' assert { type: "json" };
 
 export { L2TxReqDtoSchema, L2TxRespDtoSchema, MerkleProofDtoSchema, NetworkStatusDtoSchema, WithdrawInfoDtoSchema, WithdrawAssetReqDtoSchema };
-export { WorldStateRespDtoSchema, TxFeeSuggestionDtoSchema, ProofTaskDtoSchma, RollupTaskDtoSchma, AssetInBlockReqDtoSchema, AssetsInBlockDtoSchema, WithdrawalWitnessDtoSchema }
+export { WorldStateRespDtoSchema, TxFeeSuggestionDtoSchema, ProofTaskDtoSchma, ProofVerifyReqDtoSchma, RollupTaskDtoSchma, AssetInBlockReqDtoSchema, AssetsInBlockDtoSchema, WithdrawalWitnessDtoSchema }
 
 export * from "./merkle_tree/hasher";
 export * from "./merkle_tree/poseidon_hasher";
