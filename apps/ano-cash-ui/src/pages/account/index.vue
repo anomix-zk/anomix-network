@@ -421,6 +421,7 @@ onMounted(async () => {
                         if (appState.value.accountStatus === AccountStatus.REGISTERING) {
                             // check if register success
                             const registerSuccess = await remoteApi.isAliasRegistered(appState.value.alias!, false);
+                            console.log('listener - registerSuccess: ', registerSuccess);
                             if (registerSuccess) {
                                 setAccountStatus(AccountStatus.REGISTERED);
                             }
@@ -431,6 +432,16 @@ onMounted(async () => {
             accountStatusListenerSetted.value = true;
         } else {
             console.log('Account status syncer listener already setted, no need to set again');
+        }
+
+        // update account status
+        if (appState.value.accountStatus === AccountStatus.REGISTERING) {
+            // check if register success
+            const registerSuccess = await remoteApi.isAliasRegistered(appState.value.alias!, false);
+            console.log('registerSuccess: ', registerSuccess);
+            if (registerSuccess) {
+                setAccountStatus(AccountStatus.REGISTERED);
+            }
         }
 
         // get history

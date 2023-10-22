@@ -279,6 +279,10 @@ const toConfirm = async () => {
     message.error('Insufficient balance.');
     return;
   }
+  if (notesInfo.value?.availableNotesNum === 0) {
+    message.error('No available notes. Please confirm whether you have any pending transactions. These transactions may be consuming your notes.');
+    return;
+  }
   const availvalue = convertToMinaUnit(notesInfo.value?.maxSpendValuePerTx)?.toNumber()!;
   if (sendAmount.value > availvalue) {
     message.error(`A single transaction can cost up to two notes, and the sending amount exceeds the total amount of the two notes with the largest amount: ${availvalue} MINA.`);
