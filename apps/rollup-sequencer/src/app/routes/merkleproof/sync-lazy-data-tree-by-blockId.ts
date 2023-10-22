@@ -44,15 +44,15 @@ export const handler: RequestHandler<null, { blockId: number }> = async function
 
         // check if sync_date_tree root is aligned with 
         // check if duplicated call
-        const syncDataTreeRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, false);
+        const syncDataTreeRoot = this.worldState.worldStateDBLazy.getRoot(MerkleTreeId.DATA_TREE, false);
         if (block.dataTreeRoot0 == syncDataTreeRoot.toString()) {
             const blockCacheRepo = getConnection().getRepository(BlockCache);
             const cachedStr = (await blockCacheRepo.findOne({ where: { blockId, type: BlockCacheType.DATA_TREE_UPDATES } }))!.cache;
 
             const blockCachedUpdates1 = (JSON.parse(cachedStr) as Array<string>).map(i => Field(i));
-            await this.worldState.worldStateDB.appendLeaves(MerkleTreeId.SYNC_DATA_TREE, blockCachedUpdates1);
+            await this.worldState.worldStateDBLazy.appendLeaves(MerkleTreeId.DATA_TREE, blockCachedUpdates1);
 
-            await this.worldState.worldStateDB.commit(); // here only 'SYNC_DATA_TREE' commits underlyingly           
+            await this.worldState.worldStateDBLazy.commit(); // here only 'DATA_TREE' commits underlyingly           
 
             return {
                 code: 0, data: '', msg: ''
