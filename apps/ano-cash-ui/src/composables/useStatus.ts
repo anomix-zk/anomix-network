@@ -56,7 +56,7 @@ export default function () {
             ],
             connectedWallet58: null,
             minaNetwork: "Berkeley",
-            explorerUrl: "https://minascan.io/testworld2/zk-tx/",
+            explorerUrl: "https://minascan.io/testworld/zk-tx/",
             sdkExist: false,
             syncerStarted: false,
             apiExist: false,

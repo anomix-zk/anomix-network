@@ -118,6 +118,7 @@ onMounted(async () => {
         await SdkState.remoteApi!.resetLocalAccounts();
         console.log('reset local accounts done');
         localStorage.setItem(ANOMIX_NETWORK_LOCAL, anomixNetwork);
+        alert('Anomix network has been reset! You can choose to log in using your original account key, which will require you to register again.');
       }
     } else {
       console.log(`No network ID recorded locally, set anomix network: ${anomixNetwork}`);
