@@ -51,15 +51,15 @@ export const handler: RequestHandler<null, null> = async function (
         logger.info(`blockCacheList: ${blockCacheList.map(bc => { return { id: bc.id, blockId: bc.blockId } })}`);
 
         for (let index = 0; index < blockCacheList.length; index++) {
-            const blockCache = blockCacheList[index];
+            let blockCache = blockCacheList[index];
             logger.info(`processing blockCache.id = ${blockCache.id} ...`);
 
             const block = await queryRunner.manager.findOne(Block, { id: blockCache.blockId });
             logger.info(`block.id: ${block!.id}, block!.dataTreeRoot0: ${block!.dataTreeRoot0}`);
 
-            let syncDataTreeRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, true);
+            let syncDataTreeRoot = this.worldState.worldStateDBLazy.getRoot(MerkleTreeId.DATA_TREE, true);
             logger.info(`before sync, syncDataTreeRoot: ${syncDataTreeRoot.toString()}`);
-            let syncDataTreeLeafNum = this.worldState.worldStateDB.getNumLeaves(MerkleTreeId.SYNC_DATA_TREE, true);
+            let syncDataTreeLeafNum = this.worldState.worldStateDBLazy.getNumLeaves(MerkleTreeId.DATA_TREE, true);
             logger.info(`before sync, syncDataTreeLeafNum: ${syncDataTreeLeafNum.toString()}`);
 
             if (block!.dataTreeRoot0 != syncDataTreeRoot.toString()) {
@@ -70,11 +70,11 @@ export const handler: RequestHandler<null, null> = async function (
             logger.info(`blockCache.cache: ${blockCache.cache}`);
             const commitments = (JSON.parse(blockCache.cache) as string[]).map(c => Field(c));
             logger.info(`cooresponding commitments: ${commitments.toString()}`);
-            await this.worldState.worldStateDB.appendLeaves(MerkleTreeId.SYNC_DATA_TREE, commitments);
+            await this.worldState.worldStateDBLazy.appendLeaves(MerkleTreeId.DATA_TREE, commitments);
 
-            syncDataTreeRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, true);
+            syncDataTreeRoot = this.worldState.worldStateDBLazy.getRoot(MerkleTreeId.DATA_TREE, true);
             logger.info(`after sync, syncDataTreeRoot: ${syncDataTreeRoot.toString()}`);
-            syncDataTreeLeafNum = this.worldState.worldStateDB.getNumLeaves(MerkleTreeId.SYNC_DATA_TREE, true);
+            syncDataTreeLeafNum = this.worldState.worldStateDBLazy.getNumLeaves(MerkleTreeId.DATA_TREE, true);
             logger.info(`after sync, syncDataTreeLeafNum: ${syncDataTreeLeafNum.toString()}`);
 
             if (block!.dataTreeRoot1 != syncDataTreeRoot.toString()) {
@@ -92,13 +92,20 @@ export const handler: RequestHandler<null, null> = async function (
         await queryRunner.manager.save(blockCacheList);
         await queryRunner.commitTransaction();
 
-        await this.worldState.worldStateDB.commit(); // here only 'SYNC_DATA_TREE' commits underlyingly      
+        await this.worldState.worldStateDBLazy.commit(); // here only 'DATA_TREE' commits underlyingly      
         logger.info(`sync data_tree all done at this round.`);
 
     } catch (err) {
-        await queryRunner.rollbackTransaction();
-        await this.worldState.worldStateDB.rollback();
         logger.error(err);
+
+        try {
+            await queryRunner.rollbackTransaction();
+            logger.info('mysqldb.rollbackTransaction.');
+        } catch (error) {
+            logger.error('mysqldb.rollbackTransaction failed!');
+        }
+
+        await this.worldState.worldStateDBLazy.rollback();
 
     } finally {
         await queryRunner.release();
