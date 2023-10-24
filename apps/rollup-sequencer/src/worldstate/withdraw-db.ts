@@ -177,7 +177,7 @@ export class WithdrawDB {
 
         const { index: predecessorIndex, alreadyPresent } = this.currectTree.tree.findIndexOfPreviousValue(nullifier1.toBigInt(), includeUncommitted);
         if (alreadyPresent) {// actually won't be tree here!
-            throw new Error("nullifier1[${nullifier1}] existed!");
+            throw new Error(`nullifier1[${nullifier1}] existed!`);
         }
 
         const predecessorLeafData = this.currectTree.tree.getLatestLeafDataCopy(predecessorIndex, includeUncommitted)!;
