@@ -148,7 +148,7 @@ export class ProofScheduler {
             secret: Field(txFeeWInfo.secret),
             ownerPk: PublicKey.fromBase58(txFeeWInfo.ownerPk),
             accountRequired: Field(txFeeWInfo.accountRequired),
-            creatorPk: PublicKey.fromBase58(txFeeWInfo.creatorPk),
+            creatorPk: PublicKey.empty(), // PublicKey.fromBase58(txFeeWInfo.creatorPk),
             value: UInt64.from(txFeeWInfo.value),
             assetId: Field(txFeeWInfo.assetId),
             inputNullifier: Field(txFeeWInfo.inputNullifier),
@@ -241,6 +241,7 @@ export class ProofScheduler {
             await queryRunner.release();
         }
 
+        /*
         // check if align with AnomixRollupContract's onchain states, then it must be the lowese PENDING L2Block.
         const rollupContractAddr = PublicKey.fromBase58(config.rollupContractAddress);
         await syncAcctInfo(rollupContractAddr);
@@ -248,6 +249,7 @@ export class ProofScheduler {
         if (block?.dataTreeRoot0 == rollupContract.state.get().dataRoot.toString()) { // check here
             this.callRollupContract(blockId, blockProvedResultStr);
         }
+        */
 
         logger.info('whenL2BlockComeback: done');
 
