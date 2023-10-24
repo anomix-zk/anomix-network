@@ -105,17 +105,24 @@ const disconnect = () => {
 const claimableNotes = ref<{ token: string; value: string; commitment: string }[]>([]);
 const loadClaimableNotesByConnectedWallet = async () => {
   console.log('claimable.vue - loadClaimableNotesByConnectedWallet: ', appState.value.connectedWallet58);
-  const cs = await remoteApi.getClaimableNotes([], appState.value.connectedWallet58!);
 
-  let notes: { token: string; value: string; commitment: string }[] = [];
-  cs.forEach((c) => {
-    notes.push({
-      token: 'MINA',
-      value: convertToMinaUnit(c.value)!.toString(),
-      commitment: c.outputNoteCommitment
+  try {
+    const cs = await remoteApi.getClaimableNotes([], appState.value.connectedWallet58!);
+
+    let notes: { token: string; value: string; commitment: string }[] = [];
+    cs.forEach((c) => {
+      notes.push({
+        token: 'MINA',
+        value: convertToMinaUnit(c.value)!.toString(),
+        commitment: c.outputNoteCommitment
+      });
     });
-  });
-  claimableNotes.value = notes;
+    claimableNotes.value = notes;
+  } catch (err: any) {
+    console.error(err);
+    message.error(err.message, { duration: 0, closable: true });
+  }
+
 };
 
 
@@ -164,8 +171,10 @@ onMounted(async () => {
         if (event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
 
           if (event.connectedAddress) {
+            showLoadingMask({ text: 'Loading...', id: maskId, closable: false });
             setConnectedWallet(event.connectedAddress);
             await loadClaimableNotesByConnectedWallet();
+            closeLoadingMask(maskId);
 
           } else {
             message.error('Please connect your wallet', {

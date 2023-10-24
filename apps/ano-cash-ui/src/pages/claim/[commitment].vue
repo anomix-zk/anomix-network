@@ -392,28 +392,33 @@ const loadAccountInfoByConnectedWallet = async () => {
   console.log('loadAccountInfoByConnectedWallet...');
 
   if (appState.value.connectedWallet58 !== null) {
-    const account = await remoteApi.getL1Account(appState.value.connectedWallet58!);
-
-    console.log('account: ', account);
-    const balance = convertToMinaUnit(account.balance)!.toString();
-    L1TokenBalance.value = { token: 'MINA', balance };
-    console.log('L1TokenBalance: ', L1TokenBalance.value);
-
-    // check withdrawAccount if exists
-    let withdrawAccount = undefined;
-    const tokenId = await remoteSdk.getWithdrawAccountTokenId();
     try {
-      withdrawAccount = await remoteApi.getL1Account(appState.value.connectedWallet58!, tokenId);
+      const account = await remoteApi.getL1Account(appState.value.connectedWallet58!);
+
+      console.log('account: ', account);
+      const balance = convertToMinaUnit(account.balance)!.toString();
+      L1TokenBalance.value = { token: 'MINA', balance };
+      console.log('L1TokenBalance: ', L1TokenBalance.value);
+
+      // check withdrawAccount if exists
+      let withdrawAccount = undefined;
+      const tokenId = await remoteSdk.getWithdrawAccountTokenId();
+      try {
+        withdrawAccount = await remoteApi.getL1Account(appState.value.connectedWallet58!, tokenId);
+      } catch (err: any) {
+        console.error(err);
+      }
+
+      if (withdrawAccount !== undefined) {
+        withdrawAccountExists.value = true;
+      } else {
+        withdrawAccountExists.value = false;
+      }
     } catch (err: any) {
       console.error(err);
+      message.error(err.message, { duration: 0, closable: true });
+      closeLoadingMask(maskId);
     }
-
-    if (withdrawAccount !== undefined) {
-      withdrawAccountExists.value = true;
-    } else {
-      withdrawAccountExists.value = false;
-    }
-
   }
 };
 
@@ -482,7 +487,7 @@ onMounted(async () => {
 
     if (!walletListenerSetted.value) {
       walletChannel = new BroadcastChannel(CHANNEL_MINA);
-      walletChannel.onmessage = (e: any) => {
+      walletChannel.onmessage = async (e: any) => {
         const event = e.data as WalletEvent;
         console.log('claim - walletChannel.onmessage: ', event);
         if (event.eventType === WalletEventType.ACCOUNTS_CHANGED) {
@@ -496,7 +501,9 @@ onMounted(async () => {
 
               return;
             }
+            showLoadingMask({ text: 'Loading...', id: maskId, closable: false });
             setConnectedWallet(event.connectedAddress);
+            await loadAccountInfoByConnectedWallet();
 
           } else {
             message.error('Please connect your wallet', {
