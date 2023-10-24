@@ -11,6 +11,7 @@ import { requestSerializer, responseSerializer } from './serializers'
 import { throwError } from './decorators'
 import { routes } from './routes'
 import { getLogger } from "@/lib/logUtils";
+import { BaseResponse } from "@anomix/types"
 const logger = getLogger('web-server');
 
 export class FastifyCore {
@@ -30,6 +31,13 @@ export class FastifyCore {
                 },
             } as any
         })
+
+        this.server.setErrorHandler(function (error, request, reply) {
+            // Log error
+            this.log.error(error)
+            // Send error response
+            reply.status(200).send({ code: 1, data: undefined, msg: error.message } as BaseResponse<any>)
+        });
 
         // Core plugins
         // this.server.register(helmet, config.helmet)
