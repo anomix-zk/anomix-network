@@ -64,6 +64,7 @@ const config = {
 
     l1TxFee: <number>Number(<string>process.env.L1_TX_FEE ?? 200_000_000),
 
+    depositWorldStateDBLazyPath: <string>process.env.LEVELDB_DEPOSIT_ROLLUP_STATE_DB_LAZY_PATH || './anomix_deposit_rollup_state_db_lazy',
     depositWorldStateDBPath: <string>process.env.LEVELDB_DEPOSIT_ROLLUP_STATE_DB_PATH || './anomix_deposit_rollup_state_db',
     depositIndexedDBPath: <string>process.env.LEVELDB_DEPOSIT_INDEX_DB_PATH || './anomix_deposit_index_db',
 
