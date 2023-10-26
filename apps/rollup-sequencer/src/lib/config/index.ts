@@ -3,11 +3,8 @@ import {
 } from 'o1js';
 import { JoinSplitProof } from "@anomix/circuits"
 import fs from "fs";
-import * as dotenv from "dotenv"
 
 const KeyConfig = JSON.parse(fs.readFileSync('../../packages/circuits/scripts/keys-private.json', 'utf8'));
-
-dotenv.config({ path: '../../.env' })
 
 const JoinsplitProofDummyTx: string = fs.readFileSync('./circuit-JoinsplitProofDummyTx.string', 'utf8');
 
@@ -59,7 +56,7 @@ const config = {
             }
         }
     },
-    sequencerHost: <string>process.env.ROLLUP_SEQUENCER_PORT || '127.0.0.1',
+    sequencerHost: <string>process.env.ROLLUP_SEQUENCER_HOST || '127.0.0.1',
     sequencerPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8080),
     depositProcessorHost: <string>process.env.DEPOSIT_PROCESSOR_HOST || '127.0.0.1',
     depositProcessorPort: <number>Number(<string>process.env.DEPOSIT_PROCESSOR_PORT ?? 8082),
@@ -77,6 +74,7 @@ const config = {
     l1TxFee: <number>Number(<string>process.env.L1_TX_FEE ?? 200_000_000),
     networkInit: <number>Number(<string>process.env.NETWORK_INIT ?? 1),
     worldStateDBPath: <string>process.env.LEVELDB_WORLDSTATE_DB_PATH || '/var/leveldb/anomix_world_state_db',
+    worldStateDBLazyPath: <string>process.env.LEVELDB_WORLDSTATE_DB_LAZY_PATH || '/var/leveldb/anomix_world_state_db_lazy',
     indexedDBPath: <string>process.env.LEVELDB_INDEX_DB_PATH || '/var/leveldb/anomix_index_db',
     withdrawDBPath: <string>process.env.LEVELDB_WITHDRAW_DB_PATH || '/var/leveldb/anomix_withdraw_db',
     pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/',
