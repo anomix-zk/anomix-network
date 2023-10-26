@@ -61,7 +61,7 @@ setInterval(httpfetchWithdrawalEvents, 2 * 60 * 1000);// exec/5mins
 // commit.
 
 export async function httpfetchWithdrawalEvents() {
-    logger.info('... a new ROUND to http fetchWithdrawalEvents ...');
+    logger.info('start fetchWithdrawalEvents by Http...');
 
     try {
         const connection = getConnection();
@@ -73,7 +73,7 @@ export async function httpfetchWithdrawalEvents() {
         const startBlockHeight = (withdrawEventFetchRecord0?.endBlock ?? 1);
 
         logger.info('start fetching Events...');
-        const result: EventsHttpResponse = await fetch("https://api.minascan.io/archive/berkeley/v1/graphql/", {
+        const result: EventsHttpResponse = await fetch(config.httpGraphQLMinaScan, {
             "headers": {
                 "content-type": "application/json",
             },
@@ -86,30 +86,16 @@ export async function httpfetchWithdrawalEvents() {
         }).then(v => v.json()).then(json => {
             return json;
         });
+        logger.info(`original responded eventList: ${JSON.stringify(result)}`);
 
-        if (!(result.data.events?.length > 0)) {
+        if (!(result?.data?.events?.length > 0)) {
             logger.info('no events back by httpfetch!');
-
-            // try to fetch by standard methods
-            const contract = new AnomixVaultContract(PublicKey.fromBase58(config.vaultContractAddress));
-            const eventList = await contract.fetchEvents(UInt32.from(startBlockHeight));
-            if (eventList.length == 0) {
-                logger.info('no events back by fetchEvent!');
-
-                /*
-                // trigger sync into user_nullifier_tree SEPERATELY
-                await $axiosSeq.get<BaseResponse<string>>(`/note/withdrawal-batch-sync`).then(r => {
-                    if (r.data.code == 1) {
-                        logger.error(r.data.msg);
-                    }
-                });
-                */
-                return false;
-            }
+            return false;
         }
 
         // sort
         const eventList = result.data.events.sort((e1, e2) => e1.blockInfo.height - e2.blockInfo.height);
+        logger.info(`after sort, eventList: ${JSON.stringify(eventList)}`);
 
         // record
         const endBlockHeight = eventList[eventList.length - 1].blockInfo.height + 1;
@@ -156,7 +142,7 @@ export async function httpfetchWithdrawalEvents() {
             }
 
             record = new WithdrawEventFetchRecord();
-            record.data = JSON.stringify(wInfoIdList);
+            record.data0 = JSON.stringify(wInfoIdList);
             record.status = WithdrawEventFetchRecordStatus.NOT_SYNC;
             record.startBlock = startBlockHeight;
             record.endBlock = endBlockHeight;
@@ -174,11 +160,10 @@ export async function httpfetchWithdrawalEvents() {
         }
         return true;
     } catch (error) {
-        console.error(error);
         logger.error(error);
         return false;
     } finally {
-        logger.info('this ROUND is done.');
+        logger.info('end.');
     }
 
 }

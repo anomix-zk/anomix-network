@@ -61,7 +61,7 @@ setInterval(standardFetchWithdrawalEvents, 2 * 60 * 1000);// exec/5mins
 //   insert to db as 'DepositActionEventFetchRecord'
 // commit.
 export async function standardFetchWithdrawalEvents() {
-    logger.info('... a new ROUND to standard FetchWithdrawalEvents ...');
+    logger.info('start fetchWithdrawalEvents by Standard...');
 
     try {
         const connection = getConnection();
@@ -73,9 +73,13 @@ export async function standardFetchWithdrawalEvents() {
         const startBlockHeight = (withdrawEventFetchRecord0?.endBlock ?? 1);
 
         logger.info('start fetching Events...');
+
+        logger.info(`startBlockHeight: ${startBlockHeight}`);
+
         // try to fetch by standard methods
         const vaultContract = new AnomixVaultContract(PublicKey.fromBase58(config.vaultContractAddress));
         const eventRes: EventsStandardResponse[] = await vaultContract.fetchEvents(UInt32.from(startBlockHeight));
+        logger.info(`original responded eventList: ${JSON.stringify(eventRes)}`);
         if (eventRes.length == 0) {
             logger.info('no events back by fetchEvent!');
 
@@ -92,6 +96,7 @@ export async function standardFetchWithdrawalEvents() {
 
         // sort
         const eventList = eventRes.sort((e1, e2) => Number(e1.blockHeight.toBigint()) - Number(e2.blockHeight.toBigint()));
+        logger.info(`after sort, eventList: ${JSON.stringify(eventList)}`);
 
         // record
         const endBlockHeight = Number(eventList[eventList.length - 1].blockHeight.toBigint()) + 1;
@@ -107,7 +112,7 @@ export async function standardFetchWithdrawalEvents() {
                 const withdrawFundEvent: WithdrawFundEvent = e.event.data;
                 const txHash = e.event.transactionInfo.transactionHash
 
-                const commitment = withdrawFundEvent.noteNullifier;
+                const commitment = withdrawFundEvent.noteNullifier.toString();
 
                 const wInfo = await queryRunner.manager.findOne(WithdrawInfo, {
                     where: {
@@ -118,7 +123,7 @@ export async function standardFetchWithdrawalEvents() {
                     continue;
                 }
 
-                wInfo.nullifierIdx = (Number(withdrawFundEvent[3]) - 1).toString();
+                wInfo.nullifierIdx = (Number(withdrawFundEvent.nullifierIndex) - 1).toString();
                 wInfo.nullifierTreeRoot0 = withdrawFundEvent.receiverNulliferRootBefore.toString();
                 wInfo.nullifierTreeRoot1 = withdrawFundEvent.receiverNulliferRootAfter.toString();
                 wInfo.blockIdWhenL1Tx = blockHeight;
@@ -131,7 +136,7 @@ export async function standardFetchWithdrawalEvents() {
             }
 
             const record: WithdrawEventFetchRecord = new WithdrawEventFetchRecord();
-            record.data = JSON.stringify(wInfoIdList);
+            record.data0 = JSON.stringify(wInfoIdList);
             record.status = WithdrawEventFetchRecordStatus.NOT_SYNC;
             record.startBlock = startBlockHeight;
             record.endBlock = endBlockHeight;
@@ -153,7 +158,7 @@ export async function standardFetchWithdrawalEvents() {
 
         return false;
     } finally {
-        logger.info('this ROUND is done.');
+        logger.info('end.');
     }
 
 }
