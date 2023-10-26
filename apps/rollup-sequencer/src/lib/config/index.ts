@@ -75,6 +75,7 @@ const config = {
     networkInit: <number>Number(<string>process.env.NETWORK_INIT ?? 1),
     worldStateDBPath: <string>process.env.LEVELDB_WORLDSTATE_DB_PATH || '/var/leveldb/anomix_world_state_db',
     worldStateDBLazyPath: <string>process.env.LEVELDB_WORLDSTATE_DB_LAZY_PATH || '/var/leveldb/anomix_world_state_db_lazy',
+    worldStateDBSnapshotPath: <string>process.env.LEVELDB_TREES_SNAPSHOT_PATH || '/var/leveldb/anomix_world_state_db_lazy',
     indexedDBPath: <string>process.env.LEVELDB_INDEX_DB_PATH || '/var/leveldb/anomix_index_db',
     withdrawDBPath: <string>process.env.LEVELDB_WITHDRAW_DB_PATH || '/var/leveldb/anomix_withdraw_db',
     pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/',

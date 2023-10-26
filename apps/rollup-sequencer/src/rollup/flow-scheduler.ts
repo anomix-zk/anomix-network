@@ -1,6 +1,6 @@
 
 import config from "@/lib/config";
-import { DepositStatus, MerkleTreeId, L2TxStatus, PoseidonHasher, MerkleProofDto, BlockCacheType, BaseResponse, BlockStatus, WithdrawNoteStatus, BaseSiblingPath } from "@anomix/types";
+import { DepositStatus, MerkleTreeId, L2TxStatus, PoseidonHasher, MerkleProofDto, BlockCacheType, BaseResponse, BlockStatus, WithdrawNoteStatus, BaseSiblingPath, MerkleTreeError } from "@anomix/types";
 import {
     DataMerkleWitness, DataRootWitnessData, LowLeafWitnessData, NullifierMerkleWitness,
     DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, NoteType, ValueNote, Commitment, RollupState, RollupStateTransition, BlockProveOutput, TxFee, FEE_ASSET_ID_SUPPORT_NUM, AssetId, DEPOSIT_TREE_INIT_ROOT
@@ -18,6 +18,7 @@ import { LeafData } from "@anomix/merkle-tree";
 import { BlockCacheStatus } from "@anomix/types";
 import fs from "fs";
 import { getDateString } from "@/lib/timeUtils";
+import path from "node:path";
 
 const logger = getLogger('FlowScheduler');
 
@@ -66,6 +67,9 @@ export class FlowScheduler {
         // clear dirty data on both rollupDB & worldStateDB at the beginning
         await this.init();
 
+        let nullifierTreeErrorFlag = false;
+        let existingLatestBlock: Block = undefined as any;
+
         const connection = getConnection();
         const queryRunner = connection.createQueryRunner();
         await queryRunner.startTransaction();
@@ -90,7 +94,7 @@ export class FlowScheduler {
                 return;
             }
 
-            const existingLatestBlock = (await queryRunner.manager.find(Block, {
+            existingLatestBlock = (await queryRunner.manager.find(Block, {
                 order: {
                     id: 'DESC'
                 },
@@ -98,6 +102,7 @@ export class FlowScheduler {
             }))[0];
             let existingLatestBlockId = 0;
             if (existingLatestBlock) {// if exist
+
                 existingLatestBlockId = existingLatestBlock.id;
 
                 let checkRs = true;
@@ -135,7 +140,8 @@ export class FlowScheduler {
             // snapshot the leaves of nullifier_tree before appendLeaves
             logger.info(`snapshot nullifier_tree's leaves before appendLeaves...`);
             const snapshotLeavesBeforeBlockGen = this.worldStateDB.exportNullifierTreeForDebug();
-            const fileName = `/opt/private-anomix-network-data/treesnapshots/block-${currentBlockId}-nullifier-tree-pre-snapshot-${getDateString()}`;
+
+            const fileName = `${config.worldStateDBSnapshotPath}/block-${currentBlockId}-nullifier-tree-pre-snapshot-${getDateString()}`;
             fs.writeFile(fileName, snapshotLeavesBeforeBlockGen, (err) => {
                 if (err) {
                     logger.error(`${fileName} persist error!`);
@@ -554,7 +560,6 @@ export class FlowScheduler {
             logger.info(`succeed generating block: ${currentBlockId} .`);
         } catch (error) {
             logger.error(error);
-            console.log(error);
 
             try {
                 await queryRunner.rollbackTransaction();
@@ -566,6 +571,10 @@ export class FlowScheduler {
             await this.worldStateDB.rollback();
             logger.info('worldStateDB.rollback.');
 
+            if (error instanceof MerkleTreeError) {
+                nullifierTreeErrorFlag = true;
+            }
+
         } finally {
             // end the flow
             await this.worldState.reset();
@@ -573,7 +582,100 @@ export class FlowScheduler {
             logger.info('end.');
             await queryRunner.release();
         }
+
+        if (nullifierTreeErrorFlag && existingLatestBlock) {// if nullifierTreeError occurs and next block is not the first block.
+            logger.info(`start rebuilding WorldStateDB...`);
+
+            const currentDateString = getDateString();
+            const rebuildWorldStateDBPath = config.worldStateDBPath.concat(`-block-${existingLatestBlock.id}-rebuilding-${currentDateString}`);
+            const rebuildWorldStateDB = new WorldStateDB(rebuildWorldStateDBPath);
+
+            await rebuildWorldStateDB.initTrees();
+            logger.info(`rebuild: rebuildWorldStateDB.initTrees done.`);
+            // prepare data_tree root into dataTreeRootsTree
+            const dataTreeRoot = rebuildWorldStateDB.getRoot(MerkleTreeId.DATA_TREE, false);
+            logger.info(`rebuild: the initial dataTreeRoot: ${dataTreeRoot.toString()}`);
+            const index = rebuildWorldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, false);// 0n
+            await rebuildWorldStateDB.appendLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, [dataTreeRoot]);
+            await rebuildWorldStateDB.commit();
+            logger.info(`rebuild: append the initial dataTreeRoot into DATA_TREE_ROOTS_TREE at index:${index}, done.`);
+
+            try {
+                // if merkletree error, then new trees instantly and switch to the new ones!
+                const blockCacheList = await getConnection().getRepository(BlockCache)
+                    .find({ where: { type: In([BlockCacheType.DATA_TREE_ROOTS_TREE_UPDATES, BlockCacheType.DATA_TREE_UPDATES, BlockCacheType.NULLIFIER_TREE_UPDATES]) } });
+
+                const blockCacheMap = new Map<BlockCacheType, BlockCache[]>();
+                blockCacheList.forEach(bc => {
+                    const bcArray = blockCacheMap.get(bc.type) ?? [];
+                    bcArray.push(bc);
+                    blockCacheMap.set(bc.type, bcArray);
+                });
+
+                for (const [key, bcArray] of blockCacheMap) {
+                    bcArray.sort((a, b) => a.blockId - b.blockId);
+
+                    let treeId = MerkleTreeId.DATA_TREE_ROOTS_TREE;
+                    if (key == BlockCacheType.DATA_TREE_UPDATES) {
+                        treeId = MerkleTreeId.DATA_TREE;
+                    } else if (key == BlockCacheType.NULLIFIER_TREE_UPDATES) {
+                        treeId = MerkleTreeId.NULLIFIER_TREE;
+                    }
+
+                    logger.info(`start rebuild ${MerkleTreeId[treeId]} ...`);
+
+                    for (let i = 0; i < bcArray.length; i++) {
+                        const blockCache = bcArray[i];
+                        logger.info(`  processing blockCache[${blockCache.id}] at Block[${blockCache.blockId}]...`);
+                        await rebuildWorldStateDB.appendLeaves(treeId, (JSON.parse(blockCache.cache) as string[]).map(c => Field(c)));
+
+                        const existingCurrentBlock = await getConnection().getRepository(Block).findOne({ where: { id: blockCache.blockId } });
+                        const newRoot = rebuildWorldStateDB.getRoot(treeId, true).toString();
+                        logger.info(`  new ${MerkleTreeId[treeId]} root: ${newRoot}`);
+                        logger.info(`  existingCurrentBlock.dataTreeRoot1: ${existingCurrentBlock!.dataTreeRoot1}`);
+
+                        if (newRoot != existingCurrentBlock!.dataTreeRoot1) {
+                            logger.error(`  rebuild ${MerkleTreeId[treeId]} failed, due to two roots are not equal.`);
+                            throw new Error(`rebuild ${MerkleTreeId[treeId]} failed, due to two roots are not equal.`);
+                        }
+                    }
+                    logger.info(`  appendLeaves done.`);
+                    logger.info(`rebuild ${MerkleTreeId[treeId]} done.`);
+                }
+                logger.info(`rebuildWorldStateDB.commit...`);
+                await rebuildWorldStateDB.commit();
+
+                logger.info(`rebuildWorldStateDB close...`);
+                await rebuildWorldStateDB.close();
+                logger.info(`original worldStateDB close...`);
+                await this.worldStateDB.close();
+
+                const migrateDir = config.worldStateDBPath.concat(`-block-${existingLatestBlock.id}-broken-${currentDateString}`);
+                logger.info(`rename dir of original worldStateDB to ${migrateDir}...`);
+                fs.renameSync(config.worldStateDBPath, migrateDir);
+                logger.info(`rename dir of rebuildWorldStateDB to ${config.worldStateDBPath}...`);
+                fs.renameSync(rebuildWorldStateDBPath, config.worldStateDBPath);
+
+                logger.info(`re-open new WorldStateDB...`);
+                await rebuildWorldStateDB.open();
+
+                logger.info(`change pointer to new WorldStateDB...`);
+                this.worldState.worldStateDB = rebuildWorldStateDB;
+                this.worldStateDB = this.worldState.worldStateDB;
+
+                logger.info(`rebuild WorldStateDB end.`);
+            } catch (err) {
+                logger.error(err);
+
+                await rebuildWorldStateDB.rollback();
+
+                throw err;
+            } finally {
+                await rebuildWorldStateDB.close();
+            }
+        }
     }
+
 
     private async preInsertIntoTreeCache(txList: MemPlL2Tx[]) {
         logger.info(`start insert into trees...`);
@@ -666,7 +768,7 @@ export class FlowScheduler {
 
                 if (predecessorLeafData.nextValue.toBigInt() != 0n && predecessorLeafData.nextValue.toBigInt() <= BigInt(tx1.nullifier1)) {
                     logger.error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx1.nullifier1)");
-                    throw new Error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx1.nullifier1)");
+                    throw new MerkleTreeError(MerkleTreeId.NULLIFIER_TREE, "predecessorLeafData.nextValue.toBigInt()<= BigInt(tx1.nullifier1)");
                 }
 
                 // modify predecessor                
@@ -724,7 +826,7 @@ export class FlowScheduler {
 
                 if (predecessorLeafData.nextValue.toBigInt() != 0n && predecessorLeafData.nextValue.toBigInt() <= BigInt(tx1.nullifier2)) {
                     logger.error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx1.nullifier2)");
-                    throw new Error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx1.nullifier2)");
+                    throw new MerkleTreeError(MerkleTreeId.NULLIFIER_TREE, "predecessorLeafData.nextValue.toBigInt()<= BigInt(tx1.nullifier2)");
                 }
 
                 // modify predecessor                
@@ -782,7 +884,7 @@ export class FlowScheduler {
 
                 if (predecessorLeafData.nextValue.toBigInt() != 0n && predecessorLeafData.nextValue.toBigInt() <= BigInt(tx2.nullifier1)) {
                     logger.error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx2.nullifier1)");
-                    throw new Error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx2.nullifier1)");
+                    throw new MerkleTreeError(MerkleTreeId.NULLIFIER_TREE, "predecessorLeafData.nextValue.toBigInt()<= BigInt(tx2.nullifier1)");
                 }
 
                 // modify predecessor 
@@ -839,7 +941,7 @@ export class FlowScheduler {
 
                 if (predecessorLeafData.nextValue.toBigInt() != 0n && predecessorLeafData.nextValue.toBigInt() <= BigInt(tx2.nullifier2)) {
                     logger.error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx2.nullifier2)");
-                    throw new Error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx2.nullifier2)");
+                    throw new MerkleTreeError(MerkleTreeId.NULLIFIER_TREE, "predecessorLeafData.nextValue.toBigInt()<= BigInt(tx2.nullifier2)");
                 }
 
                 // modify predecessor                
