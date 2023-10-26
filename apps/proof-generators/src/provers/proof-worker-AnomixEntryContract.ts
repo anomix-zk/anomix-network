@@ -6,7 +6,7 @@ import { activeMinaInstance, syncAcctInfo } from '@anomix/utils';
 import { FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 
-const logger = getLogger(`pWorker-AnomixEntryContract`, 'AnomixEntryContract');
+const logger = getLogger(`pWorker-AnomixEntryContract`);
 
 export { initWorker };
 
@@ -24,6 +24,15 @@ function processMsgFromMaster() {
                         fee: message.payload.fee,
                         depositRollupProof: DepositRollupProof.fromJSON(message.payload.depositRollupProof)
                     }
+
+                    logger.info(`currentActionsHash0: ${params.depositRollupProof.publicOutput.source.currentActionsHash}`);
+                    logger.info(`currentIndex0: ${params.depositRollupProof.publicOutput.source.currentIndex}`);
+                    logger.info(`depositRoot0: ${params.depositRollupProof.publicOutput.source.depositRoot}`);
+
+                    logger.info(`currentActionsHash1: ${params.depositRollupProof.publicOutput.target.currentActionsHash}`);
+                    logger.info(`currentIndex1: ${params.depositRollupProof.publicOutput.target.currentIndex}`);
+                    logger.info(`depositRoot1: ${params.depositRollupProof.publicOutput.target.depositRoot}`);
+
                     const addr = PublicKey.fromBase58(config.entryContractAddress);
                     await syncAcctInfo(addr);// fetch account.
                     const entryContract = new AnomixEntryContract(addr);

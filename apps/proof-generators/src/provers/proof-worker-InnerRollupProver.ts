@@ -7,7 +7,7 @@ import { ProofTaskType, FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 import { proveTxBatch, merge } from './circuits/inner_rollup_prover';
 
-const logger = getLogger('pWorker-InnerRollupProver', 'InnerRollupProver');
+const logger = getLogger('pWorker-InnerRollupProver');
 
 export { initWorker };
 

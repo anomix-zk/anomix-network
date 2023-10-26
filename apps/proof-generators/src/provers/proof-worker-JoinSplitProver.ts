@@ -5,7 +5,7 @@ import { ProofTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 import { deposit } from "./circuits/join-split-prover";
 
-const logger = getLogger('pWorker-JoinSplitProver', 'JoinSplitProver');
+const logger = getLogger('pWorker-JoinSplitProver');
 
 export { initWorker };
 
