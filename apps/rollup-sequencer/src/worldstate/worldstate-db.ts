@@ -18,24 +18,32 @@ export class WorldStateDB {
     constructor(dbPath: string) {
         this.db = levelup(leveldown(dbPath));
 
-        /*
-                this.db.createReadStream().on('data', function (entry) {
-                    if (String(entry.key).startsWith('NULLIFIER_TREE:leaf')) {
-                        let buf = entry.value;
-                        const value0 = toBigIntBE(buf.subarray(0, 32));
-                        const nextIndex0 = toBigIntBE(buf.subarray(32, 64));
-                        const nextValue0 = toBigIntBE(buf.subarray(64, 96));
-                        const data = {
-                            value: Field(value0),
-                            nextIndex: Field(nextIndex0),
-                            nextValue: Field(nextValue0)
-                        }
-                        console.log(`${entry.key}: ${JSON.stringify(data)}`);
-                    } else {
-                        console.log(`${entry.key}: ${entry.value}`);
-                    }
-                });
-        */
+/*
+        this.db.createReadStream().on('data', function (entry) {
+            if (String(entry.key).startsWith('NULLIFIER_TREE:leaf')) {
+                let buf = entry.value;
+                const value0 = toBigIntBE(buf.subarray(0, 32));
+                const nextIndex0 = toBigIntBE(buf.subarray(32, 64));
+                const nextValue0 = toBigIntBE(buf.subarray(64, 96));
+                const data = {
+                    value: Field(value0),
+                    nextIndex: Field(nextIndex0),
+                    nextValue: Field(nextValue0)
+                }
+                logger.info(`${entry.key}: ${JSON.stringify(data)}`);
+            } else {
+                logger.info(`${entry.key}: ${entry.value}`);
+            }
+        });
+*/
+    }
+
+    async close() {
+        await this.db.close();
+    }
+
+    async open() {
+        await this.db.open();
     }
 
     /**
