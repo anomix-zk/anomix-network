@@ -15,7 +15,7 @@ export class SequenceFlow {
 
     async start() {
 
-        this.flowScheduler.start();
+        await this.flowScheduler.start();
     }
 
     async end() {
