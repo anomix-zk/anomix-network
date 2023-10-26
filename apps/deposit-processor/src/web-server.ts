@@ -1,3 +1,5 @@
+import { getLogger } from "@/lib/logUtils";
+
 import { Worker } from "worker_threads";
 import { RollupDB, IndexDB } from "./rollup";
 import { WorldState, WorldStateDB, } from "./worldstate";
@@ -7,7 +9,6 @@ import { FastifyCore } from "./app";
 import fs from "fs";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { getLogger } from "@/lib/logUtils";
 import { getConnection } from "typeorm";
 import { DepositTreeTrans, DepositTreeTransCache } from "@anomix/dao";
 import { DepositTransCacheType, MerkleTreeId } from "@anomix/types";
@@ -28,6 +29,19 @@ logger.info('indexDB started.');
 const rollupDB = new RollupDB();
 await rollupDB.start();
 logger.info('rollupDB started.');
+
+// init worldStateDBLazy
+const existDBLazy = fs.existsSync(config.depositWorldStateDBLazyPath);
+// init leveldb for deposit state
+const worldStateDBLazy = new WorldStateDB(config.depositWorldStateDBLazyPath);// leveldown itself will mkdir underlyingly if dir not exists.
+if (!existDBLazy) {// check if network initialze
+    // init tree
+    await worldStateDBLazy.initTrees();
+    logger.info('worldStateDBLazy.initTrees completed.');
+} else {
+    await worldStateDBLazy.loadTrees();
+    logger.info('worldStateDBLazy.loadTrees completed.');
+}
 
 const connection = getConnection();
 const dcTransRepo = await connection.getRepository(DepositTreeTrans);
@@ -109,14 +123,14 @@ logger.info(`  leafNum: ${worldStateDB.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, f
 logger.info(`  treeRoot: ${worldStateDB.getRoot(MerkleTreeId.DEPOSIT_TREE, false).toString()}`)
 
 logger.info(`treeId: SYNC_DEPOSIT_TREE`);
-logger.info(`  depth: ${worldStateDB.getDepth(MerkleTreeId.SYNC_DEPOSIT_TREE)}`);
-logger.info(`  leafNum: ${worldStateDB.getNumLeaves(MerkleTreeId.SYNC_DEPOSIT_TREE, false).toString()}`);
-logger.info(`  treeRoot: ${worldStateDB.getRoot(MerkleTreeId.SYNC_DEPOSIT_TREE, false).toString()}`)
+logger.info(`  depth: ${worldStateDBLazy.getDepth(MerkleTreeId.DEPOSIT_TREE)}`);
+logger.info(`  leafNum: ${worldStateDBLazy.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false).toString()}`);
+logger.info(`  treeRoot: ${worldStateDBLazy.getRoot(MerkleTreeId.DEPOSIT_TREE, false).toString()}`)
 
 logger.info(`}`);
 
 // construct WorldState
-const worldState = new WorldState(worldStateDB, rollupDB, indexDB);
+const worldState = new WorldState(worldStateDBLazy, worldStateDB, rollupDB, indexDB);
 logger.info('worldState prepared done.');
 
 // start server!
