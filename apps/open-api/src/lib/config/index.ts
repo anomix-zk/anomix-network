@@ -1,15 +1,17 @@
 import {
     VerificationKey,
 } from 'o1js';
-import fs from "fs";
 import * as dotenv from "dotenv"
 import { JoinSplitProver } from '@anomix/circuits';
+import fs from "fs";
+
+const KeyConfig = JSON.parse(fs.readFileSync('../../packages/circuits/scripts/keys-private.json', 'utf8'));
 
 dotenv.config({ path: '../../.env' })
 
 // const JoinSplitProverVK: string = fs.readFileSync('./circuit-JoinSplitProverVK.string', 'utf8');
-const { verificationKey: JoinSplitProverVK } = await JoinSplitProver.compile();
-// const JoinSplitProverVK = ''
+// const { verificationKey: JoinSplitProverVK } = await JoinSplitProver.compile();
+const JoinSplitProverVK = ''
 const config = {
     port: <number>Number(<string>process.env.OPENAPI_PORT) || 80,
     logger: {
@@ -65,8 +67,12 @@ const config = {
     sequencerPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT) || 8080,
     coordinatorHost: <string>process.env.COORDINATOR_HOST || '127.0.0.1',
     coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT) || 8083,
+    proofGeneratorHost: <string>process.env.PROOF_GENERATOR_HOST || '127.0.0.1',
+    proofGeneratorPort: <number>Number(<string>process.env.PROOF_GENERATOR_PORT ?? 8081),
 
     maxMpTxCnt: <number>Number(<string>process.env.MAX_MP_TX_CNT) || 300,
+    txFeePayerPrivateKey: <string>KeyConfig.feePayer.privateKey,
+    operatorPrivateKey: <string>KeyConfig.operator.privateKey,
 
     // L2Tx Fee suggestion
     minMpTxFeeToGenBlock: <number>Number(<string>process.env.MIN_MP_TX_FEE_TO_GEN_BLOCK) || 0.09 * 1000_000_000,
