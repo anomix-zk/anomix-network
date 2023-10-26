@@ -10,3 +10,8 @@ export const $axiosCoordinator = axios.create({
     baseURL: `${config.httpProtocol}://${config.coordinatorHost}:${config.coordinatorPort}`,
     withCredentials: true,
 });
+
+export const $axiosProofGenerator = axios.create({
+    baseURL: `${config.httpProtocol}://${config.proofGeneratorHost}:${config.proofGeneratorPort}`,
+    withCredentials: true,
+});
