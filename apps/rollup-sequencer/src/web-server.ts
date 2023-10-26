@@ -12,6 +12,7 @@ import { Field } from "o1js";
 import { getConnection } from 'typeorm';
 import { Block, BlockCache } from '@anomix/dao';
 import debug from 'debug';
+import { LeafData } from '@anomix/merkle-tree';
 
 const logger = getLogger('web-server');
 
@@ -70,6 +71,63 @@ if (!existDB) {
     await worldStateDB.commit();
     logger.info(`append the initial dataTreeRoot into DATA_TREE_ROOTS_TREE at index:${index}, done.`);
     await indexDB.put(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${dataTreeRoot.toString()}`, `${index.toString()}`);// '0'
+
+    /*
+    // simulate nullifier-tree appendLeaves as each Block.
+    const blockCacheList = await connection.getRepository(BlockCache).find({ where: { type: BlockCacheType.NULLIFIER_TREE_UPDATES }, order: { blockId: 'ASC' } });
+    let nullifierTreeCursor = worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, false);
+    for (let i = 0; i < blockCacheList.length; i++) {
+        const blockCache = blockCacheList[i];
+        logger.info(`start appendLeaves of blockId: ${blockCache.blockId}`);
+        const nullifierList = (JSON.parse(blockCache.cache) as string[]).map(b => Field(b));
+
+        for (let j = 0; j < nullifierList.length; j++) {
+            const nullifier = nullifierList[j];
+            logger.info(`start process nullifier: ${nullifier}`);
+            logger.info(`nullifierTreeCursor: ${nullifierTreeCursor}`);
+            let tx1LowLeafWitness = await worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(nullifier), true);
+            logger.info(`tx1LowLeafWitness: ${JSON.stringify(tx1LowLeafWitness)}`);
+
+            const predecessorLeafData = tx1LowLeafWitness.leafData;
+            const predecessorIdx = tx1LowLeafWitness.index.toBigInt();
+
+            // modify predecessor                
+            logger.info(`before modify predecessor, nullifierTree Root: ${await worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+            logger.info(`before modify predecessor, nullifierTree Num: ${await worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+            const modifiedPredecessorLeafDataTmp: LeafData = {
+                value: predecessorLeafData.value.toBigInt(),
+                nextValue: Field(nullifier).toBigInt(),
+                nextIndex: nullifierTreeCursor
+            };
+            await worldStateDB.updateLeaf(MerkleTreeId.NULLIFIER_TREE, modifiedPredecessorLeafDataTmp, predecessorIdx);
+            logger.info(`after modify predecessor, nullifierTree Root: ${await worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+            logger.info(`after modify predecessor, nullifierTree Num: ${await worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+
+            // obtain tx1OldNullWitness
+            let tx1OldNullWitness = await worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+            logger.info(`tx1OldNullWitness: ${JSON.stringify(tx1OldNullWitness)}`);
+
+            // revert predecessor
+            const revertedPredecessorLeafDataTmp: LeafData = {
+                value: predecessorLeafData.value.toBigInt(),
+                nextValue: predecessorLeafData.nextValue.toBigInt(),
+                nextIndex: predecessorLeafData.nextIndex.toBigInt()
+            };
+            await worldStateDB.updateLeaf(MerkleTreeId.NULLIFIER_TREE, revertedPredecessorLeafDataTmp, predecessorIdx);
+            logger.info(`after revert predecessor, nullifierTree Root: ${await worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
+            logger.info(`after revert predecessor, nullifierTree Num: ${await worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true)}`);
+
+            // insert nullifier
+            await worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(nullifier));
+            logger.info('insert nullifier, done.');
+
+            nullifierTreeCursor += 1n;
+            logger.info(`after appendLeaf, nullifierTreeCursor: ${nullifierTreeCursor}`);
+        }
+        await worldStateDB.commit();
+        logger.info(`end appendLeaves of blockId: ${blockCache.blockId}`);
+    }
+    */
 } else {
     await worldStateDB.loadTrees();
     logger.info(`worldStateDB.loadTrees done.`);
