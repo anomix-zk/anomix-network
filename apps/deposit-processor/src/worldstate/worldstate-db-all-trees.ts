@@ -25,7 +25,11 @@ export class WorldStateDB {
         const depositTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`, DEPOSIT_TREE_HEIGHT);
         this.trees.set(MerkleTreeId.DEPOSIT_TREE, depositTree);
 
+        const syncDepositTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.SYNC_DEPOSIT_TREE]}`, DEPOSIT_TREE_HEIGHT)
+        this.trees.set(MerkleTreeId.SYNC_DEPOSIT_TREE, syncDepositTree);
+
         this.appendedLeavesCollection.set(MerkleTreeId.DEPOSIT_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DEPOSIT_TREE, []);
     }
 
     /**
@@ -37,7 +41,11 @@ export class WorldStateDB {
         const depositTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DEPOSIT_TREE]}`)
         this.trees.set(MerkleTreeId.DEPOSIT_TREE, depositTree);
 
+        const syncDepositTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.SYNC_DEPOSIT_TREE]}`)
+        this.trees.set(MerkleTreeId.SYNC_DEPOSIT_TREE, syncDepositTree);
+
         this.appendedLeavesCollection.set(MerkleTreeId.DEPOSIT_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DEPOSIT_TREE, []);
     }
 
     /**
@@ -118,8 +126,10 @@ export class WorldStateDB {
      */
     async commit() {
         await this.trees.get(MerkleTreeId.DEPOSIT_TREE)?.commit();
+        await this.trees.get(MerkleTreeId.SYNC_DEPOSIT_TREE)?.commit();
 
         this.appendedLeavesCollection.set(MerkleTreeId.DEPOSIT_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DEPOSIT_TREE, []);
     }
 
     /**
@@ -127,8 +137,10 @@ export class WorldStateDB {
      */
     async rollback() {
         await this.trees.get(MerkleTreeId.DEPOSIT_TREE)?.rollback();
+        await this.trees.get(MerkleTreeId.SYNC_DEPOSIT_TREE)?.rollback();
 
         this.appendedLeavesCollection.set(MerkleTreeId.DEPOSIT_TREE, []);
+        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DEPOSIT_TREE, []);
     }
 
 }

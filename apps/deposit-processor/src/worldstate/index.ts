@@ -19,7 +19,7 @@ export class WorldState {
     private flow: RollupFlow;
     private proofScheduler: ProofScheduler;
 
-    constructor(public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) {
+    constructor(public worldStateDBLazy: WorldStateDB, public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) {
         this.proofScheduler = new ProofScheduler(this, worldStateDB, rollupDB, indexDB);
     }
 
