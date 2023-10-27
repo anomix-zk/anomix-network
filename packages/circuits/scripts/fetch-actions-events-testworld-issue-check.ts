@@ -9,7 +9,7 @@ export async function fetchActionsAndEventsStandard() {
     logger.info('fetchActionsAndEvents through Standard endpoint...');
 
     try {
-        let startBlockHeight = 2526;// !!
+        let startBlockHeight = 0;// !!
         let startActionHash = Reducer.initialActionState;
         let startIdx = 0n;
 
@@ -33,28 +33,6 @@ export async function fetchActionsAndEventsStandard() {
 
         if (newActionList == undefined || newActionList == null || !(newActionList instanceof Array) || newActionList.length == 0) {
             logger.error("no new actions...");
-            return false;
-        }
-
-        if (newActionList[newActionList.length - 1].hash != zkAppActionStateArray![0].toString()) {
-            logger.error(`the hash attached to latest action is NOT aligned with onchainActionStateArray[0]`);
-            return false;
-        }
-        logger.info(`the hash attached to latest action is aligned with onchainActionStateArray[0]`);
-
-        logger.info(`start reducing actions locally for double check...`);
-        logger.info(`current actionsHash: ${startActionHash.toString()} `);
-        const calcActionHash = newActionList.reduce((p, c) => {
-            logger.info(' reducing action:' + c.actions[0][0]);
-            p = AccountUpdate.Actions.updateSequenceState(
-                p,
-                AccountUpdate.Actions.hash([Field(c.actions[0][0]).toFields()]) // 
-            );
-            logger.info('calc actionsHash:' + p.toString());
-            return p;
-        }, startActionHash);
-        if (calcActionHash.toString() != zkAppActionStateArray![0].toString()) {
-            logger.error('calcActionHash is NOT aligned with onchainActionStateArray[0]');
             return false;
         }
 
