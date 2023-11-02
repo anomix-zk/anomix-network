@@ -77,7 +77,10 @@ const config = {
     // L2Tx Fee suggestion
     minMpTxFeeToGenBlock: <number>Number(<string>process.env.MIN_MP_TX_FEE_TO_GEN_BLOCK) || 0.09 * 1000_000_000,
     floorMpTxFee: <number>Number(<string>process.env.FLOOR_MP_TX_FEE) || 0.03 * 1000_000_000,
-    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http'
+    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http',
+
+    proxyMinaEndpoint: <string>process.env.PROXY_MINA_ENDPOINT || 'https://berkeley.graphql.minaexplorer.com/',
+    graphqlArchiveEndpoint: <string>process.env.GRAPHQL_ARCHIVE_ENDPOINT || 'https://berkeley.graphql.minaexplorer.com/',
 
 }
 
