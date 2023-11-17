@@ -20,7 +20,7 @@
 <script lang="ts" setup>
 import { NConfigProvider, GlobalThemeOverrides } from 'naive-ui';
 import { CHANNEL_SYNCER, CHANNEL_MINA, WalletEventType, ANOMIX_NETWORK_LOCAL } from './common/constants';
-import type { WalletEvent } from './common/types';
+import type { ChainInfoArgs, WalletEvent } from './common/types';
 
 const { createRemoteSdk, createRemoteApi, startRemoteSyncer, SdkState } = useSdk();
 const runtimeConfig = useRuntimeConfig();
@@ -201,9 +201,9 @@ onMounted(async () => {
 
         });
 
-        window.mina.on('chainChanged', (chainType: string) => {
-          console.log('App - current chain: ', chainType);
-          if (chainType !== appState.value.minaNetwork && chainType !== 'Unknown') {
+        window.mina.on('chainChanged', (chainInfo: ChainInfoArgs) => {
+          console.log('App - current chain info: ', chainInfo);
+          if (chainInfo.chainId !== appState.value.minaNetwork && chainInfo.chainId !== 'testworld2') {
             chan.postMessage({
               eventType: WalletEventType.NETWORK_INCORRECT,
             } as WalletEvent);

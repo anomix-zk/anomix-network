@@ -1,5 +1,10 @@
 import { SdkEventType, WalletEventType } from "./constants";
 
+export type ChainInfoArgs = {
+    chainId: string;
+    name: string;
+};
+
 export interface SdkEvent {
     eventType: SdkEventType;
     data?: any;
