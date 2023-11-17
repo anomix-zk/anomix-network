@@ -28,6 +28,13 @@ Anomix Network contains several major components described as belows:
 * maintain L2 status(i.e. each merkle trees)
 * listen for onchain events, .etc.
 
+`Anomix Deposit Processor`
+* listen to the onchain Deposit events & actions and Sync to the offchain storage
+* maintain Deposit Smart Contract 
+
+`Anomix Network Coordinator`
+* coordinate all components above to make layer2 run in order
+
 `Anomix Rollup Processor Contract`
 * deployed on Mina L1
 * verify each rollup block associated with its zk-Proof from `Anomix Sequencer`

@@ -4,6 +4,9 @@ import { FastifyPlugin } from "fastify"
 import { RequestHandler, } from '@/lib/types'
 import { BaseResponse, RollupTaskDto, RollupTaskDtoSchma } from "@anomix/types";
 import { parentPort } from "worker_threads";
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger('rollupSeqTrigger');
 
 /**
  * recieve rollup seq triggering command from coordinator
@@ -34,6 +37,7 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
 
         return { code: 0, data: true, msg: '' };
     } catch (err) {
+        logger.error(err);
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }

@@ -14,8 +14,17 @@ export class WithdrawEventFetchRecord {
     @PrimaryGeneratedColumn("increment")
     id: number
 
+    /**
+     * not_sync ones
+     */
     @Column()
-    data: string
+    data0: string
+
+    /**
+     * synced ones from data0
+     */
+    @Column()
+    data1: string
 
     /**
      * refer to : WithdrawEventFetchRecordStatus.SYNC/NOT_SYNC

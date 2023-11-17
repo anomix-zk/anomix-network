@@ -1,11 +1,14 @@
 
-import { AppendOnlyTree, LeafData, newTree, loadTree, StandardTree, StandardIndexedTree, IndexedTree } from "@anomix/merkle-tree";
+import { AppendOnlyTree, LeafData, newTree, loadTree, StandardTree, StandardIndexedTree, IndexedTree, toBigIntBE } from "@anomix/merkle-tree";
 import { MerkleTreeId } from "@anomix/types";
 import { PoseidonHasher } from '@anomix/types';
 import { DATA_TREE_HEIGHT, ROOT_TREE_HEIGHT, NULLIFIER_TREE_HEIGHT, LowLeafWitnessData } from "@anomix/circuits";
 import { Field } from "o1js";
 import levelup, { LevelUp } from 'levelup';
 import leveldown from "leveldown";
+import { getLogger } from "@/lib/logUtils";
+
+const logger = getLogger(`WorldStateDB`);
 
 export class WorldStateDB {
     private readonly db: LevelUp
@@ -15,7 +18,7 @@ export class WorldStateDB {
     constructor(dbPath: string) {
         this.db = levelup(leveldown(dbPath));
 
-        /*
+/*
         this.db.createReadStream().on('data', function (entry) {
             if (String(entry.key).startsWith('NULLIFIER_TREE:leaf')) {
                 let buf = entry.value;
@@ -27,12 +30,20 @@ export class WorldStateDB {
                     nextIndex: Field(nextIndex0),
                     nextValue: Field(nextValue0)
                 }
-                console.log(`${entry.key}: ${JSON.stringify(data)}`);
+                logger.info(`${entry.key}: ${JSON.stringify(data)}`);
             } else {
-                console.log(`${entry.key}: ${entry.value}`);
+                logger.info(`${entry.key}: ${entry.value}`);
             }
         });
-        */
+*/
+    }
+
+    async close() {
+        await this.db.close();
+    }
+
+    async open() {
+        await this.db.open();
     }
 
     /**
@@ -41,17 +52,14 @@ export class WorldStateDB {
     async initTrees() {
         let poseidonHasher = new PoseidonHasher();
         const dataTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE]}`, DATA_TREE_HEIGHT)
-        const syncDataTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.SYNC_DATA_TREE]}`, DATA_TREE_HEIGHT)
         const nullifierTree = await newTree(StandardIndexedTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}`, NULLIFIER_TREE_HEIGHT)
         const dataTreeRootsTree = await newTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}`, ROOT_TREE_HEIGHT)
 
         this.trees.set(MerkleTreeId.DATA_TREE, dataTree);
-        this.trees.set(MerkleTreeId.SYNC_DATA_TREE, syncDataTree);
         this.trees.set(MerkleTreeId.NULLIFIER_TREE, nullifierTree);
         this.trees.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, dataTreeRootsTree);
 
         this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE, []);
-        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DATA_TREE, []);
         this.appendedLeavesCollection.set(MerkleTreeId.NULLIFIER_TREE, []);
         this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, []);
     }
@@ -63,18 +71,32 @@ export class WorldStateDB {
         let poseidonHasher = new PoseidonHasher();
 
         const dataTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE]}`)
-        const syncDataTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.SYNC_DATA_TREE]}`)
         const nullifierTree = await loadTree(StandardIndexedTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}`)
         const dataTreeRootsTree = await loadTree(StandardTree, this.db, poseidonHasher, `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}`)
 
         this.trees.set(MerkleTreeId.DATA_TREE, dataTree);
-        this.trees.set(MerkleTreeId.SYNC_DATA_TREE, syncDataTree);
 
+        /*
+        console.log(`DATA_TREE: `);
+        console.log(`DATA_TREE root: ${dataTree.getRoot(false)}`);
+        for (let i = 0; i < dataTree.getNumLeaves(false); i++) {
+            const element = await dataTree.getLeafValue(BigInt(i), false);
+            console.log(`${i}: ${element?.toString()}`);
+        }
+
+        console.log('\n');
+
+        console.log(`SYNC_DATA_TREE: `);
+        console.log(`SYNC_DATA_TREE root: ${syncDataTree.getRoot(false)}`);
+        for (let i = 0; i < syncDataTree.getNumLeaves(false); i++) {
+            const element = await syncDataTree.getLeafValue(BigInt(i), false);
+            console.log(`${i}: ${element?.toString()}`);
+        }
+        */
         this.trees.set(MerkleTreeId.NULLIFIER_TREE, nullifierTree);
         this.trees.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, dataTreeRootsTree);
 
         this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE, []);
-        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DATA_TREE, []);
         this.appendedLeavesCollection.set(MerkleTreeId.NULLIFIER_TREE, []);
         this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, []);
     }
@@ -134,15 +156,34 @@ export class WorldStateDB {
 
     /**
      * Commit pending updates to the MerkleTreeId.
+     * if any one of trees commit fails, process will mandatorily exit to avoid data inconsistence!
      */
     async commit() {
-        await this.trees.get(MerkleTreeId.DATA_TREE)!.commit();
-        await this.trees.get(MerkleTreeId.SYNC_DATA_TREE)!.commit();
-        await this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.commit();
-        await this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.commit();
+        try {
+            await this.trees.get(MerkleTreeId.DATA_TREE)!.commit();
+        } catch (err) {
+            logger.error(`DATA_TREE commit failed...`);
+            logger.error(err);
 
+            process.exit(0);
+        }
+        try {
+            await this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.commit();
+        } catch (err) {
+            logger.error(`NULLIFIER_TREE commit failed...`);
+            logger.error(err);
+
+            process.exit(0);
+        }
+        try {
+            await this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.commit();
+        } catch (err) {
+            logger.error(`DATA_TREE_ROOTS_TREE commit failed...`);
+            logger.error(err);
+
+            process.exit(0);
+        }
         this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE, []);
-        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DATA_TREE, []);
         this.appendedLeavesCollection.set(MerkleTreeId.NULLIFIER_TREE, []);
         this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, []);
     }
@@ -156,15 +197,34 @@ export class WorldStateDB {
 
     /**
      * Rollback pending update to the MerkleTreeId.
+     * if any one of trees rollback fails, process will mandatorily exit to avoid data inconsistence!
      */
     async rollback() {//
-        await this.trees.get(MerkleTreeId.DATA_TREE)!.rollback();
-        await this.trees.get(MerkleTreeId.SYNC_DATA_TREE)!.rollback();
-        await this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.rollback();
-        await this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.rollback();
+        try {
+            await this.trees.get(MerkleTreeId.DATA_TREE)!.rollback();
+        } catch (err) {
+            logger.error(`DATA_TREE rollback failed...`);
+            logger.error(err);
 
+            process.exit(0);
+        }
+        try {
+            await this.trees.get(MerkleTreeId.NULLIFIER_TREE)!.rollback();
+        } catch (err) {
+            logger.error(`NULLIFIER_TREE rollback failed...`);
+            logger.error(err);
+
+            process.exit(0);
+        }
+        try {
+            await this.trees.get(MerkleTreeId.DATA_TREE_ROOTS_TREE)!.rollback();
+        } catch (err) {
+            logger.error(`DATA_TREE_ROOTS_TREE rollback failed...`);
+            logger.error(err);
+
+            process.exit(0);
+        }
         this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE, []);
-        this.appendedLeavesCollection.set(MerkleTreeId.SYNC_DATA_TREE, []);
         this.appendedLeavesCollection.set(MerkleTreeId.NULLIFIER_TREE, []);
         this.appendedLeavesCollection.set(MerkleTreeId.DATA_TREE_ROOTS_TREE, []);
     }
@@ -218,5 +278,14 @@ export class WorldStateDB {
     */
     public async updateLeaf(treeId: MerkleTreeId, leaf: LeafData, index: bigint): Promise<void> {
         return await (this.trees.get(treeId) as StandardIndexedTree).updateLeafWithNoValueCheck(leaf, index);
+    }
+
+    exportNullifierTreeForDebug() {
+        const leaves = (this.trees.get(MerkleTreeId.NULLIFIER_TREE) as StandardIndexedTree).leaves;
+        // temporarily snapshot the this.leaves for debug error...
+        const snapshotLeaves = leaves.reduce((p, c, i) => {
+            return p.concat(`key: ${i}, value: LeafData{"value": ${c.value}, nextIndex: ${c.nextIndex}, nextValue:${c.nextValue}} \n`)
+        }, '[');
+        return snapshotLeaves.concat(']');
     }
 }

@@ -42,13 +42,14 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
         const winfo = await withdrawInfoRepo.findOne({
             where: {
                 outputNoteCommitment: withdrawCommitment,
-                status: WithdrawNoteStatus.PENDING
             }
         })
 
         if (!winfo) {
             logger.warn(`no withdraw info, end.`);
-            return { code: 1, data: undefined, msg: 'cannot find the value note!' } as BaseResponse<WithdrawalWitnessDto>;
+            return { code: 1, data: undefined, msg: 'Cannot find the asset note!' } as BaseResponse<WithdrawalWitnessDto>;
+        } else if (winfo.status == WithdrawNoteStatus.DONE) {
+            return { code: 1, data: undefined, msg: 'This asset note has been claimed!' } as BaseResponse<WithdrawalWitnessDto>;
         }
 
         // check if it's the first withdraw
@@ -83,8 +84,8 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
         */
 
         // check if already init
-        const firstFlag = await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk.toBase58}:${tokenId}`);
-        logger.info(`check if already init: firstFlag=${firstFlag}`);
+        const firstFlag = await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk.toBase58()}:${tokenId}`);
+        logger.info(`check if already init: firstFlag=${firstFlag?.toString()}`);
         if (!firstFlag) {
             logger.info(`it's the first withdraw, init tree...`);
             // init a 'USER_NULLIFIER_TREE' tree for it
@@ -92,7 +93,7 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
             await this.withdrawDB.commit();
             logger.info(`init tree, done.`);
 
-            await this.worldState.indexDB.put(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk.toBase58}:${tokenId}`, '1');
+            await this.worldState.indexDB.put(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk.toBase58()}:${tokenId}`, '1');
 
         } else {
             logger.info(`it's NOT the first withdraw, load tree...`);
@@ -102,10 +103,17 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
             logger.info(`load tree, done.`);
         }
 
+        // print tree info
+        logger.info(`print withdraw tree info:`);
+        logger.info(`  treeId: ${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${tokenId}:${ownerPk.toBase58()}`);
+        logger.info(`  depth: ${this.withdrawDB.getDepth()}`);
+        logger.info(`  leafNum: ${this.withdrawDB.getNumLeaves(false).toString()}`);
+        logger.info(`  treeRoot: ${this.withdrawDB.getRoot(false).toString()}`);
+
         const outputNoteCommitmentIdx = winfo!.outputNoteCommitmentIdx ?? (await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${winfo.outputNoteCommitment}`));
         const targetIndx = this.withdrawDB.getNumLeaves(false);
 
-        const rollupDataRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DATA_TREE, false).toString();
+        const rollupDataRoot = this.worldState.worldStateDBLazy.getRoot(MerkleTreeId.DATA_TREE, false).toString();
         logger.info(`current root of SYNC_DATA_TREE: ${rollupDataRoot}`);
 
         const lowLeafWitness = await this.withdrawDB.findPreviousValueAndMp(Field(winfo.outputNoteCommitment), true);
@@ -139,10 +147,13 @@ const handler: RequestHandler<null, { commitment: string }> = async function (
         logger.info(`after revert predecessor, nullifierTree Root: ${await this.withdrawDB.getRoot(true)}`);
         // logger.info(`after revert predecessor, nullifierTree Num: ${await this.withdrawDB.getNumLeaves(true)}`);
 
+        const witnessOnSyncDataTree = (await this.worldState.worldStateDBLazy.getSiblingPath(MerkleTreeId.DATA_TREE, BigInt(outputNoteCommitmentIdx), false))!.path.map(p => p.toString());
+        logger.info(`witnessOnSyncDataTree: ${JSON.stringify(witnessOnSyncDataTree)}`);
+
         const rs = {
             withdrawNoteWitnessData: {
                 withdrawNote: winfo!.valueNote(),
-                witness: (await this.worldState.worldStateDB.getSiblingPath(MerkleTreeId.SYNC_DATA_TREE, BigInt(outputNoteCommitmentIdx), false))!.path.map(p => p.toString()),
+                witness: witnessOnSyncDataTree,
                 index: outputNoteCommitmentIdx
             },
             lowLeafWitness: {

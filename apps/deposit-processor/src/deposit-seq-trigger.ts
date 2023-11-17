@@ -1,6 +1,7 @@
 
-import { $axiosDeposit } from './lib';
 import { getLogger } from "@/lib/logUtils";
+
+import { $axiosDeposit } from './lib';
 import { activeMinaInstance } from '@anomix/utils';
 
 const logger = getLogger('deposit-seq-trigger');

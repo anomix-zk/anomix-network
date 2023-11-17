@@ -34,7 +34,6 @@ export const handler: RequestHandler<null, { transId: number }> = async function
     const transId = req.params.transId;
 
     try {
-
         const dcTranRepo = getConnection().getRepository(DepositTreeTrans);
         const dcTrans = (await dcTranRepo.findOne({ where: { id: transId } }));
 
@@ -46,8 +45,8 @@ export const handler: RequestHandler<null, { transId: number }> = async function
 
         // check if sync_date_tree root is aligned with 
         // check if duplicated call
-        const treeLeafNum = this.worldState.worldStateDB.getNumLeaves(MerkleTreeId.SYNC_DEPOSIT_TREE, false);
-        const treeRoot = this.worldState.worldStateDB.getRoot(MerkleTreeId.SYNC_DEPOSIT_TREE, false);
+        const treeLeafNum = this.worldState.worldStateDBLazy.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false);
+        const treeRoot = this.worldState.worldStateDBLazy.getRoot(MerkleTreeId.DEPOSIT_TREE, false);
 
         // must also check treeRoot!
         if (dcTrans.startActionIndex == treeLeafNum.toString() && dcTrans.startDepositRoot == treeRoot.toString()) {
@@ -55,9 +54,9 @@ export const handler: RequestHandler<null, { transId: number }> = async function
             const cachedStr = (await dcTransCacheRepo.findOne({ where: { dcTransId: transId, type: DepositTransCacheType.DEPOSIT_TREE_UPDATES } }))!.cache;
 
             const dcTransCachedUpdates1 = (JSON.parse(cachedStr) as Array<string>).map(i => Field(i));
-            await this.worldState.worldStateDB.appendLeaves(MerkleTreeId.SYNC_DEPOSIT_TREE, dcTransCachedUpdates1);
+            await this.worldState.worldStateDBLazy.appendLeaves(MerkleTreeId.DEPOSIT_TREE, dcTransCachedUpdates1);
 
-            await this.worldState.worldStateDB.commit(); // here only 'SYNC_DEPOSIT_TREE' commits underlyingly           
+            await this.worldState.worldStateDBLazy.commit(); // here only 'DEPOSIT_TREE' commits underlyingly           
 
             return {
                 code: 0, data: '', msg: ''

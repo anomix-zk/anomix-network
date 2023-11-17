@@ -3,8 +3,9 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { BaseResponse, MerkleTreeId } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
+import { getLogger } from "@/lib/logUtils"
 
-
+const logger = getLogger('queryMerkleTreeInfo');
 /**
  * query MerkleTree Info
  */
@@ -26,6 +27,7 @@ export const handler: RequestHandler<{ treeId: number, includeUncommit: boolean 
     req,
     res
 ): Promise<BaseResponse<{
+    // flag: number, // TODO from 2023-10-21
     treeId: number,
     includeUncommit: boolean,
     depth: number,
@@ -34,17 +36,21 @@ export const handler: RequestHandler<{ treeId: number, includeUncommit: boolean 
 }>> {
     const { treeId, includeUncommit } = req.body;
 
+    const worldStateDBTmp = treeId == MerkleTreeId.DEPOSIT_TREE ? this.worldState.worldStateDB : this.worldState.worldStateDBLazy;
+
+    // TODO As there is no MerkleTreeId.SYNC_DEPOSIT_TREE any more from 2023-10-21, Need to improve it here!TODO
     try {
         return {
             code: 0, data: {
                 treeId,
                 includeUncommit,
-                depth: this.worldState.worldStateDB.getDepth(treeId),
-                leafNum: this.worldState.worldStateDB.getNumLeaves(treeId, includeUncommit).toString(),
-                treeRoot: this.worldState.worldStateDB.getRoot(treeId, includeUncommit).toString()
+                depth: worldStateDBTmp.getDepth(MerkleTreeId.DEPOSIT_TREE),
+                leafNum: worldStateDBTmp.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, includeUncommit).toString(),
+                treeRoot: worldStateDBTmp.getRoot(MerkleTreeId.DEPOSIT_TREE, includeUncommit).toString()
             }, msg: ''
         };
     } catch (err) {
+        logger.error(err);
         throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }

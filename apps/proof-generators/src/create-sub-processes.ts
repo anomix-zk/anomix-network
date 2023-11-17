@@ -73,15 +73,10 @@ const cnt_AnomixRollupContract = Math.floor((3 / 16) * cores) == 0 ? 1 : Math.fl
 let rollupContractCallTimes = 0;
 let entryContractCallTimes = 0;
 
-export const createSubProcesses = async (n: number) => {
+export const createSubProcesses = async () => {
     let cores = os.cpus().length - 2;
     logger.info(`Number of CPUs is ${cores}`);
     logger.info(`Master ${process.pid} is running`);
-    if (cores <= n) {
-        throw Error(
-            `You have ${cores} cores available, but you are trying to spin up ${n} processes. Please give your CPU some room to breathe!`
-        );
-    }
 
     let workerMap = new Map<string, { worker: Worker, status: WorkerStatus, type: string }[]>([
         [CircuitName_DepositRollupProver, []],
@@ -131,7 +126,7 @@ export const createSubProcesses = async (n: number) => {
         }
     }
 
-    createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
+        createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
 
     createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
 
@@ -142,7 +137,7 @@ export const createSubProcesses = async (n: number) => {
     createCircuitProcessor(cnt_BlockProver, CircuitName_BlockProver);
 
     createCircuitProcessor(cnt_AnomixRollupContract, CircuitName_AnomixRollupContract);
-
+    
     await waitForAllWorkersReady(workerMap);
 
     return {

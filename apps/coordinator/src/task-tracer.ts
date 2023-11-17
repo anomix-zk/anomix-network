@@ -8,6 +8,7 @@ import { $axiosDeposit, $axiosSeq } from './lib/api';
 import { initORM } from './lib/orm';
 import { parentPort } from 'worker_threads';
 import { UInt64, PublicKey, Field } from "o1js";
+import config from './lib/config';
 
 if (process.send) {
     (process.send as any)({// when it's a primary process, process.send == undefined. 
@@ -57,13 +58,12 @@ async function traceTasks() {
         // check if txHash is confirmed or failed
         const l1TxHash = task.txHash;
         // TODO need record the error!
-        const rs: { data: { zkapp: { blockHeight: number, dateTime: string, failureReason: string }; }; } = await fetch("https://berkeley.graphql.minaexplorer.com/", {
+        const rs: { data: { zkapp: { blockHeight: number, dateTime: string, failureReason: string }; }; } = await fetch(config.httpGraphQLMinaExplorer, {
             "headers": {
                 "Accept": "application/json",
                 "Accept-Language": "en-US,en;q=0.5",
                 "Content-Type": "application/json",
             },
-            "referrer": "https://berkeley.graphql.minaexplorer.com/",
             "body": "{\"query\":\"query MyQuery {\\n  zkapp(query: {hash: \\\"" + l1TxHash + "\\\"}) {\\n    blockHeight\\n    failureReason {\\n      failures\\n    }\\n    dateTime\\n  }\\n}\\n\",\"variables\":null,\"operationName\":\"MyQuery\"}",
             "method": "POST",
             "mode": "cors"

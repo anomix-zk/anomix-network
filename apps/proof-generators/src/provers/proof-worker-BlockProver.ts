@@ -7,7 +7,7 @@ import { ProofTaskType, FlowTaskType } from '@anomix/types';
 import { getLogger } from "../lib/logUtils";
 import { prove } from "./circuits/block_prover";
 
-const logger = getLogger('pWorker-BlockProver', 'BlockProver');
+const logger = getLogger('pWorker-BlockProver');
 
 export { initWorker };
 
@@ -20,8 +20,12 @@ function processMsgFromMaster() {
 
             case `${FlowTaskType[FlowTaskType.BLOCK_PROVE]}`:
                 await execCircuit(message, async () => {
+                    // comprising code! due to PublicKey.fromBase58(PubicKey.empty().toBase58()) will fail.
+                    message.payload.blockProveInput.txFeeReceiverNote.creatorPk = message.payload.blockProveInput.txFeeReceiverNote.ownerPk;
+                    const blockProveInput = new BlockProveInput(BlockProveInput.fromJSON(message.payload.blockProveInput));
+                    blockProveInput.txFeeReceiverNote.creatorPk = PublicKey.empty();
                     let params = {
-                        blockProveInput: new BlockProveInput(BlockProveInput.fromJSON(message.payload.blockProveInput)),
+                        blockProveInput,
                         innerRollupProof: InnerRollupProof.fromJSON(message.payload.innerRollupProof)
                     }
 

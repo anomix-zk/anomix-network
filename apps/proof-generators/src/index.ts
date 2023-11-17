@@ -20,17 +20,17 @@ const __dirname = dirname(__filename);
 const logger = getLogger('proof-generator');
 
 
-function bootWebServerThread(subProcessCordinator: SubProcessCordinator) {
+function bootWebServerThread(subProcessCordinator: SubProcessCordinator, port: string | number) {
     // init worker thread A
-    let httpWorker = cp.fork(`${__dirname}/web-server.js`, ['child']);
+    let httpWorker = cp.fork(`${__dirname}/web-server.js`, ['webserver', port.toString()]);
     httpWorker.on('online', () => {
-        logger.info('web-server worker is online...');
+        logger.info(`web-server[port:${port}] worker is online...`);
     })
 
     httpWorker.on('exit', (exitCode: number) => {
-        logger.error('webServer process exit...')
+        logger.error(`webServer${port} process exit...`)
         // create a new worker for http-server
-        bootWebServerThread(subProcessCordinator);
+        bootWebServerThread(subProcessCordinator, port);
     })
 
     httpWorker.on('message', (proofTaskDto: ProofTaskDto<any, any>) => {
@@ -223,9 +223,13 @@ const proof_generation_init = async () => {
     await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
     if (cluster.isPrimary) {
-        let subProcessCordinator = await createSubProcesses(config.subProcessCnt);
-        // start web server in worker thread
-        bootWebServerThread(subProcessCordinator);
+        let subProcessCordinator = await createSubProcesses();
+        // start web server in childProcessors
+        bootWebServerThread(subProcessCordinator, config.port);
+
+        bootWebServerThread(subProcessCordinator, config.portProofVerifyServer0);
+        bootWebServerThread(subProcessCordinator, config.portProofVerifyServer1);
+
     }/*  else {// sub processes:
         await initWorker();
     } */

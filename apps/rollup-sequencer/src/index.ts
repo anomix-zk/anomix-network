@@ -1,17 +1,17 @@
+import { getLogger } from "@/lib/logUtils";
 import cp from "child_process";
 import { Worker as WorkerThread } from "worker_threads";
 import { RollupTaskType } from "@anomix/types";
 import { WorldState, WorldStateDB, RollupDB, IndexDB } from "./worldstate";
 import config from './lib/config';
 import { activeMinaInstance } from "@anomix/utils";
-import { getLogger } from "@/lib/logUtils";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const logger = getLogger('rollup-sequencer');
+const logger = getLogger('main');
 
 class ProofSchedulerWorkers extends Array<{ status: number, worker: cp.ChildProcess }> {
     private cursor = 0
@@ -28,7 +28,7 @@ class ProofSchedulerWorkers extends Array<{ status: number, worker: cp.ChildProc
 
     bootProofSchedulerThread() {
         // init worker thread
-        const worker = cp.fork(`${__dirname}/prover.js`, ['child']);
+        const worker = cp.fork(`${__dirname}/prover.js`, [`Prover${this.length}`]);
         worker.on('online', () => {
             logger.info('proof-scheduler worker is online...');
         })
@@ -84,7 +84,7 @@ let proofSchedulerWorkers = new ProofSchedulerWorkers(config.proofSchedulerWorke
 const bootWebServerThread = () => {
     // init worker thread A
     // let worker = new WorkerThread(`${__dirname}/web-server.js`);
-    let serverProcess = cp.fork(`${__dirname}/web-server.js`, ['child']);
+    let serverProcess = cp.fork(`${__dirname}/web-server.js`, ['WebServer']);
     serverProcess.on('online', () => {
         logger.info('web-server process is online...');
     })

@@ -80,7 +80,7 @@ async function proofTrigger() {
                 }
 
                 // to control the frequency of contract-call to a approprite range, to let 'Withdraw-claim' more smoothly.
-                if (lastContractCallTimestamp != 0 && (new Date().getTime() - lastContractCallTimestamp) < 10 * 60 * 1000) {
+                if (lastContractCallTimestamp != 0 && (new Date().getTime() - lastContractCallTimestamp) < 20 * 60 * 1000) {
                     logger.info(`lastContractCallTimestamp = ${lastContractCallTimestamp}, less than 15mins after last contract-call...`);
                     continue;
                 }
@@ -133,7 +133,7 @@ async function proofTrigger() {
                             // assert
                             // assert
 
-                            logger.info('trigger /rollup/contract-call/', depositTreeTrans?.id);
+                            logger.info('trigger $axiosDeposit contract-call/', depositTreeTrans?.id);
                             await $axiosDeposit.get<BaseResponse<string>>(`/rollup/contract-call/${depositTreeTrans.id}`).then(r => {
                                 if (r.data.code == 1) {
                                     throw new Error(r.data.msg);

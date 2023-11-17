@@ -6,7 +6,7 @@ import { getLogger } from "../lib/logUtils";
 import { commitActionBatch, merge } from "./circuits/deposit_rollup_prover";
 import fs from "fs";
 
-const logger = getLogger('pWorker-DepositRollupProver', 'DepositRollupProver');
+const logger = getLogger('pWorker-DepositRollupProver');
 
 export { initWorker };
 

@@ -46,19 +46,32 @@ parentPort?.postMessage({// if it's a subThread
 
 await fetchWithdrawalEvents();
 
-setInterval(fetchWithdrawalEvents, 2 * 60 * 1000);// exec/5mins
+setInterval(fetchWithdrawalEvents, 1 * 60 * 1000);// exec/5mins
 
 async function fetchWithdrawalEvents() {
-    const httpRes = await httpfetchWithdrawalEvents();
-    if (!httpRes) {
-        logger.info(`httpfetchWithdrawalEvents failed, switch to standardFetchWithdrawalEvents...`);
-        await standardFetchWithdrawalEvents();
-    }
-    // trigger sync into user_nullifier_tree SEPERATELY
-    await $axiosSeq.get<BaseResponse<string>>(`/note/withdrawal-batch-sync`).then(r => {
-        if (r.data.code == 1) {
-            logger.error(r.data.msg);
+    logger.info('... a new ROUND to fetchWithdrawalEvents ...');
+
+    try {
+        const httpRes = await httpfetchWithdrawalEvents();
+        if (!httpRes) {
+            logger.info(`httpfetchWithdrawalEvents failed, switch to standardFetchWithdrawalEvents...`);
+            await standardFetchWithdrawalEvents();
         }
-    });
+    } catch (error) {
+        logger.error(error);
+    }
+
+    try {
+        // trigger sync into user_nullifier_tree SEPERATELY
+        await $axiosSeq.get<BaseResponse<string>>(`/note/withdrawal-batch-sync`).then(r => {
+            if (r.data.code == 1) {
+                logger.error(r.data.msg);
+            }
+        });
+    } catch (error) {
+        logger.error(error);
+    }
+
+    logger.info('this ROUND to fetchWithdrawalEvents end.');
 }
 

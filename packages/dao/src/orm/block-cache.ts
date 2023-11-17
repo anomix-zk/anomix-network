@@ -17,11 +17,21 @@ export class BlockCache {
     @Column()
     cache: string
 
-    /**
-     * * 0: data_tree's cached updates
-     * * 1: empty leaf witness of txFee on data_tree
-     */
     @Column({ default: 0 })
+    status: number
+
+    /**
+      * BlockCacheType {
+            DATA_TREE_UPDATES,
+            TX_FEE_EMPTY_LEAF_WITNESS,
+            DATA_TREE_ROOT_EMPTY_LEAF_WITNESS,
+            DEPOSIT_COMMITMENTS_WITNESS,
+            NULLIFIER_TREE_UPDATES,
+            DATA_TREE_ROOTS_TREE_UPDATES,
+            INDEXDB_UPDATES,<br>
+      * }
+     */
+    @Column()
     type: number
 
     @Column()

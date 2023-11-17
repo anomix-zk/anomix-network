@@ -1,9 +1,8 @@
-
+import { getLogger } from "@/lib/logUtils";
 import { getConnection, In, LessThan } from 'typeorm';
 import { DepositRollupBatch, DepositTreeTrans } from '@anomix/dao';
 import { BaseResponse, FlowTask, FlowTaskType, DepositTreeTransStatus, ProofTaskDto, ProofTaskType } from '@anomix/types';
 import { $axiosProofGenerator, initORM } from './lib';
-import { getLogger } from "@/lib/logUtils";
 import { activeMinaInstance } from '@anomix/utils';
 import { randomUUID } from 'crypto';
 

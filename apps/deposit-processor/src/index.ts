@@ -1,8 +1,8 @@
+import { getLogger } from "@/lib/logUtils";
 import { threadId, Worker } from "worker_threads";
 import { activeMinaInstance } from "@anomix/utils";
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { getLogger } from "@/lib/logUtils";
 
 const logger = getLogger('deposit-processor');
 const __filename = fileURLToPath(import.meta.url);

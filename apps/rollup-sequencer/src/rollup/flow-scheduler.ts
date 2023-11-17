@@ -1,9 +1,9 @@
 
 import config from "@/lib/config";
-import { DepositStatus, MerkleTreeId, L2TxStatus, PoseidonHasher, MerkleProofDto, BlockCacheType, BaseResponse, BlockStatus, WithdrawNoteStatus, BaseSiblingPath } from "@anomix/types";
+import { DepositStatus, MerkleTreeId, L2TxStatus, PoseidonHasher, MerkleProofDto, BlockCacheType, BaseResponse, BlockStatus, WithdrawNoteStatus, BaseSiblingPath, MerkleTreeError } from "@anomix/types";
 import {
     DataMerkleWitness, DataRootWitnessData, LowLeafWitnessData, NullifierMerkleWitness,
-    DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, NoteType, ValueNote, Commitment, RollupState, RollupStateTransition, BlockProveOutput, TxFee, FEE_ASSET_ID_SUPPORT_NUM, AssetId
+    DUMMY_FIELD, AnomixEntryContract, AnomixRollupContract, ActionType, NoteType, ValueNote, Commitment, RollupState, RollupStateTransition, BlockProveOutput, TxFee, FEE_ASSET_ID_SUPPORT_NUM, AssetId, DEPOSIT_TREE_INIT_ROOT
 } from "@anomix/circuits";
 import { WorldStateDB, WorldState, IndexDB, RollupDB } from "@/worldstate";
 import { Block, BlockCache, DepositCommitment, InnerRollupBatch, L2Tx, MemPlL2Tx, WithdrawInfo } from "@anomix/dao";
@@ -15,6 +15,11 @@ import { getLogger } from "@/lib/logUtils";
 import { randomBytes, randomInt, randomUUID } from "crypto";
 import { $axiosDepositProcessor } from "@/lib";
 import { LeafData } from "@anomix/merkle-tree";
+import { BlockCacheStatus } from "@anomix/types";
+import fs from "fs";
+import { getDateString } from "@/lib/timeUtils";
+import path from "node:path";
+
 const logger = getLogger('FlowScheduler');
 
 export class FlowScheduler {
@@ -44,18 +49,26 @@ export class FlowScheduler {
 
         // const rollupContract = new AnomixRollupContract(rollupContractAddr);// not based on onchain values, but last block's result!
         this.currentDataRoot = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false);
+        logger.info(`currentDataRoot: ${this.currentDataRoot}`);
         this.currentRootTreeRoot = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE_ROOTS_TREE, false);
+        logger.info(`currentRootTreeRoot: ${this.currentRootTreeRoot}`);
         this.currentNullifierRoot = this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, false);
+        logger.info(`currentNullifierRoot: ${this.currentNullifierRoot}`);
 
         const entryContract = new AnomixEntryContract(entryContractAddr);
         // this.depositStartIndexInBlock = rollupContract.state.get().depositStartIndex;
         this.depositTreeRootInBlock = entryContract.depositState.get().depositRoot;
+        logger.info(`init depositTreeRootInBlock to currently onchain entryContract.depositState: ${this.depositTreeRootInBlock}`);
 
     }
 
     async start() {
+        logger.info(`start a new round of rollup-seq...`);
         // clear dirty data on both rollupDB & worldStateDB at the beginning
         await this.init();
+
+        let nullifierTreeErrorFlag = false;
+        let existingLatestBlock: Block = undefined as any;
 
         const connection = getConnection();
         const queryRunner = connection.createQueryRunner();
@@ -64,15 +77,80 @@ export class FlowScheduler {
             const innerRollupTxNum = config.innerRollup.txCount;
 
             // query unhandled NON-Deposit Tx list from RollupDB
-            let mpTxList = await this.rollupDB.queryPendingTxList();
+            let mpTxList = await queryRunner.manager.find(MemPlL2Tx, {
+                where: {
+                    status: L2TxStatus.PENDING,
+                },
+                order: { txFee: 'DESC' }
+            }) ?? [];
             if (mpTxList.length == 0) {
                 logger.info('no tx inside mempool...');
+
+                await queryRunner.rollbackTransaction();
                 await this.worldState.reset();//  end this flow!
                 logger.info('reset worldState.');
                 logger.info('end.');
 
                 return;
             }
+
+            existingLatestBlock = (await queryRunner.manager.find(Block, {
+                order: {
+                    id: 'DESC'
+                },
+                take: 1
+            }))[0];
+            let existingLatestBlockId = 0;
+            if (existingLatestBlock) {// if exist
+
+                existingLatestBlockId = existingLatestBlock.id;
+
+                let checkRs = true;
+                // check dataTreeRoot is aligned 
+                if (existingLatestBlock.dataTreeRoot1 != this.currentDataRoot.toString()) {
+                    logger.warn(`existingLatestBlock.dataTreeRoot1[${existingLatestBlock.dataTreeRoot1}] != this.currentDataRoot`);
+                    checkRs &&= false;
+                }
+                // check nullifierTreeRoot is aligned 
+                if (existingLatestBlock.nullifierTreeRoot1 != this.currentNullifierRoot.toString()) {
+                    logger.warn(`existingLatestBlock.nullifierTreeRoot1[${existingLatestBlock.nullifierTreeRoot1}] != this.currentNullifierRoot`);
+                    checkRs &&= false;
+                }
+                // check rootTreeRoot is aligned 
+                if (existingLatestBlock.rootTreeRoot1 != this.currentRootTreeRoot.toString()) {
+                    logger.warn(`existingLatestBlock.rootTreeRoot1[${existingLatestBlock.rootTreeRoot1}] != this.currentRootTreeRoot`);
+                    checkRs &&= false;
+                }
+
+                if (!checkRs) {
+                    logger.error('merkle tree is inconsistent! pls ping administrator...');
+
+                    await queryRunner.rollbackTransaction();
+                    await this.worldState.reset();//  end this flow!
+                    logger.info('reset worldState.');
+                    logger.info('end.');
+
+                    return;
+                }
+            }
+
+            const currentBlockId = existingLatestBlockId + 1;
+            logger.info(`start generating block: ${currentBlockId}...`);
+
+            // snapshot the leaves of nullifier_tree before appendLeaves
+            logger.info(`snapshot nullifier_tree's leaves before appendLeaves...`);
+            const snapshotLeavesBeforeBlockGen = this.worldStateDB.exportNullifierTreeForDebug();
+
+            const fileName = `${config.worldStateDBSnapshotPath}/block-${currentBlockId}-nullifier-tree-pre-snapshot-${getDateString()}`;
+            fs.writeFile(fileName, snapshotLeavesBeforeBlockGen, (err) => {
+                if (err) {
+                    logger.error(`${fileName} persist error!`);
+                    logger.error(err);
+                } else {
+                    logger.info(`${fileName} written successfully`);
+                }
+            });
+            logger.info(`async persist nullifier_tree's leaves at ${fileName} ...`);
 
             // based on last block's depositStartIndex1, if no last block, then set '0'
             this.depositStartIndexInBlock = Field((await queryRunner.manager.find(Block, {
@@ -81,6 +159,7 @@ export class FlowScheduler {
                 },
                 take: 1
             }))[0]?.depositStartIndex1 ?? '0');
+            logger.info(`depositStartIndexInBlock: ${this.depositStartIndexInBlock}...`);
 
             // ================== below: mpTxList.length > 0 ==================
             // !!need double check if nullifier1/2 has already been spent!!
@@ -107,11 +186,14 @@ export class FlowScheduler {
                 });
                 await queryRunner.manager.save(ridTxList);
             }
+            logger.info(`ridTxList whose nullifier1/2 is spent already: ${ridTxList.map(r => r.txHash)}`);
 
             // !!need double check if nullifier1/2 has already been spent!!
             mpTxList = await this.ridLessFeeOnesIfDoubleSpend(mpTxList);
+            logger.info(`after ridLessFeeOnesIfDoubleSpend, mpTxList.length == ${mpTxList.length}`);
             if (mpTxList.length == 0) {
                 await this.worldState.reset();//  end this flow!
+                logger.info(`end.`);
                 return;
             }
 
@@ -119,15 +201,18 @@ export class FlowScheduler {
             const nonDepositTxList = mpTxList.filter(tx => {
                 return tx.actionType != ActionType.DEPOSIT.toString();
             })
+            logger.info(`nonDepositTxList number: ${nonDepositTxList.length}`);
             const depositTxList = mpTxList.filter(tx => {
                 return tx.actionType == ActionType.DEPOSIT.toString();
             }).sort((a, b) => {
                 return Number(a.depositIndex) - Number(b.depositIndex);
             });
+            logger.info(`depositTxList number: ${depositTxList.length}`);
             mpTxList = [...nonDepositTxList, ...depositTxList];
 
             const depositCount = depositTxList.length;
             this.depositEndIndexInBlock = this.depositStartIndexInBlock.add(depositCount);
+            logger.info(`depositEndIndexInBlock: ${this.depositEndIndexInBlock}`);
 
             let blockCachedWitnessDc: BlockCache = undefined as any;
             if (depositCount > 0) {
@@ -141,6 +226,7 @@ export class FlowScheduler {
                     leafIndexList: depositTxList.map(d => d.depositIndex)
                 }).then(r => {
                     if (r.data.code == 1) {
+                        logger.error(`could not obtain latest DEPOSIT_TREE root: ${r.data.msg}`);
                         throw new Error(`could not obtain latest DEPOSIT_TREE root: ${r.data.msg}`);
                     }
 
@@ -150,6 +236,7 @@ export class FlowScheduler {
 
                 // pre fill with the latest depositTreeRoot and currently dataTreeRoot
                 const depositTreeRootStr = this.depositTreeRootInBlock.toString();
+                logger.info(`update depositTreeRootInBlock after fetch the latest depositTreeRoot: ${depositTreeRootStr}`);
                 const dataTreeRootStr = this.currentDataRoot.toString();
                 depositTxList.forEach(tx => {
                     tx.depositRoot = depositTreeRootStr;
@@ -157,10 +244,11 @@ export class FlowScheduler {
                 });
 
                 blockCachedWitnessDc = new BlockCache();
-                // blockCachedWitnessTxFee.blockId = block.id;
+                blockCachedWitnessDc.blockId = currentBlockId;
                 blockCachedWitnessDc.cache = JSON.stringify(dcWitnessWrapper.witnesses);
                 blockCachedWitnessDc.type = BlockCacheType.DEPOSIT_COMMITMENTS_WITNESS;
                 await queryRunner.manager.save(blockCachedWitnessDc);
+                logger.info(`save BlockCache of DEPOSIT_COMMITMENTS_WITNESS`);
             }
 
             const rollupSize = mpTxList.length;
@@ -170,6 +258,7 @@ export class FlowScheduler {
             if (mod > 0) {//ie. == 1
                 // calc dummy tx
                 let pendingTxSize = innerRollupTxNum - mod;
+                logger.info(`append ${pendingTxSize} dummyTx...`)
                 // fill dummy tx
                 for (let index = 0; index < pendingTxSize; index++) {
                     const dummyTx = config.joinsplitProofDummyTx;
@@ -210,7 +299,7 @@ export class FlowScheduler {
                 secret: Poseidon.hash([Field.random()]),
                 ownerPk: PrivateKey.fromBase58(config.operatorPrivateKey).toPublicKey(),
                 accountRequired: Field(1),
-                creatorPk: PrivateKey.fromBase58(config.operatorPrivateKey).toPublicKey(),
+                creatorPk: PublicKey.empty(),
                 value: UInt64.from(nonDummyTxList.reduce((p, c, i) => {
                     return Number(c.txFee) + p;
                 }, 0)),
@@ -227,13 +316,13 @@ export class FlowScheduler {
                 paths: txFeeSiblingPath.map(p => p.toString())
             } as MerkleProofDto;
             await this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, txFeeCommitment);
-
+            logger.info(`appendLeaf: txFeeCommitment: ${txFeeCommitment.toString()}`);
 
             this.targetDataRoot = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, true);
             this.targetNullifierRoot = this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true);
             // insert new data_root
             const dataRootLeafIndex = this.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, false);
-            const dataRootSiblingPath = (await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, BigInt(dataRootLeafIndex), true))!.path;
+            const dataRootSiblingPath = (await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, BigInt(dataRootLeafIndex), false))!.path;
             const dataRootEmptyLeafWitness = {
                 leafIndex: Number(dataRootLeafIndex),
                 commitment: DUMMY_FIELD.toString(),
@@ -244,7 +333,7 @@ export class FlowScheduler {
 
             // create a new block
             let block = new Block();
-            block.id = (await queryRunner.manager.count(Block)) + 1;
+            block.id = currentBlockId;
             block.status = BlockStatus.PENDING;
             block.rollupSize = rollupSize;// TODO non-dummy?
             block.rootTreeRoot0 = this.currentRootTreeRoot.toString();
@@ -292,13 +381,32 @@ export class FlowScheduler {
 
             block = await queryRunner.manager.save(block);// save it
 
-            const cachedUpdates = this.worldStateDB.exportCacheUpdates(MerkleTreeId.DATA_TREE);
-            logger.info(`block.id: ${block.id}, DATA_TREE's cachedUpdates: ${JSON.stringify(cachedUpdates)}`);
-            const blockCachedUpdates = new BlockCache();
-            blockCachedUpdates.blockId = block.id;
-            blockCachedUpdates.cache = JSON.stringify(cachedUpdates);
-            blockCachedUpdates.type = BlockCacheType.DATA_TREE_UPDATES;//  0
-            await queryRunner.manager.save(blockCachedUpdates);
+            const cachedUpdatesDataTree = this.worldStateDB.exportCacheUpdates(MerkleTreeId.DATA_TREE);
+            logger.info(`block.id: ${block.id}, DATA_TREE's cachedUpdates: ${JSON.stringify(cachedUpdatesDataTree)}`);
+            const blockCachedUpdatesDataTree = new BlockCache();
+            blockCachedUpdatesDataTree.blockId = block.id;
+            blockCachedUpdatesDataTree.cache = JSON.stringify(cachedUpdatesDataTree);
+            blockCachedUpdatesDataTree.type = BlockCacheType.DATA_TREE_UPDATES;//  0
+            blockCachedUpdatesDataTree.status = BlockCacheStatus.PENDING;
+            await queryRunner.manager.save(blockCachedUpdatesDataTree);
+
+            const cachedUpdatesNullifierTree = this.worldStateDB.exportCacheUpdates(MerkleTreeId.NULLIFIER_TREE);
+            logger.info(`block.id: ${block.id}, NULLIFIER_TREE's cachedUpdates: ${JSON.stringify(cachedUpdatesNullifierTree)}`);
+            const blockCachedUpdatesNullifierTree = new BlockCache();
+            blockCachedUpdatesNullifierTree.blockId = block.id;
+            blockCachedUpdatesNullifierTree.cache = JSON.stringify(cachedUpdatesNullifierTree);
+            blockCachedUpdatesNullifierTree.type = BlockCacheType.NULLIFIER_TREE_UPDATES;//  4
+            blockCachedUpdatesNullifierTree.status = BlockCacheStatus.PENDING;
+            await queryRunner.manager.save(blockCachedUpdatesNullifierTree);
+
+            const cachedUpdatesRootTree = this.worldStateDB.exportCacheUpdates(MerkleTreeId.DATA_TREE_ROOTS_TREE);
+            logger.info(`block.id: ${block.id}, DATA_TREE_ROOTS_TREE's cachedUpdates: ${JSON.stringify(cachedUpdatesRootTree)}`);
+            const blockCachedUpdatesRootTree = new BlockCache();
+            blockCachedUpdatesRootTree.blockId = block.id;
+            blockCachedUpdatesRootTree.cache = JSON.stringify(cachedUpdatesRootTree);
+            blockCachedUpdatesRootTree.type = BlockCacheType.DATA_TREE_ROOTS_TREE_UPDATES;//  5
+            blockCachedUpdatesRootTree.status = BlockCacheStatus.PENDING;
+            await queryRunner.manager.save(blockCachedUpdatesRootTree);
 
             // cache txFee's empty leaf witness
             const blockCachedWitnessTxFee = new BlockCache();
@@ -313,12 +421,6 @@ export class FlowScheduler {
             blockCachedWitnessDataRoot.cache = JSON.stringify(dataRootEmptyLeafWitness);
             blockCachedWitnessDataRoot.type = BlockCacheType.DATA_TREE_ROOT_EMPTY_LEAF_WITNESS;// 2
             await queryRunner.manager.save(blockCachedWitnessDataRoot);
-
-            // cache depositCommitments' witnesses if existing
-            if (blockCachedWitnessDc) {
-                blockCachedWitnessDc.blockId = block.id;
-                await queryRunner.manager.save(blockCachedWitnessDc);
-            }
 
             const txFeeWithdrawInfo = new WithdrawInfo();
             txFeeWithdrawInfo.secret = feeValueNote.secret.toString();
@@ -349,7 +451,7 @@ export class FlowScheduler {
                 mpL2Tx.indexInBlock = i;
 
                 const l2tx = new L2Tx();
-                Object.assign(l2tx, mpL2Tx); //????
+                Object.assign(l2tx, mpL2Tx);
 
                 return l2tx;
             })
@@ -369,16 +471,12 @@ export class FlowScheduler {
             })
             await queryRunner.manager.update(DepositCommitment, { depositNoteCommitment: In(dcCommitments) }, { status: DepositStatus.CONFIRMED });// TODO imporve here?
 
-            // commit
-            await queryRunner.commitTransaction();
-
-            // TODO =======================need make them into a Distributed Transaction =======================
-
-            // commit leveldb at last
-            await this.worldStateDB.commit();
-
             // cache in indexDB
-            let batch: { key: any, value: any }[] = [];
+            let batchOps: { key: any, value: any }[] = [];
+            batchOps.push({
+                key: `LATESTBLOCK`,
+                value: block.id
+            });
             nonDummyTxList.forEach((tx, i) => {
                 /**
                  * cache KV for acceleration:
@@ -388,65 +486,95 @@ export class FlowScheduler {
                  */
 
                 if (tx.outputNoteCommitment1 != '0') {
-                    batch.push({
+                    batchOps.push({
                         key: `L2TX:${tx.outputNoteCommitment1}`,// no 0
                         value: tx.txHash
                     });
-                    batch.push({
+                    batchOps.push({
                         key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${tx.outputNoteCommitment1}`,// no 0
                         value: tx.outputNoteCommitmentIdx1
                     });
                 }
                 if (tx.outputNoteCommitment2 != '0') {
-                    batch.push({
+                    batchOps.push({
                         key: `L2TX:${tx.outputNoteCommitment2}`,// no 0
                         value: tx.txHash
                     });
-                    batch.push({
+                    batchOps.push({
                         key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${tx.outputNoteCommitment2}`,// no 0
                         value: tx.outputNoteCommitmentIdx2
                     })
                 }
 
                 if (tx.nullifier1 != '0') {
-                    batch.push({
+                    batchOps.push({
                         key: `L2TX:${tx.nullifier1}`,// no 0
                         value: tx.txHash
                     });
-                    batch.push({
+                    batchOps.push({
                         key: `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${tx.nullifier1}`,// no 0
                         value: tx.nullifierIdx1
                     })
                 }
                 if (tx.nullifier2 != '0') {
-                    batch.push({
+                    batchOps.push({
                         key: `L2TX:${tx.nullifier2}`,// no 0
                         value: tx.txHash
                     });
-                    batch.push({
+                    batchOps.push({
                         key: `${MerkleTreeId[MerkleTreeId.NULLIFIER_TREE]}:${tx.nullifier2}`,// no 0
                         value: tx.nullifierIdx2
                     })
                 }
             });
 
-            batch.push({
+            batchOps.push({
                 key: `${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${txFeeCommitment.toString()}`,
                 value: txFeeCommitmentIdx
             });
-            batch.push({
+            batchOps.push({
                 key: `${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${this.targetDataRoot.toString()}`,
                 value: dataRootLeafIndex.toString()
             });
-            // TODO !!! although it will not break consistency, need consider extreme case where some mechenism if this.indexDB.batchInsert(*) fails.!!!
-            await this.indexDB.batchInsert(batch);
 
+            const batchOpStr = JSON.stringify(batchOps);
+            logger.info(`block.id: ${block.id}, indexDB's cachedUpdates: ${batchOpStr}`);
+            const blockCachedUpdatesIndexDB = new BlockCache();
+            blockCachedUpdatesIndexDB.blockId = block.id;
+            blockCachedUpdatesIndexDB.cache = batchOpStr;
+            blockCachedUpdatesIndexDB.type = BlockCacheType.INDEXDB_UPDATES;//  6
+            await queryRunner.manager.save(blockCachedUpdatesIndexDB);
+
+            // commit
+            await queryRunner.commitTransaction();
+            logger.info(`mysqldb.commit.`);
+
+            // if these leveldb ops fail (in the case the process exit after db.commit but before merkletrees commit), it will be checked and fixed during network reboot.
+            await this.worldStateDB.commit();
+            logger.info(`worldStateDB.commit.`);
+
+            await this.indexDB.batchInsert(batchOps);
+            logger.info(`indexDB.batchInsert.`);
+
+
+            logger.info(`succeed generating block: ${currentBlockId} .`);
         } catch (error) {
             logger.error(error);
-            console.log(error);
 
-            await queryRunner.rollbackTransaction();
+            try {
+                await queryRunner.rollbackTransaction();
+                logger.info('mysqldb.rollbackTransaction.');
+            } catch (error) {
+                logger.info('mysqldb.rollbackTransaction failed!');
+            }
+
             await this.worldStateDB.rollback();
+            logger.info('worldStateDB.rollback.');
+
+            if (error instanceof MerkleTreeError) {
+                nullifierTreeErrorFlag = true;
+            }
+
         } finally {
             // end the flow
             await this.worldState.reset();
@@ -454,9 +582,103 @@ export class FlowScheduler {
             logger.info('end.');
             await queryRunner.release();
         }
+
+        if (nullifierTreeErrorFlag && existingLatestBlock) {// if nullifierTreeError occurs and next block is not the first block.
+            logger.info(`start rebuilding WorldStateDB...`);
+
+            const currentDateString = getDateString();
+            const rebuildWorldStateDBPath = config.worldStateDBPath.concat(`-block-${existingLatestBlock.id}-rebuilding-${currentDateString}`);
+            const rebuildWorldStateDB = new WorldStateDB(rebuildWorldStateDBPath);
+
+            await rebuildWorldStateDB.initTrees();
+            logger.info(`rebuild: rebuildWorldStateDB.initTrees done.`);
+            // prepare data_tree root into dataTreeRootsTree
+            const dataTreeRoot = rebuildWorldStateDB.getRoot(MerkleTreeId.DATA_TREE, false);
+            logger.info(`rebuild: the initial dataTreeRoot: ${dataTreeRoot.toString()}`);
+            const index = rebuildWorldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, false);// 0n
+            await rebuildWorldStateDB.appendLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, [dataTreeRoot]);
+            await rebuildWorldStateDB.commit();
+            logger.info(`rebuild: append the initial dataTreeRoot into DATA_TREE_ROOTS_TREE at index:${index}, done.`);
+
+            try {
+                // if merkletree error, then new trees instantly and switch to the new ones!
+                const blockCacheList = await getConnection().getRepository(BlockCache)
+                    .find({ where: { type: In([BlockCacheType.DATA_TREE_ROOTS_TREE_UPDATES, BlockCacheType.DATA_TREE_UPDATES, BlockCacheType.NULLIFIER_TREE_UPDATES]) } });
+
+                const blockCacheMap = new Map<BlockCacheType, BlockCache[]>();
+                blockCacheList.forEach(bc => {
+                    const bcArray = blockCacheMap.get(bc.type) ?? [];
+                    bcArray.push(bc);
+                    blockCacheMap.set(bc.type, bcArray);
+                });
+
+                for (const [key, bcArray] of blockCacheMap) {
+                    bcArray.sort((a, b) => a.blockId - b.blockId);
+
+                    let treeId = MerkleTreeId.DATA_TREE_ROOTS_TREE;
+                    if (key == BlockCacheType.DATA_TREE_UPDATES) {
+                        treeId = MerkleTreeId.DATA_TREE;
+                    } else if (key == BlockCacheType.NULLIFIER_TREE_UPDATES) {
+                        treeId = MerkleTreeId.NULLIFIER_TREE;
+                    }
+
+                    logger.info(`start rebuild ${MerkleTreeId[treeId]} ...`);
+
+                    for (let i = 0; i < bcArray.length; i++) {
+                        const blockCache = bcArray[i];
+                        logger.info(`  processing blockCache[${blockCache.id}] at Block[${blockCache.blockId}]...`);
+                        await rebuildWorldStateDB.appendLeaves(treeId, (JSON.parse(blockCache.cache) as string[]).map(c => Field(c)));
+
+                        const existingCurrentBlock = await getConnection().getRepository(Block).findOne({ where: { id: blockCache.blockId } });
+                        const newRoot = rebuildWorldStateDB.getRoot(treeId, true).toString();
+                        logger.info(`  new ${MerkleTreeId[treeId]} root: ${newRoot}`);
+                        logger.info(`  existingCurrentBlock.dataTreeRoot1: ${existingCurrentBlock!.dataTreeRoot1}`);
+
+                        if (newRoot != existingCurrentBlock!.dataTreeRoot1) {
+                            logger.error(`  rebuild ${MerkleTreeId[treeId]} failed, due to two roots are not equal.`);
+                            throw new Error(`rebuild ${MerkleTreeId[treeId]} failed, due to two roots are not equal.`);
+                        }
+                    }
+                    logger.info(`  appendLeaves done.`);
+                    logger.info(`rebuild ${MerkleTreeId[treeId]} done.`);
+                }
+                logger.info(`rebuildWorldStateDB.commit...`);
+                await rebuildWorldStateDB.commit();
+
+                logger.info(`rebuildWorldStateDB close...`);
+                await rebuildWorldStateDB.close();
+                logger.info(`original worldStateDB close...`);
+                await this.worldStateDB.close();
+
+                const migrateDir = config.worldStateDBPath.concat(`-block-${existingLatestBlock.id}-broken-${currentDateString}`);
+                logger.info(`rename dir of original worldStateDB to ${migrateDir}...`);
+                fs.renameSync(config.worldStateDBPath, migrateDir);
+                logger.info(`rename dir of rebuildWorldStateDB to ${config.worldStateDBPath}...`);
+                fs.renameSync(rebuildWorldStateDBPath, config.worldStateDBPath);
+
+                logger.info(`re-open new WorldStateDB...`);
+                await rebuildWorldStateDB.open();
+
+                logger.info(`change pointer to new WorldStateDB...`);
+                this.worldState.worldStateDB = rebuildWorldStateDB;
+                this.worldStateDB = this.worldState.worldStateDB;
+
+                logger.info(`rebuild WorldStateDB end.`);
+            } catch (err) {
+                logger.error(err);
+
+                await rebuildWorldStateDB.rollback();
+
+                throw err;
+            } finally {
+                await rebuildWorldStateDB.close();
+            }
+        }
     }
 
+
     private async preInsertIntoTreeCache(txList: MemPlL2Tx[]) {
+        logger.info(`start insert into trees...`);
         const innerRollup_proveTxBatchParamList: { txId1: string, txId2: string, innerRollupInput: string, joinSplitProof1: string, joinSplitProof2: string }[] = []
 
         let depositOldStartIndexTmp = this.depositStartIndexInBlock;
@@ -465,56 +687,89 @@ export class FlowScheduler {
             const tx1 = txList[i];// if txList's length is uneven, tx1 would be the last one, ie. this.leftNonDepositTx .
             const tx2 = txList[i + 1];
 
+            logger.info(`processing tx[${i}]:${tx1.txHash}...`);
+            logger.info(`processing tx[${i + 1}]:${tx2.txHash}...`);
+            logger.info(`depositOldStartIndexTmp: ${depositOldStartIndexTmp}`);
+            logger.info(`depositNewStartIndexTmp: ${depositNewStartIndexTmp}`);
+
             const dataStartIndex: Field = Field(this.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE, true));
             const oldDataRoot: Field = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, true);
             const nullStartIndex: Field = Field(this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true));
             const oldNullRoot: Field = this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true);
             const dataRootsRoot: Field = this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE_ROOTS_TREE, false);
-
+            logger.info(`dataStartIndex: ${dataStartIndex}`);
+            logger.info(`oldDataRoot: ${oldDataRoot}`);
+            logger.info(`nullStartIndex: ${nullStartIndex}`);
+            logger.info(`oldNullRoot: ${oldNullRoot}`);
+            logger.info(`dataRootsRoot: ${dataRootsRoot}`);
 
             // ================ tx1 commitment parts ============
             let dataTreeCursor = this.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE, true);
+            logger.info(`currently dataTreeCursor: ${dataTreeCursor}`);
 
+            logger.info(`starts process tx1.outputNoteCommitment1: ${tx1.outputNoteCommitment1}`);
             const tx1OldDataWitness1: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
             if (Field(tx1.outputNoteCommitment1).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
                 tx1.outputNoteCommitmentIdx1 = dataTreeCursor.toString();
                 await this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx1.outputNoteCommitment1));
+                logger.info(`after appendLeaf, DATA_TREE root: ${this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, true)}`);
                 dataTreeCursor += 1n;
+                logger.info(`after appendLeaf, dataTreeCursor: ${dataTreeCursor}`);
+                logger.info('append tx1.outputNoteCommitment1, done.');
             }
 
+            logger.info(`starts process tx1.outputNoteCommitment2: ${tx1.outputNoteCommitment2}`);
             const tx1OldDataWitness2: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
             if (Field(tx1.outputNoteCommitment2).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
                 tx1.outputNoteCommitmentIdx2 = dataTreeCursor.toString();
                 await this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx1.outputNoteCommitment2));
+                logger.info(`after appendLeaf, DATA_TREE root: ${this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, true)}`);
                 dataTreeCursor += 1n;
+                logger.info(`after appendLeaf, dataTreeCursor: ${dataTreeCursor}`);
+                logger.info('append tx1.outputNoteCommitment2, done.');
             }
 
             // ================ tx2 commitment parts ============
+            logger.info(`starts process tx2.outputNoteCommitment1: ${tx2.outputNoteCommitment1}`);
             const tx2OldDataWitness1: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
             if (Field(tx2.outputNoteCommitment1).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
                 tx2.outputNoteCommitmentIdx1 = dataTreeCursor.toString();
                 await this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx2.outputNoteCommitment1));
+                logger.info(`after appendLeaf, DATA_TREE root: ${this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, true)}`);
                 dataTreeCursor += 1n;
+                logger.info(`after appendLeaf, dataTreeCursor: ${dataTreeCursor}`);
+                logger.info('append tx2.outputNoteCommitment1, done.');
             }
 
+            logger.info(`starts process tx2.outputNoteCommitment2: ${tx2.outputNoteCommitment2}`);
             const tx2OldDataWitness2: DataMerkleWitness = await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE, dataTreeCursor, true);
             if (Field(tx2.outputNoteCommitment2).equals(DUMMY_FIELD).not().toBoolean()) {// if DUMMY_FIELD, then ignore it!
                 tx2.outputNoteCommitmentIdx2 = dataTreeCursor.toString();
-
                 await this.worldStateDB.appendLeaf(MerkleTreeId.DATA_TREE, Field(tx2.outputNoteCommitment2));
+                logger.info(`after appendLeaf, DATA_TREE root: ${this.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, true)}`);
                 dataTreeCursor += 1n;
+                logger.info(`after appendLeaf, dataTreeCursor: ${dataTreeCursor}`);
+                logger.info('append tx2.outputNoteCommitment2, done.');
             }
 
             // ================ tx1 nullifier parts ============
             let nullifierTreeCursor = this.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, true);
+            logger.info(`currently nullifierTreeCursor: ${nullifierTreeCursor}`);
 
-            logger.info('starts process tx1.nullifier1...');
+            logger.info(`starts process tx1.nullifier1: ${tx1.nullifier1}...`);
             let tx1LowLeafWitness1: LowLeafWitnessData = undefined as any;
             let tx1OldNullWitness1: NullifierMerkleWitness = undefined as any;
             if (Field(tx1.nullifier1).equals(DUMMY_FIELD).not().toBoolean()) {// if non-DEPOSIT
                 tx1LowLeafWitness1 = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier1), true);
+                logger.info(`tx1LowLeafWitness1: ${JSON.stringify(tx1LowLeafWitness1)}`);
+
                 const predecessorLeafData = tx1LowLeafWitness1.leafData;
                 const predecessorIdx = tx1LowLeafWitness1.index.toBigInt();
+
+                if (predecessorLeafData.nextValue.toBigInt() != 0n && predecessorLeafData.nextValue.toBigInt() <= BigInt(tx1.nullifier1)) {
+                    logger.error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx1.nullifier1)");
+                    throw new MerkleTreeError(MerkleTreeId.NULLIFIER_TREE, "predecessorLeafData.nextValue.toBigInt()<= BigInt(tx1.nullifier1)");
+                }
 
                 // modify predecessor                
                 logger.info(`before modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
@@ -530,6 +785,7 @@ export class FlowScheduler {
 
                 // obtain tx1OldNullWitness1
                 tx1OldNullWitness1 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+                logger.info(`tx1OldNullWitness1: ${JSON.stringify(tx1OldNullWitness1)}`);
                 logger.info('obtain tx1OldNullWitness1 done.');
 
                 // revert predecessor
@@ -544,22 +800,34 @@ export class FlowScheduler {
 
                 // insert nullifier1
                 await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier1));
-                logger.info('insert tx1.nullifier1, done.');
+                logger.info(`after insert tx1.nullifier1, NULLIFIER_TREE root: ${this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
 
                 tx1.nullifierIdx1 = nullifierTreeCursor.toString();
                 nullifierTreeCursor += 1n;
+                logger.info(`after appendLeaf, nullifierTreeCursor: ${nullifierTreeCursor}`);
+
+                logger.info('insert tx1.nullifier1, done.');
             } else {
                 tx1OldNullWitness1 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
                 tx1LowLeafWitness1 = LowLeafWitnessData.zero(await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, 0n, true));
+                logger.info(`tx1LowLeafWitness1: ${JSON.stringify(tx1LowLeafWitness1)}`);
+                logger.info(`tx1OldNullWitness1: ${JSON.stringify(tx1OldNullWitness1)}`);
             }
 
-            logger.info('starts process tx1.nullifier2...');
+            logger.info(`starts process tx1.nullifier2: ${tx1.nullifier2}...`);
             let tx1LowLeafWitness2: LowLeafWitnessData = undefined as any;
             let tx1OldNullWitness2: NullifierMerkleWitness = undefined as any;
             if (Field(tx1.nullifier2).equals(DUMMY_FIELD).not().toBoolean()) {// if non-DEPOSIT
                 tx1LowLeafWitness2 = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier2), true);
+                logger.info(`tx1LowLeafWitness2: ${JSON.stringify(tx1LowLeafWitness2)}`);
+
                 const predecessorLeafData = tx1LowLeafWitness2.leafData;
                 const predecessorIdx = tx1LowLeafWitness2.index.toBigInt();
+
+                if (predecessorLeafData.nextValue.toBigInt() != 0n && predecessorLeafData.nextValue.toBigInt() <= BigInt(tx1.nullifier2)) {
+                    logger.error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx1.nullifier2)");
+                    throw new MerkleTreeError(MerkleTreeId.NULLIFIER_TREE, "predecessorLeafData.nextValue.toBigInt()<= BigInt(tx1.nullifier2)");
+                }
 
                 // modify predecessor                
                 logger.info(`before modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
@@ -575,6 +843,7 @@ export class FlowScheduler {
 
                 // obtain tx1OldNullWitness2
                 tx1OldNullWitness2 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+                logger.info(`tx1OldNullWitness2: ${JSON.stringify(tx1OldNullWitness2)}`);
 
                 // revert predecessor
                 const revertedPredecessorLeafDataTmp: LeafData = {
@@ -588,23 +857,35 @@ export class FlowScheduler {
 
                 // insert nullifier2
                 await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx1.nullifier2));
-                logger.info('insert tx1.nullifier2, done.');
+                logger.info(`after insert tx1.nullifier2, NULLIFIER_TREE root: ${this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
 
                 tx1.nullifierIdx2 = nullifierTreeCursor.toString();
                 nullifierTreeCursor += 1n;
+                logger.info(`after appendLeaf, nullifierTreeCursor: ${nullifierTreeCursor}`);
+
+                logger.info('insert tx1.nullifier2, done.');
             } else {
                 tx1OldNullWitness2 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
                 tx1LowLeafWitness2 = LowLeafWitnessData.zero(await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, 0n, true));
+                logger.info(`tx1LowLeafWitness2: ${JSON.stringify(tx1LowLeafWitness2)}`);
+                logger.info(`tx1OldNullWitness2: ${JSON.stringify(tx1OldNullWitness2)}`);
             }
 
             // ================ tx2 nullifier parts ============
-            logger.info('starts process tx2.nullifier1...');
+            logger.info(`starts process tx2.nullifier1:${tx2.nullifier1}...`);
             let tx2LowLeafWitness1: LowLeafWitnessData = undefined as any;
             let tx2OldNullWitness1: NullifierMerkleWitness = undefined as any;
             if (Field(tx2.nullifier1).equals(DUMMY_FIELD).not().toBoolean()) {// if non-DEPOSIT
                 tx2LowLeafWitness1 = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier1), true);
+                logger.info(`tx2LowLeafWitness1: ${JSON.stringify(tx2LowLeafWitness1)}`);
+
                 const predecessorLeafData = tx2LowLeafWitness1.leafData;
                 const predecessorIdx = tx2LowLeafWitness1.index.toBigInt();
+
+                if (predecessorLeafData.nextValue.toBigInt() != 0n && predecessorLeafData.nextValue.toBigInt() <= BigInt(tx2.nullifier1)) {
+                    logger.error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx2.nullifier1)");
+                    throw new MerkleTreeError(MerkleTreeId.NULLIFIER_TREE, "predecessorLeafData.nextValue.toBigInt()<= BigInt(tx2.nullifier1)");
+                }
 
                 // modify predecessor 
                 logger.info(`before modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
@@ -620,6 +901,7 @@ export class FlowScheduler {
 
                 // obtain tx2OldNullWitness1
                 tx2OldNullWitness1 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+                logger.info(`tx2OldNullWitness1: ${JSON.stringify(tx2OldNullWitness1)}`);
 
                 // revert predecessor
                 const revertedPredecessorLeafDataTmp: LeafData = {
@@ -633,23 +915,34 @@ export class FlowScheduler {
 
                 // insert nullifier1
                 await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier1));
-                logger.info('insert tx2.nullifier1, done.');
-
+                logger.info(`after insert tx2.nullifier1, NULLIFIER_TREE root: ${this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
 
                 tx2.nullifierIdx1 = nullifierTreeCursor.toString();
                 nullifierTreeCursor += 1n;
+                logger.info(`after appendLeaf, nullifierTreeCursor: ${nullifierTreeCursor}`);
+
+                logger.info('insert tx2.nullifier1, done.');
             } else {
                 tx2OldNullWitness1 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
                 tx2LowLeafWitness1 = LowLeafWitnessData.zero(await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, 0n, true));
+                logger.info(`tx2LowLeafWitness1: ${JSON.stringify(tx2LowLeafWitness1)}`);
+                logger.info(`tx2OldNullWitness1: ${JSON.stringify(tx2OldNullWitness1)}`);
             }
 
-            logger.info('starts process tx2.nullifier2...');
+            logger.info(`starts process tx2.nullifier2:${tx2.nullifier2}...`);
             let tx2LowLeafWitness2: LowLeafWitnessData = undefined as any;
             let tx2OldNullWitness2: NullifierMerkleWitness = undefined as any;
             if (Field(tx2.nullifier2).equals(DUMMY_FIELD).not().toBoolean()) {// if non-DEPOSIT
                 tx2LowLeafWitness2 = await this.worldStateDB.findPreviousValueAndMp(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier2), true);
+                logger.info(`tx2LowLeafWitness2: ${JSON.stringify(tx2LowLeafWitness2)}`);
+
                 const predecessorLeafData = tx2LowLeafWitness2.leafData;
                 const predecessorIdx = tx2LowLeafWitness2.index.toBigInt();
+
+                if (predecessorLeafData.nextValue.toBigInt() != 0n && predecessorLeafData.nextValue.toBigInt() <= BigInt(tx2.nullifier2)) {
+                    logger.error("predecessorLeafData.nextValue.toBigInt()<= BigInt(tx2.nullifier2)");
+                    throw new MerkleTreeError(MerkleTreeId.NULLIFIER_TREE, "predecessorLeafData.nextValue.toBigInt()<= BigInt(tx2.nullifier2)");
+                }
 
                 // modify predecessor                
                 logger.info(`before modify predecessor, nullifierTree Root: ${await this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
@@ -665,6 +958,7 @@ export class FlowScheduler {
 
                 // obtain tx2OldNullWitness2
                 tx2OldNullWitness2 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
+                logger.info(`tx2OldNullWitness2: ${JSON.stringify(tx2OldNullWitness2)}`);
 
                 // revert predecessor
                 const revertedPredecessorLeafDataTmp: LeafData = {
@@ -678,23 +972,30 @@ export class FlowScheduler {
 
                 // insert nullifier2
                 await this.worldStateDB.appendLeaf(MerkleTreeId.NULLIFIER_TREE, Field(tx2.nullifier2));
-                logger.info('insert tx2.nullifier2, done.');
+                logger.info(`after insert tx2.nullifier2, NULLIFIER_TREE root: ${this.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, true)}`);
 
                 tx2.nullifierIdx2 = nullifierTreeCursor.toString();
                 nullifierTreeCursor += 1n;
+                logger.info(`after appendLeaf, nullifierTreeCursor: ${nullifierTreeCursor}`);
+
+                logger.info('insert tx2.nullifier2, done.');
             } else {
                 tx2OldNullWitness2 = await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, nullifierTreeCursor, true);
                 tx2LowLeafWitness2 = LowLeafWitnessData.zero(await this.worldStateDB.getSiblingPath(MerkleTreeId.NULLIFIER_TREE, 0n, true));
+                logger.info(`tx2LowLeafWitness2: ${JSON.stringify(tx2LowLeafWitness2)}`);
+                logger.info(`tx2OldNullWitness2: ${JSON.stringify(tx2OldNullWitness2)}`);
             }
 
 
             // ================ root tree parts ============
             const tx1DataTreeRootIndex = String((await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx1.dataRoot}`)));
+            logger.info(`tx1DataTreeRootIndex: ${tx1DataTreeRootIndex}`);
             const tx1RootWitnessData: DataRootWitnessData = {
                 dataRootIndex: Field(tx1DataTreeRootIndex),
                 witness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, BigInt(tx1DataTreeRootIndex), false)
             };
             const tx2DataTreeRootIndex = String(await this.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${tx2.dataRoot}`));
+            logger.info(`tx2DataTreeRootIndex: ${tx2DataTreeRootIndex}`);
             const tx2RootWitnessData: DataRootWitnessData = {
                 dataRootIndex: Field(tx2DataTreeRootIndex),
                 witness: await this.worldStateDB.getSiblingPath(MerkleTreeId.DATA_TREE_ROOTS_TREE, BigInt(tx2DataTreeRootIndex), false)
@@ -705,16 +1006,22 @@ export class FlowScheduler {
             // * And depositOldStartIndexTmp = the first DepositTx's 'depositIndex' in current merged pair = depositNewStartIndexTmp of last pair containing depositTx.
             // * But if neither tx are DepositTx, then depositOldStartIndexTmp = depositNewStartIndexTmp = depositNewStartIndexTmp of last pair containing depositTx
             if (Field(tx1.actionType).equals(ActionType.DEPOSIT).toBoolean()) {
+                logger.info(`tx1.actionType: DEPOSIT`);
                 depositOldStartIndexTmp = Field(tx1.depositIndex);
             } else if (Field(tx2.actionType).equals(ActionType.DEPOSIT).toBoolean()) {
+                logger.info(`tx2.actionType: DEPOSIT`);
                 depositOldStartIndexTmp = Field(tx2.depositIndex);
             }
             if (Field(tx1.actionType).equals(ActionType.DEPOSIT).toBoolean()) {
+                logger.info(`tx1.actionType: DEPOSIT`);
                 depositNewStartIndexTmp = depositNewStartIndexTmp.add(1);
             }
             if (Field(tx2.actionType).equals(ActionType.DEPOSIT).toBoolean()) {
+                logger.info(`tx2.actionType: DEPOSIT`);
                 depositNewStartIndexTmp = depositNewStartIndexTmp.add(1);
             }
+            logger.info(`update depositOldStartIndexTmp: ${depositOldStartIndexTmp}`);
+            logger.info(`update depositNewStartIndexTmp: ${depositNewStartIndexTmp}`);
 
             // TODO no need stringfy it!
             const innerRollupInputStr = JSON.stringify({
@@ -805,6 +1112,7 @@ export class FlowScheduler {
                     ridTxList.push(tx);
                 }
             });
+            logger.info(`ridLessFeeOnesIfDoubleSpend: ${ridTxList.map(r => r.txHash)}`);
             await queryRunner.manager.save(ridTxList);
 
             await queryRunner.commitTransaction();

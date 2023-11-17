@@ -39,3 +39,4 @@ export { WorldStateRespDtoSchema, TxFeeSuggestionDtoSchema, ProofTaskDtoSchma, P
 export * from "./merkle_tree/hasher";
 export * from "./merkle_tree/poseidon_hasher";
 export * from "./merkle_tree/sibling_path";
+export * from "./merkle_tree/merkle-tree-error"

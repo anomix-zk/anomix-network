@@ -1,12 +1,19 @@
-import * as dotenv from "dotenv"
 import fs from "fs";
+import * as dotenv from "dotenv"
+import { JoinSplitProver } from "@anomix/circuits";
+dotenv.config({ path: '../../.env' })
 
 const KeyConfig = JSON.parse(fs.readFileSync('../../packages/circuits/scripts/keys-private.json', 'utf8'));
 
-dotenv.config({ path: '../../.env' })
+// const { verificationKey: JoinSplitProverVK } = await JoinSplitProver.compile();
+const JoinSplitProverVK = ''
 
 const config = {
     port: <number>Number(<string>process.env.PROOF_GENERATOR_PORT ?? 8081),
+    portProofVerifyServer0: <number>Number(<string>process.env.PROOF_GENERATOR_PROOF_VERIFY_PORT_0 ?? 8085),
+    portProofVerifyServer1: <number>Number(<string>process.env.PROOF_GENERATOR_PROOF_VERIFY_PORT_1 ?? 8086),
+    portProofVerifyServer2: <number>Number(<string>process.env.PROOF_GENERATOR_PROOF_VERIFY_PORT_2 ?? 8087),
+
     logger: {
         prettyPrint: <boolean>(process.env.LOGGING_PRETTY_PRINT === 'true' || true), // change if .env
         level: process.env.LOGGING_LEVEL || 'info',
@@ -49,6 +56,9 @@ const config = {
     sequencerProcessorHost: <string>process.env.ROLLUP_SEQUENCER_HOST || '127.0.0.1',
     sequencerProcessorPort: <number>Number(<string>process.env.ROLLUP_SEQUENCER_PORT ?? 8080),
 
+    proofGeneratorHost: <string>process.env.PROOF_GENERATOR_HOST || '127.0.0.1',
+    proofGeneratorPort: <number>Number(<string>process.env.PROOF_GENERATOR_PORT ?? 8081),
+
     pinoLogFilePath: <string>process.env.PINO_LOG_FILE_PATH || '/var/anomix/logs/proof-generators/',
 
     vaultContractAddress: <string>KeyConfig.vaultContract.publicKey,
@@ -57,6 +67,8 @@ const config = {
 
     subProcessCnt: <number>Number(<string>process.env.PROOR_GENERATOR_SUB_PROCESSOR_COUNT ?? 1),
     httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http',
+
+    joinSplitProverVK: JoinSplitProverVK,
 
     cnt_DepositRollupProver: <number>Number(<string>process.env.CNT_DepositRollupProver ?? 1),
     cnt_AnomixEntryContract: <number>Number(<string>process.env.CNT_AnomixEntryContract ?? 1),

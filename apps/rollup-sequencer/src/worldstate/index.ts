@@ -13,10 +13,7 @@ export * from './worldstate-db'
 export class WorldState {
     private seqFlow: SequenceFlow
 
-    constructor(public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) {
-
-
-    }
+    constructor(public worldStateDBLazy: WorldStateDB, public worldStateDB: WorldStateDB, public rollupDB: RollupDB, public indexDB: IndexDB) { }
 
     /**
      * start a new Flow

@@ -4,17 +4,17 @@ import "reflect-metadata"
 import { createConnection } from 'typeorm'
 import { MysqlConnectionOptions } from "typeorm/driver/mysql/MysqlConnectionOptions";
 import { getLogger } from "@/lib/logUtils";
-import { DepositTreeTransCache, DepositActionEventFetchRecord, DepositProcessorSignal, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockCache, BlockProverOutput, InnerRollupBatch } from '@anomix/dao';
+import { L2TxDtoOrigin, DepositTreeTransCache, DepositActionEventFetchRecord, DepositProcessorSignal, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockCache, BlockProverOutput, InnerRollupBatch } from '@anomix/dao';
 
-const logger = getLogger('deposit-processor');
+const logger = getLogger('orm');
 export const initORM = async (connectionOverrides?: Partial<MysqlConnectionOptions>) => {
     logger.info('### INFO: Creating Mysql Connection for typeORM')
     try {
         const connection = await createConnection(<MysqlConnectionOptions>{
             ...config.typeORM,
             // 【error1】 ...entities
-            // 【error2】 entities: [...entities]
-            entities: [DepositActionEventFetchRecord, DepositProcessorSignal, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockCache, BlockProverOutput, InnerRollupBatch, DepositTreeTransCache],
+            // 【error2】 entities: [L2TxDtoOrigin, ...entities]
+            entities: [L2TxDtoOrigin, DepositActionEventFetchRecord, DepositProcessorSignal, Task, WithdrawInfo, DepositCommitment, DepositProverOutput, DepositRollupBatch, DepositTreeTrans, Account, MemPlL2Tx, L2Tx, Block, BlockCache, BlockProverOutput, InnerRollupBatch, DepositTreeTransCache],
             ...connectionOverrides,
             timezone: '+00:00'
         });
