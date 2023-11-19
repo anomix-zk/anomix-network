@@ -8,7 +8,6 @@ import { Field } from 'o1js';
 import { BaseSiblingPath } from '@anomix/types';
 
 const log = createDebugLogger('anomix:standard-indexed-tree');
-log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~StandardIndexedTree~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
 
 const indexToKeyLeaf = (name: string, index: bigint) => {
     return `${name}:leaf:${index}`;
@@ -169,7 +168,6 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
          */
         alreadyPresent: boolean;
     } {
-        log(`start findIndexOfPreviousValue: newValue: ${newValue}, includeUncommitted: ${includeUncommitted}`);
         const numLeaves = this.getNumLeaves(includeUncommitted);
         const diff: bigint[] = [];
 
@@ -190,7 +188,6 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
         }
         const minIndex = this.findMinIndex(diff);
 
-        log(`findIndexOfPreviousValue, done.`);
         return { index: minIndex, alreadyPresent: false };
     }
 
@@ -205,7 +202,6 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
         index: number,
         includeUncommitted: boolean
     ): LeafData | undefined {
-        log(`index: ${index}, includeUncommitted: ${includeUncommitted}`);
         const leaf = !includeUncommitted
             ? this.leaves[index]
             : this.cachedLeaves[index] ?? this.leaves[index];
