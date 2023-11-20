@@ -73,7 +73,7 @@ export async function httpfetchWithdrawalEvents() {
         const startBlockHeight = (withdrawEventFetchRecord0?.endBlock ?? 1);
 
         logger.info('start fetching Events...');
-        const result: EventsHttpResponse = await fetch(config.httpGraphQLMinaScan, {
+        const result: EventsHttpResponse = await fetch(config.graphqlArchiveEndpoint, {
             "headers": {
                 "content-type": "application/json",
             },
