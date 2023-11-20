@@ -17,7 +17,7 @@ const config = {
         prettyPrint: <boolean>(process.env.LOGGING_PRETTY_PRINT === 'true' || true), // change if .env
         level: process.env.LOGGING_LEVEL || 'info',
     },
-    typeORM: {
+    typeOrmMysql: {
         type: <string>process.env.TYPE_ORM_CONNECTION || "mysql",
         host: <string>process.env.TYPE_ORM_HOST || "localhost", // "localhost" | "mysql" ~ docker,
         port: <number>Number(<string>process.env.TYPE_ORM_PORT) || 3060, // 3060 | 5432 ~ docker
@@ -26,6 +26,16 @@ const config = {
         database: <string>process.env.TYPE_ORM_DATABASE || "unknown_db",
         //synchronize: <boolean>(process.env.TYPE_ORM_SYNCHRONIZE === "true" || true), // change if .env
         logging: <boolean>(process.env.TYPE_ORM_LOGGING === "true" || true), // change if .env
+    },
+    typeOrmPg: {
+        type: <string>process.env.TYPE_ORM_CONNECTION_PG || "postgres",
+        host: <string>process.env.TYPE_ORM_HOST_PG || "localhost", // "localhost" | "mysql" ~ docker,
+        port: <number>Number(<string>process.env.TYPE_ORM_PORT_PG) || 5432, // 5432 |  ~ docker
+        username: <string>process.env.TYPE_ORM_USERNAME_PG || "postgres",
+        password: <string>process.env.TYPE_ORM_PASSWORD_PG || "postgres",
+        database: <string>process.env.TYPE_ORM_DATABASE_PG || "archive",
+        //synchronize: <boolean>(process.env.TYPE_ORM_SYNCHRONIZE_PG === "true" || true), // change if .env
+        logging: <boolean>(process.env.TYPE_ORM_LOGGING_PG === "true" || true), // change if .env
     },
     auth: {
         jwtSecret: <string>process.env.JWT_SECRET || "gtrpohgkeropk12k3k124oi23j4oifefe",
@@ -97,8 +107,10 @@ const config = {
 
     httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http',
 
-    httpGraphQLMinaExplorer: <string>process.env.HTTP_GRAPHQL_MINAEXPLORER || 'https://berkeley.graphql.minaexplorer.com/',
-    httpGraphQLMinaScan: <string>process.env.HTTP_GRAPHQL_MINASCAN || 'https://berkeley.graphql.minaexplorer.com/',
+    garethCustomMinaEndpoint: <string>process.env.HTTP_GARETH_CUSTOM_MINAEXPLORER || 'https://berkeley.graphql.minaexplorer.com/',
+
+    proxyMinaEndpoint: <string>process.env.PROXY_MINA_ENDPOINT || 'https://berkeley.graphql.minaexplorer.com/',
+    graphqlArchiveEndpoint: <string>process.env.GRAPHQL_ARCHIVE_ENDPOINT || 'https://berkeley.graphql.minaexplorer.com/',
 
 }
 

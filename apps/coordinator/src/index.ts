@@ -14,7 +14,7 @@ const workerMap = new Map<string, Worker>();
 
 function bootTaskTracerThread() {
     // init worker thread A
-    const worker = cp.fork(`${__dirname}/task-tracer.js`, ['task-tracer']);// TODO
+    const worker = cp.fork(`${__dirname}/task-tracer-by-db-query.js`, ['task-tracer']);// TODO
 
     worker.on('message', (msg: { type: any, data: any }) => {
         if (msg.type == 'online') {

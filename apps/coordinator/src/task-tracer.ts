@@ -58,7 +58,7 @@ async function traceTasks() {
         // check if txHash is confirmed or failed
         const l1TxHash = task.txHash;
         // TODO need record the error!
-        const rs: { data: { zkapp: { blockHeight: number, dateTime: string, failureReason: string }; }; } = await fetch(config.httpGraphQLMinaExplorer, {
+        const rs: { data: { zkapp: { blockHeight: number, dateTime: string, failureReason: string }; }; } = await fetch(config.garethCustomMinaEndpoint, {
             "headers": {
                 "Accept": "application/json",
                 "Accept-Language": "en-US,en;q=0.5",
