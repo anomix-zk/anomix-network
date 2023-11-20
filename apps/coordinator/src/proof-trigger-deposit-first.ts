@@ -111,38 +111,48 @@ async function proofTrigger() {
                     depositProcessorSignal.signal = DepositProcessingSignal.CAN_TRIGGER_CONTRACT;
                     await queryRunner.manager.save(depositProcessorSignal); // save before http-call below
 
-                    logger.info('obtain the first DepositTreeTrans...');
                     // obtain the first DepositTreeTrans and trigger deposit-contract-call
-                    const depositTreeTrans = await queryRunner.manager.findOne(DepositTreeTrans, {// one is enough among the period range(5mins).
+                    const depositTreeTransConfirmed = await queryRunner.manager.findOne(DepositTreeTrans, {// one is enough among the period range(5mins).
                         where: {
-                            status: In([DepositTreeTransStatus.PROVED])
+                            status: In([DepositTreeTransStatus.CONFIRMED])
                         },
-                        order: { id: 'ASC' },
+                        order: { id: 'DESC' },
                     });
-
-                    logger.info('obtain the first DepositTreeTrans=' + depositTreeTrans?.id);
-                    if (depositTreeTrans) {
-                        // check if it's been just processed
-                        const taskList = await queryRunner.manager.find(Task, { where: { status: TaskStatus.PENDING, taskType: TaskType.DEPOSIT } }) ?? [];
-                        const rs = taskList.some(t => {
-                            return t.targetId == depositTreeTrans.id
+                    if (depositTreeTransConfirmed?.startDepositRoot != block.depositRoot) {// must check this, due to the time window between confirmed root and syncDepositTree is not updated in time
+                        logger.info('obtain the first DepositTreeTrans...');
+                        // obtain the first DepositTreeTrans and trigger deposit-contract-call
+                        const depositTreeTransProved = await queryRunner.manager.findOne(DepositTreeTrans, {// one is enough among the period range(5mins).
+                            where: {
+                                status: In([DepositTreeTransStatus.PROVED])
+                            },
+                            order: { id: 'ASC' },
                         });
 
-                        if (!rs) {
-                            // dTran MUST align with the AnomixEntryContract's states.
-                            // assert
-                            // assert
-
-                            logger.info('trigger $axiosDeposit contract-call/', depositTreeTrans?.id);
-                            await $axiosDeposit.get<BaseResponse<string>>(`/rollup/contract-call/${depositTreeTrans.id}`).then(r => {
-                                if (r.data.code == 1) {
-                                    throw new Error(r.data.msg);
-                                }
+                        logger.info('obtain the first DepositTreeTrans=' + depositTreeTransProved?.id);
+                        if (depositTreeTransProved) {
+                            // check if it's been just processed
+                            const taskList = await queryRunner.manager.find(Task, { where: { status: TaskStatus.PENDING, taskType: TaskType.DEPOSIT } }) ?? [];
+                            const rs = taskList.some(t => {
+                                return t.targetId == depositTreeTransProved.id && t.taskType == TaskType.DEPOSIT
                             });
+
+                            if (!rs) {
+                                // dTran MUST align with the AnomixEntryContract's states.
+                                // assert
+                                // assert
+
+                                logger.info('trigger $axiosDeposit contract-call/', depositTreeTransProved?.id);
+                                await $axiosDeposit.get<BaseResponse<string>>(`/rollup/contract-call/${depositTreeTransProved.id}`).then(r => {
+                                    if (r.data.code == 1) {
+                                        throw new Error(r.data.msg);
+                                    }
+                                });
+                            }
+                            logger.info('done.');
+                            continue;
                         }
-                        logger.info('done.');
-                        continue;
                     }
+
                 }
 
                 const rollupTaskDto = {
