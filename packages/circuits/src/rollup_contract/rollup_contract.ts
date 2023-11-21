@@ -21,6 +21,7 @@ import {
   NULLIFIER_TREE_INIT_ROOT,
   ROOT_TREE_INIT_ROOT,
 } from '../constants';
+import { AnomixEntryContract } from '../entry_contract/entry_contract';
 
 export class AnomixRollupContract extends SmartContract {
   static entryContractAddress: PublicKey;
@@ -63,13 +64,8 @@ export class AnomixRollupContract extends SmartContract {
     return AnomixRollupContract.entryContractAddress;
   }
 
-  @method updateRollupState(
-    proof: RollupProof,
-    operatorSign: Signature,
-    entryDepositRoot: Field
-  ) {
+  @method updateRollupState(proof: RollupProof, operatorSign: Signature) {
     Provable.log('updateRollupState...');
-    Provable.log('entryDepositRoot: ', entryDepositRoot);
     proof.verify();
 
     const globalSlots = this.network.globalSlotSinceGenesis.get();
@@ -105,11 +101,15 @@ export class AnomixRollupContract extends SmartContract {
     );
 
     //const entryDepositRoot = this.entryContract.getDepositRoot();
-    const accountUpdate = AccountUpdate.create(this.entryAddress);
-    AccountUpdate.assertEquals(
-      accountUpdate.body.preconditions.account.state[0],
-      entryDepositRoot
-    );
+    const entryContract = new AnomixEntryContract(this.entryAddress);
+    const depositState = entryContract.depositState.getAndAssertEquals();
+    const entryDepositRoot = depositState.depositRoot;
+
+    // const accountUpdate = AccountUpdate.create(this.entryAddress);
+    // AccountUpdate.assertEquals(
+    //   accountUpdate.body.preconditions.account.state[0],
+    //   entryDepositRoot
+    // );
 
     Provable.if(
       output.depositCount.greaterThan(0),
