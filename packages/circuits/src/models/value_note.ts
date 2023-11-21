@@ -2,6 +2,34 @@ import { Field, Poseidon, PublicKey, Struct, UInt64 } from 'o1js';
 import { Commitment } from './commitment';
 import { NoteType } from './constants';
 
+export class DataNote
+  extends Struct({
+    secret: Field,
+    ownerPk: PublicKey,
+    nanomina: UInt64,
+    dataRoot: Field,
+  })
+  implements Commitment
+{
+  public commitment(): Field {
+    return Poseidon.hash([
+      this.secret,
+      ...this.ownerPk.toFields(),
+      this.nanomina.toFields(),
+      this.dataRoot,
+    ]);
+  }
+
+  public static zero(): DataNote {
+    return new DataNote({
+      secret: Field(0),
+      ownerPk: PublicKey.empty(),
+      nanomina: UInt64.zero,
+      dataRoot: Field(0),
+    });
+  }
+}
+
 export class ValueNote
   extends Struct({
     secret: Field,
@@ -28,11 +56,6 @@ export class ValueNote
     ]);
   }
 
-  /**
-   *
-   * @param asset_id
-   * @param account_required
-   */
   public static zero(): ValueNote {
     return new ValueNote({
       secret: Field(0),
