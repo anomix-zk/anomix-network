@@ -76,13 +76,16 @@ const config = {
     entryContractAddress: <string>KeyConfig.entryContract.publicKey,
     rollupContractAddress: <string>KeyConfig.rollupContract.publicKey,
 
-    entryContractDeploymentBlockHeight: <number>Number(<string>process.env.ENTRY_CONTRACT_ADDRESS_DEPLOYMENT_BLOCKHEIGHT ?? 0),
-    rollupContractDeploymentBlockHeight: <number>Number(<string>process.env.ROLLUP_CONTRACT_ADDRESS_DEPLOYMENT_BLOCKHEIGHT ?? 0),
+    entryContractDeploymentBlockHeight: <number>Number(<string>process.env.ENTRY_CONTRACT_ADDRESS_DEPLOYMENT_BLOCKHEIGHT ?? 1),
+    rollupContractDeploymentBlockHeight: <number>Number(<string>process.env.ROLLUP_CONTRACT_ADDRESS_DEPLOYMENT_BLOCKHEIGHT ?? 1),
 
     coordinatorHost: <string>process.env.COORDINATOR_HOST || '127.0.0.1',
     coordinatorPort: <number>Number(<string>process.env.COORDINATOR_PORT ?? 8083),
 
-    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http'
+    httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http',
+
+    proxyMinaEndpoint: <string>process.env.PROXY_MINA_ENDPOINT || 'https://berkeley.graphql.minaexplorer.com/',
+    graphqlArchiveEndpoint: <string>process.env.GRAPHQL_ARCHIVE_ENDPOINT || 'https://berkeley.graphql.minaexplorer.com/',
 
 }
 
