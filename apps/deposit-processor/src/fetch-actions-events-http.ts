@@ -33,7 +33,7 @@ export async function fetchActionsAndEventsHttp() {
             logger.info(`startActionHash: ${startActionHash.toString()}`);
             logger.info(`startIdx: ${startIdx}`);
 
-            let actionListWrapper: ActionWrapper[] = await fetch("https://api.minascan.io/archive/berkeley/v1/graphql/", {
+            let actionListWrapper: ActionWrapper[] = await fetch(config.graphqlArchiveEndpoint, {
                 "headers": {
                     "content-type": "application/json",
                 },
@@ -97,7 +97,7 @@ export async function fetchActionsAndEventsHttp() {
             // !! the events we process must keep aligned with actionList !! 
             // extreme case: after fetchActions, then a new block is gen, then fetchEvent will cover the new block. Apparently this would cause unconsistence between actions & events.
             logger.info('start fetching Events...');
-            let eventWrapperList: EventWrapper[] = await fetch("https://api.minascan.io/archive/berkeley/v1/graphql/", {
+            let eventWrapperList: EventWrapper[] = await fetch(config.graphqlArchiveEndpoint, {
                 "headers": {
                     "content-type": "application/json",
                 },
