@@ -5,8 +5,8 @@ dotenv.config({ path: '../../.env' })
 
 const KeyConfig = JSON.parse(fs.readFileSync('../../packages/circuits/scripts/keys-private.json', 'utf8'));
 
-// const { verificationKey: JoinSplitProverVK } = await JoinSplitProver.compile();
-const JoinSplitProverVK = ''
+const { verificationKey: JoinSplitProverVK } = await JoinSplitProver.compile();
+// const JoinSplitProverVK = ''
 
 const config = {
     port: <number>Number(<string>process.env.PROOF_GENERATOR_PORT ?? 8081),
@@ -76,6 +76,10 @@ const config = {
     cnt_InnerRollupProver: <number>Number(<string>process.env.CNT_InnerRollupProver ?? 1),
     cnt_BlockProver: <number>Number(<string>process.env.CNT_BlockProver ?? 1),
     cnt_AnomixRollupContract: <number>Number(<string>process.env.CNT_AnomixRollupContract ?? 1),
+
+    proxyMinaEndpoint: <string>process.env.PROXY_MINA_ENDPOINT || 'https://berkeley.graphql.minaexplorer.com/',
+    graphqlArchiveEndpoint: <string>process.env.GRAPHQL_ARCHIVE_ENDPOINT || 'https://berkeley.graphql.minaexplorer.com/',
+
 }
 
 export default config
