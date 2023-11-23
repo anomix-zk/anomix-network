@@ -93,6 +93,9 @@ const config = {
     httpProtocol: <string>process.env.HTTP_PROTOCOL || 'http',
     networkStatus: <string>process.env.NETWORK_STATUS || 'SIMULATING_PRODUCTION',
 
+    proxyMinaEndpoint: <string>process.env.PROXY_MINA_ENDPOINT || 'https://berkeley.graphql.minaexplorer.com/',
+    graphqlArchiveEndpoint: <string>process.env.GRAPHQL_ARCHIVE_ENDPOINT || 'https://berkeley.graphql.minaexplorer.com/',
+
 }
 
 export default config
