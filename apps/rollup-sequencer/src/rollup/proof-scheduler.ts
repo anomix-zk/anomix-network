@@ -333,8 +333,8 @@ export class ProofScheduler {
         l1Tx.transaction.feePayer.lazyAuthorization = { kind: 'lazy-signature' };
         await l1Tx.sign([PrivateKey.fromBase58(config.txFeePayerPrivateKey)]);
 
-        await l1Tx.send().then(async txHash => {// TODO what if it fails currently!
-            const txHash0 = txHash.hash()!;
+        await l1Tx.send().then(async txId => {// TODO what if it fails currently!
+            const txHash0 = txId.hash()!;
 
             if ((!txHash0)) {
                 logger.warn('error: broadcast anomixRollupContract\'s l1Tx failed!!!');
