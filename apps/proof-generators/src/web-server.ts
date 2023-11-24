@@ -7,6 +7,7 @@ const server = async () => {
 
     const app = new FastifyCore()
 
+    console.log('proof-generator server is listening...');
     await app.listen()
 }
 
