@@ -12,6 +12,7 @@ import {
   calculateNoteNullifier,
   checkMembership,
   checkMembershipAndAssert,
+  createNoteNullifier,
 } from '../utils/utils';
 import {
   Bool,
@@ -244,7 +245,7 @@ let JoinSplitProver = Experimental.ZkProgram({
           'InputNote1Commitment can not equal to inputNote2Commitment'
         );
 
-        const accountPk = sendInput.accountPrivateKey.toPublicKey();
+        const accountPk = sendInput.accountPublicKey;
 
         const isAccountRequired = sendInput.accountRequired.equals(
           AccountRequired.REQUIRED
@@ -387,34 +388,30 @@ let JoinSplitProver = Experimental.ZkProgram({
           'InputNote2 commitment check membership failed or inputNote2 value is not 0'
         );
 
-        const nullifier1 = calculateNoteNullifier(
-          inputNote1Commitment,
-          sendInput.accountPrivateKey,
-          inputNote1InUse
-        );
+        const nullifier1 = sendInput.nullifier1;
         Provable.log('nullifier1: ', nullifier1);
+        nullifier1.verify([inputNote1Commitment, inputNote1InUse.toField()]);
 
-        const nullifier2 = calculateNoteNullifier(
-          inputNote2Commitment,
-          sendInput.accountPrivateKey,
-          inputNote2InUse
-        );
+        const nullifier2 = sendInput.nullifier2;
         Provable.log('nullifier2: ', nullifier2);
+        nullifier2.verify([inputNote2Commitment, inputNote2InUse.toField()]);
 
+        const nullifier1Key = nullifier1.key();
         outputNote1.inputNullifier.assertEquals(
-          nullifier1,
+          nullifier1Key,
           'outputNote1.inputNullifier not equal to nullifier1'
         );
+        const nullifier2Key = nullifier2.key();
         outputNote2.inputNullifier.assertEquals(
-          nullifier2,
+          nullifier2Key,
           'outputNote2.inputNullifier not equal to nullifier2'
         );
 
         const message = [
           outputNote1Commitment,
           outputNote2Commitment,
-          nullifier1,
-          nullifier2,
+          nullifier1Key,
+          nullifier2Key,
           publicAssetId,
           ...publicValue.toFields(),
           ...publicOwner.toFields(),
@@ -426,8 +423,8 @@ let JoinSplitProver = Experimental.ZkProgram({
           actionType,
           outputNoteCommitment1: outputNote1Commitment,
           outputNoteCommitment2: outputNote2Commitment,
-          nullifier1,
-          nullifier2,
+          nullifier1: nullifier1Key,
+          nullifier2: nullifier2Key,
           publicValue,
           publicOwner,
           publicAssetId,

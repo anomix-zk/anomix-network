@@ -5,6 +5,7 @@ import {
 import { ValueNote } from '../models/value_note';
 import {
   Field,
+  Nullifier,
   Poseidon,
   PrivateKey,
   PublicKey,
@@ -82,7 +83,10 @@ export class JoinSplitSendInput extends Struct({
   outputNote1: ValueNote,
   outputNote2: ValueNote,
   aliasHash: Field,
-  accountPrivateKey: PrivateKey,
+  //accountPrivateKey: PrivateKey,
+  accountPublicKey: PublicKey,
+  nullifier1: Nullifier,
+  nullifier2: Nullifier,
   accountRequired: Field,
   accountNoteIndex: Field,
   accountNoteWitness: DataMerkleWitness,
