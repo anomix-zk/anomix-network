@@ -15,6 +15,7 @@ import {
   Encoding,
   provablePure,
   Provable,
+  Nullifier,
 } from 'o1js';
 import { DEPOSIT_NOTE_DATA_FIELDS_LENGTH } from '../constants';
 import { EncryptedNoteFieldData } from '../entry_contract/models';
@@ -101,6 +102,18 @@ export function calculateNoteNullifier(
     Poseidon.hash(priKey.toFields()),
     isRealNote.toField(),
   ]);
+}
+
+export function createNoteNullifier(
+  commitment: Field,
+  priKey: PrivateKey,
+  isRealNote: Bool
+): Nullifier {
+  let nullifier = Nullifier.createTestNullifier(
+    [commitment, isRealNote.toField()],
+    priKey
+  ) as unknown as Nullifier;
+  return nullifier;
 }
 
 export async function encryptValueNoteToFieldData(
