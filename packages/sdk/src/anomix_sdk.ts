@@ -19,6 +19,7 @@ import {
   UserLowLeafWitnessData,
   UserNullifierMerkleWitness,
   AccountRequired,
+  createNoteNullifier,
 } from '@anomix/circuits';
 import { EncryptedNote, L2TxReqDto } from '@anomix/types';
 import {
@@ -1163,17 +1164,17 @@ export class AnomixSdk {
         );
       }
       inputNote1Witness = DataMerkleWitness.fromMerkleProofDTO(witessDtos[0]);
-      nullifier1 = calculateNoteNullifier(
+      nullifier1 = createNoteNullifier(
         Field(inputNote.commitment),
         accountPrivateKey,
         Bool(true)
-      );
+      ).key();
       inputValueNote2.secret = Field.random();
-      nullifier2 = calculateNoteNullifier(
+      nullifier2 = createNoteNullifier(
         inputValueNote2.commitment(),
         accountPrivateKey,
         Bool(false)
-      );
+      ).key();
       const balance = BigInt(inputNote.value);
       const amountLeftOver = balance - payAmount.toBigInt() - txFee.toBigInt();
 
@@ -1230,16 +1231,16 @@ export class AnomixSdk {
       inputNote2Index = Field(inputNote2.index!);
       inputValueNote2 = inputNote2.valueNote;
 
-      nullifier1 = calculateNoteNullifier(
+      nullifier1 = createNoteNullifier(
         Field(inputNote1.commitment),
         accountPrivateKey,
         Bool(true)
-      );
-      nullifier2 = calculateNoteNullifier(
+      ).key();
+      nullifier2 = createNoteNullifier(
         Field(inputNote2.commitment),
         accountPrivateKey,
         Bool(true)
-      );
+      ).key();
 
       const inputNoteWitnesses =
         await this.node.getMerkleWitnessesByCommitments([
@@ -1321,11 +1322,13 @@ export class AnomixSdk {
         Note.from({
           valueNoteJSON: ValueNote.toJSON(outputNote2),
           commitment: outputNote2Commitment.toString(),
-          nullifier: calculateNoteNullifier(
+          nullifier: createNoteNullifier(
             outputNote2Commitment,
             accountPrivateKey,
             Bool(true)
-          ).toString(),
+          )
+            .key()
+            .toString(),
           nullified: false,
         })
       );

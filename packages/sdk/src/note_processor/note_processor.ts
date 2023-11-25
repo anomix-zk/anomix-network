@@ -8,6 +8,7 @@ import {
   AccountNote,
   AssetId,
   calculateNoteNullifier,
+  createNoteNullifier,
   ValueNote,
 } from '@anomix/circuits';
 import {
@@ -207,11 +208,13 @@ export class NoteProcessor {
           if (decryptedResult1) {
             const withdrawNote = decryptedResult1.valueNoteJSON;
 
-            const nullifier = calculateNoteNullifier(
+            const nullifier = createNoteNullifier(
               Field(outputNote1!.noteCommitment),
               accountPrivateKey,
               Bool(true)
-            ).toString();
+            )
+              .key()
+              .toString();
             await this.db.upsertNote(
               Note.from({
                 valueNoteJSON: withdrawNote,
@@ -255,11 +258,11 @@ export class NoteProcessor {
             if (decryptedResult2) {
               valueNoteJSON2 = decryptedResult2.valueNoteJSON;
               if (valueNoteJSON2.ownerPk === accountPk) {
-                const outputNote2Nullifier = calculateNoteNullifier(
+                const outputNote2Nullifier = createNoteNullifier(
                   Field(outputNote2.noteCommitment),
                   accountPrivateKey,
                   Bool(true)
-                );
+                ).key();
                 await this.db.upsertNote(
                   Note.from({
                     valueNoteJSON: valueNoteJSON2,
@@ -286,11 +289,11 @@ export class NoteProcessor {
             isTxRelated = true;
             if (valueNoteJSON1.ownerPk === accountPk) {
               // current user as receiver
-              const outputNote1Nullifier = calculateNoteNullifier(
+              const outputNote1Nullifier = createNoteNullifier(
                 Field(outputNote1!.noteCommitment),
                 accountPrivateKey,
                 Bool(true)
-              );
+              ).key();
               await this.db.upsertNote(
                 Note.from({
                   valueNoteJSON: valueNoteJSON1,
@@ -312,11 +315,11 @@ export class NoteProcessor {
               isTxRelated = true;
               valueNoteJSON2 = decryptedResult2.valueNoteJSON;
               if (valueNoteJSON2.ownerPk === accountPk) {
-                const outputNote2Nullifier = calculateNoteNullifier(
+                const outputNote2Nullifier = createNoteNullifier(
                   Field(outputNote2.noteCommitment),
                   accountPrivateKey,
                   Bool(true)
-                );
+                ).key();
                 await this.db.upsertNote(
                   Note.from({
                     valueNoteJSON: valueNoteJSON2,
