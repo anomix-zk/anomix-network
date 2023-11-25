@@ -15,7 +15,7 @@ export class DataNote
     return Poseidon.hash([
       this.secret,
       ...this.ownerPk.toFields(),
-      this.nanomina.toFields(),
+      ...this.nanomina.toFields(),
       this.dataRoot,
     ]);
   }
