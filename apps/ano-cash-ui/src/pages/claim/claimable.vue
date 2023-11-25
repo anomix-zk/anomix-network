@@ -136,7 +136,7 @@ const connect = async () => {
   showLoadingMask({ text: 'Connecting...', id: maskId, closable: true });
   try {
     const currentNetwork = await window.mina.requestNetwork();
-    if (appState.value.minaNetwork !== currentNetwork && currentNetwork !== 'Unknown') {
+    if (appState.value.minaNetwork !== currentNetwork.chainId && currentNetwork.chainId !== 'testworld2') {
       closeLoadingMask(maskId);
       message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
       return;
