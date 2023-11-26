@@ -190,7 +190,7 @@ const connectToClaim = async () => {
   try {
     showLoadingMask({ id: maskId, text: 'Connecting wallet...', closable: false });
     const currentNetwork = await window.mina.requestNetwork();
-    if (appState.value.minaNetwork !== currentNetwork) {
+    if (appState.value.minaNetwork !== currentNetwork.chainId) {
       closeLoadingMask(maskId);
       message.error(`Please switch to the correct network (${appState.value.minaNetwork}) first.`);
       return;
