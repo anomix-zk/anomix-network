@@ -67,6 +67,6 @@
     "@anomix/utils": "^0.1.0"
   },
   "peerDependencies": {
-    "o1js": "0.13.0"
+    "o1js": "0.14.2"
   }
 }
