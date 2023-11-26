@@ -1,5 +1,5 @@
 import { InnerRollupProof } from '../inner_rollup/inner_rollup_prover';
-import { Experimental, Provable } from 'o1js';
+import { Provable, ZkProgram } from 'o1js';
 import { BlockProveInput, BlockProveOutput } from './models';
 import { checkMembershipAndAssert } from '../utils/utils';
 import { DUMMY_FIELD } from '../models/constants';
@@ -7,7 +7,8 @@ import { RollupState, RollupStateTransition } from '../rollup_contract/models';
 
 export { BlockProver, RollupProof };
 
-let BlockProver = Experimental.ZkProgram({
+let BlockProver = ZkProgram({
+  name: 'BlockProver',
   publicOutput: BlockProveOutput,
 
   methods: {
@@ -94,4 +95,4 @@ let BlockProver = Experimental.ZkProgram({
   },
 });
 
-class RollupProof extends Experimental.ZkProgram.Proof(BlockProver) {}
+class RollupProof extends ZkProgram.Proof(BlockProver) {}

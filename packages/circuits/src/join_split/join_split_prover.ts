@@ -15,12 +15,12 @@ import {
 } from '../utils/utils';
 import {
   Bool,
-  Experimental,
   Field,
   Poseidon,
   Provable,
   PublicKey,
   UInt64,
+  ZkProgram,
 } from 'o1js';
 import {
   JoinSplitAccountInput,
@@ -31,7 +31,8 @@ import {
 
 export { JoinSplitProver, JoinSplitProof };
 
-let JoinSplitProver = Experimental.ZkProgram({
+let JoinSplitProver = ZkProgram({
+  name: 'JoinSplitProver',
   publicOutput: JoinSplitOutput,
 
   methods: {
@@ -568,4 +569,4 @@ let JoinSplitProver = Experimental.ZkProgram({
   },
 });
 
-class JoinSplitProof extends Experimental.ZkProgram.Proof(JoinSplitProver) {}
+class JoinSplitProof extends ZkProgram.Proof(JoinSplitProver) {}

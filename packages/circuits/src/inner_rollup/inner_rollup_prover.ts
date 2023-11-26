@@ -2,11 +2,11 @@ import { FEE_ASSET_ID_SUPPORT_NUM } from '../constants';
 import {
   Bool,
   Empty,
-  Experimental,
   Field,
   Provable,
   SelfProof,
   Struct,
+  ZkProgram,
 } from 'o1js';
 import {
   DataRootWitnessData,
@@ -41,7 +41,8 @@ class TempStruct2 extends Struct({
   currIndex: Field,
 }) {}
 
-let InnerRollupProver = Experimental.ZkProgram({
+let InnerRollupProver = ZkProgram({
+  name: 'InnerRollupProver',
   publicOutput: InnerRollupOutput,
 
   methods: {
@@ -275,9 +276,7 @@ let InnerRollupProver = Experimental.ZkProgram({
   },
 });
 
-class InnerRollupProof extends Experimental.ZkProgram.Proof(
-  InnerRollupProver
-) {}
+class InnerRollupProof extends ZkProgram.Proof(InnerRollupProver) {}
 
 function processTx({
   txProof,
