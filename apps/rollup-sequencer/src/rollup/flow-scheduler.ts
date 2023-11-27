@@ -335,7 +335,7 @@ export class FlowScheduler {
             let block = new Block();
             block.id = currentBlockId;
             block.status = BlockStatus.PENDING;
-            block.rollupSize = rollupSize;// TODO non-dummy?
+            block.rollupSize = rollupSize;// non-dummy
             block.rootTreeRoot0 = this.currentRootTreeRoot.toString();
             block.dataTreeRoot0 = this.currentDataRoot.toString();
             block.nullifierTreeRoot0 = this.currentNullifierRoot.toString();

@@ -64,7 +64,7 @@ const handler: RequestHandler<ProofVerifyReqDto, null> = async function (
         let mpL2Tx = MemPlL2Tx.fromJoinSplitOutput(joinSplitProof.publicOutput);
         logger.info(`verify proof from mpL2Tx: ${mpL2Tx.txHash}...`);
 
-        const ok = await verify(joinSplitProof, config.joinSplitProverVK);// TODO
+        const ok = await verify(joinSplitProof, config.joinSplitProverVK);
 
         if (!ok) {
             logger.info('proof verify failed!');
