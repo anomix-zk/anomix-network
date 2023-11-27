@@ -3,11 +3,11 @@ import {
   AccountUpdate,
   Bool,
   Empty,
-  Experimental,
   Field,
   Provable,
   SelfProof,
   Struct,
+  ZkProgram,
 } from 'o1js';
 import {
   DepositActionBatch,
@@ -22,7 +22,8 @@ class TempParams extends Struct({
   currentIndex: Field,
 }) {}
 
-let DepositRollupProver = Experimental.ZkProgram({
+let DepositRollupProver = ZkProgram({
+  name: 'DepositRollupProver',
   publicOutput: DepositRollupStateTransition,
 
   methods: {
@@ -115,8 +116,6 @@ let DepositRollupProver = Experimental.ZkProgram({
   },
 });
 
-class DepositRollupProof extends Experimental.ZkProgram.Proof(
-  DepositRollupProver
-) {}
+class DepositRollupProof extends ZkProgram.Proof(DepositRollupProver) {}
 
 export { DepositRollupProver, DepositRollupProof };
