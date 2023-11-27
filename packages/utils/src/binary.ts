@@ -1,4 +1,5 @@
 import { Buffer } from "buffer";
+import { Field } from "o1js";
 
 const ifDefined =
     <T, R>(cb: (input: T) => R) =>
@@ -42,6 +43,26 @@ export const bufferToInt256 = (buf: Buffer) => {
     const res = bi & ((BigInt(1) << BigInt(256)) - BigInt(1));
 
     return res;
+};
+
+export const FieldToUint8Array = (f: Field) => {
+    const buf = new Uint8Array(32);
+    let n = f.toBigInt();
+
+    for (let i = 0; i < 32; i++) {
+        buf[31 - i] = Number(n & 0xffn);
+        n >>= 8n;
+    }
+
+    return buf;
+};
+
+export const Uint8ArrayToField = (buf: Uint8Array) => {
+    let bigIntValue = BigInt(0);
+    for (let i = 0; i < buf.length; i++) {
+        bigIntValue = (bigIntValue << 8n) | BigInt(buf[i]);
+    }
+    return Field(bigIntValue);
 };
 
 /**
