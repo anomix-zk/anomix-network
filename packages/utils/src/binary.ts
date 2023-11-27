@@ -65,6 +65,45 @@ export const Uint8ArrayToField = (buf: Uint8Array) => {
     return Field(bigIntValue);
 };
 
+export const uint8ArrayToBase64 = (buf: Uint8Array) => {
+    let binary = "";
+    const length = buf.length;
+
+    for (let i = 0; i < length; i++) {
+        binary += String.fromCharCode(buf[i]);
+    }
+
+    if (typeof btoa === "function") {
+        return btoa(binary);
+    }
+
+    if (typeof Buffer === "function") {
+        const buffer = Buffer.from(binary, "binary");
+        return buffer.toString("base64");
+    }
+
+    throw new Error("Base64 conversion not supported in this environment.");
+};
+
+export const base64ToUint8Array = (base64String: string) => {
+    if (typeof Buffer === "function") {
+        const buffer = Buffer.from(base64String, "base64");
+        return new Uint8Array(buffer);
+    }
+
+    if (typeof atob === "function") {
+        const binaryString = atob(base64String);
+        const length = binaryString.length;
+        const uint8Array = new Uint8Array(length);
+
+        for (let i = 0; i < length; i++) {
+            uint8Array[i] = binaryString.charCodeAt(i);
+        }
+
+        return uint8Array;
+    }
+};
+
 /**
  * Convert a string to an array of 8-bit integers
  * @param str String to convert
