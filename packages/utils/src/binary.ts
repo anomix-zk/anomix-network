@@ -1,5 +1,5 @@
 import { Buffer } from "buffer";
-import { Field } from "o1js";
+import { Field, FlexibleProvablePure } from "o1js";
 
 const ifDefined =
     <T, R>(cb: (input: T) => R) =>
@@ -103,6 +103,36 @@ export const base64ToUint8Array = (base64String: string) => {
         return uint8Array;
     }
 };
+
+export function structToBase64<StructType>(
+    type: FlexibleProvablePure<StructType>,
+    value: StructType
+) {
+    const fs = type.toFields(value);
+    let bytes: number[] = [];
+    fs.forEach((f) => bytes.concat(Field.toBytes(f)));
+    const u8Arr = new Uint8Array(bytes);
+
+    return uint8ArrayToBase64(u8Arr);
+}
+
+export function base64ToStruct<StructType>(
+    b64Str: string,
+    type: FlexibleProvablePure<StructType>
+) {
+    const u8Arr = Array.from(base64ToUint8Array(b64Str)!);
+    const fsize = type.sizeInFields();
+    let fs: Field[] = [];
+
+    let pos = 0;
+    for (let i = 0; i < fsize; i++) {
+        let f = Field.readBytes(u8Arr, pos as never)[0];
+        fs.push(f);
+        pos += 32;
+    }
+
+    return type.fromFields(fs) as StructType;
+}
 
 /**
  * Convert a string to an array of 8-bit integers

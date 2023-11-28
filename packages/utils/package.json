@@ -7,6 +7,7 @@
   "types": "dist/src/index.d.ts",
   "license": "MIT",
   "scripts": {
+    "bin": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/binary_test.js",
     "keys": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/keys_helper_test.js",
     "encrypt": "tsc -p tsconfig.json && node --experimental-specifier-resolution=node ./dist/src/encrypt_test.js",
     "lib:dev": "npm run lib:build && (concurrently \"tsc --build tsconfig.json --watch\" \"tsc-alias -w\")",
