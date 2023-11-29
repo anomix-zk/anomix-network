@@ -1,7 +1,7 @@
 import { LevelUp, LevelUpChain } from 'levelup';
 import { createDebugLogger, createLogger } from './log';
 import { BaseSiblingPath, SiblingPath } from '@anomix/types';
-import { Hasher } from '@anomix/types';
+import { Hasher } from './hasher/hasher.js';
 import { MerkleTree } from './interfaces/merkle_tree.js';
 import { toBigIntLE, toBufferLE } from './utils';
 import { Field } from 'o1js';
@@ -20,8 +20,8 @@ const MAX_DEPTH = 254;
 const indexToKeyHash = (name: string, level: number, index: bigint) =>
   `${name}:${level}:${index}`;
 
-const encodeMeta = (root: Field, depth: number, size: bigint) => {
-  const rootBuf = int256ToBuffer(root.toBigInt()); // 32-bytes buffer
+const encodeMeta = (root: bigint, depth: number, size: bigint) => {
+  const rootBuf = int256ToBuffer(root); // 32-bytes buffer
   const data = Buffer.alloc(32 + 4);
   rootBuf.copy(data);
   data.writeUInt32LE(depth, 32);
@@ -29,7 +29,7 @@ const encodeMeta = (root: Field, depth: number, size: bigint) => {
 };
 
 export const decodeMeta = (meta: Buffer) => {
-  const root = Field(bufferToInt256(meta.subarray(0, 32)));
+  const root = bufferToInt256(meta.subarray(0, 32));
   const depth = meta.readUInt32LE(32);
   const size = toBigIntLE(meta.subarray(36));
   return {
@@ -39,7 +39,7 @@ export const decodeMeta = (meta: Buffer) => {
   };
 };
 
-export const INITIAL_LEAF = Field(0);
+export const INITIAL_LEAF = 0n;
 
 /**
  * A Merkle tree implementation that uses a LevelDB database to store the tree.
@@ -47,8 +47,8 @@ export const INITIAL_LEAF = Field(0);
 export abstract class TreeBase implements MerkleTree {
   protected readonly maxIndex: bigint;
   protected cachedSize?: bigint;
-  private root!: Field;
-  private zeroHashes: Field[] = [];
+  private root!: bigint;
+  private zeroHashes: bigint[] = [];
   private cache: { [key: string]: Buffer } = {};
 
   public constructor(
@@ -79,13 +79,13 @@ export abstract class TreeBase implements MerkleTree {
    * @param includeUncommitted - If true, root incorporating uncomitted changes is returned.
    * @returns The root of the tree.
    */
-  public getRoot(includeUncommitted: boolean): Field {
+  public getRoot(includeUncommitted: boolean): bigint {
     if (!includeUncommitted) {
       return this.root;
     } else {
       let tmpRootBuffer = this.cache[indexToKeyHash(this.name, 0, 0n)];
       if (tmpRootBuffer) {
-        return Field(Uint8ArrayToField(new Uint8Array(tmpRootBuffer)));
+        return bufferToInt256(tmpRootBuffer);
       } else {
         return this.root;
       }
@@ -128,7 +128,7 @@ export abstract class TreeBase implements MerkleTree {
     index: bigint,
     includeUncommitted: boolean
   ): Promise<BaseSiblingPath> {
-    const path: Field[] = [];
+    const path: bigint[] = [];
     let level = this.depth;
 
     while (level > 0) {
@@ -186,7 +186,7 @@ export abstract class TreeBase implements MerkleTree {
   public getLeafValue(
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<Field | undefined> {
+  ): Promise<bigint | undefined> {
     return this.getLatestValueAtIndex(this.depth, index, includeUncommitted);
   }
 
@@ -239,10 +239,10 @@ export abstract class TreeBase implements MerkleTree {
     level: number,
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<Field> {
+  ): Promise<bigint> {
     const key = indexToKeyHash(this.name, level, index);
     if (includeUncommitted && this.cache[key] !== undefined) {
-      return Uint8ArrayToField(new Uint8Array(this.cache[key]));
+      return bufferToInt256(this.cache[key]));
     }
     const committed = await this.dbGet(key);
     if (committed !== undefined) {
@@ -256,10 +256,10 @@ export abstract class TreeBase implements MerkleTree {
    * @param key - The key to by which to get the value.
    * @returns A value from the db based on the key.
    */
-  private async dbGet(key: string): Promise<Field | undefined> {
+  private async dbGet(key: string): Promise<bigint | undefined> {
     const buf = await this.db.get(key).catch(() => {});
     if (buf !== undefined) {
-      return Field(Uint8ArrayToField(new Uint8Array(buf)));
+      return bufferToInt256(buf);
     }
 
     return undefined;
