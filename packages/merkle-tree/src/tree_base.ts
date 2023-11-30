@@ -57,7 +57,7 @@ export abstract class TreeBase implements MerkleTree {
     private name: string,
     private depth: number,
     protected size: bigint = 0n,
-    root?: Field
+    root?: bigint
   ) {
     if (!(depth >= 1 && depth <= MAX_DEPTH)) {
       throw Error('Invalid depth');
@@ -127,7 +127,7 @@ export abstract class TreeBase implements MerkleTree {
   public async getSiblingPath(
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<BaseSiblingPath> {
+  ): Promise<bigint[]> {
     const path: bigint[] = [];
     let level = this.depth;
 
@@ -143,9 +143,7 @@ export abstract class TreeBase implements MerkleTree {
       index >>= 1n;
     }
 
-    class SiblingPath_ extends SiblingPath(this.depth) {}
-
-    return new SiblingPath_(path);
+    return path;
   }
 
   /**
@@ -203,7 +201,7 @@ export abstract class TreeBase implements MerkleTree {
    * @param leaf - Leaf to add to cache.
    * @param index - Index of the leaf (used to derive the cache key).
    */
-  protected async addLeafToCacheAndHashToRoot(leaf: Field, index: bigint) {
+  protected async addLeafToCacheAndHashToRoot(leaf: bigint, index: bigint) {
     const key = indexToKeyHash(this.name, this.depth, index);
     let current = leaf;
     this.cache[key] = Buffer.from(current.toString());
@@ -242,7 +240,7 @@ export abstract class TreeBase implements MerkleTree {
   ): Promise<bigint> {
     const key = indexToKeyHash(this.name, level, index);
     if (includeUncommitted && this.cache[key] !== undefined) {
-      return bufferToInt256(this.cache[key]));
+      return bufferToInt256(this.cache[key]);
     }
     const committed = await this.dbGet(key);
     if (committed !== undefined) {

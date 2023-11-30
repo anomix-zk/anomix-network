@@ -1,7 +1,7 @@
 import { newTree } from './new_tree.js';
 import { default as levelup } from 'levelup';
 import { default as memdown, type MemDown } from 'memdown';
-import { PoseidonHasher } from '@anomix/types';
+import { PoseidonHasher, SiblingPath } from '@anomix/types';
 import { StandardIndexedTree } from './standard_indexed_tree/standard_indexed_tree';
 import { IndexedTree } from './interfaces/indexed_tree';
 import { Field, Provable } from 'o1js';
@@ -43,9 +43,7 @@ const tree: StandardTree = await newTree(
 
 console.log('standard tree init root4: ', tree.getRoot(true).toString());
 await tree.appendLeaves([
-  Field(
-    '20468198949394563802460512965219839480612000520504690501918527632215047268421'
-  ),
+  20468198949394563802460512965219839480612000520504690501918527632215047268421n,
 ]);
 console.log('root tree init root4: ', tree.getRoot(true).toString());
 
@@ -59,27 +57,31 @@ const tree2: StandardIndexedTree = await newTree(
 
 console.log('indexTree init root4: ', tree2.getRoot(true).toString());
 
-await tree.appendLeaves([Field(11)]);
-await tree.appendLeaves([Field(21)]);
-await tree.appendLeaves([Field(31)]);
-await tree.appendLeaves([Field(41)]);
-await tree.appendLeaves([Field(51)]);
-await tree.appendLeaves([Field(61)]);
+await tree.appendLeaves([11n]);
+await tree.appendLeaves([21n]);
+await tree.appendLeaves([31n]);
+await tree.appendLeaves([41n]);
+await tree.appendLeaves([51n]);
+await tree.appendLeaves([61n]);
 
 // await tree.commit();
 const nowRoot = tree.getRoot(true);
 console.log('nowRoot: ', nowRoot.toString());
 
-const witness = await tree.getSiblingPath(3n, true);
-console.log('witness: ', witness.toJSON());
+const witnessPath = await tree.getSiblingPath(3n, true);
+class SiblingPath_ extends SiblingPath(witnessPath.length) {}
+
+const witness = new SiblingPath_(witnessPath.map((x) => Field(x)));
+console.log('witness: ', witness);
 
 Provable.runAndCheck(() => {
   const root = witness.calculateRoot(Field(41), Field(3n));
   Provable.log(root);
-  Provable.assertEqual(Field, root, nowRoot);
+  Provable.assertEqual(Field, root, Field(nowRoot));
 });
 
-const witness2 = await tree.getSiblingPath(6n, true);
+const witness2Path = await tree.getSiblingPath(6n, true);
+const witness2 = new SiblingPath_(witness2Path.map((x) => Field(x)));
 console.log('witness2: ', witness2.toJSON());
 
 Provable.runAndCheck(() => {
