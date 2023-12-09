@@ -155,7 +155,7 @@ export const handler: RequestHandler<L2TxReqDto, null> = async function (req, re
             const outputNote2 = l2TxReqDto.extraData.outputNote2;
             mpL2Tx.encryptedData1 = outputNote1 ? JSON.stringify(outputNote1) : undefined as any;
             mpL2Tx.encryptedData2 = outputNote2 ? JSON.stringify(outputNote2) : undefined as any;
-            mpL2Tx.proof = JSON.stringify(l2TxReqDto.proof); // TODO ??should be JSON.stringfy(joinSplitProof.proof)
+            mpL2Tx.proof = JSON.stringify(l2TxReqDto.proof);
             mpL2Tx = await queryRunner.manager.save(mpL2Tx);
 
             if (actionType.equals(ActionType.WITHDRAW).toBoolean()) {
