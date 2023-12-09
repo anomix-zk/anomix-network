@@ -28,6 +28,9 @@ export interface AssetsInBlockDto {
     finalizedTs: number
 }
 
+/**
+ * L2 tx dto for simplifying the L2 tx to return to frontend
+ */
 export interface L2TxSimpleDto {
     id: number
 
