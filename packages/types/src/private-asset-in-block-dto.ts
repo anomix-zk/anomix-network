@@ -92,6 +92,35 @@ export interface L2TxSimpleDto {
 
     txFeeAssetId: string
 
+    extraData: {
+        /**
+         * from encryptedData1
+         */
+        outputNote1?: EncryptedNote,
+        /**
+         * from encryptedData2
+         */
+        outputNote2?: EncryptedNote,
+        /**
+         * used at Account Registration section
+         */
+        accountPublicKey?: string,
+        /**
+         * used at Account Registration section
+         */
+        aliasHash?: string,
+
+        /**
+         * encrypted alias
+         */
+        aliasInfo?: string,
+
+        /**
+         * used at Withdrawal section
+         */
+        withdrawNote?: WithdrawInfoDto
+    }
+
     /**
      * the index within a block
      */
