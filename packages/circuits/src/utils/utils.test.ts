@@ -19,6 +19,6 @@ describe('separateHighPartFor254BitField', () => {
         const result = separateHighPartFor254BitField(x);
 
         // Assert
-        expect(result.xDiv2Var.mul(2).add(result.isOddVar)).to.equal(x);
+        expect(result.xDiv2Var.mul(2).add(result.isOddVar).toBigInt()).toEqual(x);
     });
 });
