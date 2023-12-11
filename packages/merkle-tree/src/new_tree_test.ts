@@ -4,8 +4,16 @@ import { default as memdown, type MemDown } from 'memdown';
 import { PoseidonHasher, SiblingPath } from '@anomix/types';
 import { StandardIndexedTree } from './standard_indexed_tree/standard_indexed_tree';
 import { IndexedTree } from './interfaces/indexed_tree';
-import { Field, Provable } from 'o1js';
+import { Field, Poseidon, Provable } from 'o1js';
+import { Poseidon as PoseidonBigint } from './hasher/poseidon/poseidon.js';
 import { StandardTree } from './standard_tree/standard_tree.js';
+
+let ints = [123n, 456n, 789n];
+let fs = ints.map((i) => Field(i));
+let hashField = Poseidon.hash(fs);
+console.log('hashField: ', hashField.toString());
+let hashInt = PoseidonBigint.hash(ints);
+console.log('hashInt: ', hashInt.toString());
 
 const createMemDown = () => (memdown as any)() as MemDown<any, any>;
 
