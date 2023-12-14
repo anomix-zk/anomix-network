@@ -1,5 +1,6 @@
 import { ProjPointType } from "@noble/curves/abstract/weierstrass";
-import { p256 } from "@noble/curves/p256";
+import { p256, secp256r1 } from "@noble/curves/p256";
+import * as utils from "@noble/curves/abstract/utils";
 
 let priKey = p256.utils.randomPrivateKey();
 let pubKey = p256.getPublicKey(priKey);
@@ -74,19 +75,28 @@ function extract(sk: SecretKey, p: number) {
     return dsk;
 }
 
-// function flag(pk: PublicKey): Flag {
-//     let pubKey = pk.pubKeys;
-//     // tag
-//     let r = p256.utils.normPrivateKeyToScalar(p256.utils.randomPrivateKey());
-//     let u = Point.BASE.multiply(r);
-//     let z = p256.utils.normPrivateKeyToScalar(p256.utils.randomPrivateKey());
-//     let w = Point.BASE.multiply(z);
-//     Point.fromBytes()
+function flag(pk: PublicKey): Flag {
+    let pubKey = pk.pubKeys;
+    // tag
+    let r = p256.utils.normPrivateKeyToScalar(p256.utils.randomPrivateKey());
+    let u = Point.BASE.multiply(r);
+    let z = p256.utils.normPrivateKeyToScalar(p256.utils.randomPrivateKey());
+    let w = Point.BASE.multiply(z);
+    Point.fromBytes();
 
-//     let c = [];
-//     let k = [];
+    let c = [];
+    let k = [];
 
-//     for(let i=0; i<15; i++) {
-//         Point.fromAffine()
-//     }
-// }
+    for (let i = 0; i < 15; i++) {
+        let x = Point.fromHex(utils.bytesToHex(pubKey[i])).x;
+        let h = Point.fromPrivateKey(r).multiply(x);
+        k.push(hash_h(u, h, w));
+        c.push(k[i] ^ 1);
+    }
+
+    m = hash_g(u.x, u.y, c);
+}
+
+function hash_h(u: Point, h: Point, w: Point) {}
+
+function hash_g(ux: number, uy: number, c: number[]) {}
