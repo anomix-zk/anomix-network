@@ -66,7 +66,6 @@ export async function syncActions(
                     `error: await fetchActions({ publicKey: ${targetAddr.toBase58()} }): `,
                     JSON.stringify(error)
                 );
-                console.error(error);
 
                 console.log(`wait for a block and fetchActions again...`);
                 await waitBlockHeightToGrow(UInt32.from(1));
