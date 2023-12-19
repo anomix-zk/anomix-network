@@ -38,10 +38,10 @@ class SecretKey {
 
 class Flag {
     u: Point;
-    y: number;
+    y: bigint;
     c: number[];
 
-    constructor(u: Point, y: number, c?: number[]) {
+    constructor(u: Point, y: bigint, c?: number[]) {
         if (c === undefined) {
             c = [];
         }
@@ -75,6 +75,34 @@ function extract(sk: SecretKey, p: number) {
     return dsk;
 }
 
+function modInverse(a: bigint, m: bigint): bigint {
+    let m0 = m;
+    let y = 0n;
+    let x = 1n;
+
+    if (m === 1n) {
+        return 0n;
+    }
+
+    while (a > 1n) {
+        let q = a / m;
+        let t = m;
+
+        m = a % m;
+        a = t;
+        t = y;
+
+        y = x - q * y;
+        x = t;
+    }
+
+    if (x < 0n) {
+        x += m0;
+    }
+
+    return x;
+}
+
 function flag(pk: PublicKey): Flag {
     let pubKey = pk.pubKeys;
     // tag
@@ -93,7 +121,10 @@ function flag(pk: PublicKey): Flag {
         c.push(k[i] ^ 1);
     }
 
-    m = hash_g(u.x, u.y, c);
+    let m = hash_g(u.x, u.y, c);
+    let y = ((z - m) * modInverse(r, p256.CURVE.n)) % p256.CURVE.n;
+    let result = new Flag(u, y, c);
+    return result;
 }
 
 function encrypt_string(hash_string: string) {
@@ -118,10 +149,6 @@ function concatenateUint8Arrays(a: Uint8Array, b: Uint8Array): Uint8Array {
     return result;
 }
 
-function uint8ArrayToBigInt(bytes: Uint8Array): bigint {
-    return bytes.reduce((acc, curr) => (acc << 8n) + BigInt(curr), 0n);
-}
-
 function hash_g(ux: bigint, uy: bigint, c: number[]) {
     let str = ux.toString() + uy.toString();
     for (let i = 0; i < c.length; i++) {
@@ -142,6 +169,34 @@ function hash_g(ux: bigint, uy: bigint, c: number[]) {
         }
     }
 
-    let res = uint8ArrayToBigInt(result) % p256.CURVE.n;
+    let res = utils.bytesToNumberBE(result) % p256.CURVE.n;
     return res;
+}
+
+function test(dsk: SecretKey, f: Flag): boolean {
+    let result = true;
+
+    let key = dsk.secKeys;
+    let u = f.u;
+    let y = f.y;
+    let c = f.c;
+
+    let message = hash_g(u.x, u.y, c);
+    let z = Point.BASE.multiply(message);
+    let t = u.multiply(BigInt(y));
+    z = z.add(t);
+
+    for (let i = 0; i < dsk.numKeys; i++) {
+        let keyScalar = p256.utils.normPrivateKeyToScalar(key[i]);
+        let pkr = u.multiply(keyScalar);
+
+        let padding = hash_h(u, pkr, z);
+        padding ^= c[i] & 0x01;
+
+        if (padding == 0) {
+            result = false;
+        }
+    }
+
+    return result;
 }
