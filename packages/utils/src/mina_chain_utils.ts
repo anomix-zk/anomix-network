@@ -67,7 +67,7 @@ export async function syncActions(
                     JSON.stringify(error)
                 );
 
-                console.log(`wait for a block and fetchActions again...`);
+                console.log(`\r\n wait for a block and fetchActions again...`);
                 await waitBlockHeightToGrow(UInt32.from(1));
             }
 
