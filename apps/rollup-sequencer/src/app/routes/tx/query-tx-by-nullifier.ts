@@ -47,11 +47,17 @@ export const handler: RequestHandler<string[], null> = async function (
             }
         }) ?? [];
 
-        const l2TxList = l2TxListNullifier1.concat(l2TxListNullifier2);
+        let l2TxList = l2TxListNullifier1.concat(l2TxListNullifier2);
+        const map = new Map();
+        l2TxList.forEach(e => {
+            map.set(e.txHash, e);
+        });
+
+        const result = Array.from(map.values());
 
         return {
             code: 0,
-            data: l2TxList,
+            data: result,
             msg: ''
         };
     } catch (err) {
