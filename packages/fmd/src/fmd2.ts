@@ -1,14 +1,12 @@
 import { p256, secp256r1 } from "@noble/curves/p256";
 import * as utils from "@noble/curves/abstract/utils";
 import { sha256 } from "@noble/hashes/sha256";
-
-let priKey = p256.utils.randomPrivateKey();
-let pubKey = p256.getPublicKey(priKey);
+import { modInverse } from "./utils";
 
 const Point = p256.ProjectivePoint;
 type Point = typeof Point.BASE;
 
-class PublicKey {
+export class PublicKey {
     numKeys: number;
     pubKeys: Uint8Array[];
 
@@ -22,7 +20,7 @@ class PublicKey {
     }
 }
 
-class SecretKey {
+export class SecretKey {
     numKeys: number;
     secKeys: Uint8Array[];
 
@@ -51,7 +49,7 @@ class Flag {
     }
 }
 
-function keyGen(numKeys = 15) {
+export function keyGen(numKeys = 15) {
     let sk = new SecretKey(numKeys);
     let pk = new PublicKey(numKeys);
 
@@ -63,7 +61,7 @@ function keyGen(numKeys = 15) {
     return [sk, pk];
 }
 
-function extract(sk: SecretKey, p: number) {
+export function extract(sk: SecretKey, p: number) {
     let n = Math.log(1 / p) / Math.log(2);
     let result: Uint8Array[] = [];
 
@@ -75,35 +73,7 @@ function extract(sk: SecretKey, p: number) {
     return dsk;
 }
 
-function modInverse(a: bigint, m: bigint): bigint {
-    let m0 = m;
-    let y = 0n;
-    let x = 1n;
-
-    if (m === 1n) {
-        return 0n;
-    }
-
-    while (a > 1n) {
-        let q = a / m;
-        let t = m;
-
-        m = a % m;
-        a = t;
-        t = y;
-
-        y = x - q * y;
-        x = t;
-    }
-
-    if (x < 0n) {
-        x += m0;
-    }
-
-    return x;
-}
-
-function flag(pk: PublicKey): Flag {
+export function flag(pk: PublicKey): Flag {
     let pubKey = pk.pubKeys;
     // tag
     let r = p256.utils.normPrivateKeyToScalar(p256.utils.randomPrivateKey());
@@ -161,7 +131,7 @@ function hash_g(ux: bigint, uy: bigint, c: number[]) {
 
     while (bit_hashed < size) {
         let hashed = encrypt_string(str);
-        result = concatenateUint8Arrays(result, hashed.slice(0, 32));
+        result = concatenateUint8Arrays(result, hashed.subarray(0, 32));
         bit_hashed = result.length / 8;
 
         if (bit_hashed < size) {
@@ -173,7 +143,7 @@ function hash_g(ux: bigint, uy: bigint, c: number[]) {
     return res;
 }
 
-function test(dsk: SecretKey, f: Flag): boolean {
+export function test(dsk: SecretKey, f: Flag): boolean {
     let result = true;
 
     let key = dsk.secKeys;
