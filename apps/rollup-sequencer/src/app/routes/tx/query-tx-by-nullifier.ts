@@ -10,14 +10,14 @@ import { L2Tx } from "@anomix/dao"
 /**
 * 根据alias_nullifier/account_viewing_key/valueNote_commitment/nullifier查询L2Tx
 */
-export const queryTxByNoteHash: FastifyPlugin = async function (
+export const queryTxByNullifier: FastifyPlugin = async function (
     instance,
     options,
     done
 ): Promise<void> {
     instance.route({
         method: "POST",
-        url: "/tx/notehashes",
+        url: "/tx/nullifiers",
         //preHandler: [instance.authGuard],
         schema,
         handler
