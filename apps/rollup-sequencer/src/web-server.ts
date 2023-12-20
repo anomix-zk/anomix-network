@@ -152,16 +152,6 @@ if (!existDB) {
 
     // query latest block
     latestBlock = (await blockRepository.find({
-        select: [
-            'id'
-            /*,
-            'blockHash',
-            'l1TxHash',
-            'status',
-            'createdAt',
-            'finalizedAt'
-            */
-        ],
         order: {
             id: 'DESC'
         },
