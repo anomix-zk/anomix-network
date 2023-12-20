@@ -4,6 +4,8 @@ import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { BaseResponse, L2TxRespDto } from '@anomix/types'
 import { RequestHandler } from '@/lib/types'
+import { getConnection, In } from "typeorm"
+import { L2Tx } from "@anomix/dao"
 
 /**
 * 根据alias_nullifier/account_viewing_key/valueNote_commitment/nullifier查询L2Tx
@@ -25,17 +27,31 @@ export const queryTxByNoteHash: FastifyPlugin = async function (
 export const handler: RequestHandler<string[], null> = async function (
     req,
     res
-): Promise<BaseResponse<L2TxRespDto[]>> {
-    const notehashes = req.body
+): Promise<BaseResponse<L2Tx[]>> {
+    const notehashes = req.body;
+
+    const connection = getConnection();
 
     try {
-        let l2TxRespDtoList: L2TxRespDto[] = []
-        // TODO
-        //
-        //
+        // query confirmed tx
+        const txRepository = connection.getRepository(L2Tx);
+        let l2TxListNullifier1 = await txRepository.find({
+            where: {
+                nullifier1: In(notehashes)
+            }
+        }) ?? [];
+
+        let l2TxListNullifier2 = await txRepository.find({
+            where: {
+                nullifier2: In(notehashes)
+            }
+        }) ?? [];
+
+        const l2TxList = l2TxListNullifier1.concat(l2TxListNullifier2);
+
         return {
             code: 0,
-            data: l2TxRespDtoList,
+            data: l2TxList,
             msg: ''
         };
     } catch (err) {
