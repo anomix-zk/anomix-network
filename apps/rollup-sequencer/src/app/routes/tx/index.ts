@@ -1,5 +1,5 @@
 import { FastifyPlugin } from "fastify"
-import { queryTxByNullifier } from "./query-tx-by-note-hashes";
+import { queryTxByNullifier } from "./query-tx-by-nullifier";
 import { withdrawAsset } from "./withdraw-assets";
 
 export const txEndpoint: FastifyPlugin = async (
