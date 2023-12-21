@@ -10,8 +10,9 @@ function main() {
     for (let i = 0; i < n; i++) {
         let flag = 0;
         try {
-            server.run(1 / 2);
+            server.run(1 / 4);
         } catch (err) {
+            console.log(err);
             flag = 1;
             console.log("FMD2 experiment " + (i + 1) + " was unsuccessful!");
             console.log("Experiment done, try again!");

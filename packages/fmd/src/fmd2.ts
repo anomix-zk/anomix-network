@@ -62,7 +62,7 @@ export function keyGen(numKeys = 15) {
 }
 
 export function extract(sk: SecretKey, p: number) {
-    let n = Math.log(1 / p) / Math.log(2);
+    let n = Math.trunc(Math.log2(1 / p));
     let result: Uint8Array[] = [];
 
     for (let i = 0; i < n; i++) {
@@ -153,7 +153,7 @@ export function test(dsk: SecretKey, f: Flag): boolean {
 
     let message = hash_g(u.x, u.y, c);
     let z = Point.BASE.multiply(message);
-    let t = u.multiply(BigInt(y));
+    let t = u.multiply(y);
     z = z.add(t);
 
     for (let i = 0; i < dsk.numKeys; i++) {

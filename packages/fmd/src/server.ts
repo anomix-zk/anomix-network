@@ -19,7 +19,7 @@ export class Server {
     }
 
     run(p: number) {
-        if ((Math.log(1 / p) / Math.log(2)) % 1 !== 0) {
+        if (Math.log2(1 / p) % 1 !== 0) {
             throw new Error("p must be a power of 2");
         }
 
