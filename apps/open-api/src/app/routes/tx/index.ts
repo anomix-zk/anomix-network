@@ -5,6 +5,7 @@ import { queryWithdrawalNotes } from "./query-withdrawal-notes";
 import { recieveTx } from "./recieve-tx-call-proof-verify";
 import { withdrawAsset } from "./withdraw-assets";
 import { queryPendingTxs } from "./query-pending-txs";
+import { queryTxByNullifier } from "./query-tx-by-nullifier";
 
 /**
  (5)供client查询encrypted data
@@ -32,4 +33,6 @@ export const txEndpoint: FastifyPlugin = async (
     instance.register(queryTxByNoteHash);
     instance.register(queryWithdrawalNotes);
     // instance.register(withdrawAsset);
+    instance.register(queryTxByNullifier);
+
 }
