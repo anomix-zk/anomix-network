@@ -7,6 +7,7 @@ import { rollupSeqTrigger } from "./rollup-seq-trigger";
 import { notesEndpoint } from "./note";
 import { txEndpoint } from "./tx";
 import { networkEndpoints } from "./network";
+import { triggerStartNewFlow } from "./trigger-seq-commitment";
 
 export const routes: FastifyPlugin = async function (
     instance,
@@ -21,4 +22,5 @@ export const routes: FastifyPlugin = async function (
     instance.register(notesEndpoint)
     instance.register(txEndpoint)
     instance.register(networkEndpoints);
+    instance.register(triggerStartNewFlow);
 }
