@@ -46,7 +46,7 @@ const schema = {
                     type: 'number',
                 },
                 data: {
-                    type: 'number'
+                    type: 'boolean'
                 },
                 msg: {
                     type: 'string'
