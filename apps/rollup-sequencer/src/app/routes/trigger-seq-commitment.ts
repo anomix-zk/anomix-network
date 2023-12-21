@@ -36,7 +36,7 @@ export const handler: RequestHandler<null, null> = async function (
 }
 
 const schema = {
-    description: 'trigger deposit actions rollup',
+    description: 'trigger trigger Start New Flow for seq',
     tags: ['Rollup'],
     response: {
         200: {
