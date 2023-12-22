@@ -36,7 +36,7 @@ export class SubProcessCordinator {
     constructor(public workerMap: Map<string, { worker: Worker; status: WorkerStatus; type: string }[]>
     ) { }
 
-    innerRollup_proveTxBatch(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
+    innerRollupProveTxBatch(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         // 
     }
 
@@ -123,10 +123,7 @@ export class SubProcessCordinator {
                         // send for exec circuit
                         worker?.worker!.send(msg1);
                     })
-
-
                 });
-
             }
         );
     }
