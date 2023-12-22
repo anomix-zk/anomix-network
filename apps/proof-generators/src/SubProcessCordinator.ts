@@ -42,23 +42,23 @@ export class SubProcessCordinator {
     constructor(public workerMap: Map<string, { worker: Worker; status: WorkerStatus; type: string }[]>
     ) { }
 
-    innerRollupProveTxBatch(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
+    async innerRollupProveTxBatch(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         // 
     }
 
-    innerRollupMerge(proofPayload1: ProofPayload<any>, proofPayload2: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
+    async innerRollupMerge(proofPayload1: ProofPayload<any>, proofPayload2: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         //
     }
 
-    depositRollupCommitActionBatch(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
+    async depositRollupCommitActionBatch(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         //
     }
 
-    depositRollupMerge(x: ProofPayload<any>, y: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
+    async depositRollupMerge(x: ProofPayload<any>, y: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         //
     }
 
-    jointSplitDeposit(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<>> {
+    async jointSplitDeposit(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         return await new Promise(
             (
                 resolve: (payload: ProofPayload<any>) => any,
@@ -134,23 +134,23 @@ export class SubProcessCordinator {
         );
     }
 
-    blockProve(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
+    async blockProve(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         //
     }
 
-    depositContract_updateDepositState(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
+    async depositContract_updateDepositState(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         //
     }
 
-    rollupContractFirstWithdraw(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
+    async rollupContractFirstWithdraw(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         //
     }
 
-    rollupContractWithdraw(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
+    async rollupContractWithdraw(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         //
     }
 
-    rollupContractUpdateRollupState(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
+    async rollupContractUpdateRollupState(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         //
     }
 
