@@ -15,7 +15,13 @@ import { dirname } from 'path';
 import { randomUUID } from 'crypto';
 import config from './lib/config';
 
+const logger = getLogger('SubProcessCordinator');
+
 type WorkerStatus = 'IsReady' | 'Busy';
+
+
+let rollupContractCallTimes = 0;
+let entryContractCallTimes = 0;
 
 const CircuitName_DepositRollupProver = 'DepositRollupProver';
 const CircuitName_AnomixEntryContract = 'AnomixEntryContract';
@@ -147,4 +153,41 @@ export class SubProcessCordinator {
     rollupContractUpdateRollupState(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
         //
     }
+
+    static getFreeWorker(
+        workers: { worker: Worker, status: WorkerStatus, type: string }[],
+        resolve,
+        reject: (err: any) => any | any
+    ) {
+        let worker: { worker: Worker, status: string, type: string } | undefined = undefined;
+
+        worker = workers.find((w) => w.status == 'IsReady');
+
+        if (worker === undefined) {
+            console.log('no free worker currently, will ask it again 1mins later...')
+            setTimeout(SubProcessCordinator.getFreeWorker, 2 * 60 * 1000, workers, resolve, reject);
+        } else {
+            if (worker.type == CircuitName_AnomixEntryContract) {
+                // by return, due to the last process need time to release memory(about wasm32, don't know why, but occurs), or else it will fail!
+
+                logger.info(`worker.type: ${worker.type}, entryContractCallTimes:${entryContractCallTimes}, workerIndex: ${entryContractCallTimes % workers.length}`);
+
+                worker = workers.at(entryContractCallTimes % workers.length);
+                entryContractCallTimes++;
+
+            } else if (worker.type == CircuitName_AnomixRollupContract) {
+                // by return, due to the last process need time to release memory(about wasm32, don't know why, but occurs), or else it will fail!
+                logger.info(`worker.type: ${worker.type}, rollupContractCallTimes:${rollupContractCallTimes}, workerIndex: ${rollupContractCallTimes % workers.length}`);
+
+                worker = workers.at(rollupContractCallTimes % workers.length);
+                rollupContractCallTimes++;
+
+            }
+
+            worker!.status = 'Busy';
+            return resolve(worker);
+        }
+    }
+
 }
+
