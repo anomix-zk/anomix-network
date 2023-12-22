@@ -1,7 +1,7 @@
 /* eslint-disable no-prototype-builtins */
-import { PoseidonHasher } from "./poseidon_hasher";
+import { PoseidonHasher } from "../../../merkle-tree/src/hasher/poseidon/poseidon_hasher";
 import { arrayProp, Bool, CircuitValue, Field } from "o1js";
-import { Hasher } from "./hasher";
+import { Hasher } from "../../../merkle-tree/src/hasher/hasher";
 
 export class BaseSiblingPath extends CircuitValue {
     static height: number;

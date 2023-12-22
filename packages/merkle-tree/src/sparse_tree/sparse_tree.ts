@@ -11,17 +11,16 @@ export class SparseTree extends TreeBase implements UpdateOnlyTree {
    * @param leaf - New contents of the leaf.
    * @param index - Index of the leaf to be updated.
    */
-  public async updateLeaf(leaf: Field, index: bigint): Promise<void> {
+  public async updateLeaf(leaf: bigint, index: bigint): Promise<void> {
     if (index > this.maxIndex) {
       throw Error(
         `Index out of bounds. Index ${index}, max index: ${this.maxIndex}.`
       );
     }
 
-    const insertingZeroElement = leaf.equals(INITIAL_LEAF).toBoolean();
-    const originallyZeroElement = (await this.getLeafValue(index, true))
-      ?.equals(INITIAL_LEAF)
-      .toBoolean();
+    const insertingZeroElement = leaf === INITIAL_LEAF;
+    const originallyZeroElement =
+      (await this.getLeafValue(index, true)) === INITIAL_LEAF;
     if (insertingZeroElement && originallyZeroElement) {
       return;
     }

@@ -9,5 +9,5 @@ export interface AppendOnlyTree extends MerkleTree {
    * Appends a set of leaf values to the tree.
    * @param leaves - The set of leaves to be appended.
    */
-  appendLeaves(leaves: Field[]): Promise<void>;
+  appendLeaves(leaves: bigint[]): Promise<void>;
 }

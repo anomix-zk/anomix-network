@@ -36,7 +36,7 @@ import RollupTaskDtoSchma from './rollup-task-dto-schema.json' assert { type: "j
 export { L2TxReqDtoSchema, L2TxRespDtoSchema, MerkleProofDtoSchema, NetworkStatusDtoSchema, WithdrawInfoDtoSchema, WithdrawAssetReqDtoSchema };
 export { WorldStateRespDtoSchema, TxFeeSuggestionDtoSchema, ProofTaskDtoSchma, ProofVerifyReqDtoSchma, RollupTaskDtoSchma, AssetInBlockReqDtoSchema, AssetsInBlockDtoSchema, WithdrawalWitnessDtoSchema }
 
-export * from "./merkle_tree/hasher";
-export * from "./merkle_tree/poseidon_hasher";
+export * from "../../merkle-tree/src/hasher/hasher";
+export * from "../../merkle-tree/src/hasher/poseidon/poseidon_hasher";
 export * from "./merkle_tree/sibling_path";
 export * from "./merkle_tree/merkle-tree-error"
