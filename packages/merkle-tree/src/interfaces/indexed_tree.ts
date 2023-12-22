@@ -71,12 +71,12 @@ export interface IndexedTree extends AppendOnlyTree {
    * @param subtreeHeight - Height of the subtree.
    * @param includeUncommitted - If true, the uncommitted changes are included in the search.
    */
-  batchInsert(
-    leaves: Field[],
-    treeHeight: number,
-    subtreeHeight: number,
-    includeUncommitted: boolean
-  ): Promise<
-    [LowLeafWitnessData[], BaseSiblingPath] | [undefined, BaseSiblingPath]
-  >;
+  // batchInsert(
+  //   leaves: Field[],
+  //   treeHeight: number,
+  //   subtreeHeight: number,
+  //   includeUncommitted: boolean
+  // ): Promise<
+  //   [LowLeafWitnessData[], BaseSiblingPath] | [undefined, BaseSiblingPath]
+  // >;
 }

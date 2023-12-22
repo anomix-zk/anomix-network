@@ -11,5 +11,5 @@ export interface UpdateOnlyTree extends MerkleTree {
    * @param index - The leaf to be updated.
    */
   // TODO: Make this strictly a Buffer
-  updateLeaf(leaf: Field, index: bigint): Promise<void>;
+  updateLeaf(leaf: bigint, index: bigint): Promise<void>;
 }

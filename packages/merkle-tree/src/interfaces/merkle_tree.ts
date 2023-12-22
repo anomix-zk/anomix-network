@@ -10,10 +10,7 @@ export interface SiblingPathSource {
    * @param index - The index of the leaf for which a sibling path is required.
    * @param includeUncommitted - Set to true to include uncommitted updates in the sibling path.
    */
-  getSiblingPath(
-    index: bigint,
-    includeUncommitted: boolean
-  ): Promise<BaseSiblingPath>;
+  getSiblingPath(index: bigint, includeUncommitted: boolean): Promise<bigint[]>;
 }
 
 /**
@@ -24,7 +21,7 @@ export interface MerkleTree extends SiblingPathSource {
    * Returns the current root of the tree.
    * @param includeUncommitted - Set to true to include uncommitted updates in the calculated root.
    */
-  getRoot(includeUncommitted: boolean): Field;
+  getRoot(includeUncommitted: boolean): bigint;
 
   /**
    * Returns the number of leaves in the tree.
@@ -55,5 +52,5 @@ export interface MerkleTree extends SiblingPathSource {
   getLeafValue(
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<Field | undefined>;
+  ): Promise<bigint | undefined>;
 }
