@@ -19,5 +19,8 @@
   },
   "dependencies": {
     "@noble/curves": "^1.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5"
   }
 }
