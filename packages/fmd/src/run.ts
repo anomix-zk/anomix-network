@@ -10,7 +10,7 @@ function main() {
     for (let i = 0; i < n; i++) {
         let flag = 0;
         try {
-            server.run(1 / 4);
+            server.run(1 / 2);
         } catch (err) {
             console.log(err);
             flag = 1;
@@ -18,7 +18,7 @@ function main() {
             console.log("Experiment done, try again!");
         }
 
-        if (flag !== 1) {
+        if (flag === 0) {
             x++;
             console.log("FMD2 experiment " + (i + 1) + " was successful!");
             console.log("Experiment done, try with other values!");

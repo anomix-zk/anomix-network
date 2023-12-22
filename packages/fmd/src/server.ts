@@ -63,7 +63,7 @@ export class Server {
         }
         // the false positives should be at minimum p%
         if (falsePos / this.clients.length < p) {
-            throw new CheckError("false positive rate too low");
+            throw new CheckError("Real false positive rate too low");
         }
     }
 }
