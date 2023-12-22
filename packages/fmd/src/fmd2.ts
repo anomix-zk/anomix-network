@@ -1,7 +1,7 @@
 import { p256, secp256r1 } from "@noble/curves/p256";
 import * as utils from "@noble/curves/abstract/utils";
 import { sha256 } from "@noble/hashes/sha256";
-import { modInverse } from "./utils";
+import { modInverse, randomBigIntRange } from "./utils";
 
 const Point = p256.ProjectivePoint;
 type Point = typeof Point.BASE;
@@ -22,14 +22,14 @@ export class PublicKey {
 
 export class SecretKey {
     numKeys: number;
-    secKeys: Uint8Array[];
+    secKeys: bigint[];
 
-    constructor(numKeys: number = 0, sec: Uint8Array[] = []) {
+    constructor(numKeys: number = 0, sec: bigint[] = []) {
         this.numKeys = numKeys;
         this.secKeys = sec;
     }
 
-    public addSecKey(sk: Uint8Array) {
+    public addSecKey(sk: bigint) {
         this.secKeys.push(sk);
     }
 }
@@ -54,7 +54,11 @@ export function keyGen(numKeys = 15) {
     let pk = new PublicKey(numKeys);
 
     for (let i = 0; i < numKeys; i++) {
-        sk.addSecKey(p256.utils.randomPrivateKey());
+        sk.addSecKey(
+            p256.utils.normPrivateKeyToScalar(
+                secp256r1.utils.randomPrivateKey()
+            )
+        );
         pk.addPubkey(p256.getPublicKey(sk.secKeys[i]));
     }
 
@@ -62,8 +66,8 @@ export function keyGen(numKeys = 15) {
 }
 
 export function extract(sk: SecretKey, p: number) {
-    let n = Math.trunc(Math.log2(1 / p));
-    let result: Uint8Array[] = [];
+    let n = Math.floor(Math.log2(1 / p));
+    let result: bigint[] = [];
 
     for (let i = 0; i < n; i++) {
         result.push(sk.secKeys[i]);
@@ -76,23 +80,27 @@ export function extract(sk: SecretKey, p: number) {
 export function flag(pk: PublicKey): Flag {
     let pubKey = pk.pubKeys;
     // tag
-    let r = p256.utils.normPrivateKeyToScalar(p256.utils.randomPrivateKey());
+    let r = randomBigIntRange(0n, p256.CURVE.n);
     let u = Point.BASE.multiply(r);
-    let z = p256.utils.normPrivateKeyToScalar(p256.utils.randomPrivateKey());
+    let z = randomBigIntRange(0n, p256.CURVE.n);
     let w = Point.BASE.multiply(z);
 
     let c: number[] = [];
     let k: number[] = [];
 
     for (let i = 0; i < 15; i++) {
-        let x = Point.fromHex(utils.bytesToHex(pubKey[i])).x;
-        let h = Point.fromPrivateKey(r).multiply(x);
+        let pk = Point.fromHex(utils.bytesToHex(pubKey[i]));
+        let h = pk.multiply(r);
         k.push(hash_h(u, h, w));
         c.push(k[i] ^ 1);
     }
 
     let m = hash_g(u.x, u.y, c);
     let y = ((z - m) * modInverse(r, p256.CURVE.n)) % p256.CURVE.n;
+    if (y < 0) {
+        y += p256.CURVE.n;
+    }
+    console.log("y: ", y);
     let result = new Flag(u, y, c);
     return result;
 }
@@ -135,7 +143,7 @@ function hash_g(ux: bigint, uy: bigint, c: number[]) {
         bit_hashed = result.length / 8;
 
         if (bit_hashed < size) {
-            str += "x";
+            str += "X";
         }
     }
 
@@ -146,19 +154,20 @@ function hash_g(ux: bigint, uy: bigint, c: number[]) {
 export function test(dsk: SecretKey, f: Flag): boolean {
     let result = true;
 
-    let key = dsk.secKeys;
+    let keys = dsk.secKeys;
     let u = f.u;
     let y = f.y;
     let c = f.c;
 
     let message = hash_g(u.x, u.y, c);
     let z = Point.BASE.multiply(message);
+    // console.log("u: ", BigInt("0x" + u.toHex().toString()));
+    // console.log("y: ", y, y < p256.CURVE.n);
     let t = u.multiply(y);
     z = z.add(t);
 
     for (let i = 0; i < dsk.numKeys; i++) {
-        let keyScalar = p256.utils.normPrivateKeyToScalar(key[i]);
-        let pkr = u.multiply(keyScalar);
+        let pkr = u.multiply(keys[i]);
 
         let padding = hash_h(u, pkr, z);
         padding ^= c[i] & 0x01;
