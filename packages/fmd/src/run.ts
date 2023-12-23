@@ -10,7 +10,7 @@ function main() {
     for (let i = 0; i < n; i++) {
         let flag = 0;
         try {
-            server.run(1 / 2);
+            server.run(1 / 8);
         } catch (err) {
             console.log(err);
             flag = 1;

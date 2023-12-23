@@ -1,10 +1,11 @@
-import { p256 } from "@noble/curves/p256";
+import { p256 as curve } from "@noble/curves/p256";
 import * as utils from "@noble/curves/abstract/utils";
 import { sha256 } from "@noble/hashes/sha256";
 import { modInverse, randomBigIntRange } from "./utils";
 
-const Point = p256.ProjectivePoint;
+const Point = curve.ProjectivePoint;
 type Point = typeof Point.BASE;
+const NUM_KEYS = 15;
 
 export class PublicKey {
     numKeys: number;
@@ -23,10 +24,12 @@ export class PublicKey {
 export class SecretKey {
     numKeys: number;
     secKeys: bigint[];
+    prob: number;
 
     constructor(numKeys: number = 0, sec: bigint[] = []) {
         this.numKeys = numKeys;
         this.secKeys = sec;
+        this.prob = numKeys;
     }
 
     public addSecKey(sk: bigint) {
@@ -49,18 +52,95 @@ class Flag {
     }
 }
 
-export function keyGen(numKeys = 15) {
+// Generate a full keypair for an n-bit ciphertext
+export function keyGen(numKeys: number = NUM_KEYS): {
+    sk: SecretKey;
+    pk: PublicKey;
+} {
     let sk = new SecretKey(numKeys);
     let pk = new PublicKey(numKeys);
 
     for (let i = 0; i < numKeys; i++) {
         sk.addSecKey(
-            p256.utils.normPrivateKeyToScalar(p256.utils.randomPrivateKey())
+            curve.utils.normPrivateKeyToScalar(curve.utils.randomPrivateKey())
         );
-        pk.addPubkey(p256.getPublicKey(sk.secKeys[i]));
+        pk.addPubkey(curve.getPublicKey(sk.secKeys[i]));
     }
 
-    return [sk, pk];
+    return { sk, pk };
+}
+
+function randomScalar(): bigint {
+    return curve.utils.normPrivateKeyToScalar(curve.utils.randomPrivateKey());
+}
+
+// Encrypt a ciphertext
+export function flag(pk: PublicKey): Flag {
+    let r = randomScalar();
+    let z = randomScalar();
+
+    // compute u = r * P
+    let u = Point.BASE.multiply(r);
+    // compute w = z * P
+    let w = Point.BASE.multiply(z);
+    let bitVec = new Uint8Array((pk.numKeys + 7) / 8);
+
+    for (let i = 0; i < pk.numKeys; i++) {
+        // compute pkR = r * pk[i]
+        let pkR = Point.fromHex(utils.bytesToHex(pk.pubKeys[i])).multiply(r);
+
+        let padChar = computeHashH(u, pkR, w);
+        padChar ^= 0x01;
+
+        bitVec[i / 8] |= padChar << k % 8;
+    }
+
+    let v = computeHashG(u, bitVec);
+
+    // let m = hash_g(u.x, u.y, c);
+    // let y = ((z - m) * modInverse(r, p256.CURVE.n)) % p256.CURVE.n;
+    // if (y < 0) {
+    //     y += p256.CURVE.n;
+    // }
+    // console.log("y: ", y);
+    // let result = new Flag(u, y, c);
+    // return result;
+}
+
+function computeHashH(u: Point, h: Point, w: Point): number {
+    let serialized = concatenateUint8Arrays(u.toRawBytes(), h.toRawBytes());
+    serialized = concatenateUint8Arrays(serialized, w.toRawBytes());
+
+    let hash = sha256(serialized);
+    return hash[0] & 0x01;
+}
+
+function computeHashG(u: Point, bitVec: Uint8Array): bigint {
+    let N = curve.CURVE.n;
+    let bitSize = curve.CURVE.nBitLength;
+
+    let serialized = concatenateUint8Arrays(u.toRawBytes(), bitVec);
+
+    bitSize += 64;
+    let bitsHashed = 0;
+    let h = new Uint8Array();
+
+    while (bitsHashed < bitSize) {
+        let hash = sha256(serialized);
+        h = concatenateUint8Arrays(h, hash.subarray(0, 32));
+        bitsHashed = h.length / 8;
+
+        if (bitsHashed < bitSize) {
+            // Concatenate an "X" (0x58)
+            serialized = concatenateUint8Arrays(
+                serialized,
+                new Uint8Array([0x58])
+            );
+        }
+    }
+
+    let result = utils.bytesToNumberBE(h) % N;
+    return result;
 }
 
 export function extract(sk: SecretKey, p: number) {
@@ -74,34 +154,6 @@ export function extract(sk: SecretKey, p: number) {
 
     let dsk = new SecretKey(n, result);
     return dsk;
-}
-
-export function flag(pk: PublicKey): Flag {
-    let pubKey = pk.pubKeys;
-    // tag
-    let r = randomBigIntRange(0n, p256.CURVE.n);
-    let u = Point.BASE.multiply(r);
-    let z = randomBigIntRange(0n, p256.CURVE.n);
-    let w = Point.BASE.multiply(z);
-
-    let c: number[] = [];
-    let k: number[] = [];
-
-    for (let i = 0; i < 15; i++) {
-        let pk = Point.fromHex(utils.bytesToHex(pubKey[i]));
-        let h = pk.multiply(r);
-        k.push(hash_h(u, h, w));
-        c.push(k[i] ^ 1);
-    }
-
-    let m = hash_g(u.x, u.y, c);
-    let y = ((z - m) * modInverse(r, p256.CURVE.n)) % p256.CURVE.n;
-    if (y < 0) {
-        y += p256.CURVE.n;
-    }
-    console.log("y: ", y);
-    let result = new Flag(u, y, c);
-    return result;
 }
 
 function encrypt_string(hash_string: string) {
