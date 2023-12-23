@@ -2,7 +2,7 @@
 import httpCodes from "@inip/http-codes"
 import { FastifyPlugin } from "fastify"
 import { RequestHandler } from '@/lib/types'
-import { BaseResponse } from "@anomix/types";
+import { BaseResponse, NetworkStatus } from "@anomix/types";
 import { $axiosSeq } from "@/lib/api";
 
 /**
@@ -31,7 +31,7 @@ export const handler: RequestHandler<string[], null> = async function (
             return r.data
         })
 
-        if (rs == 'alive') {
+        if (rs == NetworkStatus.ALIVE) {
             return { code: 0, data: true, msg: '' };
         }
         return { code: 1, data: false, msg: '' };

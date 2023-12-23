@@ -183,3 +183,10 @@ export enum WithdrawEventFetchRecordStatus {
 export enum ProofVerifyReqType {
     L2TX
 }
+
+export enum NetworkStatus {
+    STARTING,
+    ALIVE,
+    STOPPING,
+    STOPPED
+}
