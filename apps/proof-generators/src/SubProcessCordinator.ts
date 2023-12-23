@@ -61,7 +61,7 @@ export class SubProcessCordinator {
                     return InnerRollupProof.fromJSON(proofJson);
                 }
 
-                generateProof(workerMap.get(CircuitName_InnerRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
+                SubProcessCordinator.generateProof(this.workerMap.get(CircuitName_InnerRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
             }
         )
     }
