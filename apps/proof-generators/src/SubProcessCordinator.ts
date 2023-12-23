@@ -43,7 +43,27 @@ export class SubProcessCordinator {
     ) { }
 
     async innerRollupProveTxBatch(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
-        // 
+        return await new Promise(
+            (
+                resolve: (payload: ProofPayload<any>) => any,
+                reject: (err: any) => any | any
+            ) => {
+                const msg = {
+                    type: `${FlowTaskType[FlowTaskType.ROLLUP_TX_BATCH]}`,
+                    payload: proofPayload.payload as {
+                        innerRollupInput: string,
+                        joinSplitProof1: string,
+                        joinSplitProof2: string
+                    },
+                };
+
+                const fromJsonFn = (proofJson: any) => {
+                    return InnerRollupProof.fromJSON(proofJson);
+                }
+
+                generateProof(workerMap.get(CircuitName_InnerRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
+            }
+        )
     }
 
     async innerRollupMerge(proofPayload1: ProofPayload<any>, proofPayload2: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
@@ -82,7 +102,7 @@ export class SubProcessCordinator {
 
                     // never await this promise
                     new Promise((s, j) => {
-                        getFreeWorker(workers, s, j);
+                        SubProcessCordinator.getFreeWorker(workers, s, j);
 
                     }).then(workerEntity => {
                         let worker = workerEntity as { worker: Worker, status: WorkerStatus, type: string };
@@ -187,6 +207,59 @@ export class SubProcessCordinator {
             worker!.status = 'Busy';
             return resolve(worker);
         }
+    }
+
+
+    static generateProof(
+        workers: { worker: Worker, status: WorkerStatus, type: string }[],
+        msg: { type: string, payload: any },
+        fromJsonFn,
+        resolve,
+        reject: (err: any) => any | any,
+        sendCallBack?: any) {
+
+        return new Promise((s, j) => {
+
+            SubProcessCordinator.getFreeWorker(workers, s, j);
+
+        }).then(workerEntity => {
+
+            let workerE = workerEntity as { worker: Worker, status: WorkerStatus, type: string };
+
+            const handler = (message: any) => {
+                if (message.type == 'error') {// when meet errors (it's wasm32memory issue at great probability), defaultly restart the childProcess
+                    return;
+                }
+
+                if (workerE.type != CircuitName_AnomixRollupContract && workerE.type != CircuitName_AnomixEntryContract) {
+                    workerE.status = 'IsReady';
+                }
+
+                workerE.worker!.removeListener('message', handler);// must rm it here to avoid listener accumulation.
+
+                if (message.type == 'done') {
+                    try {
+                        let proofJson = message.payload.payload;
+                        if (sendCallBack) {
+                            sendCallBack(proofJson);
+                        }
+
+                        let proof = fromJsonFn(proofJson);
+                        resolve({
+                            isProof: true,
+                            payload: proof,
+                        });
+                    } catch (error) {
+                        reject(error);
+                    }
+                }
+
+            }
+            workerE.worker!.on('message', handler);
+
+            // async exec
+            workerE.worker!.send(msg);
+        });
     }
 
 }
