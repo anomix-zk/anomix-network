@@ -57,6 +57,7 @@ export const handler: RequestHandler<{ tokenId: string, ownerPk: string, include
         const leafNum = this.withdrawDB.getNumLeaves(includeUncommit).toString();
         const treeRoot = this.withdrawDB.getRoot(includeUncommit).toString();
         await this.withdrawDB.reset();
+        logger.info(`withdrawDB.reset... done.`);
 
         return {
             code: 0,
