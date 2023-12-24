@@ -71,7 +71,29 @@ export class SubProcessCordinator {
     }
 
     async depositRollupCommitActionBatch(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
-        //
+        return await new Promise(
+            (
+                resolve: (payload: ProofPayload<any>) => any,
+                reject: (err: any) => any | any
+            ) => {
+
+                const msg = {
+                    type: `${FlowTaskType[FlowTaskType.DEPOSIT_BATCH]}`,
+                    payload: { depositActionBatch: proofPayload.payload.depositActionBatch, depositRollupState: proofPayload.payload.depositRollupState } as {
+                        depositRollupState: DepositRollupState,
+                        depositActionBatch: DepositActionBatch
+                    }
+                };
+
+                const fromJsonFn = (proofJson: any) => {
+                    return DepositRollupProof.fromJSON(proofJson);
+                }
+
+                generateProof(workerMap.get(CircuitName_DepositRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
+            }
+        ).catch(e => {
+            console.error(e);
+        });
     }
 
     async depositRollupMerge(x: ProofPayload<any>, y: ProofPayload<any>, sendCallBack?: (x: any) => void): Promise<ProofPayload<any>> {
