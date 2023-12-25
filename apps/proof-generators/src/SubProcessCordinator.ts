@@ -215,7 +215,40 @@ export class SubProcessCordinator {
     }
 
     async rollupContractUpdateRollupState(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
+        return await new Promise(
+            (
+                resolve: (payload: ProofPayload<any>) => any,
+                reject: (err: any) => any | any
+            ) => {
 
+                const msg = {
+                    type: `${FlowTaskType[FlowTaskType.ROLLUP_CONTRACT_CALL]}`,
+                    payload: {
+                        fee: proofPayload.payload.fee,
+                        feePayer: proofPayload.payload.feePayer,
+                        proof: proofPayload.payload.proof,
+                        operatorSign: proofPayload.payload.operatorSign,
+                        entryDepositRoot: proofPayload.payload.entryDepositRoot
+                    } as {
+                        fee: number,
+                        feePayer: string,
+                        proof: string,
+                        operatorSign: any
+                        entryDepositRoot: string
+                    }
+                };
+
+                logger.info(`rollupContractUpdateRollupState-msg: ${JSON.stringify(msg)}`);
+
+                const fromJsonFn = (proofJson: any) => {
+                    return proofJson;
+                }
+
+                SubProcessCordinator.generateProof(this.workerMap.get(CircuitName_AnomixRollupContract)!, msg, fromJsonFn, resolve, reject, sendCallBack);
+            }
+        ).catch(e => {
+            console.error(e);
+        });
     }
 
     static getFreeWorker(
