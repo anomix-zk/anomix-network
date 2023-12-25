@@ -177,7 +177,29 @@ export class SubProcessCordinator {
     }
 
     async blockProve(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
-        //
+        return await new Promise(
+            (
+                resolve: (payload: ProofPayload<any>) => any,
+                reject: (err: any) => any | any
+            ) => {
+
+                const msg = {
+                    type: `${FlowTaskType[FlowTaskType.BLOCK_PROVE]}`,
+                    payload: { blockProveInput: proofPayload.payload.blockProveInput, innerRollupProof: proofPayload.payload.innerRollupProof } as {
+                        blockProveInput: BlockProveInput,
+                        innerRollupProof: InnerRollupProof
+                    }
+                };
+
+                const fromJsonFn = (proofJson: any) => {
+                    return RollupProof.fromJSON(proofJson);
+                }
+
+                SubProcessCordinator.generateProof(this.workerMap.get(CircuitName_BlockProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
+            }
+        ).catch(e => {
+            console.error(e);
+        });
     }
 
     async depositContract_updateDepositState(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
@@ -193,7 +215,7 @@ export class SubProcessCordinator {
     }
 
     async rollupContractUpdateRollupState(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
-        //
+
     }
 
     static getFreeWorker(
