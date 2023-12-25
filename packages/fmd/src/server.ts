@@ -1,5 +1,5 @@
 import { Client } from "./client";
-import { extract, flag, test } from "./fmd2";
+import { extract, tag, testTag } from "./fmd";
 
 class CheckError extends Error {
     constructor(message: string) {
@@ -28,7 +28,7 @@ export class Server {
         let receiverId = Math.floor(Math.random() * (max - min + 1)) + min;
         let reciever = this.clients[receiverId];
 
-        let f = flag(reciever.pk);
+        let f = tag(reciever.pk);
 
         let resTrue = 0;
         let falsePos = 0;
@@ -37,7 +37,7 @@ export class Server {
         for (let i = 0; i < this.clients.length; i++) {
             let client = this.clients[i];
             let client_dsk = extract(client.sk, p);
-            if (test(client_dsk, f)) {
+            if (testTag(client_dsk, f)) {
                 if (i === receiverId) {
                     resTrue++;
                 } else {

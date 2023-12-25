@@ -1,12 +1,12 @@
-import { PublicKey, SecretKey, keyGen } from "./fmd2";
+import { TaggingKey, SecretKey, genKeypair } from "./fmd";
 
 export class Client {
-    pk: PublicKey;
+    pk: TaggingKey;
     sk: SecretKey;
 
     constructor() {
-        const [sk, pk] = keyGen();
-        this.pk = pk as PublicKey;
-        this.sk = sk as SecretKey;
+        const { sk, pk } = genKeypair();
+        this.pk = pk;
+        this.sk = sk;
     }
 }

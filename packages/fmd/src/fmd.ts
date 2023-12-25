@@ -1,125 +1,90 @@
 import { p256 as curve } from "@noble/curves/p256";
 import * as utils from "@noble/curves/abstract/utils";
-import { sha256 } from "@noble/hashes/sha256";
-import { modInverse, randomBigIntRange } from "./utils";
+import { sha3_256 as sha256 } from "@noble/hashes/sha3";
+import { concatUint8Arrays, modInverse, randomScalar } from "./utils";
 
 const Point = curve.ProjectivePoint;
 type Point = typeof Point.BASE;
+// GAMMA
 const NUM_KEYS = 15;
 
-export class PublicKey {
-    numKeys: number;
-    pubKeys: Uint8Array[];
+export type DetectionKey = SecretKey;
 
-    constructor(numKeys: number = 0, pub: Uint8Array[] = []) {
-        this.numKeys = numKeys;
+export class TaggingKey {
+    private pubKeys: Uint8Array[];
+
+    constructor(pub: Uint8Array[] = []) {
         this.pubKeys = pub;
-    }
-
-    public addPubkey(pk: Uint8Array) {
-        this.pubKeys.push(pk);
     }
 }
 
 export class SecretKey {
-    numKeys: number;
-    secKeys: bigint[];
-    prob: number;
+    private secKeys: bigint[];
 
-    constructor(numKeys: number = 0, sec: bigint[] = []) {
-        this.numKeys = numKeys;
+    constructor(sec: bigint[] = []) {
         this.secKeys = sec;
-        this.prob = numKeys;
     }
 
-    public addSecKey(sk: bigint) {
-        this.secKeys.push(sk);
+    public static random(numKeys: number = NUM_KEYS): SecretKey {
+        let secKeys: bigint[] = [];
+
+        for (let i = 0; i < numKeys; i++) {
+            secKeys.push(randomScalar(curve));
+        }
+
+        return new SecretKey(secKeys);
+    }
+
+    public getTaggingKey(): TaggingKey {
+        let pubKeys: Uint8Array[] = [];
+
+        const numKeys = this.secKeys.length;
+        for (let i = 0; i < numKeys; i++) {
+            pubKeys.push(curve.getPublicKey(this.secKeys[i]));
+        }
+
+        return new TaggingKey(pubKeys);
     }
 }
 
-class Flag {
-    u: Point;
-    y: bigint;
-    c: number[];
+export class Tag {
+    private u: Point;
+    private y: bigint;
+    private bitVec: number[];
 
-    constructor(u: Point, y: bigint, c?: number[]) {
-        if (c === undefined) {
-            c = [];
+    constructor(u: Point, y: bigint, bitVec?: number[]) {
+        if (bitVec === undefined) {
+            bitVec = [];
         }
         this.u = u;
         this.y = y;
-        this.c = c;
+        this.bitVec = bitVec;
     }
 }
 
 // Generate a full keypair for an n-bit ciphertext
-export function keyGen(numKeys: number = NUM_KEYS): {
+export function genKeypair(numKeys: number = NUM_KEYS): {
     sk: SecretKey;
-    pk: PublicKey;
+    pk: TaggingKey;
 } {
-    let sk = new SecretKey(numKeys);
-    let pk = new PublicKey(numKeys);
-
-    for (let i = 0; i < numKeys; i++) {
-        sk.addSecKey(
-            curve.utils.normPrivateKeyToScalar(curve.utils.randomPrivateKey())
-        );
-        pk.addPubkey(curve.getPublicKey(sk.secKeys[i]));
-    }
-
+    let sk = SecretKey.random(numKeys);
+    let pk = sk.getTaggingKey();
     return { sk, pk };
 }
 
-function randomScalar(): bigint {
-    return curve.utils.normPrivateKeyToScalar(curve.utils.randomPrivateKey());
-}
-
-// Encrypt a ciphertext
-export function flag(pk: PublicKey): Flag {
-    let r = randomScalar();
-    let z = randomScalar();
-
-    // compute u = r * P
-    let u = Point.BASE.multiply(r);
-    // compute w = z * P
-    let w = Point.BASE.multiply(z);
-    let bitVec = new Uint8Array((pk.numKeys + 7) / 8);
-
-    for (let i = 0; i < pk.numKeys; i++) {
-        // compute pkR = r * pk[i]
-        let pkR = Point.fromHex(utils.bytesToHex(pk.pubKeys[i])).multiply(r);
-
-        let padChar = computeHashH(u, pkR, w);
-        padChar ^= 0x01;
-
-        bitVec[i / 8] |= padChar << k % 8;
-    }
-
-    let v = computeHashG(u, bitVec);
-
-    // let m = hash_g(u.x, u.y, c);
-    // let y = ((z - m) * modInverse(r, p256.CURVE.n)) % p256.CURVE.n;
-    // if (y < 0) {
-    //     y += p256.CURVE.n;
-    // }
-    // console.log("y: ", y);
-    // let result = new Flag(u, y, c);
-    // return result;
-}
-
 function computeHashH(u: Point, h: Point, w: Point): number {
-    let serialized = concatenateUint8Arrays(u.toRawBytes(), h.toRawBytes());
-    serialized = concatenateUint8Arrays(serialized, w.toRawBytes());
+    let serialized = concatUint8Arrays(u.toRawBytes(), h.toRawBytes());
+    serialized = concatUint8Arrays(serialized, w.toRawBytes());
 
     let hash = sha256(serialized);
     return hash[0] & 0x01;
 }
 
-function computeHashG(u: Point, bitVec: Uint8Array): bigint {
+function computeHashG(u: Point, bitVec: number[]): bigint {
     let N = curve.CURVE.n;
     let bitSize = curve.CURVE.nBitLength;
 
-    let serialized = concatenateUint8Arrays(u.toRawBytes(), bitVec);
+    let serialized = concatUint8Arrays(u.toRawBytes(), new Uint8Array(bitVec));
 
     bitSize += 64;
     let bitsHashed = 0;
@@ -127,15 +92,12 @@ function computeHashG(u: Point, bitVec: Uint8Array): bigint {
 
     while (bitsHashed < bitSize) {
         let hash = sha256(serialized);
-        h = concatenateUint8Arrays(h, hash.subarray(0, 32));
+        h = concatUint8Arrays(h, hash.subarray(0, 32));
         bitsHashed = h.length / 8;
 
         if (bitsHashed < bitSize) {
             // Concatenate an "X" (0x58)
-            serialized = concatenateUint8Arrays(
-                serialized,
-                new Uint8Array([0x58])
-            );
+            serialized = concatUint8Arrays(serialized, new Uint8Array([0x58]));
         }
     }
 
@@ -143,87 +105,72 @@ function computeHashG(u: Point, bitVec: Uint8Array): bigint {
     return result;
 }
 
-export function extract(sk: SecretKey, p: number) {
-    let n = Math.floor(Math.log2(1 / p));
-    //console.log("n: ", n);
-    let result: bigint[] = [];
+// Encrypt a ciphertext
+export function tag(pk: TaggingKey): Tag {
+    let r = randomScalar(curve);
+    let z = randomScalar(curve);
 
-    for (let i = 0; i < n; i++) {
-        result.push(sk.secKeys[i]);
+    // compute u = r * P
+    let u = Point.BASE.multiply(r);
+    // compute w = z * P
+    let w = Point.BASE.multiply(z);
+    let bitVec: number[] = [];
+
+    const numKeys = pk.pubKeys.length;
+    for (let i = 0; i < numKeys; i++) {
+        // compute pkR = r * pk[i]
+        let pkR = Point.fromHex(pk.pubKeys[i]).multiply(r);
+
+        let padChar = computeHashH(u, pkR, w);
+        bitVec.push((padChar ^= 0x01));
     }
 
-    let dsk = new SecretKey(n, result);
+    let v = computeHashG(u, bitVec);
+
+    let y = ((z - v) * modInverse(r, curve.CURVE.n)) % curve.CURVE.n;
+    if (y < 0) {
+        y += curve.CURVE.n;
+    }
+
+    return new Tag(u, y, bitVec);
+}
+
+export function extract(sk: SecretKey, p: number): DetectionKey {
+    let n = Math.floor(Math.log2(1 / p));
+
+    const secKeys = sk.secKeys;
+    const numKeys = secKeys.length;
+    if (n > numKeys) {
+        throw new Error("p is illegal");
+    }
+
+    let dsk = new SecretKey(secKeys.slice(0, n));
     return dsk;
 }
 
-function encrypt_string(hash_string: string) {
-    return sha256(hash_string);
-}
-
-function hash_h(u: Point, h: Point, w: Point) {
-    let str =
-        u.x.toString() +
-        u.y.toString() +
-        h.x.toString() +
-        h.y.toString() +
-        w.x.toString() +
-        w.y.toString();
-    return encrypt_string(str)[0] & 0x01;
-}
-
-function concatenateUint8Arrays(a: Uint8Array, b: Uint8Array): Uint8Array {
-    const result: Uint8Array = new Uint8Array(a.length + b.length);
-    result.set(a, 0);
-    result.set(b, a.length);
-    return result;
-}
-
-function hash_g(ux: bigint, uy: bigint, c: number[]) {
-    let str = ux.toString() + uy.toString();
-    for (let i = 0; i < c.length; i++) {
-        str += c[i].toString();
-    }
-
-    let size = p256.CURVE.nBitLength + 64;
-    let result = new Uint8Array();
-    let bit_hashed = 0;
-
-    while (bit_hashed < size) {
-        let hashed = encrypt_string(str);
-        result = concatenateUint8Arrays(result, hashed.subarray(0, 32));
-        bit_hashed = result.length / 8;
-
-        if (bit_hashed < size) {
-            str += "X";
-        }
-    }
-
-    let res = utils.bytesToNumberBE(result) % p256.CURVE.n;
-    return res;
-}
-
-export function test(dsk: SecretKey, f: Flag): boolean {
+export function testTag(dsk: SecretKey, tag: Tag): boolean {
     let result = true;
 
-    let keys = dsk.secKeys;
-    let u = f.u;
-    let y = f.y;
-    let c = f.c;
+    const u = tag.u;
+    const y = tag.y;
+    const bitVec = tag.bitVec;
+    const secKeys = dsk.secKeys;
 
-    let message = hash_g(u.x, u.y, c);
-    let z = Point.BASE.multiply(message);
-    // console.log("u: ", BigInt("0x" + u.toHex().toString()));
-    // console.log("y: ", y, y < p256.CURVE.n);
-    let t = u.multiply(y);
-    z = z.add(t);
+    let v = computeHashG(u, bitVec);
+    let z = Point.BASE.multiply(v);
 
-    for (let i = 0; i < dsk.numKeys; i++) {
-        let pkr = u.multiply(keys[i]);
+    let temp = u.multiply(y);
+    z = z.add(temp);
 
-        let padding = hash_h(u, pkr, z);
-        padding ^= c[i] & 0x01;
+    const numKeys = secKeys.length;
+    for (let i = 0; i < numKeys; i++) {
+        let pkR = u.multiply(secKeys[i]);
 
-        if (padding == 0) {
+        let padChar = computeHashH(u, pkR, z);
+        let ki = bitVec[i] & 0x01;
+        padChar ^= ki;
+
+        if (padChar == 0) {
             result = false;
         }
     }
