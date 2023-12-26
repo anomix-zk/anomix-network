@@ -7,12 +7,12 @@ import { Block } from "@anomix/dao";
 import { getConnection } from 'typeorm';
 import { getLogger } from "@/lib/logUtils";
 
-const logger = getLogger('queryLatestBlockHeight');
+const logger = getLogger('queryBlockByBlockHeight');
 
 /**
  * query the latest block-height
  */
-export const queryLatestBlockHeight: FastifyPlugin = async function (
+export const queryBlockByBlockHeight: FastifyPlugin = async function (
     instance,
     options,
     done
@@ -40,7 +40,7 @@ export const handler: RequestHandler<null, { blockHeight: number }> = async func
         }));
 
 
-        return { code: 0, data: blockEntity, msg: '' };
+        return { code: 0, data: blockEntity as any as BlockDto, msg: '' };
     } catch (err) {
         logger.error(err);
         console.error(err);
