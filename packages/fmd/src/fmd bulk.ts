@@ -2,12 +2,12 @@ import { p256 as curve } from "@noble/curves/p256";
 import {
     concatBytes,
     bytesToNumberBE,
-    numberToBytesLE,
+    numberToBytesBE,
     bytesToHex,
 } from "@noble/curves/abstract/utils";
-import { sha3_256 as sha256 } from "@noble/hashes/sha3";
+import { sha3_256, sha3_512 } from "@noble/hashes/sha3";
 import { randomScalar } from "./utils";
-import { mod, invert } from "@noble/curves/abstract/modular";
+import { mod, invert, mapHashToField } from "@noble/curves/abstract/modular";
 
 export { genKeypair, TaggingKey, DetectionKey, Tag, SecretKey };
 
@@ -26,39 +26,28 @@ function genKeypair(numKeys: number = NUM_KEYS): {
     return { sk, pk };
 }
 
-function computeHashH(u: Point, h: Point, w: Point): number {
-    const serialized = concatBytes(
-        u.toRawBytes(),
-        h.toRawBytes(),
-        w.toRawBytes()
-    );
+function computePreH(u: Point, w: Point): ReturnType<typeof sha3_256.create> {
+    let hash = sha3_256.create();
+    hash.update(u.toRawBytes());
+    hash.update(w.toRawBytes());
+    return hash;
+}
 
-    const hash = sha256(serialized);
-    return hash[0] & 0x01;
+function computePostH(
+    hash: ReturnType<typeof sha3_256.create>,
+    h: Point
+): number {
+    hash.update(h.toRawBytes());
+    const result = hash.digest();
+    return result[0] & 0x01;
 }
 
 function computeHashG(u: Point, bitVec: number[]): bigint {
-    const N = curve.CURVE.n;
-    let bitSize = curve.CURVE.nBitLength;
-
-    let serialized = concatBytes(u.toRawBytes(), new Uint8Array(bitVec));
-
-    bitSize += 64;
-    let bitsHashed = 0;
-    let h = new Uint8Array();
-
-    while (bitsHashed < bitSize) {
-        let hash = sha256(serialized);
-        h = concatBytes(h, hash.subarray(0, 32));
-        bitsHashed = h.length / 8;
-
-        if (bitsHashed < bitSize) {
-            // Concatenate an "X" (0x58)
-            serialized = concatBytes(serialized, new Uint8Array([0x58]));
-        }
-    }
-
-    return mod(bytesToNumberBE(h), N);
+    let hash = sha3_512.create();
+    hash.update(new Uint8Array(bitVec));
+    hash.update(u.toRawBytes());
+    const hashResult = hash.digest();
+    return bytesToNumberBE(mapHashToField(hashResult, curve.CURVE.n));
 }
 
 class TaggingKey {
@@ -74,33 +63,87 @@ class TaggingKey {
             keyBytes = concatBytes(keyBytes, this.pubKeys[i].toRawBytes(true));
         }
 
-        return bytesToHex(sha256(keyBytes));
+        return bytesToHex(sha3_256(keyBytes));
     }
 
     public generateTag(): Tag {
-        const r = randomScalar(curve);
-        const z = randomScalar(curve);
+        let r = randomScalar(curve);
+        let u = Point.BASE.multiply(r);
 
-        // compute u = r * P
-        const u = Point.BASE.multiply(r);
-        // compute w = z * P
-        const w = Point.BASE.multiply(z);
+        let z = randomScalar(curve);
+        let w = Point.BASE.multiply(z);
+
+        let preH = computePreH(u, w);
         let bitVec: number[] = [];
 
         const numKeys = this.pubKeys.length;
         for (let i = 0; i < numKeys; i++) {
-            // compute pkR = r * pk[i]
-            const pkR = this.pubKeys[i].multiply(r);
-
-            let padding = computeHashH(u, pkR, w);
-            bitVec.push((padding ^= 0x01));
+            let k_i = computePostH(preH.clone(), this.pubKeys[i].multiply(r));
+            let c_i = k_i ^ 0x01;
+            bitVec.push(c_i == 0x01 ? 1 : 0);
         }
 
-        const v = computeHashG(u, bitVec);
-        const y = mod((z - v) * invert(r, curve.CURVE.n), curve.CURVE.n);
+        let m = computeHashG(u, bitVec);
+        let y = mod(invert(r, curve.CURVE.n) * (z - m), curve.CURVE.n);
+        console.log("y: " + y);
 
         return new Tag(u, y, bitVec);
     }
+}
+
+export function generateEntangledTag(
+    taggingKeys: TaggingKey[],
+    length: number
+): Tag | null {
+    let g = Point.BASE;
+
+    let r = randomScalar(curve);
+    let u = g.multiply(r);
+
+    let taggingKeyPrecomputes: Point[][] = [];
+    for (let i = 0; i < taggingKeys.length; i++) {
+        let taggingKey = taggingKeys[i];
+        let precompute: Point[] = [];
+        for (let j = 0; j < taggingKey.pubKeys.length; j++) {
+            precompute.push(taggingKey.pubKeys[j].multiply(r));
+        }
+        taggingKeyPrecomputes.push(precompute);
+    }
+
+    let z = randomScalar(curve);
+
+    let w = g.multiply(z);
+    let preH = computePreH(u, w);
+    let key: number[] = [];
+
+    for (let i = 0; i < taggingKeyPrecomputes[0].length; i++) {
+        let precompute = taggingKeyPrecomputes[0][i];
+        let k_i = computePostH(preH.clone(), precompute);
+        if (i < length) {
+            for (let j = 1; j < taggingKeyPrecomputes.length; j++) {
+                let n_k_i = computePostH(
+                    preH.clone(),
+                    taggingKeyPrecomputes[j][i]
+                );
+                if (k_i != n_k_i) {
+                    return null;
+                }
+            }
+            key.push(k_i);
+        }
+    }
+    let bitVec: number[] = [];
+    for (let i = 0; i < key.length; i++) {
+        let k_i = key[i];
+        let c_i = k_i ^ 0x01;
+        bitVec.push(c_i == 0x01 ? 1 : 0);
+    }
+
+    let m = computeHashG(u, bitVec);
+    let y = mod(invert(r, curve.CURVE.n) * (z - m), curve.CURVE.n);
+    console.log("y: " + y);
+
+    return new Tag(u, y, bitVec);
 }
 
 class DetectionKey {
@@ -115,11 +158,11 @@ class DetectionKey {
         for (let i = 0; i < this.secKeys.length; i++) {
             keyBytes = concatBytes(
                 keyBytes,
-                numberToBytesLE(this.secKeys[i], 32)
+                numberToBytesBE(this.secKeys[i], 32)
             );
         }
 
-        return bytesToHex(sha256(keyBytes));
+        return bytesToHex(sha3_256(keyBytes));
     }
 
     public falsePositiveProbability(): number {

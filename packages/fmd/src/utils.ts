@@ -1,6 +1,7 @@
 import { CurveFn } from "@noble/curves/abstract/weierstrass";
 import * as crypto from "crypto";
 
+
 export function fastPow(x: bigint, n: bigint, mod: bigint): bigint {
     let res = 1n;
     while (n > 0n) {
@@ -17,13 +18,6 @@ export function modInverse(a: bigint, mod: bigint): bigint {
 
 export function randomScalar(curve: CurveFn): bigint {
     return curve.utils.normPrivateKeyToScalar(curve.utils.randomPrivateKey());
-}
-
-export function concatUint8Arrays(a: Uint8Array, b: Uint8Array): Uint8Array {
-    const result: Uint8Array = new Uint8Array(a.length + b.length);
-    result.set(a, 0);
-    result.set(b, a.length);
-    return result;
 }
 
 export function randomBigIntRange(min: bigint, max: bigint): bigint {
