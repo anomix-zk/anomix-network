@@ -97,7 +97,37 @@ export class SubProcessCordinator {
     }
 
     async depositRollupMerge(x: ProofPayload<any>, y: ProofPayload<any>, sendCallBack?: (x: any) => void) {
-        //
+        return await new Promise(
+            (
+                resolve: (payload: ProofPayload<any>) => any,
+                reject: (err: any) => any | any
+            ) => {
+                let msg = {
+                    type: `${FlowTaskType[FlowTaskType.DEPOSIT_MERGE]}`,
+                    payload: {
+                        depositRollupProof1: x.payload,
+                        depositRollupProof2: y.payload
+                    },
+                };
+
+                // if the method is triggered by the same process, then no need DepositRollupProof.fromJSON(*), otherwise need it!
+                if (!(x.payload instanceof DepositRollupProof)) {
+                    msg.payload.depositRollupProof1 = DepositRollupProof.fromJSON(x.payload);
+                }
+                if (!(y.payload instanceof DepositRollupProof)) {
+                    msg.payload.depositRollupProof2 = DepositRollupProof.fromJSON(y.payload);
+                }
+
+                const fromJsonFn = (proofJson: any) => {
+                    return DepositRollupProof.fromJSON(proofJson);
+                }
+
+                SubProcessCordinator.generateProof(this.workerMap.get(CircuitName_DepositRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
+
+            }
+        ).catch(e => {
+            console.error(e);
+        });
     }
 
     async jointSplitDeposit(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
