@@ -237,7 +237,32 @@ export class SubProcessCordinator {
     }
 
     async rollupContractFirstWithdraw(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
-        //
+        return await new Promise(
+            (
+                resolve: (payload: ProofPayload<any>) => any,
+                reject: (err: any) => any | any
+            ) => {
+
+                const msg = {
+                    type: `${ProofTaskType[ProofTaskType.USER_FIRST_WITHDRAW]}`,
+                    payload: {
+                        withdrawNoteWitnessData: proofPayload.payload.withdrawNoteWitnessData,
+                        oldNullWitness: proofPayload.payload.oldNullWitness
+                    } as {
+                        withdrawNoteWitnessData: WithdrawNoteWitnessData,
+                        lowLeafWitness: LowLeafWitnessData,
+                        oldNullWitness: NullifierMerkleWitness
+                    }
+                };
+
+                const fromJsonFn = (proofJson: any) => {
+                    return proofJson;
+                }
+
+                SubProcessCordinator.generateProof(this.workerMap.get(CircuitName_AnomixRollupContract)!, msg, fromJsonFn, resolve, reject, sendCallBack);
+
+            }
+        );
     }
 
     async rollupContractWithdraw(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
