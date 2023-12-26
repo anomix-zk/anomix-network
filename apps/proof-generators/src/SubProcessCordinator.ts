@@ -246,9 +246,12 @@ export class SubProcessCordinator {
                 const msg = {
                     type: `${ProofTaskType[ProofTaskType.USER_FIRST_WITHDRAW]}`,
                     payload: {
+                        feePayer: proofPayload.payload.feePayer, verificationKey: proofPayload.payload.verificationKey,
                         withdrawNoteWitnessData: proofPayload.payload.withdrawNoteWitnessData,
                         oldNullWitness: proofPayload.payload.oldNullWitness
                     } as {
+                        feePayer: PublicKey,
+                        verificationKey: VerificationKey,
                         withdrawNoteWitnessData: WithdrawNoteWitnessData,
                         lowLeafWitness: LowLeafWitnessData,
                         oldNullWitness: NullifierMerkleWitness
