@@ -77,18 +77,18 @@ export interface BlockDto {
      * the timestamp when L2Block is finalized at Layer1
      */
 
-    finalizedAt: Date
+    finalizedAt: number
 
     /**
      * record timestamp for each proof-gen trigger
      * * used at coordinator_proof-trigger to avoid repeatedly trigger proof-gen at a short time-window.
      */
 
-    triggerProofAt: Date
+    triggerProofAt: number
 
 
-    updatedAt: Date
+    updatedAt: number
 
 
-    createdAt: Date
+    createdAt: number
 }
