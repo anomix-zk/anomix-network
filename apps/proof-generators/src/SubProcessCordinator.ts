@@ -233,7 +233,30 @@ export class SubProcessCordinator {
     }
 
     async depositContract_updateDepositState(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
-        //
+        return await new Promise(
+            (
+                resolve: (payload: ProofPayload<any>) => any,
+                reject: (err: any) => any | any
+            ) => {
+
+                const msg = {
+                    type: `${FlowTaskType[FlowTaskType.DEPOSIT_UPDATESTATE]}`,
+                    payload: {
+                        feePayer: proofPayload.payload.feePayer,
+                        fee: proofPayload.payload.fee,
+                        depositRollupProof: proofPayload.payload.data
+                    }
+                };
+
+                const fromJsonFn = (proofJson: any) => {
+                    return proofJson;
+                }
+
+                SubProcessCordinator.generateProof(this.workerMap.get(CircuitName_AnomixEntryContract)!, msg, fromJsonFn, resolve, reject, sendCallBack);
+            }
+        ).catch(e => {
+            console.error(e);
+        });
     }
 
     async rollupContractFirstWithdraw(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
@@ -269,7 +292,33 @@ export class SubProcessCordinator {
     }
 
     async rollupContractWithdraw(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
-        //
+        return await new Promise(
+            (
+                resolve: (payload: ProofPayload<any>) => any,
+                reject: (err: any) => any | any
+            ) => {
+
+                const msg = {
+                    type: `${ProofTaskType[ProofTaskType.USER_WITHDRAW]}`,
+                    payload: {
+                        feePayer: proofPayload.payload.feePayer,
+                        withdrawNoteWitnessData: proofPayload.payload.withdrawNoteWitnessData,
+                        oldNullWitness: proofPayload.payload.oldNullWitness
+                    } as {
+                        feePayer: PublicKey,
+                        withdrawNoteWitnessData: WithdrawNoteWitnessData,
+                        lowLeafWitness: LowLeafWitnessData,
+                        oldNullWitness: NullifierMerkleWitness
+                    }
+                };
+
+                const fromJsonFn = (proofJson: any) => {
+                    return proofJson;
+                }
+
+                SubProcessCordinator.generateProof(this.workerMap.get(CircuitName_AnomixRollupContract)!, msg, fromJsonFn, resolve, reject, sendCallBack);
+            }
+        );
     }
 
     async rollupContractUpdateRollupState(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
