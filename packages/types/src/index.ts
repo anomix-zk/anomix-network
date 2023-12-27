@@ -32,8 +32,9 @@ import WithdrawalWitnessDtoSchema from './withdrawal-witness-dto-schema.json' as
 import ProofTaskDtoSchma from './proof-task-dto-schema.json' assert { type: "json" };
 import ProofVerifyReqDtoSchma from './proof-verify-req-dto-schema.json' assert { type: "json" };
 import RollupTaskDtoSchma from './rollup-task-dto-schema.json' assert { type: "json" };
+import BlockDtoSchema from './block-dto-schema.json' assert { type: "json" };
 
-export { L2TxReqDtoSchema, L2TxRespDtoSchema, MerkleProofDtoSchema, NetworkStatusDtoSchema, WithdrawInfoDtoSchema, WithdrawAssetReqDtoSchema };
+export { L2TxReqDtoSchema, L2TxRespDtoSchema, MerkleProofDtoSchema, NetworkStatusDtoSchema, WithdrawInfoDtoSchema, WithdrawAssetReqDtoSchema, BlockDtoSchema };
 export { WorldStateRespDtoSchema, TxFeeSuggestionDtoSchema, ProofTaskDtoSchma, ProofVerifyReqDtoSchma, RollupTaskDtoSchma, AssetInBlockReqDtoSchema, AssetsInBlockDtoSchema, WithdrawalWitnessDtoSchema }
 
 export * from "../../merkle-tree/src/hasher/hasher";
