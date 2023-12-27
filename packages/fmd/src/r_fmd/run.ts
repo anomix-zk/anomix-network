@@ -2,7 +2,7 @@ import { Server } from "./server";
 
 function main() {
     console.log("start fmd exam");
-    let server = new Server(200);
+    let server = new Server(1024);
 
     let x = 0;
     let n = 10;
@@ -10,7 +10,7 @@ function main() {
     for (let i = 0; i < n; i++) {
         let flag = 0;
         try {
-            server.run(1 / 8);
+            server.run(8);
         } catch (err) {
             console.log(err);
             flag = 1;
