@@ -67,7 +67,29 @@ export class SubProcessCordinator {
     }
 
     async innerRollupMerge(proofPayload1: ProofPayload<any>, proofPayload2: ProofPayload<any>, sendCallBack?: (x: any) => void) {
-        //
+        return await new Promise(
+            (
+                resolve: (payload: ProofPayload<any>) => any,
+                reject: (err: any) => any | any
+            ) => {
+
+                const msg = {
+                    type: `${FlowTaskType[FlowTaskType.ROLLUP_MERGE]}`,
+                    payload: { innerRollupProof1: x.payload, innerRollupProof2: y.payload } as {
+                        innerRollupProof1: InnerRollupProof,
+                        innerRollupProof2: InnerRollupProof
+                    },
+                };
+
+                const fromJsonFn = (proofJson: any) => {
+                    return InnerRollupProof.fromJSON(proofJson);
+                }
+
+                SubProcessCordinator.generateProof(this.workerMap.get(CircuitName_InnerRollupProver)!, msg, fromJsonFn, resolve, reject, sendCallBack);
+            }
+        )/* .catch(e => {
+            console.error(e);
+        }) */;
     }
 
     async depositRollupCommitActionBatch(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
