@@ -187,7 +187,7 @@ function generateEntangledTag(taggingKeys: TaggingKey[], n: number): Tag {
         }
 
         let m = computeHashG(u, bitVec);
-        let y = mod(invert(r, curve.CURVE.n) * (z - m), curve.CURVE.n);
+        let y = invert(r, curve.CURVE.n) * mod(z - m, curve.CURVE.n);
 
         return new Tag(u, y, bitVec);
     };
