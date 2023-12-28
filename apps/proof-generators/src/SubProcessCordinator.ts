@@ -37,10 +37,51 @@ const cnt_InnerRollupProver = config.cnt_InnerRollupProver;
 const cnt_BlockProver = config.cnt_BlockProver;
 const cnt_AnomixRollupContract = config.cnt_AnomixRollupContract;
 
+
+
 export class SubProcessCordinator {
 
     constructor(public workerMap: Map<string, { worker: Worker; status: WorkerStatus; type: string }[]>
     ) { }
+
+    createCircuitProcessor = (proverCnt: number, circuitName: string) => {
+        const createFn = (proverCnt: number, circuitName: string, index: number) => {
+            let worker = cp.fork(__dirname.concat('/provers/proof-worker-').concat(circuitName).concat('.js'), [circuitName]);
+
+            let workerEntity: { worker: Worker, status: WorkerStatus, type: string } = { worker, status: 'Busy', type: circuitName };
+            worker.on('message', (message: { type: string }) => {// change to 'IsReady'
+                message = JSON.parse(JSON.stringify(message));
+                switch (message.type) {
+                    case 'online':
+                        this.workerMap.get(circuitName)![index] = workerEntity;
+                        break;
+                    case 'isReady':
+                        workerEntity.status = 'IsReady';
+                        break;
+                    default:
+                        break;
+                }
+            });
+            worker.on('exit', (exitCode: number) => {
+                logger.info(`${circuitName} worker exited, exitCode:${exitCode}`);
+
+                const index = this.workerMap.get(circuitName)!.findIndex((t, i) => {
+                    return t.worker == worker;
+                });
+                // workerMap.get(circuitName)!.splice(index, 1);
+                // create a new one again at the same position
+                createFn(proverCnt, circuitName, index);
+            });
+
+            worker.on('error', (exitCode: number) => {
+                logger.info(`${circuitName} worker error!`);
+            });
+        }
+
+        for (let index = 0; index < proverCnt; index++) {
+            createFn(proverCnt, circuitName, index);
+        }
+    }
 
     async innerRollupProveTxBatch(proofPayload: ProofPayload<any>, sendCallBack?: (x: any) => void) {
         return await new Promise(
