@@ -42,7 +42,18 @@ const cnt_AnomixRollupContract = config.cnt_AnomixRollupContract;
 export class SubProcessCordinator {
 
     constructor(public workerMap: Map<string, { worker: Worker; status: WorkerStatus; type: string }[]>
-    ) { }
+    ) {
+        // init all prover worker when constructing SubProcessCordinator instance.
+        this.createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
+        this.createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
+        this.createCircuitProcessor(cnt_JoinSplitProver, CircuitName_JoinSplitProver);
+        this.createCircuitProcessor(cnt_InnerRollupProver, CircuitName_InnerRollupProver);
+        this.createCircuitProcessor(cnt_BlockProver, CircuitName_BlockProver);
+        this.createCircuitProcessor(cnt_AnomixRollupContract, CircuitName_AnomixRollupContract);
+        this.createCircuitProcessor(cnt_DepositRollupProver, CircuitName_DepositRollupProver);
+        this.createCircuitProcessor(cnt_AnomixEntryContract, CircuitName_AnomixEntryContract);
+
+    }
 
     createCircuitProcessor = (proverCnt: number, circuitName: string) => {
         const createFn = (proverCnt: number, circuitName: string, index: number) => {
