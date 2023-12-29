@@ -4,6 +4,7 @@ import {
     bytesToNumberBE,
     numberToBytesBE,
     bytesToHex,
+    hexToBytes,
 } from "@noble/curves/abstract/utils";
 import { sha3_256, sha3_512 } from "@noble/hashes/sha3";
 import { randomScalar } from "../utils";
@@ -328,10 +329,20 @@ class Tag {
         );
     }
 
+    public toHex(): string {
+        const tagBytes = this.toBytes();
+        return bytesToHex(tagBytes);
+    }
+
     public static fromBytes(tagBytes: Uint8Array): Tag {
         const u = Point.fromHex(tagBytes.slice(0, 33));
         const y = bytesToNumberBE(tagBytes.slice(33, 65));
         const bitVec = Array.from(tagBytes.slice(65));
         return new Tag(u, y, bitVec);
+    }
+
+    public static fromHex(tagHex: string): Tag {
+        const tagBytes = hexToBytes(tagHex);
+        return Tag.fromBytes(tagBytes);
     }
 }
