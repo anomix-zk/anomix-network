@@ -92,7 +92,7 @@ class TaggingKey {
         }
 
         let m = computeHashG(u, precisionBits, bitVec);
-        let y = invert(r, curve.CURVE.n) * mod(z - m, curve.CURVE.n);
+        let y = mod(invert(r, curve.CURVE.n) * (z - m), curve.CURVE.n);
 
         return new Tag(precisionBits, u, y, bitVec);
     }
@@ -326,5 +326,22 @@ class Tag {
 
     public falsePositiveProbability(): number {
         return Math.pow(0.5, this.precisionBits);
+    }
+
+    public toBytes(): Uint8Array {
+        return concatBytes(
+            numberToBytesBE(this.precisionBits, 1),
+            this.u.toRawBytes(true),
+            numberToBytesBE(this.y, 32),
+            new Uint8Array(this.bitVec)
+        );
+    }
+
+    public static fromBytes(tagBytes: Uint8Array): Tag {
+        const precisionBits = tagBytes[0];
+        const u = Point.fromHex(tagBytes.slice(1, 34));
+        const y = bytesToNumberBE(tagBytes.slice(34, 66));
+        const bitVec = Array.from(tagBytes.slice(66));
+        return new Tag(precisionBits, u, y, bitVec);
     }
 }
