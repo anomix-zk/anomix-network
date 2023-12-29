@@ -48,6 +48,7 @@ export class RollupDB {
             await queryRunner.clearTable('tb_withdraw_info');
             await queryRunner.clearTable('tb_withdraw_event_fetch_record');
             await queryRunner.clearTable('tb_l2_tx_dto_origin');
+            await queryRunner.clearTable('tb_event_fetch_record');// !!TODO discuss with teammate upon this
 
             const depositProcessorSignal = new DepositProcessorSignal();
             depositProcessorSignal.id = 1;
