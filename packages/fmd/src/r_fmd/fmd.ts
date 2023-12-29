@@ -187,7 +187,7 @@ function generateEntangledTag(taggingKeys: TaggingKey[], n: number): Tag {
         }
 
         let m = computeHashG(u, bitVec);
-        let y = invert(r, curve.CURVE.n) * mod(z - m, curve.CURVE.n);
+        let y = mod(invert(r, curve.CURVE.n) * (z - m), curve.CURVE.n);
 
         return new Tag(u, y, bitVec);
     };
@@ -318,5 +318,20 @@ class Tag {
         this.u = u;
         this.y = y;
         this.bitVec = bitVec;
+    }
+
+    public toBytes(): Uint8Array {
+        return concatBytes(
+            this.u.toRawBytes(true),
+            numberToBytesBE(this.y, 32),
+            new Uint8Array(this.bitVec)
+        );
+    }
+
+    public static fromBytes(tagBytes: Uint8Array): Tag {
+        const u = Point.fromHex(tagBytes.slice(0, 33));
+        const y = bytesToNumberBE(tagBytes.slice(33, 65));
+        const bitVec = Array.from(tagBytes.slice(65));
+        return new Tag(u, y, bitVec);
     }
 }
