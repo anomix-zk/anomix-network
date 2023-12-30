@@ -1,5 +1,5 @@
 import { Client } from "./client";
-import { MAX_PRECISION, generateEntangledTag } from "./fmd";
+import { MAX_PRECISION, Tag, generateEntangledTag } from "./fmd";
 
 class CheckError extends Error {
     constructor(message: string) {
@@ -40,6 +40,10 @@ export class Server {
         let f = generateEntangledTag([reciever1.pk, reciever2.pk], n);
         console.timeEnd("generateEntangledTag");
 
+        const tagBytes = f.toBytes();
+        console.log("tag bytes len: ", tagBytes.length);
+        const sameTag = Tag.fromBytes(tagBytes);
+
         let resTrue = 0;
         let falsePos = 0;
         let falseNeg = 0;
@@ -47,7 +51,7 @@ export class Server {
         for (let i = 0; i < this.clients.length; i++) {
             let client = this.clients[i];
             let client_dsk = client.sk.extractDetectionKey(n);
-            if (client_dsk.testTag(f!)) {
+            if (client_dsk.testTag(sameTag)) {
                 if (i === receiverId1) {
                     resTrue++;
                     console.log("receiverId 1 ok: ", i);
