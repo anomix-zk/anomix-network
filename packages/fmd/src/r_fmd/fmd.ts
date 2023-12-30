@@ -76,6 +76,34 @@ class TaggingKey {
         return bytesToHex(sha3_256(keyBytes));
     }
 
+    public toBytes(): Uint8Array {
+        let keyBytes = new Uint8Array();
+        for (let i = 0; i < this.pubKeys.length; i++) {
+            keyBytes = concatBytes(keyBytes, this.pubKeys[i].toRawBytes(true));
+        }
+
+        return keyBytes;
+    }
+
+    public static fromBytes(keyBytes: Uint8Array): TaggingKey {
+        let pubKeys: Point[] = [];
+        for (let i = 0; i < keyBytes.length; i += 33) {
+            pubKeys.push(Point.fromHex(keyBytes.slice(i, i + 33)));
+        }
+
+        return new TaggingKey(pubKeys);
+    }
+
+    public toHex(): string {
+        const keyBytes = this.toBytes();
+        return bytesToHex(keyBytes);
+    }
+
+    public fromHex(keyHex: string): TaggingKey {
+        const keyBytes = hexToBytes(keyHex);
+        return TaggingKey.fromBytes(keyBytes);
+    }
+
     public generateTag(): Tag {
         let r = randomScalar(curve);
         let u = Point.BASE.multiply(r);
@@ -220,6 +248,37 @@ class DetectionKey {
         }
 
         return bytesToHex(sha3_256(keyBytes));
+    }
+
+    public toBytes(): Uint8Array {
+        let keyBytes = new Uint8Array();
+        for (let i = 0; i < this.secKeys.length; i++) {
+            keyBytes = concatBytes(
+                keyBytes,
+                numberToBytesBE(this.secKeys[i], 32)
+            );
+        }
+
+        return keyBytes;
+    }
+
+    public static fromBytes(keyBytes: Uint8Array): DetectionKey {
+        let secKeys: bigint[] = [];
+        for (let i = 0; i < keyBytes.length; i += 32) {
+            secKeys.push(bytesToNumberBE(keyBytes.slice(i, i + 32)));
+        }
+
+        return new DetectionKey(secKeys);
+    }
+
+    public toHex(): string {
+        const keyBytes = this.toBytes();
+        return bytesToHex(keyBytes);
+    }
+
+    public static fromHex(keyHex: string): DetectionKey {
+        const keyBytes = hexToBytes(keyHex);
+        return DetectionKey.fromBytes(keyBytes);
     }
 
     public falsePositiveProbability(): number {
