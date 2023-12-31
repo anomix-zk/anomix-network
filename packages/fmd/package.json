@@ -19,7 +19,8 @@
     "o1js": "0.14.2"
   },
   "dependencies": {
-    "@noble/curves": "^1.2.0"
+    "@noble/curves": "^1.2.0",
+    "fast-base64": "^0.1.8"
   },
   "devDependencies": {
     "@types/node": "^20.10.5"

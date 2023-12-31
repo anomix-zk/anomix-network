@@ -1,4 +1,5 @@
 import { p256 as curve } from "@noble/curves/p256";
+import { toBase64, toBytes } from "fast-base64";
 import {
     concatBytes,
     bytesToNumberBE,
@@ -92,6 +93,16 @@ class TaggingKey {
         }
 
         return new TaggingKey(pubKeys);
+    }
+
+    public async toBase64(): Promise<string> {
+        const keyBytes = this.toBytes();
+        return toBase64(keyBytes);
+    }
+
+    public async fromBase64(keyBase64: string): TaggingKey {
+        const keyBytes = await toBytes(keyBase64);
+        return TaggingKey.fromBytes(keyBytes);
     }
 
     public toHex(): string {
