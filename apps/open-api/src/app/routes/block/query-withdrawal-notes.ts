@@ -73,6 +73,7 @@ export const handler: RequestHandler<{ commitments: string[] }, { l1addr: string
 
         const withdrawInfoList = (await queryBuilder.getMany()) ?? [];
 
+        const blockRepository = connection.getRepository(Block)
         const withdrawInfoDtoList = await Promise.all(withdrawInfoList.map(async wInfo => {
             const { createdAt, updatedAt, ...restObj } = wInfo;
             const withdrawInfoDto = (restObj as any) as WithdrawInfoDto;
@@ -80,16 +81,10 @@ export const handler: RequestHandler<{ commitments: string[] }, { l1addr: string
                 withdrawInfoDto.l1TxBody = '';
             }
 
-            const txRepository = connection.getRepository(L2Tx)
-            // then query confirmed tx collection
-            const tx = await txRepository.findOne({
-                where: {
-                    txHash: withdrawInfoDto.l2TxHash
-                }
-            });
+            const block = ((await blockRepository.createQueryBuilder('block')
+                .innerJoinAndSelect(L2Tx, 'tx', 'block.id = tx.blockId')
+                .where(`tx.txHash=${withdrawInfoDto.l2TxHash}`).getMany()) ?? [])[0];
 
-            const blockRepository = connection.getRepository(Block)
-            const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx!.blockId } });
             withdrawInfoDto.createdTs = block!.createdAt.getTime();
             withdrawInfoDto.finalizedTs = block!.finalizedAt.getTime();
             return withdrawInfoDto;
