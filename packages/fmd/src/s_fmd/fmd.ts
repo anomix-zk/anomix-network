@@ -39,10 +39,15 @@ function computePostH(
     return result[0] & 0x01;
 }
 
-function computeHashG(u: Point, bitVec: number[]): bigint {
+function computeHashG(
+    u: Point,
+    precisionBits: number,
+    bitVec: number[]
+): bigint {
     let hash = sha3_512.create();
-    hash.update(new Uint8Array(bitVec));
     hash.update(u.toRawBytes());
+    hash.update(new Uint8Array([precisionBits]));
+    hash.update(new Uint8Array(bitVec));
     const hashResult = hash.digest();
     return bytesToNumberBE(mapHashToField(hashResult, curve.CURVE.n));
 }
@@ -86,7 +91,7 @@ class TaggingKey {
             bitVec.push(c_i == 0x01 ? 1 : 0);
         }
 
-        let m = computeHashG(u, bitVec);
+        let m = computeHashG(u, precisionBits, bitVec);
         let y = mod(invert(r, curve.CURVE.n) * (z - m), curve.CURVE.n);
 
         return new Tag(precisionBits, u, y, bitVec);
@@ -94,15 +99,17 @@ class TaggingKey {
 }
 
 function testTagBulk(detectionKeys: DetectionKey[], tag: Tag): number[] {
-    if (tag.u.equals(Point.ZERO) || tag.y === 0n) {
+    let u = tag.u;
+    let y = tag.y;
+    if (u.equals(Point.ZERO) || y === 0n) {
         return [];
     }
 
-    let m = computeHashG(tag.u, tag.bitVec);
+    let precisionBits = tag.precisionBits;
+    let bitVec = tag.bitVec;
+    let m = computeHashG(u, precisionBits, bitVec);
     let g = Point.BASE;
 
-    let u = tag.u;
-    let y = tag.y;
     let w = g.multiply(m);
     let temp = u.multiply(y);
     w = w.add(temp);
@@ -114,10 +121,10 @@ function testTagBulk(detectionKeys: DetectionKey[], tag: Tag): number[] {
         let result = 0;
 
         let secKeys = detectionKeys[i].secKeys;
-        let precisionBits = tag.precisionBits;
+
         for (let j = 0; j < precisionBits; j++) {
             let pkR = u.multiply(secKeys[j]);
-            let c_i = tag.bitVec[j];
+            let c_i = bitVec[j];
             let k_i = computePostH(preH.clone(), pkR);
 
             let b_i = k_i ^ c_i;
@@ -190,7 +197,7 @@ function generateEntangledTag(
             bitVec.push(c_i == 0x01 ? 1 : 0);
         }
 
-        let m = computeHashG(u, bitVec);
+        let m = computeHashG(u, precisionBits, bitVec);
         let y = mod(invert(r, curve.CURVE.n) * (z - m), curve.CURVE.n);
 
         return new Tag(precisionBits, u, y, bitVec);
@@ -254,8 +261,9 @@ class DetectionKey {
         }
 
         const bitVec = tag.bitVec;
+        const precisionBits = tag.precisionBits;
 
-        const m = computeHashG(u, bitVec);
+        const m = computeHashG(u, precisionBits, bitVec);
         const g = Point.BASE;
 
         let w = g.multiply(m);
@@ -267,7 +275,7 @@ class DetectionKey {
         let result = 0;
 
         const secKeys = this.secKeys;
-        const precisionBits = tag.precisionBits;
+
         for (let i = 0; i < precisionBits; i++) {
             const pkR = u.multiply(secKeys[i]);
             const c_i = bitVec[i];
@@ -318,5 +326,22 @@ class Tag {
 
     public falsePositiveProbability(): number {
         return Math.pow(0.5, this.precisionBits);
+    }
+
+    public toBytes(): Uint8Array {
+        return concatBytes(
+            numberToBytesBE(this.precisionBits, 1),
+            this.u.toRawBytes(true),
+            numberToBytesBE(this.y, 32),
+            new Uint8Array(this.bitVec)
+        );
+    }
+
+    public static fromBytes(tagBytes: Uint8Array): Tag {
+        const precisionBits = tagBytes[0];
+        const u = Point.fromHex(tagBytes.slice(1, 34));
+        const y = bytesToNumberBE(tagBytes.slice(34, 66));
+        const bitVec = Array.from(tagBytes.slice(66));
+        return new Tag(precisionBits, u, y, bitVec);
     }
 }

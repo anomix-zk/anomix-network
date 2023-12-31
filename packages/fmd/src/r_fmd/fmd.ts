@@ -4,6 +4,7 @@ import {
     bytesToNumberBE,
     numberToBytesBE,
     bytesToHex,
+    hexToBytes,
 } from "@noble/curves/abstract/utils";
 import { sha3_256, sha3_512 } from "@noble/hashes/sha3";
 import { randomScalar } from "../utils";
@@ -73,6 +74,34 @@ class TaggingKey {
         }
 
         return bytesToHex(sha3_256(keyBytes));
+    }
+
+    public toBytes(): Uint8Array {
+        let keyBytes = new Uint8Array();
+        for (let i = 0; i < this.pubKeys.length; i++) {
+            keyBytes = concatBytes(keyBytes, this.pubKeys[i].toRawBytes(true));
+        }
+
+        return keyBytes;
+    }
+
+    public static fromBytes(keyBytes: Uint8Array): TaggingKey {
+        let pubKeys: Point[] = [];
+        for (let i = 0; i < keyBytes.length; i += 33) {
+            pubKeys.push(Point.fromHex(keyBytes.slice(i, i + 33)));
+        }
+
+        return new TaggingKey(pubKeys);
+    }
+
+    public toHex(): string {
+        const keyBytes = this.toBytes();
+        return bytesToHex(keyBytes);
+    }
+
+    public fromHex(keyHex: string): TaggingKey {
+        const keyBytes = hexToBytes(keyHex);
+        return TaggingKey.fromBytes(keyBytes);
     }
 
     public generateTag(): Tag {
@@ -221,6 +250,37 @@ class DetectionKey {
         return bytesToHex(sha3_256(keyBytes));
     }
 
+    public toBytes(): Uint8Array {
+        let keyBytes = new Uint8Array();
+        for (let i = 0; i < this.secKeys.length; i++) {
+            keyBytes = concatBytes(
+                keyBytes,
+                numberToBytesBE(this.secKeys[i], 32)
+            );
+        }
+
+        return keyBytes;
+    }
+
+    public static fromBytes(keyBytes: Uint8Array): DetectionKey {
+        let secKeys: bigint[] = [];
+        for (let i = 0; i < keyBytes.length; i += 32) {
+            secKeys.push(bytesToNumberBE(keyBytes.slice(i, i + 32)));
+        }
+
+        return new DetectionKey(secKeys);
+    }
+
+    public toHex(): string {
+        const keyBytes = this.toBytes();
+        return bytesToHex(keyBytes);
+    }
+
+    public static fromHex(keyHex: string): DetectionKey {
+        const keyBytes = hexToBytes(keyHex);
+        return DetectionKey.fromBytes(keyBytes);
+    }
+
     public falsePositiveProbability(): number {
         return Math.pow(0.5, this.secKeys.length);
     }
@@ -318,5 +378,30 @@ class Tag {
         this.u = u;
         this.y = y;
         this.bitVec = bitVec;
+    }
+
+    public toBytes(): Uint8Array {
+        return concatBytes(
+            this.u.toRawBytes(true),
+            numberToBytesBE(this.y, 32),
+            new Uint8Array(this.bitVec)
+        );
+    }
+
+    public toHex(): string {
+        const tagBytes = this.toBytes();
+        return bytesToHex(tagBytes);
+    }
+
+    public static fromBytes(tagBytes: Uint8Array): Tag {
+        const u = Point.fromHex(tagBytes.slice(0, 33));
+        const y = bytesToNumberBE(tagBytes.slice(33, 65));
+        const bitVec = Array.from(tagBytes.slice(65));
+        return new Tag(u, y, bitVec);
+    }
+
+    public static fromHex(tagHex: string): Tag {
+        const tagBytes = hexToBytes(tagHex);
+        return Tag.fromBytes(tagBytes);
     }
 }
