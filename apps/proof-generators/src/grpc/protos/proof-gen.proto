@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "network.anomix.proofGenerator";
+option java_outer_classname = "ProofGenerator";
+option objc_class_prefix = "HLW";
+
+package proofgen;
+
+service ProofGenerator {
+  rpc proofGenReq (ProofGenReq) returns (ProofGenResp) {}
+  rpc proofVerifyReq (ProofVerifyReq) returns (ProofVerifyResp) {}
+  rpc joinsplitProofVerifyReq (JoinsplitProofVerifyReq) returns (JoinsplitProofVerifyResp) {}
+}
+
+message ProofGenReq {
+  string taskType = 1;
+  
+}
+
+message ProofGenResp {
+  string message = 1;
+}
+
+
+message ProofVerifyReq {
+  string name = 1;
+}
+
+message ProofVerifyResp {
+  string message = 1;
+}
+
+
+message JoinsplitProofVerifyReq {
+  string name = 1;
+}
+
+message JoinsplitProofVerifyResp {
+  string message = 1;
+}
