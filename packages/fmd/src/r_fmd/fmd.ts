@@ -100,7 +100,7 @@ class TaggingKey {
         return toBase64(keyBytes);
     }
 
-    public async fromBase64(keyBase64: string): TaggingKey {
+    public async fromBase64(keyBase64: string): Promise<TaggingKey> {
         const keyBytes = await toBytes(keyBase64);
         return TaggingKey.fromBytes(keyBytes);
     }
@@ -292,6 +292,16 @@ class DetectionKey {
         return DetectionKey.fromBytes(keyBytes);
     }
 
+    public async toBase64(): Promise<string> {
+        const keyBytes = this.toBytes();
+        return toBase64(keyBytes);
+    }
+
+    public async fromBase64(keyBase64: string): Promise<DetectionKey> {
+        const keyBytes = await toBytes(keyBase64);
+        return DetectionKey.fromBytes(keyBytes);
+    }
+
     public falsePositiveProbability(): number {
         return Math.pow(0.5, this.secKeys.length);
     }
@@ -340,6 +350,37 @@ class SecretKey {
 
     constructor(sec: bigint[] = []) {
         this.secKeys = sec;
+    }
+
+    public toBytes(): Uint8Array {
+        let keyBytes = new Uint8Array();
+        for (let i = 0; i < this.secKeys.length; i++) {
+            keyBytes = concatBytes(
+                keyBytes,
+                numberToBytesBE(this.secKeys[i], 32)
+            );
+        }
+
+        return keyBytes;
+    }
+
+    public static fromBytes(keyBytes: Uint8Array): SecretKey {
+        let secKeys: bigint[] = [];
+        for (let i = 0; i < keyBytes.length; i += 32) {
+            secKeys.push(bytesToNumberBE(keyBytes.slice(i, i + 32)));
+        }
+
+        return new SecretKey(secKeys);
+    }
+
+    public async toBase64(): Promise<string> {
+        const keyBytes = this.toBytes();
+        return toBase64(keyBytes);
+    }
+
+    public async fromBase64(keyBase64: string): Promise<SecretKey> {
+        const keyBytes = await toBytes(keyBase64);
+        return SecretKey.fromBytes(keyBytes);
     }
 
     public static generate(numKeys: number = MAX_PRECISION): SecretKey {
@@ -413,6 +454,16 @@ class Tag {
 
     public static fromHex(tagHex: string): Tag {
         const tagBytes = hexToBytes(tagHex);
+        return Tag.fromBytes(tagBytes);
+    }
+
+    public async toBase64(): Promise<string> {
+        const keyBytes = this.toBytes();
+        return toBase64(keyBytes);
+    }
+
+    public async fromBase64(tagBase64: string): Promise<Tag> {
+        const tagBytes = await toBytes(tagBase64);
         return Tag.fromBytes(tagBytes);
     }
 }
