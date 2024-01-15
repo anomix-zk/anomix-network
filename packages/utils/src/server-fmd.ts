@@ -139,3 +139,49 @@ class ServerTag {
         this.bitVec = bitVec;
     }
 }
+
+/**
+ * compute hash by (u,h,w)
+ * @param u 
+ * @param h 
+ * @param w 
+ */
+function computeHashH(u: Point, h: Point, w: Point): number {
+    const serialized = concatBytes(
+        u.toRawBytes(),
+        h.toRawBytes(),
+        w.toRawBytes()
+    );
+
+    const hash = sha256(serialized);
+    return hash[0] & 0x01;
+}
+
+/**
+ * 
+ * @param u 
+ * @param bitVec 
+ */
+function computeHashG(u: Point, bitVec: number[]): bigint {
+    const N = curve.CURVE.n;
+    let bitSize = curve.CURVE.nBitLength;
+
+    let serialized = concatBytes(u.toRawBytes(), new Uint8Array(bitVec));
+
+    bitSize += 64;
+    let bitsHashed = 0;
+    let h = new Uint8Array();
+
+    while (bitsHashed < bitSize) {
+        let hash = sha256(serialized);
+        h = concatBytes(h, hash.subarray(0, 32));
+        bitsHashed = h.length / 8;
+
+        if (bitsHashed < bitSize) {
+            // Concatenate an "X" (0x58)
+            serialized = concatBytes(serialized, new Uint8Array([0x58]));
+        }
+    }
+
+    return mod(bytesToNumberBE(h), N);
+}
