@@ -16,6 +16,34 @@ type Point = typeof Point.BASE;
 // GAMMA
 const NUM_KEYS = 24;
 
+function computePreH(u: Point, w: Point): ReturnType<typeof sha3_256.create> {
+    let hash = sha3_256.create();
+    hash.update(u.toRawBytes());
+    hash.update(w.toRawBytes());
+    return hash;
+}
+
+function computePostH(
+    hash: ReturnType<typeof sha3_256.create>,
+    h: Point
+): number {
+    hash.update(h.toRawBytes());
+    const result = hash.digest();
+    return result[0] & 0x01;
+}
+
+function computeHashG(
+    u: Point,
+    precisionBits: number,
+    bitVec: number[]
+): bigint {
+    let hash = sha3_512.create();
+    hash.update(u.toRawBytes());
+    hash.update(new Uint8Array([precisionBits]));
+    hash.update(new Uint8Array(bitVec));
+    const hashResult = hash.digest();
+    return bytesToNumberBE(mapHashToField(hashResult, curve.CURVE.n));
+}
 class ServerTaggingKey {
     pubKeys: Point[];
 
