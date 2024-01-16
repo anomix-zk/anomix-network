@@ -11,10 +11,6 @@ import {
   Uint8ArrayToField,
 } from '@anomix/utils';
 
-const log = createDebugLogger('anomix:tree-base');
-
-log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TreeBase~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
-
 const MAX_DEPTH = 254;
 
 const indexToKeyHash = (name: string, level: number, index: bigint) =>
@@ -50,6 +46,7 @@ export abstract class TreeBase implements MerkleTree {
   private root!: bigint;
   private zeroHashes: bigint[] = [];
   private cache: { [key: string]: Buffer } = {};
+  protected log: DebugLogger;
 
   public constructor(
     protected db: LevelUp,
@@ -72,6 +69,8 @@ export abstract class TreeBase implements MerkleTree {
 
     this.root = root ? root : current;
     this.maxIndex = 2n ** BigInt(depth) - 1n;
+
+    this.log = createDebugLogger(`anomix:merkle-tree:${name}`);
   }
 
   /**
@@ -188,6 +187,26 @@ export abstract class TreeBase implements MerkleTree {
     return this.getLatestValueAtIndex(this.depth, index, includeUncommitted);
   }
 
+  public getNode(level: number, index: bigint): Promise<bigint | undefined> {
+    if (level < 0 || level > this.depth) {
+      throw Error('Invalid level: ' + level);
+    }
+
+    if (index < 0 || index >= 2n ** BigInt(level)) {
+      throw Error('Invalid index: ' + index);
+    }
+
+    return this.dbGet(indexToKeyHash(this.name, level, index));
+  }
+
+  public getZeroHash(level: number): bigint {
+    if (level <= 0 || level > this.depth) {
+      throw new Error('Invalid level');
+    }
+
+    return this.zeroHashes[level - 1];
+  }
+
   /**
    * Clears the cache.
    */
@@ -204,7 +223,7 @@ export abstract class TreeBase implements MerkleTree {
   protected async addLeafToCacheAndHashToRoot(leaf: bigint, index: bigint) {
     const key = indexToKeyHash(this.name, this.depth, index);
     let current = leaf;
-    this.cache[key] = Buffer.from(current.toString());
+    this.cache[key] = int256ToBuffer(current);
     let level = this.depth;
 
     while (level > 0) {
@@ -216,13 +235,12 @@ export abstract class TreeBase implements MerkleTree {
       );
       const lhs = isRight ? sibling : current;
       const rhs = isRight ? current : sibling;
-      current = this.hasher.compress(lhs, rhs);
+      current = this.hasher.hash(lhs, rhs);
       level -= 1;
       index >>= 1n;
 
       const cacheKey = indexToKeyHash(this.name, level, index);
-      this.cache[cacheKey] = Buffer.from(current.toString());
-    }
+      this.cache[cacheKey] = int256ToBuffer(current);
   }
 
   /**
@@ -297,4 +315,39 @@ export abstract class TreeBase implements MerkleTree {
       await this.db.put(this.name, data);
     }
   }
+
+
+  protected async appendLeaves(leaves: bigint[]): Promise<void> {
+    const numLeaves = this.getNumLeaves(true);
+    if (numLeaves + BigInt(leaves.length) - 1n > this.maxIndex) {
+      throw Error(`Can't append beyond max index. Max index: ${this.maxIndex}`);
+    }
+
+    // 1. Insert all the leaves
+    let firstIndex = numLeaves;
+    let level = this.depth;
+    for (let i = 0; i < leaves.length; i++) {
+      const cacheKey = indexToKeyHash(this.name, level, firstIndex + BigInt(i));
+      this.cache[cacheKey] = int256ToBuffer(leaves[i]);
+    }
+
+    let lastIndex = firstIndex + BigInt(leaves.length);
+    // 2. Iterate over all the levels from the bottom up
+    while (level > 0) {
+      firstIndex >>= 1n;
+      lastIndex >>= 1n;
+      // 3.Iterate over all the affected nodes at this level and update them
+      for (let index = firstIndex; index <= lastIndex; index++) {
+        const lhs = await this.getLatestValueAtIndex(level, index * 2n, true);
+        const rhs = await this.getLatestValueAtIndex(level, index * 2n + 1n, true);
+        const cacheKey = indexToKeyHash(this.name, level - 1, index);
+        this.cache[cacheKey] = int256ToBuffer(this.hasher.hash(lhs, rhs));
+      }
+
+      level -= 1;
+    }
+    this.cachedSize = numLeaves + BigInt(leaves.length);
+  }
+
+  abstract findLeafIndex(value: bigint, includeUncommitted: boolean): Promise<bigint | undefined>;
 }
