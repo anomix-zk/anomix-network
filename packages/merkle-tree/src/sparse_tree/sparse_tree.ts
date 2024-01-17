@@ -1,4 +1,3 @@
-import { Field } from 'o1js';
 import { UpdateOnlyTree } from '../interfaces/update_only_tree';
 import { INITIAL_LEAF, TreeBase } from '../tree_base.js';
 
@@ -6,6 +5,7 @@ import { INITIAL_LEAF, TreeBase } from '../tree_base.js';
  * A Merkle tree implementation that uses a LevelDB database to store the tree.
  */
 export class SparseTree extends TreeBase implements UpdateOnlyTree {
+  private snapshotBuilder = new FullTreeSnapshotBuilder(this.db, this);
   /**
    * Updates a leaf in the tree.
    * @param leaf - New contents of the leaf.

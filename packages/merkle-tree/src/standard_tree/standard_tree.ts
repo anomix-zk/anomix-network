@@ -1,8 +1,9 @@
-import { Field } from 'o1js';
 import { AppendOnlyTree } from '../interfaces/append_only_tree';
 import { TreeBase } from '../tree_base';
 import { AppendOnlySnapshotBuilder } from '../snapshots/append_only_snapshot';
 import { TreeSnapshot } from '../snapshots/snapshot_builder';
+import { TreeInsertionStats } from '../types/stats';
+import { Timer } from '../utils/timer';
 
 /**
  * A Merkle tree implementation that uses a LevelDB database to store the tree.
@@ -20,6 +21,7 @@ export class StandardTree extends TreeBase implements AppendOnlyTree {
    * @returns Empty promise.
    */
   public async appendLeaves(leaves: bigint[]): Promise<void> {
+    const timer = new Timer();
     await super.appendLeaves(leaves);
     this.log(`Inserted ${leaves.length} leaves into ${this.getName()} tree`, {
       eventName: 'tree-insertion',
