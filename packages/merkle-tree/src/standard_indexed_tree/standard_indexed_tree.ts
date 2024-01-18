@@ -9,6 +9,77 @@ import { BaseSiblingPath } from '@anomix/types';
 
 const log = createDebugLogger('anomix:standard-indexed-tree');
 
+/**
+ * Factory for creating leaf preimages.
+ */
+export interface PreimageFactory {
+  /**
+   * Creates a new preimage from a leaf.
+   * @param leaf - Leaf to create a preimage from.
+   * @param nextKey - Next key of the leaf.
+   * @param nextIndex - Next index of the leaf.
+   */
+  fromLeaf(leaf: IndexedTreeLeaf, nextKey: bigint, nextIndex: bigint): IndexedTreeLeafPreimage;
+  /**
+   * Creates a new preimage from a buffer.
+   * @param buffer - Buffer to create a preimage from.
+   */
+  fromBuffer(buffer: Buffer): IndexedTreeLeafPreimage;
+  /**
+   * Creates an empty preimage.
+   */
+  empty(): IndexedTreeLeafPreimage;
+  /**
+   * Creates a copy of a preimage.
+   * @param preimage - Preimage to be cloned.
+   */
+  clone(preimage: IndexedTreeLeafPreimage): IndexedTreeLeafPreimage;
+}
+
+export const buildDbKeyForPreimage = (name: string, index: bigint) => {
+  return `${name}:leaf_by_index:${toBufferBE(index, 32).toString('hex')}`;
+};
+
+export const buildDbKeyForLeafIndex = (name: string, key: bigint) => {
+  return `${name}:leaf_index_by_leaf_key:${toBufferBE(key, 32).toString('hex')}`;
+};
+
+
+/**
+ * Factory for creating leaves.
+ */
+export interface LeafFactory {
+  /**
+   * Creates a new leaf from a buffer.
+   * @param key - Key of the leaf.
+   */
+  buildDummy(key: bigint): IndexedTreeLeaf;
+  /**
+   * Creates a new leaf from a buffer.
+   * @param buffer - Buffer to create a leaf from.
+   */
+  fromBuffer(buffer: Buffer): IndexedTreeLeaf;
+}
+
+/**
+ * Pre-compute empty witness.
+ * @param treeHeight - Height of tree for sibling path.
+ * @returns An empty witness.
+ */
+function getEmptyLowLeafWitness<N extends number>(
+  treeHeight: N,
+  leafPreimageFactory: PreimageFactory,
+): LowLeafWitnessData<N> {
+  return {
+    leafPreimage: leafPreimageFactory.empty(),
+    index: 0n,
+    siblingPath: new SiblingPath(treeHeight, Array(treeHeight).fill(toBufferBE(0n, 32))),
+  };
+}
+
+
+
+
 const indexToKeyLeaf = (name: string, index: bigint) => {
   return `${name}:leaf:${index}`;
 };
