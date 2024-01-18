@@ -13,6 +13,7 @@ import fs from "fs";
 import assert from "assert";
 import { randomUUID } from "crypto";
 import { getDateString } from "@/lib/timeUtils";
+import { checkTx } from "@anomix/utils";
 
 const logger = getLogger('ProofScheduler');
 
@@ -337,6 +338,14 @@ export class ProofScheduler {
             const txHash0 = txId.hash()!;
 
             if ((!txHash0)) {
+                logger.warn('error: create anomixRollupContract\'s l1Tx failed!!!');
+                return;
+            }
+
+            // wait for tx is confirmed
+            try {
+                checkTx(txHash0);
+            } catch (error) {
                 logger.warn('error: broadcast anomixRollupContract\'s l1Tx failed!!!');
                 return;
             }
