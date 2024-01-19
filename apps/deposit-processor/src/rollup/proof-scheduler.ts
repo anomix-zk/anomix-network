@@ -13,6 +13,7 @@ import { Mina, PrivateKey } from 'o1js';
 import { getLogger } from "@/lib/logUtils";
 import fs from "fs";
 import { randomUUID } from "crypto";
+import { checkTx } from "@anomix/utils";
 
 const logger = getLogger('proof-scheduler');
 
@@ -143,6 +144,14 @@ export class ProofScheduler {
         await l1Tx.send().then(async txHash => {// TODO what if it fails currently!
             const l1TxHash = txHash.hash()
             if (l1TxHash) {
+                // wait for tx is confirmed
+                try {
+                    checkTx(l1TxHash);
+                } catch (error) {
+                    logger.warn('error: broadcast anomixRollupContract\'s l1Tx failed!!!');
+                    return;
+                }
+
                 logger.info(`whenDepositRollupL1TxComeBack: send L1 Tx succeed! txHash:${l1TxHash}`);
 
                 await getConnection().getRepository(DepositTreeTrans).findOne({ where: { id: transId } }).then(async dt => {
