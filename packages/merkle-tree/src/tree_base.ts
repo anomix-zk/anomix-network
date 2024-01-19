@@ -1,10 +1,8 @@
 import { LevelUp, LevelUpChain } from 'levelup';
-import { createDebugLogger, createLogger } from './log';
-import { BaseSiblingPath, SiblingPath } from '@anomix/types';
+import { DebugLogger, createDebugLogger, createLogger } from './log';
 import { Hasher } from './hasher/hasher.js';
 import { MerkleTree } from './interfaces/merkle_tree.js';
 import { toBigIntLE, toBufferLE } from './utils';
-import { Field } from 'o1js';
 import {
   bufferToInt256,
   int256ToBuffer,
@@ -64,7 +62,7 @@ export abstract class TreeBase implements MerkleTree {
     let current = INITIAL_LEAF;
     for (let i = depth - 1; i >= 0; --i) {
       this.zeroHashes[i] = current;
-      current = hasher.compress(current, current);
+      current = hasher.hash(current, current);
     }
 
     this.root = root ? root : current;

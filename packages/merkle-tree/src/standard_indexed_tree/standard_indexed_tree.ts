@@ -156,6 +156,11 @@ const initialLeaf: LeafData = {
  * Indexed merkle tree.
  */
 export class StandardIndexedTree extends TreeBase implements IndexedTree {
+  #snapshotBuilder = new IndexedTreeSnapshotBuilder(this.db, this, this.leafPreimageFactory);
+  protected cachedLeafPreimages: { [key: string]: IndexedTreeLeafPreimage } = {};
+
+
+
   // for debug leaves...
   public leaves: LeafData[] = [];
   private cachedLeaves: { [key: number]: LeafData } = {};

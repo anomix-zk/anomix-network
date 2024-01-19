@@ -58,3 +58,22 @@ export function toBufferBE(num: bigint, width: number): Buffer {
     throw new Error(`Number ${num.toString(16)} does not fit in ${width}`);
   return buffer;
 }
+
+export function int256ToUint8ArrayBE(n: bigint): Uint8Array {
+  const buf = new Uint8Array(32); // 256 bits = 32 bytes
+
+  for (let i = 0; i < 32; i++) {
+    buf[31 - i] = Number(n & BigInt(0xff));
+    n >>= BigInt(8);
+  }
+
+  return buf;
+}
+
+export function Uint8ArrayToInt256BE(buf: Uint8Array): bigint {
+  let bigIntValue = BigInt(0);
+  for (let i = 0; i < buf.length; i++) {
+    bigIntValue = (bigIntValue << BigInt(8)) | BigInt(buf[i]);
+  }
+  return bigIntValue;
+}
