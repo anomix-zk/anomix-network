@@ -39,7 +39,26 @@ export const handler: RequestHandler<RollupTaskDto<any, any>, null> = async func
 
         const respondData: any = undefined;
 
-        if (dto.taskType == RollupTaskType.DEPOSIT_JOINSPLIT) {// when join-split_deposit done, coordinator trigger ROLLUP_PROCESSOR to start rolluping; 
+        if (dto.taskType == RollupTaskType.DEPOSIT_BATCH_MERGE) {
+            // check if bother seq-rollup-proof 
+            const connection = getConnection();
+            const seqStatusReposity = connection.getRepository(SeqStatus);
+            const seqStatus = (await seqStatusReposity.findOne({ where: { id: 1 } }))!;
+            if (seqStatus.status == SequencerStatus.NotAtRollup) {
+                const entryContractAddr = PublicKey.fromBase58(config.entryContractAddress);
+                await syncAcctInfo(entryContractAddr);
+                const entryContract = new AnomixEntryContract(entryContractAddr);
+                // check if align with AnomixEntryContract's onchain states
+                await getConnection().getRepository(DepositTreeTrans)
+                    .findOne({ where: { id: targetId } })
+                    .then(async dt => {
+                        if (dt!.startActionHash == entryContract.depositState.get().currentActionsHash.toString()) { // check here
+                            dto.taskType = RollupTaskType.DEPOSIT_CONTRACT_CALL;
+                            respondData = dto;
+                        }
+                    });
+            }
+        } else if (dto.taskType == RollupTaskType.DEPOSIT_JOINSPLIT) {// when join-split_deposit done, coordinator trigger ROLLUP_PROCESSOR to start rolluping; 
             // trigger ROLLUP_PROCESSOR to start rolluping; 
             dto.taskType = RollupTaskType.ROLLUP_PROCESS;
             await $axiosSeq.post<BaseResponse<string>>('/rollup/proof-trigger', dto);
