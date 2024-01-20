@@ -2,7 +2,7 @@ import { LevelUp, LevelUpChain } from 'levelup';
 import { DebugLogger, createDebugLogger, createLogger } from './log';
 import { Hasher } from './hasher/hasher.js';
 import { MerkleTree } from './interfaces/merkle_tree.js';
-import { toBigIntLE, toBufferLE } from './utils';
+import { Uint8ArrayToInt256LE, concatUint8Arrays, copyUint8Array, int256ToUint8ArrayBE, int256ToUint8ArrayLE, readUInt32LE, toBigIntLE, toBufferLE, writeUInt32LE } from './utils';
 import {
   bufferToInt256,
   int256ToBuffer,
@@ -15,17 +15,18 @@ const indexToKeyHash = (name: string, level: number, index: bigint) =>
   `${name}:${level}:${index}`;
 
 const encodeMeta = (root: bigint, depth: number, size: bigint) => {
-  const rootBuf = int256ToBuffer(root); // 32-bytes buffer
-  const data = Buffer.alloc(32 + 4);
-  rootBuf.copy(data);
-  data.writeUInt32LE(depth, 32);
-  return Buffer.concat([data, toBufferLE(size, 32)]);
+  const rootBuf = int256ToUint8ArrayLE(root); // 32-bytes Uint8Array
+  let data = new Uint8Array(36); // 4-bytes for depth, 32-bytes for root
+  data = copyUint8Array(rootBuf, data);
+  data = writeUInt32LE(data, depth, 32);
+
+  return concatUint8Arrays(data, int256ToUint8ArrayLE(size));
 };
 
-export const decodeMeta = (meta: Buffer) => {
-  const root = bufferToInt256(meta.subarray(0, 32));
-  const depth = meta.readUInt32LE(32);
-  const size = toBigIntLE(meta.subarray(36));
+export const decodeMeta = (meta: Uint8Array) => {
+  const root = Uint8ArrayToInt256LE(meta.subarray(0, 32));
+  const depth = readUInt32LE(meta, 32);
+  const size = Uint8ArrayToInt256LE(meta.subarray(36));
   return {
     root,
     depth,
@@ -43,7 +44,7 @@ export abstract class TreeBase implements MerkleTree {
   protected cachedSize?: bigint;
   private root!: bigint;
   private zeroHashes: bigint[] = [];
-  private cache: { [key: string]: Buffer } = {};
+  private cache: { [key: string]: Uint8Array } = {};
   protected log: DebugLogger;
 
   public constructor(
@@ -80,9 +81,9 @@ export abstract class TreeBase implements MerkleTree {
     if (!includeUncommitted) {
       return this.root;
     } else {
-      let tmpRootBuffer = this.cache[indexToKeyHash(this.name, 0, 0n)];
-      if (tmpRootBuffer) {
-        return bufferToInt256(tmpRootBuffer);
+      let tmpRootBuf = this.cache[indexToKeyHash(this.name, 0, 0n)];
+      if (tmpRootBuf) {
+        return Uint8ArrayToInt256LE(tmpRootBuf);
       } else {
         return this.root;
       }
@@ -221,7 +222,7 @@ export abstract class TreeBase implements MerkleTree {
   protected async addLeafToCacheAndHashToRoot(leaf: bigint, index: bigint) {
     const key = indexToKeyHash(this.name, this.depth, index);
     let current = leaf;
-    this.cache[key] = int256ToBuffer(current);
+    this.cache[key] = int256ToUint8ArrayLE(current);
     let level = this.depth;
 
     while (level > 0) {
@@ -238,7 +239,7 @@ export abstract class TreeBase implements MerkleTree {
       index >>= 1n;
 
       const cacheKey = indexToKeyHash(this.name, level, index);
-      this.cache[cacheKey] = int256ToBuffer(current);
+      this.cache[cacheKey] = int256ToUint8ArrayLE(current);
   }
 
   /**
@@ -256,7 +257,7 @@ export abstract class TreeBase implements MerkleTree {
   ): Promise<bigint> {
     const key = indexToKeyHash(this.name, level, index);
     if (includeUncommitted && this.cache[key] !== undefined) {
-      return bufferToInt256(this.cache[key]);
+      return Uint8ArrayToInt256LE(this.cache[key]);
     }
     const committed = await this.dbGet(key);
     if (committed !== undefined) {
@@ -326,7 +327,7 @@ export abstract class TreeBase implements MerkleTree {
     let level = this.depth;
     for (let i = 0; i < leaves.length; i++) {
       const cacheKey = indexToKeyHash(this.name, level, firstIndex + BigInt(i));
-      this.cache[cacheKey] = int256ToBuffer(leaves[i]);
+      this.cache[cacheKey] = int256ToUint8ArrayLE(leaves[i]);
     }
 
     let lastIndex = firstIndex + BigInt(leaves.length);
@@ -339,7 +340,7 @@ export abstract class TreeBase implements MerkleTree {
         const lhs = await this.getLatestValueAtIndex(level, index * 2n, true);
         const rhs = await this.getLatestValueAtIndex(level, index * 2n + 1n, true);
         const cacheKey = indexToKeyHash(this.name, level - 1, index);
-        this.cache[cacheKey] = int256ToBuffer(this.hasher.hash(lhs, rhs));
+        this.cache[cacheKey] = int256ToUint8ArrayLE(this.hasher.hash(lhs, rhs));
       }
 
       level -= 1;

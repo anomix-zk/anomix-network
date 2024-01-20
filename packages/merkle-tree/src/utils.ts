@@ -59,8 +59,8 @@ export function toBufferBE(num: bigint, width: number): Buffer {
   return buffer;
 }
 
-export function int256ToUint8ArrayBE(n: bigint): Uint8Array {
-  const buf = new Uint8Array(32); // 256 bits = 32 bytes
+export function int256ToUint8ArrayBE(n: bigint, width = 32): Uint8Array {
+  const buf = new Uint8Array(width); // 256 bits = 32 bytes
 
   for (let i = 0; i < 32; i++) {
     buf[31 - i] = Number(n & BigInt(0xff));
@@ -76,4 +76,82 @@ export function Uint8ArrayToInt256BE(buf: Uint8Array): bigint {
     bigIntValue = (bigIntValue << BigInt(8)) | BigInt(buf[i]);
   }
   return bigIntValue;
+}
+
+export function int256ToUint8ArrayLE(n: bigint, width = 32): Uint8Array {
+  const buf = new Uint8Array(width); // 256 bits = 32 bytes
+
+  for (let i = 0; i < 32; i++) {
+    buf[i] = Number(n & BigInt(0xff));
+    n >>= BigInt(8);
+  }
+
+  return buf;
+}
+
+export function Uint8ArrayToInt256LE(buf: Uint8Array): bigint {
+  let bigIntValue = BigInt(0);
+  for (let i = buf.length - 1; i >= 0; i--) {
+    bigIntValue = (bigIntValue << BigInt(8)) | BigInt(buf[i]);
+  }
+  return bigIntValue;
+}
+
+export function writeUInt32LE(
+  array: Uint8Array,
+  value: number,
+  offset = 0
+): Uint8Array {
+  array[offset] = value & 0xff;
+  array[offset + 1] = (value >> 8) & 0xff;
+  array[offset + 2] = (value >> 16) & 0xff;
+  array[offset + 3] = (value >> 24) & 0xff;
+
+  return array;
+}
+
+export function readUInt32LE(array: Uint8Array, offset = 0): number {
+  return (
+    (array[offset] |
+      (array[offset + 1] << 8) |
+      (array[offset + 2] << 16) |
+      (array[offset + 3] << 24)) >>>
+    0
+  );
+}
+
+export function copyUint8Array(
+  source: Uint8Array,
+  target: Uint8Array,
+  targetStart = 0,
+  sourceStart = 0,
+  sourceEnd?: number
+): Uint8Array {
+  if (sourceEnd === undefined) {
+    sourceEnd = source.length;
+  }
+
+  for (
+    let i = sourceStart;
+    i < sourceEnd && targetStart < target.length;
+    i++, targetStart++
+  ) {
+    target[targetStart] = source[i];
+  }
+
+  return target;
+}
+
+export function concatUint8Arrays(...arrays: Uint8Array[]): Uint8Array {
+  let totalLength = arrays.reduce((acc, value) => acc + value.length, 0);
+
+  let result = new Uint8Array(totalLength);
+
+  let offset = 0;
+  for (let array of arrays) {
+    result.set(array, offset);
+    offset += array.length;
+  }
+
+  return result;
 }
