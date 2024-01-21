@@ -36,6 +36,9 @@
   "dependencies": {
     "@anomix/types": "^0.1.0",
     "@anomix/utils": "^0.1.0",
+    "consola": "^3.2.3",
+    "just-performance": "^4.3.0",
+    "level": "^8.0.0",
     "leveldown": "^6.1.1",
     "levelup": "^5.1.1",
     "memdown": "^6.1.1"
