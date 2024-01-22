@@ -1,7 +1,6 @@
-import { LevelUp } from 'levelup';
-
 import { TreeBase } from './tree_base.js';
 import { Hasher } from './hasher/hasher.js';
+import { TreeDB } from './tree_db/tree_db.js';
 
 /**
  * Creates a new tree.
@@ -15,13 +14,13 @@ import { Hasher } from './hasher/hasher.js';
  */
 export async function newTree<T extends TreeBase>(
   c: new (
-    db: LevelUp,
+    db: TreeDB,
     hasher: Hasher,
     name: string,
     depth: number,
     size: bigint
   ) => T,
-  db: LevelUp,
+  db: TreeDB,
   hasher: Hasher,
   name: string,
   depth: number,
