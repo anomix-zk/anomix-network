@@ -6,10 +6,10 @@ export interface IndexedTreeLeaf {
    * Returns key of the leaf. It's used for indexing.
    */
   getKey(): bigint;
-  // /**
-  //  * Serializes the leaf into a buffer.
-  //  */
-  // toBuffer(): Buffer;
+  /**
+   * Serializes the leaf into a Uint8Array.
+   */
+  toUint8Array(): Uint8Array;
   /**
    * Returns true if the leaf is empty.
    */
@@ -43,12 +43,12 @@ export interface IndexedTreeLeafPreimage {
    * Returns the preimage as a leaf.
    */
   asLeaf(): IndexedTreeLeaf;
-  // /**
-  //  * Serializes the preimage into a buffer.
-  //  */
-  // toBuffer(): Buffer;
-  // /**
-  //  * Serializes the preimage to an array of buffers for hashing.
-  //  */
-  // toHashInputs(): Buffer[];
+  /**
+   * Serializes the preimage into a Uint8Array.
+   */
+  toUint8Array(): Uint8Array;
+  /**
+   * Serializes the preimage to an array of bigints for hashing.
+   */
+  toHashInputs(): bigint[];
 }

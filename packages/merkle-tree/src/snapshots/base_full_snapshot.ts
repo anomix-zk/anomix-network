@@ -1,15 +1,13 @@
-import { LevelUp, LevelUpChain } from 'levelup';
-
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { TreeBase } from '../tree_base.js';
+import { TreeDB, TreeOperationBatch } from '../tree_db/tree_db.js';
+import { Uint8ArrayToInt256LE, int256ToUint8ArrayLE } from '../utils.js';
 import { TreeSnapshot, TreeSnapshotBuilder } from './snapshot_builder.js';
 
 // key for a node's children
-const snapshotChildKey = (node: Buffer, child: 0 | 1) =>
-  Buffer.concat([
-    Buffer.from('snapshot:node:'),
-    node,
-    Buffer.from(':' + child),
-  ]);
+const snapshotChildKey = (node: bigint, child: 0 | 1) =>
+  'snapshot:node:' + node + ':' + child;
 
 // metadata for a snapshot
 const snapshotRootKey = (treeName: string, block: number) =>
@@ -38,7 +36,7 @@ export abstract class BaseFullTreeSnapshotBuilder<
   S extends TreeSnapshot
 > implements TreeSnapshotBuilder<S>
 {
-  constructor(protected db: LevelUp, protected tree: T) {}
+  constructor(protected db: TreeDB, protected tree: T) {}
 
   async snapshot(block: number): Promise<S> {
     const snapshotMetadata = await this.#getSnapshotMeta(block);
@@ -66,7 +64,7 @@ export abstract class BaseFullTreeSnapshotBuilder<
       // if it does, then we know we've seen the whole subtree below it before
       // and we don't have to traverse it anymore
       // we use the left child here, but it could be anything that shows we've stored the node before
-      const exists: Buffer | undefined = await this.db
+      const exists: Uint8Array | undefined = await this.db
         .get(snapshotChildKey(node, 0))
         .catch(() => undefined);
       if (exists) {
@@ -88,8 +86,14 @@ export abstract class BaseFullTreeSnapshotBuilder<
       // we want the zero hash at the children's level, not the node's level
       const zeroHash = this.tree.getZeroHash(level + 1);
 
-      batch.put(snapshotChildKey(node, 0), lhs ?? zeroHash);
-      batch.put(snapshotChildKey(node, 1), rhs ?? zeroHash);
+      batch.put(
+        snapshotChildKey(node, 0),
+        int256ToUint8ArrayLE(lhs ?? zeroHash)
+      );
+      batch.put(
+        snapshotChildKey(node, 1),
+        int256ToUint8ArrayLE(rhs ?? zeroHash)
+      );
 
       // enqueue the children only if they're not zero hashes
       if (lhs) {
@@ -101,17 +105,24 @@ export abstract class BaseFullTreeSnapshotBuilder<
       }
     }
 
-    batch.put(snapshotRootKey(this.tree.getName(), block), root);
+    batch.put(
+      snapshotRootKey(this.tree.getName(), block),
+      int256ToUint8ArrayLE(root)
+    );
     batch.put(
       snapshotNumLeavesKey(this.tree.getName(), block),
-      String(numLeaves)
+      int256ToUint8ArrayLE(numLeaves)
     );
     await batch.write();
 
     return this.openSnapshot(root, numLeaves);
   }
 
-  protected handleLeaf(_index: bigint, _node: Buffer, _batch: LevelUpChain) {
+  protected handleLeaf(
+    _index: bigint,
+    _node: bigint,
+    _batch: TreeOperationBatch
+  ) {
     return Promise.resolve();
   }
 
@@ -129,7 +140,7 @@ export abstract class BaseFullTreeSnapshotBuilder<
 
   protected abstract openSnapshot(root: bigint, numLeaves: bigint): S;
 
-  private async getSnapshotMeta(block: number): Promise<
+  async #getSnapshotMeta(block: number): Promise<
     | {
         /** The root of the tree snapshot */
         root: bigint;
@@ -140,8 +151,10 @@ export abstract class BaseFullTreeSnapshotBuilder<
   > {
     try {
       const treeName = this.tree.getName();
-      const root = await this.db.get(snapshotRootKey(treeName, block));
-      const numLeaves = BigInt(
+      const root = Uint8ArrayToInt256LE(
+        await this.db.get(snapshotRootKey(treeName, block))
+      );
+      const numLeaves = Uint8ArrayToInt256LE(
         await this.db.get(snapshotNumLeavesKey(treeName, block))
       );
       return { root, numLeaves };
@@ -156,8 +169,8 @@ export abstract class BaseFullTreeSnapshotBuilder<
  */
 export class BaseFullTreeSnapshot implements TreeSnapshot {
   constructor(
-    protected db: LevelUp,
-    protected historicRoot: Buffer,
+    protected db: TreeDB,
+    protected historicRoot: bigint,
     protected numLeaves: bigint,
     protected tree: TreeBase
   ) {}
@@ -201,12 +214,12 @@ export class BaseFullTreeSnapshot implements TreeSnapshot {
     const root = this.historicRoot;
     const pathFromRoot = this.#getPathFromRoot(leafIndex);
 
-    let node: Buffer = root;
+    let node: bigint = root;
     for (let i = 0; i < pathFromRoot.length; i++) {
       // get both children. We'll need both anyway (one to keep track of, the other to walk down to)
-      const children: [Buffer, Buffer] = await Promise.all([
-        this.db.get(snapshotChildKey(node, 0)),
-        this.db.get(snapshotChildKey(node, 1)),
+      const children: [bigint, bigint] = await Promise.all([
+        Uint8ArrayToInt256LE(await this.db.get(snapshotChildKey(node, 0))),
+        Uint8ArrayToInt256LE(await this.db.get(snapshotChildKey(node, 1))),
       ]).catch(() => [
         this.tree.getZeroHash(i + 1),
         this.tree.getZeroHash(i + 1),
@@ -240,11 +253,11 @@ export class BaseFullTreeSnapshot implements TreeSnapshot {
     return path;
   }
 
-  async findLeafIndex(value: Buffer): Promise<bigint | undefined> {
+  async findLeafIndex(value: bigint): Promise<bigint | undefined> {
     const numLeaves = this.getNumLeaves();
     for (let i = 0n; i < numLeaves; i++) {
       const currentValue = await this.getLeafValue(i);
-      if (currentValue && currentValue.equals(value)) {
+      if (currentValue && currentValue === value) {
         return i;
       }
     }

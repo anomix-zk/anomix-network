@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Hasher } from '../hasher/hasher';
-
-import { LevelUp } from 'levelup';
 
 import { AppendOnlyTree } from '../interfaces/append_only_tree.js';
 import { TreeBase } from '../tree_base.js';
+import { TreeDB } from '../tree_db/tree_db';
+import { Uint8ArrayToInt256LE, int256ToUint8ArrayLE } from '../utils';
 import { TreeSnapshot, TreeSnapshotBuilder } from './snapshot_builder.js';
 
 // stores the last block that modified this node
@@ -40,7 +41,7 @@ const snapshotNumLeavesKey = (treeName: string, block: number) =>
  */
 export class AppendOnlySnapshotBuilder implements TreeSnapshotBuilder {
   constructor(
-    private db: LevelUp,
+    private db: TreeDB,
     private tree: TreeBase & AppendOnlyTree,
     private hasher: Hasher
   ) {}
@@ -81,7 +82,7 @@ export class AppendOnlySnapshotBuilder implements TreeSnapshotBuilder {
     const root = this.tree.getRoot(false);
     const depth = this.tree.getDepth();
     const treeName = this.tree.getName();
-    const queue: [Buffer, number, bigint][] = [[root, 0, 0n]];
+    const queue: [bigint, number, bigint][] = [[root, 0, 0n]];
 
     // walk the tree in BF and store latest nodes
     while (queue.length > 0) {
@@ -90,14 +91,20 @@ export class AppendOnlySnapshotBuilder implements TreeSnapshotBuilder {
       const historicalValue = await this.db
         .get(historicalNodeKey(treeName, level, index))
         .catch(() => undefined);
-      if (!historicalValue || !node.equals(historicalValue)) {
+      if (
+        !historicalValue ||
+        !(node === Uint8ArrayToInt256LE(historicalValue))
+      ) {
         // we've never seen this node before or it's different than before
         // update the historical tree and tag it with the block that modified it
         batch.put(
           nodeModifiedAtBlockKey(treeName, level, index),
-          String(block)
+          int256ToUint8ArrayLE(BigInt(block))
         );
-        batch.put(historicalNodeKey(treeName, level, index), node);
+        batch.put(
+          historicalNodeKey(treeName, level, index),
+          int256ToUint8ArrayLE(node)
+        );
       } else {
         // if this node hasn't changed, that means, nothing below it has changed either
         continue;
@@ -125,8 +132,11 @@ export class AppendOnlySnapshotBuilder implements TreeSnapshotBuilder {
     }
 
     const numLeaves = this.tree.getNumLeaves(false);
-    batch.put(snapshotNumLeavesKey(treeName, block), String(numLeaves));
-    batch.put(snapshotRootKey(treeName, block), root);
+    batch.put(
+      snapshotNumLeavesKey(treeName, block),
+      int256ToUint8ArrayLE(numLeaves)
+    );
+    batch.put(snapshotRootKey(treeName, block), int256ToUint8ArrayLE(root));
     await batch.write();
 
     return new AppendOnlySnapshot(
@@ -150,8 +160,10 @@ export class AppendOnlySnapshotBuilder implements TreeSnapshotBuilder {
   > {
     try {
       const treeName = this.tree.getName();
-      const root = await this.db.get(snapshotRootKey(treeName, block));
-      const numLeaves = BigInt(
+      const root = Uint8ArrayToInt256LE(
+        await this.db.get(snapshotRootKey(treeName, block))
+      );
+      const numLeaves = Uint8ArrayToInt256LE(
         await this.db.get(snapshotNumLeavesKey(treeName, block))
       );
       return { root, numLeaves };
@@ -166,7 +178,7 @@ export class AppendOnlySnapshotBuilder implements TreeSnapshotBuilder {
  */
 class AppendOnlySnapshot implements TreeSnapshot {
   constructor(
-    private db: LevelUp,
+    private db: TreeDB,
     private block: number,
     private leafCount: bigint,
     private historicalRoot: bigint,
@@ -220,9 +232,11 @@ class AppendOnlySnapshot implements TreeSnapshot {
 
     // leaf was set some time in the past
     if (blockNumber <= this.block) {
-      return this.db.get(
+      const leafValue = await this.db.get(
         historicalNodeKey(this.tree.getName(), leafLevel, index)
       );
+
+      return Uint8ArrayToInt256LE(leafValue);
     }
 
     // leaf has been set but in a block in the future
@@ -242,7 +256,10 @@ class AppendOnlySnapshot implements TreeSnapshot {
 
     // node was set some time in the past
     if (blockNumber <= this.block) {
-      return this.db.get(historicalNodeKey(this.tree.getName(), level, index));
+      const value = await this.db.get(
+        historicalNodeKey(this.tree.getName(), level, index)
+      );
+      return Uint8ArrayToInt256LE(value);
     }
 
     // the node has been modified since this snapshot was taken
@@ -273,20 +290,20 @@ class AppendOnlySnapshot implements TreeSnapshot {
     index: bigint
   ): Promise<number | undefined> {
     try {
-      const value: Buffer | string = await this.db.get(
+      const value: Uint8Array = await this.db.get(
         nodeModifiedAtBlockKey(this.tree.getName(), level, index)
       );
-      return parseInt(value.toString(), 10);
+      return Number(Uint8ArrayToInt256LE(value));
     } catch (err) {
       return undefined;
     }
   }
 
-  async findLeafIndex(value: Buffer): Promise<bigint | undefined> {
+  async findLeafIndex(value: bigint): Promise<bigint | undefined> {
     const numLeaves = this.getNumLeaves();
     for (let i = 0n; i < numLeaves; i++) {
       const currentValue = await this.getLeafValue(i);
-      if (currentValue && currentValue.equals(value)) {
+      if (currentValue && currentValue === value) {
         return i;
       }
     }
