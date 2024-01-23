@@ -10,7 +10,8 @@ import {
 } from './utils';
 import { consola, ConsolaInstance } from 'consola';
 import { HasherWithStats } from './hasher_with_stats.js';
-import { ChainedBatch, Level } from 'level';
+import { TreeDB, TreeOperationBatch } from './tree_db/tree_db.js';
+import { SiblingPath } from './types/sibling_path.js';
 
 const MAX_DEPTH = 254;
 
@@ -53,7 +54,7 @@ export abstract class TreeBase implements MerkleTree {
   protected hasher: HasherWithStats;
 
   public constructor(
-    protected db: Level<string, Uint8Array>,
+    protected db: TreeDB,
     hasher: Hasher,
     private name: string,
     private depth: number,
@@ -129,13 +130,12 @@ export abstract class TreeBase implements MerkleTree {
    * @returns A sibling path for the element at the given index.
    * Note: The sibling path is an array of sibling hashes, with the lowest hash (leaf hash) first, and the highest hash last.
    */
-  public async getSiblingPath(
+  public async getSiblingPath<N extends number>(
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<bigint[]> {
+  ): Promise<SiblingPath<N>> {
     const path: bigint[] = [];
     let level = this.depth;
-
     while (level > 0) {
       const isRight = index & 0x01n;
       const sibling = await this.getLatestValueAtIndex(
@@ -147,8 +147,49 @@ export abstract class TreeBase implements MerkleTree {
       level -= 1;
       index >>= 1n;
     }
+    return new SiblingPath<N>(this.depth as N, path);
+  }
 
-    return path;
+  /**
+   * Gets a value from db by key.
+   * @param key - The key to by which to get the value.
+   * @returns A value from the db based on the key.
+   */
+  private async dbGet(key: string): Promise<bigint | undefined> {
+    try {
+      const buf = await this.db.get(key);
+      return Uint8ArrayToInt256LE(buf);
+    } catch (err) {
+      this.log.warn('dbGet error: ', err);
+    }
+  }
+
+  /**
+   * Initializes the tree.
+   * @param prefilledSize - A number of leaves that are prefilled with values.
+   * @returns Empty promise.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async init(prefilledSize: number): Promise<void> {
+    // prefilledSize is used only by Indexed Tree.
+    await this.writeMeta();
+  }
+
+  /**
+   * Writes meta data to the provided batch.
+   * @param batch - The batch to which to write the meta data.
+   */
+  protected async writeMeta(batch?: TreeOperationBatch) {
+    const data = encodeMeta(
+      this.getRoot(true),
+      this.depth,
+      this.getNumLeaves(true)
+    );
+    if (batch) {
+      batch.put(this.name, data);
+    } else {
+      await this.db.put(this.name, data);
+    }
   }
 
   /**
@@ -272,50 +313,6 @@ export abstract class TreeBase implements MerkleTree {
       return committed;
     }
     return this.zeroHashes[level - 1];
-  }
-
-  /**
-   * Gets a value from db by key.
-   * @param key - The key to by which to get the value.
-   * @returns A value from the db based on the key.
-   */
-  private async dbGet(key: string): Promise<bigint | undefined> {
-    try {
-      const buf = await this.db.get(key);
-      return Uint8ArrayToInt256LE(buf);
-    } catch (err) {
-      this.log.warn('dbGet error: ', err);
-    }
-  }
-
-  /**
-   * Initializes the tree.
-   * @param prefilledSize - A number of leaves that are prefilled with values.
-   * @returns Empty promise.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async init(prefilledSize: number): Promise<void> {
-    // prefilledSize is used only by Indexed Tree.
-    await this.writeMeta();
-  }
-
-  /**
-   * Writes meta data to the provided batch.
-   * @param batch - The batch to which to write the meta data.
-   */
-  protected async writeMeta(
-    batch?: ChainedBatch<Level<string, Uint8Array>, string, Uint8Array>
-  ) {
-    const data = encodeMeta(
-      this.getRoot(true),
-      this.depth,
-      this.getNumLeaves(true)
-    );
-    if (batch) {
-      batch.put(this.name, data);
-    } else {
-      await this.db.put(this.name, data);
-    }
   }
 
   protected async appendLeaves(leaves: bigint[]): Promise<void> {
