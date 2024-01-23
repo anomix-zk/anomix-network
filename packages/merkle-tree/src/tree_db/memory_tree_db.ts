@@ -3,12 +3,8 @@ import { TreeDB, TreeOperationBatch } from './tree_db';
 export { MemoryTreeDB };
 
 class MemoryTreeDB implements TreeDB {
-  constructor(
-    private db: Map<string, Uint8Array>,
-    private cache: { type: string; key: string; value?: Uint8Array }[]
-  ) {
+  constructor(private db: Map<string, Uint8Array>) {
     this.db = new Map();
-    this.cache = [];
   }
 
   public async get(key: string): Promise<Uint8Array> {
@@ -24,7 +20,7 @@ class MemoryTreeDB implements TreeDB {
   }
 
   public batch(): TreeOperationBatch {
-    return new LevelTreeOperationBatch(this.cache, this.db);
+    return new LevelTreeOperationBatch([], this.db);
   }
 }
 
@@ -46,5 +42,6 @@ class LevelTreeOperationBatch implements TreeOperationBatch {
         this.db.set(key, value!);
       }
     }
+    this.cache = [];
   }
 }
