@@ -1,4 +1,5 @@
-import { IndexedTreeLeafPreimage } from './indexed_tree_leaf.js';
+import { IndexedTreeLeafPreimage } from '../standard_indexed_tree/indexed_tree_leaf.js';
+import { SiblingPath } from '../types/sibling_path.js';
 
 /**
  * An interface for a tree that can record snapshots of its contents.
@@ -46,7 +47,7 @@ export interface TreeSnapshot {
    * Returns the sibling path for a requested leaf index.
    * @param index - The index of the leaf for which a sibling path is required.
    */
-  getSiblingPath(index: bigint): Promise<bigint[]>;
+  getSiblingPath<N extends number>(index: bigint): Promise<SiblingPath<N>>;
 
   /**
    * Returns the index of a leaf given its value, or undefined if no leaf with that value is found.

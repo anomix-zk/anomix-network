@@ -4,6 +4,7 @@ import { Hasher } from '../hasher/hasher';
 import { AppendOnlyTree } from '../interfaces/append_only_tree.js';
 import { TreeBase } from '../tree_base.js';
 import { TreeDB } from '../tree_db/tree_db';
+import { SiblingPath } from '../types/sibling_path';
 import { Uint8ArrayToInt256LE, int256ToUint8ArrayLE } from '../utils';
 import { TreeSnapshot, TreeSnapshotBuilder } from './snapshot_builder.js';
 
@@ -186,7 +187,9 @@ class AppendOnlySnapshot implements TreeSnapshot {
     private hasher: Hasher
   ) {}
 
-  public async getSiblingPath(index: bigint): Promise<bigint[]> {
+  public async getSiblingPath<N extends number>(
+    index: bigint
+  ): Promise<SiblingPath<N>> {
     const path: bigint[] = [];
     const depth = this.tree.getDepth();
     let level = depth;
@@ -202,7 +205,7 @@ class AppendOnlySnapshot implements TreeSnapshot {
       index >>= 1n;
     }
 
-    return path;
+    return new SiblingPath<N>(depth as N, path);
   }
 
   getDepth(): number {

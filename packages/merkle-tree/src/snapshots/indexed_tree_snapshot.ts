@@ -7,11 +7,12 @@ import {
   BaseFullTreeSnapshot,
   BaseFullTreeSnapshotBuilder,
 } from './base_full_snapshot.js';
-import { IndexedTreeLeafPreimage } from './indexed_tree_leaf.js';
+import { IndexedTreeLeafPreimage } from '../standard_indexed_tree/indexed_tree_leaf.js';
 import {
   IndexedTreeSnapshot,
   TreeSnapshotBuilder,
 } from './snapshot_builder.js';
+import { Uint8ArrayToInt256LE } from '../utils.js';
 
 const snapshotLeafValue = (node: bigint, index: bigint) =>
   'snapshot:leaf:' + node + ':' + index;
@@ -51,7 +52,7 @@ export class IndexedTreeSnapshotBuilder
       false
     );
     if (leafPreimage) {
-      batch.put(snapshotLeafValue(node, index), leafPreimage.toBuffer());
+      batch.put(snapshotLeafValue(node, index), leafPreimage.toUint8Array());
     }
   }
 }
@@ -73,7 +74,10 @@ class IndexedTreeSnapshotImpl
 
   async getLeafValue(index: bigint): Promise<bigint | undefined> {
     const leafPreimage = await this.getLatestLeafPreimageCopy(index);
-    return leafPreimage?.toBuffer();
+    if (leafPreimage === undefined) {
+      return undefined;
+    }
+    return Uint8ArrayToInt256LE(leafPreimage.toUint8Array());
   }
 
   async getLatestLeafPreimageCopy(

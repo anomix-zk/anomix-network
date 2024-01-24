@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { TreeBase } from '../tree_base.js';
 import { TreeDB, TreeOperationBatch } from '../tree_db/tree_db.js';
+import { SiblingPath } from '../types/sibling_path.js';
 import { Uint8ArrayToInt256LE, int256ToUint8ArrayLE } from '../utils.js';
 import { TreeSnapshot, TreeSnapshotBuilder } from './snapshot_builder.js';
 
@@ -175,7 +176,9 @@ export class BaseFullTreeSnapshot implements TreeSnapshot {
     protected tree: TreeBase
   ) {}
 
-  async getSiblingPath(index: bigint): Promise<bigint[]> {
+  async getSiblingPath<N extends number>(
+    index: bigint
+  ): Promise<SiblingPath<N>> {
     const siblings: bigint[] = [];
 
     for await (const [_node, sibling] of this.pathFromRootToLeaf(index)) {
@@ -186,7 +189,7 @@ export class BaseFullTreeSnapshot implements TreeSnapshot {
     // reverse them here so we have leaf-root (what SiblingPath expects)
     siblings.reverse();
 
-    return siblings;
+    return new SiblingPath<N>(this.tree.getDepth() as N, siblings);
   }
 
   async getLeafValue(index: bigint): Promise<bigint | undefined> {
