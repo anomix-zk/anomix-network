@@ -259,3 +259,41 @@ async function proofCallback(worldState: WorldState, withdrawDB: WithdrawDB, dto
 }
 
 
+
+async function rollupProofTrigger(dto: RollupTaskDto<any, any>) {
+    try {
+        // forward it to main process, and will further forward it to Rollup processes.
+        process.send!(dto)
+
+        return { code: 0, data: true, msg: '' };
+    } catch (err) {
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
+async function triggerStartNewFlow(worldState: WorldState) {
+    try {
+        // start a new flow! 
+        await worldState.startNewFlow();
+
+        return { code: 0, data: true, msg: '' };
+    } catch (err) {
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
+async function checkCommitmentsExist(worldState: WorldState, commitmentList: string[]) {
+    try {
+        const rs = Object.fromEntries(
+            await Promise.all(commitmentList.map(async c => {
+                return [c, String(await worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.DATA_TREE]}:${c}`) ?? '')];
+            }))
+        )
+
+        return { code: 0, data: rs, msg: '' };
+    } catch (err) {
+        console.error(err);
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
