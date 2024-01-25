@@ -1,11 +1,11 @@
-import { BaseResponse, MerkleTreeId, ProofTaskDto, ProofTaskType, ProofVerifyReqDto, ProofVerifyReqType, WithdrawAssetReqDto, WithdrawNoteStatus } from "@anomix/types";
+import { BaseResponse, BlockStatus, MerkleTreeId, ProofTaskDto, ProofTaskType, ProofVerifyReqDto, ProofVerifyReqType, RollupTaskDto, WithdrawAssetReqDto, WithdrawEventFetchRecordStatus, WithdrawNoteStatus } from "@anomix/types";
 import process from "process";
 import { $axiosProofGenerator, $axiosProofGeneratorProofVerify0, $axiosProofGeneratorProofVerify1 } from "@/lib";
-import { JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, WithdrawNoteWitnessData } from "@anomix/circuits";
+import { DATA_TREE_HEIGHT, JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, NULLIFIER_TREE_HEIGHT, ROOT_TREE_HEIGHT, WithdrawNoteWitnessData } from "@anomix/circuits";
 import { getLogger } from "@/lib/logUtils";
 import config from "@/lib/config";
 import { verify } from "o1js";
-import { L2Tx, MemPlL2Tx, WithdrawInfo } from '@anomix/dao';
+import { Block, L2Tx, MemPlL2Tx, WithdrawEventFetchRecord, WithdrawInfo } from '@anomix/dao';
 import { getConnection, In } from "typeorm";
 import { checkAccountExists } from "@anomix/utils";
 import {
@@ -198,3 +198,64 @@ async function checkPoint() {
 
     return blockEntity!.id;
 }
+
+async function proofCallback(worldState: WorldState, withdrawDB: WithdrawDB, dto: ProofTaskDto<any, any>) {
+
+    const { taskType, index, payload } = dto
+
+    if (taskType == ProofTaskType.ROLLUP_FLOW) {
+
+        process.send!(dto);
+
+    } else {// FIRST_WITHDRAW || WITHDRAW
+        const connection = getConnection();
+        const withdrawInfoRepository = connection.getRepository(WithdrawInfo)
+        try {
+            const withdrawInfo = (await withdrawInfoRepository.findOne({
+                where: {
+                    id: index.withdrawInfoId
+                }
+            }))!;
+
+            // query current latest block height
+            const blockRepository = connection.getRepository(Block);
+            // query latest block
+            const blockEntity = (await blockRepository.find({
+                select: [
+                    'id'
+                ],
+                order: {
+                    id: 'DESC'
+                },
+                take: 1
+            }))[0];
+            const currentBlockHeight = blockEntity.id;
+
+            if (withdrawInfo.blockIdWhenL1Tx != currentBlockHeight) {// outdated, should revert status!
+                withdrawInfo.status = WithdrawNoteStatus.PENDING;
+
+                // loadTree from withdrawDB & obtain merkle witness
+                await withdrawDB.loadTree(PublicKey.fromBase58(withdrawInfo.ownerPk), withdrawInfo.assetId);// the tree must be in cache now!
+                await withdrawDB.rollback();// rollup it!
+                withdrawDB.reset();// the total flow is ended.
+            } else {
+                withdrawInfo.l1TxBody = JSON.stringify(payload);
+                // withdrawInfo?.l1TxHash = payload.   // TODO how to pre_calc tx.id??
+            }
+
+            // save l1TxBody
+            await withdrawInfoRepository.save(withdrawInfo);
+
+        } catch (err) {
+            // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+        }
+    }
+
+    return {
+        code: 0,
+        data: '',
+        msg: 'in queue'
+    };
+}
+
+
