@@ -459,3 +459,55 @@ async function syncUserWithdrawedNotes(withdrawDB: WithdrawDB) {
 
     return { code: 0, data: 1, msg: '' };
 }
+
+async function queryWorldStateworldState(worldState: WorldState) {
+    try {
+        // query sequencer
+        return {
+            code: 0, data: {
+                syncDataTree: {
+                    totalNum: worldState.worldStateDBLazy.getNumLeaves(MerkleTreeId.DATA_TREE, false).toString(),
+                    root: worldState.worldStateDBLazy.getRoot(MerkleTreeId.DATA_TREE, false).toString()
+                },
+                dataTree: {
+                    totalNum: worldState.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE, false).toString(),
+                    root: worldState.worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false).toString()
+                },
+                nullifierTree: {
+                    totalNum: worldState.worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, false).toString(),
+                    root: worldState.worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, false).toString()
+                },
+                rootTree: {
+                    totalNum: worldState.worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, false).toString(),
+                    root: worldState.worldStateDB.getRoot(MerkleTreeId.DATA_TREE_ROOTS_TREE, false).toString()
+                },
+            }, msg: ''
+        };
+
+    } catch (err) {
+        console.error(err);
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
+async function queryNetworkMetaData() {
+    try {
+        // query sequencer
+        return {
+            code: 0, data: {
+                rollupContractAddress: config.rollupContractAddress,
+                depositContractAddress: config.entryContractAddress,
+                vaultContractAddress: config.vaultContractAddress,
+                dataTreeHeight: DATA_TREE_HEIGHT,
+                nullifierTreeHeight: NULLIFIER_TREE_HEIGHT,
+                rootTreeHeight: ROOT_TREE_HEIGHT,
+                withdrawTreeHeight: NULLIFIER_TREE_HEIGHT,
+
+            }, msg: ''
+        };
+
+    } catch (err) {
+        console.error(err);
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
