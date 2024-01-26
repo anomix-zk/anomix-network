@@ -1,6 +1,6 @@
 import { BaseResponse, BlockStatus, MerkleTreeId, ProofTaskDto, ProofTaskType, ProofVerifyReqDto, ProofVerifyReqType, RollupTaskDto, WithdrawAssetReqDto, WithdrawEventFetchRecordStatus, WithdrawNoteStatus } from "@anomix/types";
 import process from "process";
-import { $axiosProofGenerator, $axiosProofGeneratorProofVerify0, $axiosProofGeneratorProofVerify1 } from "@/lib";
+import { $axiosProofGenerator } from "@/lib";
 import { DATA_TREE_HEIGHT, JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, NULLIFIER_TREE_HEIGHT, ROOT_TREE_HEIGHT, WithdrawNoteWitnessData } from "@anomix/circuits";
 import { getLogger } from "@/lib/logUtils";
 import config from "@/lib/config";
@@ -573,6 +573,81 @@ export async function appendTreeByHand(worldState: WorldState, dto: { passcode: 
     } catch (err) {
         logger.error(err);
         console.error(err);
-        throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
+async function appendUserNullifierTreeByHand(withdrawDB: WithdrawDB, dto: { passcode: string, timestamp: number, tokenId: string, ownerPk: string, leaves: string[] }) {
+    const { passcode, timestamp, tokenId, ownerPk, leaves } = dto;
+    if (passcode != 'LzxWxs@2023') {
+        return {
+            code: 0,
+            data: undefined as any,
+            msg: 'passcode error!'
+        }
+    }
+
+    if ((new Date().getTime() - timestamp) > 1 * 60 * 1000) {
+        return {
+            code: 0,
+            data: undefined as any,
+            msg: 'request out of date!'
+        }
+    }
+
+    try {
+        const firstFlag = await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk}:${tokenId}`);
+        logger.info(`check if already init: firstFlag=${firstFlag?.toString()}`);
+        if (!firstFlag) {
+            return {
+                code: 0,
+                data: undefined as any,
+                msg: 'the tree is not init yet!'
+            }
+        }
+
+        logger.info(`loading tree: ${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${tokenId}:${ownerPk} ...`);
+        // loadTree from withdrawDB & obtain merkle witness
+        await withdrawDB.loadTree(PublicKey.fromBase58(ownerPk), tokenId);
+        logger.info(`load tree, done.`);
+
+        const includeUncommit = false;
+
+        // print tree info
+        logger.info(`print withdraw tree before append:`);
+        logger.info(`  treeId: ${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${tokenId}:${ownerPk}`);
+        logger.info(`  depth: ${withdrawDB.getDepth()}`);
+        logger.info(`  leafNum: ${withdrawDB.getNumLeaves(includeUncommit).toString()}`);
+        logger.info(`  treeRoot: ${withdrawDB.getRoot(includeUncommit).toString()}`);
+
+        await withdrawDB.appendLeaves(leaves.map(l => Field(l)));
+        await withdrawDB.commit();
+
+        let depth = withdrawDB.getDepth();
+        let leafNum = withdrawDB.getNumLeaves(includeUncommit).toString();
+        let treeRoot = withdrawDB.getRoot(includeUncommit).toString();
+
+        // print tree info
+        logger.info(`print withdraw tree after append:`);
+        logger.info(`  treeId: ${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${tokenId}:${ownerPk}`);
+        logger.info(`  depth: ${withdrawDB.getDepth()}`);
+        logger.info(`  leafNum: ${withdrawDB.getNumLeaves(includeUncommit).toString()}`);
+        logger.info(`  treeRoot: ${withdrawDB.getRoot(includeUncommit).toString()}`);
+
+        await withdrawDB.reset();
+
+        return {
+            code: 0,
+            data: {
+                treeId: `${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${tokenId}:${ownerPk}`,
+                depth,
+                leafNum,
+                treeRoot
+            }, msg: ''
+        };
+    } catch (err) {
+        logger.error(err);
+        console.error(err);
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
