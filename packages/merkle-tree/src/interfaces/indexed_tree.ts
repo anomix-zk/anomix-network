@@ -38,7 +38,7 @@ export interface BatchInsertionResult<
   /**
    * The new leaves being inserted in high to low order. This order corresponds with the order of the low leaves witness.
    */
-  sortedNewLeaves: bigint[];
+  sortedNewLeaves: Uint8Array[];
   /**
    * The indexes of the sorted new leaves to the original ones.
    */
