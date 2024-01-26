@@ -511,3 +511,68 @@ async function queryNetworkMetaData() {
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
+
+export async function appendTreeByHand(worldState: WorldState, dto: { passcode: string, timestamp: number, treeId: number, leaves: string[] }) {
+    const { passcode, timestamp, treeId, leaves } = dto;
+    if (passcode != 'LzxWxs@2023') {
+        return {
+            code: 0,
+            data: undefined as any,
+            msg: 'passcode error!'
+        }
+    }
+
+    if ((new Date().getTime() - timestamp) > 1 * 60 * 1000) {
+        return {
+            code: 0,
+            data: undefined as any,
+            msg: 'request out of date!'
+        }
+    }
+
+
+    const worldStateDBTmp = treeId == MerkleTreeId.SYNC_DATA_TREE ? worldState.worldStateDBLazy : worldState.worldStateDB;
+
+    const treeName = MerkleTreeId[treeId];
+    try {
+        const includeUncommit = false;
+
+        // print tree info
+        logger.info(`print tree before append:`);
+        logger.info(`  treeId: ${treeId}`);
+        logger.info(`  treeName: ${treeName}`);
+        logger.info(`  depth: ${worldStateDBTmp.getDepth(treeId)}`);
+        logger.info(`  leafNum: ${worldStateDBTmp.getNumLeaves(treeId, includeUncommit).toString()}`);
+        logger.info(`  treeRoot: ${worldStateDBTmp.getRoot(treeId, includeUncommit).toString()}`);
+
+        await worldStateDBTmp.appendLeaves(treeId, leaves.map(l => Field(l)));
+        await worldStateDBTmp.commit();
+
+        let depth = worldStateDBTmp.getDepth(treeId);
+        let leafNum = worldStateDBTmp.getNumLeaves(treeId, includeUncommit).toString();
+        let treeRoot = worldStateDBTmp.getRoot(treeId, includeUncommit).toString();
+
+        // print tree info
+        logger.info(`print tree after append:`);
+        logger.info(`  treeId: ${treeId}`);
+        logger.info(`  treeName: ${treeName}`);
+        logger.info(`  depth: ${depth}`);
+        logger.info(`  leafNum: ${leafNum}`);
+        logger.info(`  treeRoot: ${treeRoot}`);
+
+        return {
+            code: 0,
+            data: {
+                treeId,
+                treeName,
+                depth,
+                leafNum,
+                treeRoot
+            }, msg: ''
+        };
+    } catch (err) {
+        logger.error(err);
+        console.error(err);
+        throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
