@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package rollupSeq;
+
+service RollupSeq {
+  rpc queryTxByNullifier (StringArray) returns (QueryTxByNullifierResp) {}
+  rpc withdrawAsset (WithdrawAssetReqDto) returns (WithdrawAssetResp) {}
+}
+
+message StringArray {
+  repeated string payload = 1;
+}
+
+message WithdrawAssetReqDto {
+  string l1addr = 1;
+  string noteCommitment = 2;
+}
+
+message QueryTxByNullifierResp{
+  int32 code = 1;
+
+  message data {
+    int32 id = 1;
+    string txHash = 2;
+    // TODO add other fields
+    //
+    //
+    //
+  };
+      
+  string msg = 3;
+}
+
+// flag: boolean, l2txStr: string
+message WithdrawAssetResp {
+  int32 code = 1;
+  message data {
+    string string = 1;
+  }
+  string msg = 3;
+}
+
