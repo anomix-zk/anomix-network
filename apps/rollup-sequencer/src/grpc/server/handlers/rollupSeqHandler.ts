@@ -1,4 +1,4 @@
-import { BaseResponse, BlockStatus, MerkleTreeId, ProofTaskDto, ProofTaskType, ProofVerifyReqDto, ProofVerifyReqType, RollupTaskDto, WithdrawAssetReqDto, WithdrawEventFetchRecordStatus, WithdrawNoteStatus } from "@anomix/types";
+import { BaseResponse, BlockStatus, MerkleProofDto, MerkleTreeId, ProofTaskDto, ProofTaskType, ProofVerifyReqDto, ProofVerifyReqType, RollupTaskDto, WithdrawAssetReqDto, WithdrawEventFetchRecordStatus, WithdrawNoteStatus } from "@anomix/types";
 import process from "process";
 import { $axiosProofGenerator } from "@/lib";
 import { DATA_TREE_HEIGHT, JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, NULLIFIER_TREE_HEIGHT, ROOT_TREE_HEIGHT, WithdrawNoteWitnessData } from "@anomix/circuits";
@@ -596,7 +596,7 @@ async function appendUserNullifierTreeByHand(withdrawDB: WithdrawDB, dto: { pass
     }
 
     try {
-        const firstFlag = await this.worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk}:${tokenId}`);
+        const firstFlag = await worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk}:${tokenId}`);
         logger.info(`check if already init: firstFlag=${firstFlag?.toString()}`);
         if (!firstFlag) {
             return {
@@ -648,6 +648,38 @@ async function appendUserNullifierTreeByHand(withdrawDB: WithdrawDB, dto: { pass
     } catch (err) {
         logger.error(err);
         console.error(err);
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
+export async function queryMerkleProof(worldState: WorldState, dto: { treeId: number, commitmentList: string[] }) {
+    const { treeId, commitmentList } = dto
+
+    try {
+        const merkleProofDtoList: any[] = [];
+
+        for (let i = 0; i < commitmentList.length; i++) {
+            const commitment = commitmentList[i];
+
+            // DATA_TREE:{comitment} -> leafIndex
+            let leafIndex = String(await worldState.indexDB.get(`${MerkleTreeId[treeId]}:${commitment}`) ?? '');
+
+            if (leafIndex) {
+                const siblingPath = await worldState.worldStateDB.getSiblingPath(treeId, BigInt(leafIndex), false);
+
+                merkleProofDtoList.push({
+                    leafIndex: Number(leafIndex),
+                    commitment: commitment,
+                    paths: siblingPath.path.map(p => { return p.toString(); })
+                } as MerkleProofDto
+                );
+            }
+        }
+
+        return { code: 0, data: merkleProofDtoList, msg: '' };
+    } catch (err) {
+        console.error(err);
+
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
