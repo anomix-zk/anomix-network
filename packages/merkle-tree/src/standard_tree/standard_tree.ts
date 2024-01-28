@@ -9,11 +9,7 @@ import { Timer } from '../utils/timer';
  * A Merkle tree implementation that uses a LevelDB database to store the tree.
  */
 export class StandardTree extends TreeBase implements AppendOnlyTree {
-  private snapshotBuilder = new AppendOnlySnapshotBuilder(
-    this.db,
-    this,
-    this.hasher
-  );
+  #snapshotBuilder = new AppendOnlySnapshotBuilder(this.db, this, this.hasher);
 
   /**
    * Appends the given leaves to the tree.
@@ -23,22 +19,26 @@ export class StandardTree extends TreeBase implements AppendOnlyTree {
   public async appendLeaves(leaves: bigint[]): Promise<void> {
     const timer = new Timer();
     await super.appendLeaves(leaves);
-    this.log(`Inserted ${leaves.length} leaves into ${this.getName()} tree`, {
-      eventName: 'tree-insertion',
-      duration: timer.ms(),
-      batchSize: leaves.length,
-      treeName: this.getName(),
-      treeDepth: this.getDepth(),
-      treeType: 'append-only',
-    } satisfies TreeInsertionStats);
+    this.log.info(
+      `Inserted ${leaves.length} leaves into ${this.getName()} tree`,
+      {
+        eventName: 'tree-insertion',
+        duration: timer.ms(),
+        batchSize: leaves.length,
+        treeName: this.getName(),
+        treeDepth: this.getDepth(),
+        treeType: 'append-only',
+        ...this.hasher.stats(),
+      } satisfies TreeInsertionStats
+    );
   }
 
   public snapshot(block: number): Promise<TreeSnapshot> {
-    return this.snapshotBuilder.snapshot(block);
+    return this.#snapshotBuilder.snapshot(block);
   }
 
   public getSnapshot(block: number): Promise<TreeSnapshot> {
-    return this.snapshotBuilder.getSnapshot(block);
+    return this.#snapshotBuilder.getSnapshot(block);
   }
 
   public async findLeafIndex(

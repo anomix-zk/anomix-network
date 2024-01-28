@@ -1,3 +1,5 @@
+import { Tuple } from './types/types';
+
 /**
  * Convert a little-endian buffer into a BigInt.
  * @param buf - The little-endian buffer to convert.
@@ -154,4 +156,22 @@ export function concatUint8Arrays(...arrays: Uint8Array[]): Uint8Array {
   }
 
   return result;
+}
+
+/**
+ * Create an array over an integer range, filled with a function 'fn'.
+ * This is used over e.g. lodash because it resolved to a tuple type, needed for our fixed array type safety.
+ * @param n - The number of integers.
+ * @param fn - The generator function.
+ * @returns The array of numbers.
+ */
+export function makeTuple<T, N extends number>(
+  length: N,
+  fn: (i: number) => T,
+  offset = 0
+) {
+  return Array.from({ length }, (v: any, i: number) => fn(i + offset)) as Tuple<
+    T,
+    N
+  >;
 }
