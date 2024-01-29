@@ -16,6 +16,8 @@ import {
   IndexedTreeLeaf,
   IndexedTreeLeafPreimage,
 } from './indexed_tree_leaf.js';
+import { TreeInsertionStats } from '../types/stats.js';
+import { IndexedTreeSnapshot } from '../snapshots/snapshot_builder.js';
 
 /**
  * Factory for creating leaf preimages.
@@ -154,12 +156,12 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
   public async getLeafValue(
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<bigint | undefined> {
+  ): Promise<bigint | Uint8Array | undefined> {
     const preimage = await this.getLatestLeafPreimageCopy(
       index,
       includeUncommitted
     );
-    return preimage && preimage.asLeaf().;
+    return preimage && preimage.toUint8Array();
   }
 
   /**
@@ -238,27 +240,23 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
   }
 
   private async getDbLowLeafIndex(key: bigint): Promise<bigint | undefined> {
-    return await new Promise<bigint | undefined>((resolve, reject) => {
-      let lowLeafIndex: bigint | undefined;
-      this.db
-        .createReadStream({
-          gte: buildDbKeyForLeafIndex(this.getName(), 0n),
-          lte: buildDbKeyForLeafIndex(this.getName(), key),
-          limit: 1,
-          reverse: true,
-        })
-        .on('data', (data) => {
-          lowLeafIndex = toBigIntBE(data.value);
-        })
-        .on('close', function () {})
-        .on('end', function () {
-          resolve(lowLeafIndex);
-        })
-        .on('error', function () {
-          log.error('stream error');
-          reject();
-        });
-    });
+    let lowLeafIndex: bigint | undefined;
+
+    try {
+      for await (const [_, value] of this.db.iterator({
+        gte: buildDbKeyForLeafIndex(this.getName(), 0n),
+        lte: buildDbKeyForLeafIndex(this.getName(), key),
+        limit: 1,
+        reverse: true,
+      })) {
+        lowLeafIndex = Uint8ArrayToInt256LE(value);
+      }
+
+      return lowLeafIndex;
+    } catch (err) {
+      this.log.error('iterator error');
+      throw err;
+    }
   }
 
   private async getDbPreimage(
@@ -300,10 +298,10 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
    * @returns The index of the first leaf found with a given value (undefined if not found).
    */
   public async findLeafIndex(
-    value: Uint8Array,
+    value: Uint8Array | bigint,
     includeUncommitted: boolean
   ): Promise<bigint | undefined> {
-    const leaf = this.leafFactory.fromUint8Array(value);
+    const leaf = this.leafFactory.fromUint8Array(value as Uint8Array);
     let index = await this.db
       .get(buildDbKeyForLeafIndex(this.getName(), leaf.getKey()))
       .then((data) => Uint8ArrayToInt256LE(data))
@@ -404,7 +402,6 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
     }
   }
 
-  /* eslint-disable jsdoc/require-description-complete-sentence */
   /* The following doc block messes up with complete-sentence, so we just disable it */
 
   /**
@@ -605,7 +602,7 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
         return {
           lowLeavesWitnessData: undefined,
           sortedNewLeaves: sortedDescendingLeafTuples.map((leafTuple) =>
-            leafTuple.leaf.toBuffer()
+            leafTuple.leaf.toUint8Array()
           ),
           sortedNewLeavesIndexes: sortedDescendingLeafTuples.map(
             (leafTuple) => leafTuple.index
@@ -680,20 +677,23 @@ export class StandardIndexedTree extends TreeBase implements IndexedTree {
     // inclusion. See {@link encodeLeaf} for  a more through param explanation.
     await this.encodeAndAppendLeaves(pendingInsertionSubtree, false);
 
-    this.log(`Inserted ${leaves.length} leaves into ${this.getName()} tree`, {
-      eventName: 'tree-insertion',
-      duration: timer.ms(),
-      batchSize: leaves.length,
-      treeName: this.getName(),
-      treeDepth: this.getDepth(),
-      treeType: 'indexed',
-      ...this.hasher.stats(),
-    } satisfies TreeInsertionStats);
+    this.log.info(
+      `Inserted ${leaves.length} leaves into ${this.getName()} tree`,
+      {
+        eventName: 'tree-insertion',
+        duration: timer.ms(),
+        batchSize: leaves.length,
+        treeName: this.getName(),
+        treeDepth: this.getDepth(),
+        treeType: 'indexed',
+        ...this.hasher.stats(),
+      } satisfies TreeInsertionStats
+    );
 
     return {
       lowLeavesWitnessData: lowLeavesWitnesses,
       sortedNewLeaves: sortedDescendingLeafTuples.map((leafTuple) =>
-        leafTuple.leaf.toBuffer()
+        leafTuple.leaf.toUint8Array()
       ),
       sortedNewLeavesIndexes: sortedDescendingLeafTuples.map(
         (leafTuple) => leafTuple.index

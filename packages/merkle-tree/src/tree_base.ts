@@ -230,7 +230,7 @@ export abstract class TreeBase implements MerkleTree {
   public getLeafValue(
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<bigint | undefined> {
+  ): Promise<bigint | Uint8Array | undefined> {
     return this.getLatestValueAtIndex(this.depth, index, includeUncommitted);
   }
 

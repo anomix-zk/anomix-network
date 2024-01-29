@@ -53,7 +53,7 @@ export interface MerkleTree extends SiblingPathSource {
   getLeafValue(
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<bigint | undefined>;
+  ): Promise<bigint | Uint8Array | undefined>;
 
   /**
    * Returns the index of a leaf given its value, or undefined if no leaf with that value is found.
@@ -62,7 +62,7 @@ export interface MerkleTree extends SiblingPathSource {
    * @returns The index of the first leaf found with a given value (undefined if not found).
    */
   findLeafIndex(
-    leaf: bigint,
+    leaf: bigint | Uint8Array,
     includeUncommitted: boolean
   ): Promise<bigint | undefined>;
 }
