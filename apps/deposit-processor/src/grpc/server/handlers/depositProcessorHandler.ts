@@ -1,11 +1,11 @@
-import { BaseResponse, BlockStatus, DepositProcessingSignal, FlowTask, FlowTaskType, MerkleProofDto, MerkleTreeId, ProofTaskDto, ProofTaskType, ProofVerifyReqDto, ProofVerifyReqType, RollupTaskDto, WithdrawAssetReqDto, WithdrawEventFetchRecordStatus, WithdrawNoteStatus } from "@anomix/types";
+import { BaseResponse, BlockStatus, DepositProcessingSignal, DepositTransCacheType, FlowTask, FlowTaskType, MerkleProofDto, MerkleTreeId, ProofTaskDto, ProofTaskType, ProofVerifyReqDto, ProofVerifyReqType, RollupTaskDto, WithdrawAssetReqDto, WithdrawEventFetchRecordStatus, WithdrawNoteStatus } from "@anomix/types";
 import process from "process";
 import { $axiosProofGenerator, getDateString } from "@/lib";
 import { DATA_TREE_HEIGHT, JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, NULLIFIER_TREE_HEIGHT, ROOT_TREE_HEIGHT, WithdrawNoteWitnessData } from "@anomix/circuits";
 import { getLogger } from "@/lib/logUtils";
 import config from "@/lib/config";
 import { verify } from "o1js";
-import { Block, DepositProcessorSignal, DepositProverOutput, L2Tx, MemPlL2Tx, WithdrawEventFetchRecord, WithdrawInfo } from '@anomix/dao';
+import { Block, DepositProcessorSignal, DepositProverOutput, DepositTreeTrans, DepositTreeTransCache, L2Tx, MemPlL2Tx, WithdrawEventFetchRecord, WithdrawInfo } from '@anomix/dao';
 import { getConnection, In } from "typeorm";
 import { checkAccountExists } from "@anomix/utils";
 import {
@@ -32,7 +32,6 @@ export async function triggerSeqDepositCommitment(worldState: WorldState) {
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
-
 
 export async function triggerContractCall(dto: { transId: number }) {
     try {
@@ -133,7 +132,7 @@ export async function queryMerkleTreeInfo(worldState: WorldState, dto: { treeId:
     }
 }
 
-export async function queryMerkleWitness(worldState: WorldState,dto:{ treeId: number, leafIndexList: string[] }){
+export async function queryMerkleWitness(worldState: WorldState, dto: { treeId: number, leafIndexList: string[] }) {
     const { treeId, leafIndexList } = dto;
 
     try {
@@ -155,3 +154,49 @@ export async function queryMerkleWitness(worldState: WorldState,dto:{ treeId: nu
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
+
+export async function syncLazyDepositTree(worldState: WorldState, dto: { transId: number }) {
+
+    const transId = dto.transId;
+
+    try {
+        const dcTranRepo = getConnection().getRepository(DepositTreeTrans);
+        const dcTrans = (await dcTranRepo.findOne({ where: { id: transId } }));
+
+        if (!dcTrans) {
+            return {
+                code: 1, data: '', msg: 'non-exiting transId'
+            };
+        }
+
+        // check if sync_date_tree root is aligned with 
+        // check if duplicated call
+        const treeLeafNum = worldState.worldStateDBLazy.getNumLeaves(MerkleTreeId.DEPOSIT_TREE, false);
+        const treeRoot = worldState.worldStateDBLazy.getRoot(MerkleTreeId.DEPOSIT_TREE, false);
+
+        // must also check treeRoot!
+        if (dcTrans.startActionIndex == treeLeafNum.toString() && dcTrans.startDepositRoot == treeRoot.toString()) {
+            const dcTransCacheRepo = getConnection().getRepository(DepositTreeTransCache);
+            const cachedStr = (await dcTransCacheRepo.findOne({ where: { dcTransId: transId, type: DepositTransCacheType.DEPOSIT_TREE_UPDATES } }))!.cache;
+
+            const dcTransCachedUpdates1 = (JSON.parse(cachedStr) as Array<string>).map(i => Field(i));
+            await worldState.worldStateDBLazy.appendLeaves(MerkleTreeId.DEPOSIT_TREE, dcTransCachedUpdates1);
+
+            await worldState.worldStateDBLazy.commit(); // here only 'DEPOSIT_TREE' commits underlyingly           
+
+            return {
+                code: 0, data: '', msg: ''
+            };
+        } else {
+            return {
+                code: 1, data: '', msg: 'rejected duplicated call!'
+            };
+        }
+
+    } catch (err) {
+        logger.error(err);
+        console.error(err);
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
