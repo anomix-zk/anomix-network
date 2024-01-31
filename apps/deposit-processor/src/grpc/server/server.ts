@@ -1,6 +1,7 @@
 import grpc from "@grpc/grpc-js";
 import protoLoader from "@grpc/proto-loader";
 import { triggerSeqDepositCommitment, triggerContractCall, queryLatestDepositTreeRoot } from "./handlers/depositProcessorHandler";
+import * as depositProcessorHandlerList from './handlers/depositProcessorHandler'
 
 const PROTO_PATH = __dirname + './protos/deposit-processor.proto';
 
@@ -17,9 +18,12 @@ const depositProcessor = grpc.loadPackageDefinition(packageDefinition).depositPr
 function getGrpcServer() {
     const server = new grpc.Server();
     server.addService(depositProcessor.DepositProcessor.service, {
-        triggerSeqDepositCommitment,
-        triggerContractCall,
-        queryLatestDepositTreeRoot
+        triggerSeqDepositCommitment: depositProcessorHandlerList.triggerSeqDepositCommitment,
+        triggerContractCall: depositProcessorHandlerList.triggerContractCall,
+        queryLatestDepositTreeRoot: depositProcessorHandlerList.queryLatestDepositTreeRoot,
+        queryMerkleTreeInfo: depositProcessorHandlerList.queryMerkleTreeInfo,
+        queryMerkleWitness: depositProcessorHandlerList.queryMerkleWitness,
+        syncLazyDepositTree: depositProcessorHandlerList.syncLazyDepositTree,
     });
     return server;
 }

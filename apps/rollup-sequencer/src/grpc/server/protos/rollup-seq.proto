@@ -8,6 +8,110 @@ service RollupSeq {
   rpc checkPoint() returns (number) {}
   rpc proofCallback(ProofCallbackReq) returns (ProofCallbackResp) {}
   rpc rollupProofTrigger (RollupProofTriggerReq) returns (RollupProofTriggerResp);
+  rpc triggerStartNewFlow() returns (TriggerStartNewFlowResp){};
+  rpc checkCommitmentsExist(CheckCommitmentsExistReq) returns (CheckCommitmentsExistResp){};
+  rpc checkDataRootsExist(CheckDataRootsExistReq) returns (CheckDataRootsExistResp){};
+  rpc checkNullifiersExist(CheckNullifiersExistReq) returns (CheckNullifiersExistResp){};
+  rpc syncUserWithdrawedNotes() returns (SyncUserWithdrawedNotesResp){};
+  rpc queryWorldStateworldState() returns (QueryWorldStateworldStateResp){};
+  rpc queryNetworkMetaData() returns (QueryNetworkMetaDataResp){};
+  rpc appendTreeByHand(AppendTreeByHandReq) returns (AppendTreeByHandResp) {};
+  rpc appendUserNullifierTreeByHand(AppendUserNullifierTreeByHandReq) returns (AppendUserNullifierTreeByHandResp) {};
+  rpc queryMerkleProof(QueryMerkleProofReq) returns (QueryMerkleProofResp) {};
+}
+
+message QueryMerkleProofReq{
+  int32 treeId =  1;  
+  repeated string commitmentList = 2;
+}
+
+message AppendUserNullifierTreeByHandResp{
+  int32 code = 1;
+  int32 data = 2;
+  string msg = 3;
+}
+
+message AppendUserNullifierTreeByHandReq{
+    string passcode= 1 ;
+    int32 timestamp = 2;
+    string tokenId =  3;  
+    string ownerPk =  3;  
+    repeated string leaves = 4;
+}
+
+message AppendTreeByHandReq{
+    string passcode= 1 ;
+    int32 timestamp = 2;
+    int32 treeId =  3;  
+    repeated string leaves = 4;
+}
+
+message AppendTreeByHandResp{
+   int32 code = 1;
+  int32 data = 2;
+  string msg = 3;
+}
+
+message QueryNetworkMetaDataResp{
+  int32 code = 1;
+   message data {
+    string rollupContractAddress = 1;
+    string depositContractAddress = 2;
+   }
+   string msg = 3;
+}
+
+message QueryWorldStateworldStateResp{
+  int32 code = 1;
+  message data {
+    string syncDataTree = 1;
+    string dataTree = 2;
+   string nullifierTree = 3;
+   string rootTree = 3;
+  };
+  string msg = 3;
+}
+
+message SyncUserWithdrawedNotesResp{
+   int32 code = 1;
+  int32 data = 2;
+  string msg = 3;
+}
+
+message CheckNullifiersExistReq{  
+   repeated string nullifierList = 1;
+}
+
+message CheckNullifiersExistResp{
+    int32 code = 1;
+  int32 data = 2;
+  string msg = 3;
+}
+
+message CheckDataRootsExistReq{
+  repeated string commitmentList = 1;
+}
+
+message CheckDataRootsExistResp{
+  int32 code = 1;
+  int32 data = 2;
+  string msg = 3;
+}
+
+message CheckCommitmentsExistReq{
+  repeated string commitmentList = 1;
+}
+
+message CheckCommitmentsExistResp{
+  int32 code = 1;
+  int32 data = 2;
+  string msg = 3;
+}
+
+message TriggerStartNewFlowResp{
+  int32 code = 1;
+  bool data = 2;
+  string msg = 3;
 }
 
 message RollupProofTriggerReq{
@@ -58,8 +162,8 @@ message WithdrawAssetResp {
 }
 
 message ProofCallbackReq {
-  int32 taskType ,
-  int32 index,
+  int32 taskType = 1 ;
+  string index = 2;,
   message payload {
     string l1addr = 1;
   }

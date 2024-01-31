@@ -1,42 +1,32 @@
 syntax = "proto3";
 
-package rollupSeq;
+package coordinator;
 
-service RollupSeq {
-  rpc queryTxByNullifier (StringArray) returns (QueryTxByNullifierResp) {}
-  rpc withdrawAsset (WithdrawAssetReqDto) returns (WithdrawAssetResp) {}
+service Coordinator {
+  rpc highFeeTxExist() returns (HighFeeTxExistResp) {};
+  rpc proofNotify(ProofNotifyReq) returns (ProofNotifyResp) {};
 }
 
-message StringArray {
-  repeated string payload = 1;
-}
-
-message WithdrawAssetReqDto {
-  string l1addr = 1;
-  string noteCommitment = 2;
-}
-
-message QueryTxByNullifierResp{
-  int32 code = 1;
-
-  message data {
-    int32 id = 1;
-    string txHash = 2;
-    // TODO add other fields
-    //
-    //
-    //
-  };
-      
-  string msg = 3;
-}
-
-// flag: boolean, l2txStr: string
-message WithdrawAssetResp {
-  int32 code = 1;
-  message data {
-    string string = 1;
+message ProofNotifyReq{
+  int32 taskType = 1 ;
+  string index = 2;,
+  message payload {
+    string l1addr = 1;
   }
+}
+
+message ProofNotifyResp{
+  int32 code = 1;
+  string data = 2;
   string msg = 3;
 }
+
+message HighFeeTxExistResp{
+  int32 code = 1;
+  string data = 2;
+  string msg = 3;
+}
+
+
+
 

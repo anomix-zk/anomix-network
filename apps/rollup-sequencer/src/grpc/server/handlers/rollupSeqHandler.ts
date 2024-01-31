@@ -19,7 +19,7 @@ import { WithdrawDB } from "@/worldstate/withdraw-db";
 
 const logger = getLogger('rollupSeqHandler');
 
-export const queryTxByNullifierEndpoint = async (dto: string[]) => {
+export const queryTxByNullifier = async (dto: string[]) => {
     const notehashes = dto;
 
     const connection = getConnection();
@@ -58,7 +58,7 @@ export const queryTxByNullifierEndpoint = async (dto: string[]) => {
 }
 
 
-export const withdrawAssetEndpoint = async (worldState: WorldState, withdrawDB: WithdrawDB, dto: WithdrawAssetReqDto) => {
+export const withdrawAsset = async (worldState: WorldState, withdrawDB: WithdrawDB, dto: WithdrawAssetReqDto) => {
     const { l1addr, noteCommitment } = dto
     try {
         const connection = getConnection();
@@ -179,7 +179,7 @@ export const withdrawAssetEndpoint = async (worldState: WorldState, withdrawDB: 
 /**
  * during the entire WITHDRAWAL flow, need ganruantee being under the same data_tree root.
  */
-async function checkPoint() {
+export async function checkPoint() {
     // query current latest block height
     const blockRepository = getConnection().getRepository(Block);
     // query latest block
@@ -199,7 +199,7 @@ async function checkPoint() {
     return blockEntity!.id;
 }
 
-async function proofCallback(worldState: WorldState, withdrawDB: WithdrawDB, dto: ProofTaskDto<any, any>) {
+export async function proofCallback(worldState: WorldState, withdrawDB: WithdrawDB, dto: ProofTaskDto<any, any>) {
 
     const { taskType, index, payload } = dto
 
@@ -260,7 +260,7 @@ async function proofCallback(worldState: WorldState, withdrawDB: WithdrawDB, dto
 
 
 
-async function rollupProofTrigger(dto: RollupTaskDto<any, any>) {
+export async function rollupProofTrigger(dto: RollupTaskDto<any, any>) {
     try {
         // forward it to main process, and will further forward it to Rollup processes.
         process.send!(dto)
@@ -271,7 +271,7 @@ async function rollupProofTrigger(dto: RollupTaskDto<any, any>) {
     }
 }
 
-async function triggerStartNewFlow(worldState: WorldState) {
+export async function triggerStartNewFlow(worldState: WorldState) {
     try {
         // start a new flow! 
         await worldState.startNewFlow();
@@ -282,7 +282,7 @@ async function triggerStartNewFlow(worldState: WorldState) {
     }
 }
 
-async function checkCommitmentsExist(worldState: WorldState, commitmentList: string[]) {
+export async function checkCommitmentsExist(worldState: WorldState, commitmentList: string[]) {
     try {
         const rs = Object.fromEntries(
             await Promise.all(commitmentList.map(async c => {
@@ -298,7 +298,7 @@ async function checkCommitmentsExist(worldState: WorldState, commitmentList: str
 }
 
 
-async function checkDataRootsExist(worldState: WorldState, commitmentList: string[]) {
+export async function checkDataRootsExist(worldState: WorldState, commitmentList: string[]) {
 
     try {
         const rs = Object.fromEntries(
@@ -314,7 +314,7 @@ async function checkDataRootsExist(worldState: WorldState, commitmentList: strin
     }
 }
 
-async function checkNullifiersExist(worldState: WorldState, nullifierList: string[]) {
+export async function checkNullifiersExist(worldState: WorldState, nullifierList: string[]) {
 
     try {
 
@@ -332,7 +332,7 @@ async function checkNullifiersExist(worldState: WorldState, nullifierList: strin
     }
 }
 
-async function syncUserWithdrawedNotes(withdrawDB: WithdrawDB) {
+export async function syncUserWithdrawedNotes(withdrawDB: WithdrawDB) {
     logger.info(`a new round to sync withdrawed notes inside WithdrawEventFetchRecord...`);
 
     const connection = getConnection();
@@ -460,7 +460,7 @@ async function syncUserWithdrawedNotes(withdrawDB: WithdrawDB) {
     return { code: 0, data: 1, msg: '' };
 }
 
-async function queryWorldStateworldState(worldState: WorldState) {
+export async function queryWorldStateworldState(worldState: WorldState) {
     try {
         // query sequencer
         return {
@@ -490,7 +490,7 @@ async function queryWorldStateworldState(worldState: WorldState) {
     }
 }
 
-async function queryNetworkMetaData() {
+export async function queryNetworkMetaData() {
     try {
         // query sequencer
         return {
@@ -577,7 +577,7 @@ export async function appendTreeByHand(worldState: WorldState, dto: { passcode: 
     }
 }
 
-async function appendUserNullifierTreeByHand(withdrawDB: WithdrawDB, dto: { passcode: string, timestamp: number, tokenId: string, ownerPk: string, leaves: string[] }) {
+export async function appendUserNullifierTreeByHand(withdrawDB: WithdrawDB, dto: { passcode: string, timestamp: number, tokenId: string, ownerPk: string, leaves: string[] }) {
     const { passcode, timestamp, tokenId, ownerPk, leaves } = dto;
     if (passcode != 'LzxWxs@2023') {
         return {

@@ -1,6 +1,6 @@
 import grpc from "@grpc/grpc-js";
 import protoLoader from "@grpc/proto-loader";
-import { queryTxByNullifierEndpoint, withdrawAssetEndpoint } from "./handlers/coordinatorHandler";
+import { highFeeTxExist, proofNotify } from "./handlers/coordinatorHandler";
 
 const PROTO_PATH = __dirname + './protos/coordinator.proto';
 
