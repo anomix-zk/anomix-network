@@ -29,6 +29,7 @@ import {
   genNewKeyPairForNote,
   maskReceiverBySender,
 } from '@anomix/utils';
+import { DetectionKey, SecretKey, TaggingKey } from '@anomix/fmd';
 import consola, { ConsolaInstance } from 'consola';
 import {
   AccountUpdate,
@@ -379,6 +380,15 @@ export class AnomixSdk {
 
   public getAccountKeySigningData(): string {
     return 'Sign this message to generate your Anomix Account Key. This key lets the application decrypt your balance on Anomix.\n\nIMPORTANT: Only sign this message if you trust the application.';
+  }
+
+  public async searchRelatedTx(detectionKey: DetectionKey) {
+    const dk = detectionKey.toHex();
+    return await this.node.searchRelatedTx(dk);
+  }
+
+  public genTagSecretKey(): SecretKey {
+    return SecretKey.generate();
   }
 
   public async generateAccountKeyPair(
@@ -1099,6 +1109,10 @@ export class AnomixSdk {
     let accountNoteWitness: DataMerkleWitness =
       DataMerkleWitness.zero(DUMMY_FIELD);
 
+    const recieverTaggingKeyHex =
+      this.node.getTaggingKeyByAccountPk(accountPk58);
+    const receiverTaggingKey = TaggingKey.fromHex(recieverTaggingKeyHex);
+
     const aliasHash =
       alias !== null ? this.computeAliasHashField(alias) : Field(0);
     const aliasHashStr = aliasHash.toString();
@@ -1402,6 +1416,8 @@ export class AnomixSdk {
       },
     } as L2TxReqDto;
 
+    const newTag = receiverTaggingKey.generateTag().toHex();
+
     const txHash = proof.publicOutput.hash().toString();
     const originTx = UserPaymentTx.from({
       txHash: txHash,
@@ -1425,6 +1441,7 @@ export class AnomixSdk {
       block: 0,
       createdTs: 0,
       finalizedTs: 0,
+      tag: newTag,
     });
 
     return {

@@ -100,7 +100,7 @@ class TaggingKey {
         return toBase64(keyBytes);
     }
 
-    public async fromBase64(keyBase64: string): TaggingKey {
+    public async fromBase64(keyBase64: string): Promise<TaggingKey> {
         const keyBytes = await toBytes(keyBase64);
         return TaggingKey.fromBytes(keyBytes);
     }
@@ -110,7 +110,7 @@ class TaggingKey {
         return bytesToHex(keyBytes);
     }
 
-    public fromHex(keyHex: string): TaggingKey {
+    public static fromHex(keyHex: string): TaggingKey {
         const keyBytes = hexToBytes(keyHex);
         return TaggingKey.fromBytes(keyBytes);
     }

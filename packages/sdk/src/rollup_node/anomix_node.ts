@@ -11,6 +11,8 @@ import {
 } from '@anomix/types';
 
 export interface AnomixNode {
+  getTaggingKeyByAccountPk(accountPk: string): Promise<string>;
+  searchRelatedTx(detectionKey: string): Promise<L2TxSimpleDto[]>;
   getHost(): string;
   isReady(): Promise<boolean>;
   getBlockHeight(): Promise<number>;
