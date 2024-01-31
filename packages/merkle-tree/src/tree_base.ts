@@ -1,19 +1,17 @@
-import { LevelUp, LevelUpChain } from 'levelup';
-import { createDebugLogger, createLogger } from './log';
-import { BaseSiblingPath, SiblingPath } from '@anomix/types';
 import { Hasher } from './hasher/hasher.js';
 import { MerkleTree } from './interfaces/merkle_tree.js';
-import { toBigIntLE, toBufferLE } from './utils';
-import { Field } from 'o1js';
 import {
-  bufferToInt256,
-  int256ToBuffer,
-  Uint8ArrayToField,
-} from '@anomix/utils';
-
-const log = createDebugLogger('anomix:tree-base');
-
-log(`~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TreeBase~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`);
+  Uint8ArrayToInt256LE,
+  concatUint8Arrays,
+  copyUint8Array,
+  int256ToUint8ArrayLE,
+  readUInt32LE,
+  writeUInt32LE,
+} from './utils';
+import { consola, ConsolaInstance } from 'consola';
+import { HasherWithStats } from './hasher_with_stats.js';
+import { TreeDB, TreeOperationBatch } from './tree_db/tree_db.js';
+import { SiblingPath } from './types/sibling_path.js';
 
 const MAX_DEPTH = 254;
 
@@ -21,17 +19,18 @@ const indexToKeyHash = (name: string, level: number, index: bigint) =>
   `${name}:${level}:${index}`;
 
 const encodeMeta = (root: bigint, depth: number, size: bigint) => {
-  const rootBuf = int256ToBuffer(root); // 32-bytes buffer
-  const data = Buffer.alloc(32 + 4);
-  rootBuf.copy(data);
-  data.writeUInt32LE(depth, 32);
-  return Buffer.concat([data, toBufferLE(size, 32)]);
+  const rootBuf = int256ToUint8ArrayLE(root); // 32-bytes Uint8Array
+  let data = new Uint8Array(36); // 4-bytes for depth, 32-bytes for root
+  data = copyUint8Array(rootBuf, data);
+  data = writeUInt32LE(data, depth, 32);
+
+  return concatUint8Arrays(data, int256ToUint8ArrayLE(size));
 };
 
-export const decodeMeta = (meta: Buffer) => {
-  const root = bufferToInt256(meta.subarray(0, 32));
-  const depth = meta.readUInt32LE(32);
-  const size = toBigIntLE(meta.subarray(36));
+export const decodeMeta = (meta: Uint8Array) => {
+  const root = Uint8ArrayToInt256LE(meta.subarray(0, 32));
+  const depth = readUInt32LE(meta, 32);
+  const size = Uint8ArrayToInt256LE(meta.subarray(36));
   return {
     root,
     depth,
@@ -49,11 +48,14 @@ export abstract class TreeBase implements MerkleTree {
   protected cachedSize?: bigint;
   private root!: bigint;
   private zeroHashes: bigint[] = [];
-  private cache: { [key: string]: Buffer } = {};
+  private cache: { [key: string]: Uint8Array } = {};
+  protected log: ConsolaInstance;
+
+  protected hasher: HasherWithStats;
 
   public constructor(
-    protected db: LevelUp,
-    protected hasher: Hasher,
+    protected db: TreeDB,
+    hasher: Hasher,
     private name: string,
     private depth: number,
     protected size: bigint = 0n,
@@ -63,15 +65,19 @@ export abstract class TreeBase implements MerkleTree {
       throw Error('Invalid depth');
     }
 
+    this.hasher = new HasherWithStats(hasher);
+
     // Compute the zero values at each layer.
     let current = INITIAL_LEAF;
     for (let i = depth - 1; i >= 0; --i) {
       this.zeroHashes[i] = current;
-      current = hasher.compress(current, current);
+      current = hasher.hash(current, current);
     }
 
     this.root = root ? root : current;
     this.maxIndex = 2n ** BigInt(depth) - 1n;
+
+    this.log = consola.withTag(`anomix:merkle-tree:${name}`);
   }
 
   /**
@@ -83,9 +89,9 @@ export abstract class TreeBase implements MerkleTree {
     if (!includeUncommitted) {
       return this.root;
     } else {
-      let tmpRootBuffer = this.cache[indexToKeyHash(this.name, 0, 0n)];
-      if (tmpRootBuffer) {
-        return bufferToInt256(tmpRootBuffer);
+      let tmpRootBuf = this.cache[indexToKeyHash(this.name, 0, 0n)];
+      if (tmpRootBuf) {
+        return Uint8ArrayToInt256LE(tmpRootBuf);
       } else {
         return this.root;
       }
@@ -124,13 +130,12 @@ export abstract class TreeBase implements MerkleTree {
    * @returns A sibling path for the element at the given index.
    * Note: The sibling path is an array of sibling hashes, with the lowest hash (leaf hash) first, and the highest hash last.
    */
-  public async getSiblingPath(
+  public async getSiblingPath<N extends number>(
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<bigint[]> {
+  ): Promise<SiblingPath<N>> {
     const path: bigint[] = [];
     let level = this.depth;
-
     while (level > 0) {
       const isRight = index & 0x01n;
       const sibling = await this.getLatestValueAtIndex(
@@ -142,8 +147,49 @@ export abstract class TreeBase implements MerkleTree {
       level -= 1;
       index >>= 1n;
     }
+    return new SiblingPath<N>(this.depth as N, path);
+  }
 
-    return path;
+  /**
+   * Gets a value from db by key.
+   * @param key - The key to by which to get the value.
+   * @returns A value from the db based on the key.
+   */
+  private async dbGet(key: string): Promise<bigint | undefined> {
+    try {
+      const buf = await this.db.get(key);
+      return Uint8ArrayToInt256LE(buf);
+    } catch (err) {
+      this.log.warn('dbGet error: ', err);
+    }
+  }
+
+  /**
+   * Initializes the tree.
+   * @param prefilledSize - A number of leaves that are prefilled with values.
+   * @returns Empty promise.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async init(prefilledSize: number): Promise<void> {
+    // prefilledSize is used only by Indexed Tree.
+    await this.writeMeta();
+  }
+
+  /**
+   * Writes meta data to the provided batch.
+   * @param batch - The batch to which to write the meta data.
+   */
+  protected async writeMeta(batch?: TreeOperationBatch) {
+    const data = encodeMeta(
+      this.getRoot(true),
+      this.depth,
+      this.getNumLeaves(true)
+    );
+    if (batch) {
+      batch.put(this.name, data);
+    } else {
+      await this.db.put(this.name, data);
+    }
   }
 
   /**
@@ -184,8 +230,28 @@ export abstract class TreeBase implements MerkleTree {
   public getLeafValue(
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<bigint | undefined> {
+  ): Promise<bigint | Uint8Array | undefined> {
     return this.getLatestValueAtIndex(this.depth, index, includeUncommitted);
+  }
+
+  public getNode(level: number, index: bigint): Promise<bigint | undefined> {
+    if (level < 0 || level > this.depth) {
+      throw Error('Invalid level: ' + level);
+    }
+
+    if (index < 0 || index >= 2n ** BigInt(level)) {
+      throw Error('Invalid index: ' + index);
+    }
+
+    return this.dbGet(indexToKeyHash(this.name, level, index));
+  }
+
+  public getZeroHash(level: number): bigint {
+    if (level <= 0 || level > this.depth) {
+      throw new Error('Invalid level');
+    }
+
+    return this.zeroHashes[level - 1];
   }
 
   /**
@@ -204,7 +270,7 @@ export abstract class TreeBase implements MerkleTree {
   protected async addLeafToCacheAndHashToRoot(leaf: bigint, index: bigint) {
     const key = indexToKeyHash(this.name, this.depth, index);
     let current = leaf;
-    this.cache[key] = Buffer.from(current.toString());
+    this.cache[key] = int256ToUint8ArrayLE(current);
     let level = this.depth;
 
     while (level > 0) {
@@ -216,12 +282,12 @@ export abstract class TreeBase implements MerkleTree {
       );
       const lhs = isRight ? sibling : current;
       const rhs = isRight ? current : sibling;
-      current = this.hasher.compress(lhs, rhs);
+      current = this.hasher.hash(lhs, rhs);
       level -= 1;
       index >>= 1n;
 
       const cacheKey = indexToKeyHash(this.name, level, index);
-      this.cache[cacheKey] = Buffer.from(current.toString());
+      this.cache[cacheKey] = int256ToUint8ArrayLE(current);
     }
   }
 
@@ -240,7 +306,7 @@ export abstract class TreeBase implements MerkleTree {
   ): Promise<bigint> {
     const key = indexToKeyHash(this.name, level, index);
     if (includeUncommitted && this.cache[key] !== undefined) {
-      return bufferToInt256(this.cache[key]);
+      return Uint8ArrayToInt256LE(this.cache[key]);
     }
     const committed = await this.dbGet(key);
     if (committed !== undefined) {
@@ -249,52 +315,44 @@ export abstract class TreeBase implements MerkleTree {
     return this.zeroHashes[level - 1];
   }
 
-  /**
-   * Gets a value from db by key.
-   * @param key - The key to by which to get the value.
-   * @returns A value from the db based on the key.
-   */
-  private async dbGet(key: string): Promise<bigint | undefined> {
-    const buf = await this.db.get(key).catch(() => {});
-    if (buf !== undefined) {
-      return bufferToInt256(buf);
+  protected async appendLeaves(leaves: bigint[]): Promise<void> {
+    const numLeaves = this.getNumLeaves(true);
+    if (numLeaves + BigInt(leaves.length) - 1n > this.maxIndex) {
+      throw Error(`Can't append beyond max index. Max index: ${this.maxIndex}`);
     }
 
-    return undefined;
-  }
-
-  /**
-   * Initializes the tree.
-   * @param prefilledSize - A number of leaves that are prefilled with values.
-   * @returns Empty promise.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async init(prefilledSize: number): Promise<void> {
-    // prefilledSize is used only by Indexed Tree.
-    await this.writeMeta();
-  }
-
-  /**
-   * Initializes the tree from the database.
-   */
-  public async initFromDb(): Promise<void> {
-    // Implemented only by Inedexed Tree to populate the leaf cache.
-  }
-
-  /**
-   * Writes meta data to the provided batch.
-   * @param batch - The batch to which to write the meta data.
-   */
-  protected async writeMeta(batch?: LevelUpChain<string, Buffer>) {
-    const data = encodeMeta(
-      this.getRoot(true),
-      this.depth,
-      this.getNumLeaves(true)
-    );
-    if (batch) {
-      batch.put(this.name, data);
-    } else {
-      await this.db.put(this.name, data);
+    // 1. Insert all the leaves
+    let firstIndex = numLeaves;
+    let level = this.depth;
+    for (let i = 0; i < leaves.length; i++) {
+      const cacheKey = indexToKeyHash(this.name, level, firstIndex + BigInt(i));
+      this.cache[cacheKey] = int256ToUint8ArrayLE(leaves[i]);
     }
+
+    let lastIndex = firstIndex + BigInt(leaves.length);
+    // 2. Iterate over all the levels from the bottom up
+    while (level > 0) {
+      firstIndex >>= 1n;
+      lastIndex >>= 1n;
+      // 3.Iterate over all the affected nodes at this level and update them
+      for (let index = firstIndex; index <= lastIndex; index++) {
+        const lhs = await this.getLatestValueAtIndex(level, index * 2n, true);
+        const rhs = await this.getLatestValueAtIndex(
+          level,
+          index * 2n + 1n,
+          true
+        );
+        const cacheKey = indexToKeyHash(this.name, level - 1, index);
+        this.cache[cacheKey] = int256ToUint8ArrayLE(this.hasher.hash(lhs, rhs));
+      }
+
+      level -= 1;
+    }
+    this.cachedSize = numLeaves + BigInt(leaves.length);
   }
+
+  abstract findLeafIndex(
+    value: bigint,
+    includeUncommitted: boolean
+  ): Promise<bigint | undefined>;
 }
