@@ -14,6 +14,7 @@ export interface L2TxReqDto {
         proof: string;
     }
     extraData: {
+        fmdTag: string,
         outputNote1?: EncryptedNote,
         outputNote2?: EncryptedNote,
 

@@ -102,6 +102,9 @@ export class L2Tx {
     @Column()
     indexInBlock: number
 
+    @Column()
+    fmdTag: string
+
     /**
      * just the insert timestamp,for later statistic
      */
