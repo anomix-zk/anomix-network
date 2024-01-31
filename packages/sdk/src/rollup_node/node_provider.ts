@@ -106,6 +106,18 @@ export class NodeProvider implements AnomixNode {
     throw new Error(res.msg);
   }
 
+  public async getTaggingKeyByAccountPk(accountPk: string): Promise<string> {
+    const url = `${this.host}/view/taggingkey/` + accountPk;
+    this.log.info(`Getting tagging key at ${url}`);
+
+    const res = await this.makeRequest<string>(url);
+    if (res.code === 0) {
+      return res.data!;
+    }
+
+    throw new Error(res.msg);
+  }
+
   public async getBlocks(
     from: number,
     take: number
