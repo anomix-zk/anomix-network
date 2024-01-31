@@ -1,4 +1,4 @@
-import { DATA_TREE_HEIGHT } from '../constants';
+import { DATA_TREE_HEIGHT, NULLIFIER_ACCOUNT_PREFIX } from '../constants';
 import { AccountNote } from '../models/account';
 import {
   AccountOperationType,
@@ -430,8 +430,8 @@ let JoinSplitProver = ZkProgram({
           actionType,
           outputNoteCommitment1: outputNote1Commitment,
           outputNoteCommitment2: outputNote2Commitment,
-          nullifier1Key,
-          nullifier2Key,
+          nullifier1: nullifier1Key,
+          nullifier2: nullifier2Key,
           publicValue,
           publicOwner,
           publicAssetId,
@@ -483,7 +483,7 @@ let JoinSplitProver = ZkProgram({
         const nullifier1 = Provable.if(
           operationTypeIsCreate,
           Field,
-          Poseidon.hash([input.aliasHash]),
+          Poseidon.hash([input.aliasHash, NULLIFIER_ACCOUNT_PREFIX]),
           DUMMY_FIELD
         );
         Provable.log('nullifier1: ', nullifier1);
@@ -491,7 +491,7 @@ let JoinSplitProver = ZkProgram({
         const nullifier2 = Provable.if(
           operationTypeIsCreate.or(operationTypeIsMigrate),
           Field,
-          Poseidon.hash(input.newAccountPk.toFields()),
+          Poseidon.hash(input.newAccountPk.toFields().concat([NULLIFIER_ACCOUNT_PREFIX])),
           DUMMY_FIELD
         );
         Provable.log('nullifier2: ', nullifier2);
