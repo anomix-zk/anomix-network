@@ -5,6 +5,23 @@ package rollupSeq;
 service RollupSeq {
   rpc queryTxByNullifier (StringArray) returns (QueryTxByNullifierResp) {}
   rpc withdrawAsset (WithdrawAssetReqDto) returns (WithdrawAssetResp) {}
+  rpc checkPoint() returns (number) {}
+  rpc proofCallback(ProofCallbackReq) returns (ProofCallbackResp) {}
+  rpc rollupProofTrigger (RollupProofTriggerReq) returns (RollupProofTriggerResp);
+}
+
+message RollupProofTriggerReq{
+  int32 taskType =1;
+  int32 index = 2;
+  message payload {
+    string l1addr = 1;
+  }
+}
+
+message RollupProofTriggerResp{
+  int32 code = 1;
+  bool data = 2;
+  string msg = 3;
 }
 
 message StringArray {
@@ -39,4 +56,22 @@ message WithdrawAssetResp {
   }
   string msg = 3;
 }
+
+message ProofCallbackReq {
+  int32 taskType ,
+  int32 index,
+  message payload {
+    string l1addr = 1;
+  }
+}
+
+message ProofCallbackResp {
+  int32 code = 1;
+  message data {
+    string string = 1;
+  }
+  string msg = 3;
+}
+
+
 
