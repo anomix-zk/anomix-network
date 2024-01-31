@@ -132,6 +132,25 @@ export class NodeProvider implements AnomixNode {
     throw new Error(res.msg);
   }
 
+  public async searchRelatedTx(detectionKey: string): Promise<L2TxSimpleDto[]> {
+    const url = `${this.host}/view/search_tx`;
+    this.log.info(`search txs at ${url}`);
+
+    const body = JSON.stringify({
+      detectionKey,
+    });
+    const res = await this.makeRequest<L2TxSimpleDto[]>(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+    if (res.code === 0) {
+      return res.data!;
+    }
+
+    throw new Error(res.msg);
+  }
+
   public async sendTx(tx: L2TxReqDto): Promise<string> {
     const url = `${this.host}/tx`;
     this.log.info(`Sending tx at ${url}`);

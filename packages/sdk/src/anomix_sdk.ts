@@ -29,6 +29,7 @@ import {
   genNewKeyPairForNote,
   maskReceiverBySender,
 } from '@anomix/utils';
+import { DetectionKey } from '@anomix/fmd';
 import consola, { ConsolaInstance } from 'consola';
 import {
   AccountUpdate,
@@ -379,6 +380,11 @@ export class AnomixSdk {
 
   public getAccountKeySigningData(): string {
     return 'Sign this message to generate your Anomix Account Key. This key lets the application decrypt your balance on Anomix.\n\nIMPORTANT: Only sign this message if you trust the application.';
+  }
+
+  public async searchRelatedTx(detectionKey: DetectionKey) {
+    const dk = detectionKey.toHex();
+    return await this.node.searchRelatedTx(dk);
   }
 
   public async generateAccountKeyPair(
