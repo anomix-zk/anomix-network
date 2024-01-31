@@ -1,6 +1,6 @@
-import { LevelUp } from 'levelup';
-import { Hasher } from '@anomix/types';
 import { TreeBase } from './tree_base.js';
+import { Hasher } from './hasher/hasher.js';
+import { TreeDB } from './tree_db/tree_db.js';
 
 /**
  * Creates a new tree.
@@ -13,15 +13,20 @@ import { TreeBase } from './tree_base.js';
  * @returns The newly created tree.
  */
 export async function newTree<T extends TreeBase>(
-  c: new (...args: any[]) => T,
-  db: LevelUp,
+  c: new (
+    db: TreeDB,
+    hasher: Hasher,
+    name: string,
+    depth: number,
+    size: bigint
+  ) => T,
+  db: TreeDB,
   hasher: Hasher,
   name: string,
   depth: number,
-  prefilledSize = 0,
+  prefilledSize = 1
 ): Promise<T> {
-  const tree = new c(db, hasher, name, depth, 0n, undefined);
+  const tree = new c(db, hasher, name, depth, 0n);
   await tree.init(prefilledSize);
   return tree;
 }
-

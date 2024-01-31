@@ -1,4 +1,4 @@
-import { DATA_TREE_HEIGHT } from '../constants';
+import { DATA_TREE_HEIGHT, NULLIFIER_ACCOUNT_PREFIX } from '../constants';
 import { AccountNote } from '../models/account';
 import {
   AccountOperationType,
@@ -388,34 +388,37 @@ let JoinSplitProver = ZkProgram({
           'InputNote2 commitment check membership failed or inputNote2 value is not 0'
         );
 
-        const nullifier1 = calculateNoteNullifier(
-          inputNote1Commitment,
-          sendInput.accountPrivateKey,
-          inputNote1InUse
-        );
+        // const nullifier1 = calculateNoteNullifier(
+        //   inputNote1Commitment,
+        //   sendInput.accountPrivateKey,
+        //   inputNote1InUse
+        // );
+        const nullifier1 = sendInput.nullifier1;
         Provable.log('nullifier1: ', nullifier1);
+        nullifier1.verify([inputNote1Commitment, inputNote1InUse.toField()]);
+        nullifier1.getPublicKey().assertEquals(accountPk);
 
-        const nullifier2 = calculateNoteNullifier(
-          inputNote2Commitment,
-          sendInput.accountPrivateKey,
-          inputNote2InUse
-        );
+        const nullifier2 = sendInput.nullifier2;
         Provable.log('nullifier2: ', nullifier2);
+        nullifier2.verify([inputNote2Commitment, inputNote2InUse.toField()]);
+        nullifier2.getPublicKey().assertEquals(accountPk);
 
+        const nullifier1Key = nullifier1.key();
+        const nullifier2Key = nullifier2.key();
         outputNote1.inputNullifier.assertEquals(
-          nullifier1,
+          nullifier1Key,
           'outputNote1.inputNullifier not equal to nullifier1'
         );
         outputNote2.inputNullifier.assertEquals(
-          nullifier2,
+          nullifier2Key,
           'outputNote2.inputNullifier not equal to nullifier2'
         );
 
         const message = [
           outputNote1Commitment,
           outputNote2Commitment,
-          nullifier1,
-          nullifier2,
+          nullifier1Key,
+          nullifier2Key,
           publicAssetId,
           ...publicValue.toFields(),
           ...publicOwner.toFields(),
@@ -427,8 +430,8 @@ let JoinSplitProver = ZkProgram({
           actionType,
           outputNoteCommitment1: outputNote1Commitment,
           outputNoteCommitment2: outputNote2Commitment,
-          nullifier1,
-          nullifier2,
+          nullifier1: nullifier1Key,
+          nullifier2: nullifier2Key,
           publicValue,
           publicOwner,
           publicAssetId,
@@ -480,7 +483,7 @@ let JoinSplitProver = ZkProgram({
         const nullifier1 = Provable.if(
           operationTypeIsCreate,
           Field,
-          Poseidon.hash([input.aliasHash]),
+          Poseidon.hash([input.aliasHash, NULLIFIER_ACCOUNT_PREFIX]),
           DUMMY_FIELD
         );
         Provable.log('nullifier1: ', nullifier1);
@@ -488,7 +491,7 @@ let JoinSplitProver = ZkProgram({
         const nullifier2 = Provable.if(
           operationTypeIsCreate.or(operationTypeIsMigrate),
           Field,
-          Poseidon.hash(input.newAccountPk.toFields()),
+          Poseidon.hash(input.newAccountPk.toFields().concat([NULLIFIER_ACCOUNT_PREFIX])),
           DUMMY_FIELD
         );
         Provable.log('nullifier2: ', nullifier2);
