@@ -1,6 +1,4 @@
-# Proposal Title*
-## Anomix Network - A Hybrid zkRollup with Native ID for Web3 Mass-adoption
-
+# Anomix Network - A Hybrid zkRollup with Native ID for Web3 Mass-adoption
 
 # What is your elevator pitch?*
 At zkIgnite Cohort1, Anomix Network has growed up to be a zk-zkRollup layer2 on Mina focusing on Privacy&Scalablility, which is the FIRST Privacy-Frist Layer2 solution running on MINA BerkeleyNetwork.
