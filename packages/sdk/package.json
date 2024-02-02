@@ -34,6 +34,7 @@
   "dependencies": {
     "@anomix/circuits": "^0.1.0",
     "@anomix/utils": "^0.1.0",
+    "@anomix/fmd": "^0.1.0",
     "comlink": "^4.4.1",
     "consola": "^3.2.3",
     "detect-node": "^2.1.0",
