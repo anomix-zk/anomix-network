@@ -1,9 +1,12 @@
 import fs from "fs";
 import * as dotenv from "dotenv"
-import { JoinSplitProver } from "@anomix/circuits";
+import { JoinSplitProver, WithdrawAccount } from "@anomix/circuits";
 dotenv.config({ path: '../../.env' })
 
 const KeyConfig = JSON.parse(fs.readFileSync('../../packages/circuits/scripts/keys-private.json', 'utf8'));
+
+// IMPORTANT!! CANNOT remove this line, or else joinsplitprover.verify(*) cannot work! Due to o1js's bug!
+await WithdrawAccount.compile();
 
 const { verificationKey: JoinSplitProverVK } = await JoinSplitProver.compile();
 // const JoinSplitProverVK = ''
