@@ -169,3 +169,57 @@ export async function checkAliasRegister(dto: { aliashash: string, includePendin
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
+
+export async function queryAcctViewKeyByAlias(dto: { aliashash: string }) {
+
+    const { aliashash: p_aliashash } = dto
+
+    const accountRepository = getConnection().getRepository(Account)
+    try {
+        const accountList = await accountRepository.find({ where: { aliasHash: p_aliashash } }) ?? [];
+        if (accountList.length > 0) {
+            return {
+                code: 0,
+                data: accountList.map(acct => {
+                    return acct.acctPk;
+                }),
+                msg: ''
+            };
+        }
+
+        return {
+            code: 0,
+            data: undefined,
+            msg: ''
+        };
+
+    } catch (err) {
+        logger.error(err);
+
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
+export async function queryAliasByAcctViewKey(dto: { acctvk: string }) {
+
+    const { acctvk: p_acctvk } = dto
+    const accountRepository = getConnection().getRepository(Account)
+    try {
+        const account = await accountRepository.findOne({ where: { acctPk: p_acctvk } });
+        if (account) {
+            return {
+                code: 0, data: {
+                    alias: account?.aliasHash,
+                    aliasInfo: account?.encrptedAlias
+                }, msg: ''
+            }
+        }
+        return {
+            code: 0, data: undefined, msg: ''
+        }
+    } catch (err) {
+        logger.error(err);
+
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
