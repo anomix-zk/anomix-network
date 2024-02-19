@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package apiIndexer;
+
+service ApiIndexer {
+  rpc checkAcctViewKeyRegistered (CheckAcctViewKeyRegisteredReq) returns (CheckAcctViewKeyRegisteredResp) {}
+  rpc checkAliasAlignWithViewKey (CheckAliasAlignWithViewKeyReq) returns (CheckAliasAlignWithViewKeyResp) {}
+
+}
+
+message CheckAcctViewKeyRegisteredReq{
+    string acctViewKey= 1 ;
+    bool includePending = 2;
+}
+
+message CheckAcctViewKeyRegisteredResp{
+  int32 code = 1;
+  bool data = 2;
+  string msg = 3;
+}
+
+
+message CheckAliasAlignWithViewKeyReq{
+    string aliasHash= 1 ;
+    string acctViewKey= 2 ;
+    bool includePending = 3;
+}
+
+message CheckAliasAlignWithViewKeyResp{
+  int32 code = 1;
+  bool data = 2;
+  string msg = 3;
+}
