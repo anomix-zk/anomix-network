@@ -406,3 +406,60 @@ export async function queryAssetsInBlocks(dto: AssetInBlockReqDto) {
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
+
+export async function queryPartialByBlockHeight(dto: { blockHeightList: number[], fieldNames: string[] }) {
+
+    const blockHeightList = dto.blockHeightList;
+    if (blockHeightList.some(b => b <= 0)) {
+        return {
+            code: 1,
+            data: undefined,
+            msg: 'There are blockHeight <= 0.'
+        }
+    }
+
+    const connection = getConnection();
+    const data = {} as any;
+    try {
+        const blockRepository = connection.getRepository(Block);
+        // query latest block
+        const blockEntityList = (await blockRepository.find({
+            select: [
+                'id',
+                'finalizedAt'
+                /*,
+                'blockHash',
+                'l1TxHash',
+                'status',
+                'createdAt',
+                */
+            ],
+            where: {
+                id: In(blockHeightList)
+            }
+        }));
+
+        const ids = blockEntityList.map(b => b.id);
+        if (blockHeightList.some(h => !ids.includes(h))) {
+            return {
+                code: 1,
+                data: undefined,
+                msg: 'There are excessing blockHeight.'
+            }
+        }
+
+        blockEntityList.forEach(b => data[`${b.id}`] = b.finalizedAt?.getTime() ?? 0);
+
+        return {
+            code: 0,
+            data,
+            msg: ''
+        };
+    } catch (err) {
+        logger.error(err);
+
+        console.error(err);
+
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
