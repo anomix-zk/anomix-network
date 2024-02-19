@@ -463,3 +463,33 @@ export async function queryPartialByBlockHeight(dto: { blockHeightList: number[]
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
+
+export async function queryBlockByBlockHash(dto: { blockHash: string }) {
+
+    try {
+        const connection = getConnection();
+
+        const blockRepository = connection.getRepository(Block);
+        // query latest block
+        const blockEntity = (await blockRepository.findOne({
+            blockHash: dto.blockHash
+        }));
+
+        const triggerProofAt = blockEntity?.triggerProofAt.getTime();
+        const finalizedAt = blockEntity?.finalizedAt.getTime();
+        const updatedAt = blockEntity?.updatedAt.getTime();
+        const createdAt = blockEntity?.createdAt.getTime();
+
+        (blockEntity as any as BlockDto).triggerProofAt = triggerProofAt;
+        (blockEntity as any as BlockDto).finalizedAt = finalizedAt;
+        (blockEntity as any as BlockDto).updatedAt = updatedAt;
+        (blockEntity as any as BlockDto).createdAt = createdAt;
+
+        return { code: 0, data: blockEntity as any as BlockDto, msg: '' };
+    } catch (err) {
+        logger.error(err);
+        console.error(err);
+
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
