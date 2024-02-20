@@ -1,4 +1,4 @@
-import { AssetInBlockReqDto, AssetsInBlockDto, BaseResponse, BlockStatus, DepositProcessingSignal, DepositTransCacheType, FlowTask, FlowTaskType, L2TxSimpleDto, L2TxStatus, MerkleProofDto, MerkleTreeId, ProofTaskDto, ProofTaskType, ProofVerifyReqDto, ProofVerifyReqType, RollupTaskDto, WithdrawAssetReqDto, WithdrawEventFetchRecordStatus, WithdrawInfoDto, WithdrawNoteStatus } from "@anomix/types";
+import { AssetInBlockReqDto, BlockDto, AssetsInBlockDto, BaseResponse, BlockStatus, DepositProcessingSignal, DepositTransCacheType, FlowTask, FlowTaskType, L2TxSimpleDto, L2TxStatus, MerkleProofDto, MerkleTreeId, ProofTaskDto, ProofTaskType, ProofVerifyReqDto, ProofVerifyReqType, RollupTaskDto, WithdrawAssetReqDto, WithdrawEventFetchRecordStatus, WithdrawInfoDto, WithdrawNoteStatus } from "@anomix/types";
 import process from "process";
 import { DATA_TREE_HEIGHT, JoinSplitProof, LowLeafWitnessData, NullifierMerkleWitness, NULLIFIER_TREE_HEIGHT, ROOT_TREE_HEIGHT, WithdrawNoteWitnessData } from "@anomix/circuits";
 import { getLogger } from "@/lib/logUtils";
@@ -484,6 +484,27 @@ export async function queryBlockByBlockHash(dto: { blockHash: string }) {
         (blockEntity as any as BlockDto).finalizedAt = finalizedAt;
         (blockEntity as any as BlockDto).updatedAt = updatedAt;
         (blockEntity as any as BlockDto).createdAt = createdAt;
+
+        return { code: 0, data: blockEntity as any as BlockDto, msg: '' };
+    } catch (err) {
+        logger.error(err);
+        console.error(err);
+
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
+export async function queryBlockByBlockHeight(dto: { blockHeight: number }) {
+
+    try {
+        const connection = getConnection();
+
+        const blockRepository = connection.getRepository(Block);
+        // query latest block
+        const blockEntity = (await blockRepository.findOne({
+            id: dto.blockHeight
+        }));
+
 
         return { code: 0, data: blockEntity as any as BlockDto, msg: '' };
     } catch (err) {
