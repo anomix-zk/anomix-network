@@ -5,7 +5,9 @@ package apiIndexer;
 service ApiIndexer {
   rpc checkAcctViewKeyRegistered (CheckAcctViewKeyRegisteredReq) returns (CheckAcctViewKeyRegisteredResp) {}
   rpc checkAliasAlignWithViewKey (CheckAliasAlignWithViewKeyReq) returns (CheckAliasAlignWithViewKeyResp) {}
-
+  rpc queryBlockByBlockHash (QueryBlockByBlockHashReq) returns (QueryBlockByBlockHashResp){}
+  rpc queryBlockByBlockHeight (QueryBlockByBlockHeightReq) returns (QueryBlockByBlockHeightResp){}
+  rpc queryByTxHashes (QueryByTxHashesReq) returns (QueryByTxHashesResp){}
 }
 
 message CheckAcctViewKeyRegisteredReq{
@@ -29,5 +31,48 @@ message CheckAliasAlignWithViewKeyReq{
 message CheckAliasAlignWithViewKeyResp{
   int32 code = 1;
   bool data = 2;
+  string msg = 3;
+}
+
+message QueryBlockByBlockHashReq{
+  string blockHash = 1;
+}
+
+message QueryBlockByBlockHashResp{
+  int32 code = 1;
+  message data {
+    string blockHash = 1;
+    // TODO BlockDto
+    //
+    //
+  };
+  string msg = 3;
+}
+
+message QueryByTxHashesReq{
+  repeated string txHashes = 1;
+}
+message QueryByTxHashesResp{
+  int32 code = 1;
+  message data {
+    string blockHash = 1;
+    // TODO BlockDto
+    //
+    //
+  };
+  string msg = 3;
+}
+
+message QueryBlockByBlockHeightReq{
+  int64 blockHeight = 1;
+}
+message QueryBlockByBlockHeightResp{
+  int32 code = 1;
+  message data {
+    string blockHash = 1;
+    // TODO BlockDto
+    //
+    //
+  };
   string msg = 3;
 }
