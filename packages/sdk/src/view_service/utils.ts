@@ -1,3 +1,19 @@
+import { stringToUtf8Array } from '@anomix/utils';
+
+/*
+  Get some key material to use as input to the deriveKey method.
+  The key material is a password supplied by the user.
+*/
+export async function getKeyMaterial(password: string): Promise<CryptoKey> {
+  return await subtle.importKey(
+    'raw',
+    stringToUtf8Array(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits', 'deriveKey']
+  );
+}
+
 export const uint8ArrayToBase64 = (buf: Uint8Array) => {
   let binary = '';
   const length = buf.length;
