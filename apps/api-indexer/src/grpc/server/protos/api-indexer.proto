@@ -8,6 +8,8 @@ service ApiIndexer {
   rpc queryBlockByBlockHash (QueryBlockByBlockHashReq) returns (QueryBlockByBlockHashResp){}
   rpc queryBlockByBlockHeight (QueryBlockByBlockHeightReq) returns (QueryBlockByBlockHeightResp){}
   rpc queryByTxHashes (QueryByTxHashesReq) returns (QueryByTxHashesResp){}
+  rpc queryAcctViewKeyByAlias (QueryAcctViewKeyByAliasReq) returns (QueryAcctViewKeyByAliasResp){}
+  rpc queryAliasByAcctViewKey (QueryAliasByAcctViewKeyReq) returns (QueryAliasByAcctViewKeyResp){}
 }
 
 message CheckAcctViewKeyRegisteredReq{
@@ -73,6 +75,29 @@ message QueryBlockByBlockHeightResp{
     // TODO BlockDto
     //
     //
+  };
+  string msg = 3;
+}
+
+message QueryAcctViewKeyByAliasReq {
+  string aliashash =1
+}
+message QueryAcctViewKeyByAliasResp{
+  int32 code = 1;
+  message data {
+    repeated string acctViewKeys = 1;
+  };
+  string msg = 3;
+}
+
+message QueryAliasByAcctViewKeyReq {
+  string aliashash =1
+}
+message QueryAliasByAcctViewKeyResp{
+  int32 code = 1;
+  message data {
+    string alias = 1;
+    string aliasInfo = 2;
   };
   string msg = 3;
 }
