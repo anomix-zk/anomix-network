@@ -575,3 +575,45 @@ export async function queryByTxHashes(dto: string[]) {
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
+
+export async function queryLatestBlockHeight(dto: null) {
+
+    try {
+        const connection = getConnection();
+
+        const blockRepository = connection.getRepository(Block);
+        // query latest block
+        const blockEntity = (await blockRepository.find({
+            select: [
+                'id'
+                /*,
+                'blockHash',
+                'l1TxHash',
+                'status',
+                'createdAt',
+                'finalizedAt'
+                */
+            ],
+            order: {
+                id: 'DESC'
+            },
+            take: 1
+        }))[0];
+        /*
+        const latestBlockDto = {} as LatestBlockDto;
+        latestBlockDto.blockHeight = blockEntity.id;
+        latestBlockDto.blockHash = blockEntity.blockHash;
+        latestBlockDto.l1TxHash = blockEntity.l1TxHash;
+        latestBlockDto.status = blockEntity.status;
+        latestBlockDto.createdTs = blockEntity.createdAt.getTime();
+        latestBlockDto.finalizedTs = blockEntity.finalizedAt.getTime();
+        */
+
+        return { code: 0, data: blockEntity?.id ?? 0, msg: '' };
+    } catch (err) {
+        logger.error(err);
+        console.error(err);
+
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
