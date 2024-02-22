@@ -617,3 +617,59 @@ export async function queryLatestBlockHeight(dto: null) {
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
+
+export async function queryPendingTxs(dto: string[]) {
+
+    const txHashList = dto
+
+    const connection = getConnection();
+    try {
+        const mpL2TxRepository = connection.getRepository(MemPlL2Tx)
+
+        // first query memory pool
+        const whereConditions = { status: In([L2TxStatus.PENDING, L2TxStatus.PROCESSING]) };
+        if (txHashList?.length > 0) {
+            (whereConditions as any).txHash = In(txHashList);
+        }
+        const txList = await mpL2TxRepository.find({ where: whereConditions }) ?? [];
+        const l2TxSimpleDtoList = await Promise.all(txList.map(async tx => {
+            const { proof, blockId, blockHash, updatedAt, createdAt, encryptedData1, encryptedData2, ...restObj } = tx;
+            const dto = restObj as any as L2TxSimpleDto;
+
+            let withdrawInfoDto = undefined as any as WithdrawInfoDto;
+            const withdrawInfoRepository = connection.getRepository(WithdrawInfo);
+            const wInfo = await withdrawInfoRepository.findOne({ where: { l2TxHash: tx.txHash } });
+            if (wInfo) {
+                const { createdAt: createdAtW, updatedAt: updatedAtW, ...restObjW } = wInfo;
+                withdrawInfoDto = (restObjW as any) as WithdrawInfoDto;
+
+                if (withdrawInfoDto.status == WithdrawNoteStatus.DONE) {
+                    withdrawInfoDto.l1TxBody = '';
+                }
+            }
+
+            const accountRepository = connection.getRepository(Account)
+            const account = await accountRepository.findOne({ where: { l2TxHash: tx.txHash } });
+
+            dto.extraData = {
+                outputNote1: JSON.parse(encryptedData1),
+                outputNote2: encryptedData2 ? JSON.parse(encryptedData2) : undefined,
+                aliasHash: account?.aliasHash,
+                accountPublicKey: account?.acctPk,
+                withdrawNote: withdrawInfoDto
+            }
+
+            return dto;
+        }));
+        return {
+            code: 0,
+            data: l2TxSimpleDtoList,
+            msg: ''
+        };
+    } catch (err) {
+        logger.error(err);
+        console.error(err);
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
