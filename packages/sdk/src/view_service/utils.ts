@@ -1,4 +1,16 @@
 import { stringToUtf8Array } from '@anomix/utils';
+import { PrivateKey, PublicKey } from 'o1js';
+
+export function calculateShareSecret(
+  priKey: PrivateKey,
+  otherPubKey: PublicKey
+): string {
+  const fields = otherPubKey.toGroup().scale(priKey.s).toFields();
+  const f1 = fields[0].toBigInt();
+  const f2 = fields[1].toBigInt();
+
+  return (f1 & f2).toString();
+}
 
 /*
   Get some key material to use as input to the deriveKey method.
