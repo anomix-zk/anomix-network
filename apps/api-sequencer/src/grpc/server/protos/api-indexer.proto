@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package apiIndexer;
+
+service ApiIndexer {
+  rpc checkAcctViewKeyRegistered (CheckAcctViewKeyRegisteredReq) returns (CheckAcctViewKeyRegisteredResp) {}
+  rpc checkAliasAlignWithViewKey (CheckAliasAlignWithViewKeyReq) returns (CheckAliasAlignWithViewKeyResp) {}
+  rpc queryBlockByBlockHash (QueryBlockByBlockHashReq) returns (QueryBlockByBlockHashResp){}
+  rpc queryBlockByBlockHeight (QueryBlockByBlockHeightReq) returns (QueryBlockByBlockHeightResp){}
+  rpc queryByTxHashes (QueryByTxHashesReq) returns (QueryByTxHashesResp){}
+  rpc queryAcctViewKeyByAlias (QueryAcctViewKeyByAliasReq) returns (QueryAcctViewKeyByAliasResp){}
+  rpc queryAliasByAcctViewKey (QueryAliasByAcctViewKeyReq) returns (QueryAliasByAcctViewKeyResp){}
+}
+
+message CheckAcctViewKeyRegisteredReq{
+    string acctViewKey= 1 ;
+    bool includePending = 2;
+}
+
+message CheckAcctViewKeyRegisteredResp{
+  int32 code = 1;
+  bool data = 2;
+  string msg = 3;
+}
+
+
+message CheckAliasAlignWithViewKeyReq{
+    string aliasHash= 1 ;
+    string acctViewKey= 2 ;
+    bool includePending = 3;
+}
+
+message CheckAliasAlignWithViewKeyResp{
+  int32 code = 1;
+  bool data = 2;
+  string msg = 3;
+}
+
+message QueryBlockByBlockHashReq{
+  string blockHash = 1;
+}
+
+message QueryBlockByBlockHashResp{
+  int32 code = 1;
+  message data {
+    string blockHash = 1;
+    // TODO BlockDto
+    //
+    //
+  };
+  string msg = 3;
+}
+
+message QueryByTxHashesReq{
+  repeated string txHashes = 1;
+}
+message QueryByTxHashesResp{
+  int32 code = 1;
+  message data {
+    string blockHash = 1;
+    // TODO BlockDto
+    //
+    //
+  };
+  string msg = 3;
+}
+
+message QueryBlockByBlockHeightReq{
+  int64 blockHeight = 1;
+}
+message QueryBlockByBlockHeightResp{
+  int32 code = 1;
+  message data {
+    string blockHash = 1;
+    // TODO BlockDto
+    //
+    //
+  };
+  string msg = 3;
+}
+
+message QueryAcctViewKeyByAliasReq {
+  string aliashash =1
+}
+message QueryAcctViewKeyByAliasResp{
+  int32 code = 1;
+  message data {
+    repeated string acctViewKeys = 1;
+  };
+  string msg = 3;
+}
+
+message QueryAliasByAcctViewKeyReq {
+  string aliashash =1
+}
+message QueryAliasByAcctViewKeyResp{
+  int32 code = 1;
+  message data {
+    string alias = 1;
+    string aliasInfo = 2;
+  };
+  string msg = 3;
+}
