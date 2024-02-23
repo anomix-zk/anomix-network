@@ -737,3 +737,21 @@ export async function queryTxByNoteHashx(dto: string[]) {
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
+
+export async function queryTxByNullifier(dto: string[]) {
+
+    const notehashes = dto;
+
+    try {
+        // request sequencer for the result.
+        const rs = await $axiosSeq.post<BaseResponse<L2Tx[]>>('/tx/nullifiers', notehashes).then(r => {
+            return r.data
+        })
+
+        return rs;
+    } catch (err) {
+        console.error(err);
+        logger.error(err);
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
