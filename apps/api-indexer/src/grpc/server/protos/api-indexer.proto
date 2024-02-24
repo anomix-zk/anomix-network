@@ -80,7 +80,7 @@ message QueryBlockByBlockHeightResp{
 }
 
 message QueryAcctViewKeyByAliasReq {
-  string aliashash =1
+  string aliashash =1;
 }
 message QueryAcctViewKeyByAliasResp{
   int32 code = 1;
@@ -91,13 +91,43 @@ message QueryAcctViewKeyByAliasResp{
 }
 
 message QueryAliasByAcctViewKeyReq {
-  string aliashash =1
+  string aliashash =1;
 }
+
 message QueryAliasByAcctViewKeyResp{
   int32 code = 1;
   message data {
     string alias = 1;
     string aliasInfo = 2;
+  };
+  string msg = 3;
+}
+
+message QueryAssetsInBlocksReq{
+  repeated number blocks = 1;
+  message range {
+    int64 from = 1;
+    int64 take = 2;
+  };
+  number flag = 3;
+}
+
+message QueryAssetsInBlocksResp{
+  int32 code = 1;
+  message data {
+    number  blockHeight= 1;
+    string blockHash= 2;
+    string l1TxHash= 3;
+
+    number status= 4;
+    /**
+     * L2 tx list
+     */
+    // txList= L2TxSimpleDto[];
+
+    number createdTs= 5;
+
+    number finalizedTs= 6;
   };
   string msg = 3;
 }
