@@ -131,3 +131,17 @@ message QueryAssetsInBlocksResp{
   };
   string msg = 3;
 }
+
+message QueryPartialByBlockHeightReq{
+  repeated number blockHeightList = 1;
+  repeated string fieldNames = 2;
+}
+
+message QueryPartialByBlockHeightResp{
+  int32 code = 1;
+  message data {
+    string name = 1;
+    number amount =2;
+  };
+  string msg = 3;
+}
