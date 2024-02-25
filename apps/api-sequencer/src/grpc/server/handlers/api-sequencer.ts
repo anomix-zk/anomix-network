@@ -16,6 +16,7 @@ import { StandardIndexedTree } from "@anomix/merkle-tree";
 import { randomUUID } from "crypto";
 import { PrivateKey } from "o1js";
 import fs from "fs";
+import { $axiosSeq } from "../../../lib/api";
 
 
 const logger = getLogger('api-sequencer');
@@ -75,4 +76,27 @@ export async function withdrawAsset(dto: WithdrawAssetReqDto) {
     } catch (err) {
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
+}
+
+/**
+ * during the entire WITHDRAWAL flow, need ganruantee being under the same data_tree root.
+ */
+export async function checkPoint() {
+    // query current latest block height
+    const blockRepository = getConnection().getRepository(Block);
+    // query latest block
+    const blockEntity = (await blockRepository.find({
+        select: [
+            'id'
+        ],
+        where: {
+            status: BlockStatus.CONFIRMED
+        },
+        order: {
+            id: 'DESC'
+        },
+        take: 1
+    }))[0];
+
+    return blockEntity!.id;
 }
