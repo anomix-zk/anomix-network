@@ -10,6 +10,7 @@ service ApiIndexer {
   rpc queryByTxHashes (QueryByTxHashesReq) returns (QueryByTxHashesResp){}
   rpc queryAcctViewKeyByAlias (QueryAcctViewKeyByAliasReq) returns (QueryAcctViewKeyByAliasResp){}
   rpc queryAliasByAcctViewKey (QueryAliasByAcctViewKeyReq) returns (QueryAliasByAcctViewKeyResp){}
+  rpc queryAssetsInBlocks (QueryAssetsInBlocksReq) returns (QueryAssetsInBlocksResp){}
 }
 
 message CheckAcctViewKeyRegisteredReq{
@@ -104,36 +105,36 @@ message QueryAliasByAcctViewKeyResp{
 }
 
 message QueryAssetsInBlocksReq{
-  repeated number blocks = 1;
+  repeated int32 blocks = 1;
   message range {
     int64 from = 1;
     int64 take = 2;
   };
-  number flag = 3;
+  int32 flag = 3;
 }
 
 message QueryAssetsInBlocksResp{
   int32 code = 1;
   message data {
-    number  blockHeight= 1;
+    int32  blockHeight= 1;
     string blockHash= 2;
     string l1TxHash= 3;
 
-    number status= 4;
+    int32 status= 4;
     /**
      * L2 tx list
      */
     // txList= L2TxSimpleDto[];
 
-    number createdTs= 5;
+    int32 createdTs= 5;
 
-    number finalizedTs= 6;
+    int32 finalizedTs= 6;
   };
   string msg = 3;
 }
 
 message QueryPartialByBlockHeightReq{
-  repeated number blockHeightList = 1;
+  repeated int32 blockHeightList = 1;
   repeated string fieldNames = 2;
 }
 
@@ -141,7 +142,34 @@ message QueryPartialByBlockHeightResp{
   int32 code = 1;
   message data {
     string name = 1;
-    number amount =2;
+    int32 amount =2;
+  };
+  string msg = 3;
+}
+
+message QueryAssetsInBlocksReq {
+  repeated int32 blocks = 1;
+  message range {
+    int64 from = 1;
+    int64 take = 2;
+  };
+  int32 flag = 3;
+}
+
+message AssetsInBlockDto {
+  int32 blockHeight = 1;
+  string blockHash = 2;
+  string l1TxHash = 3;
+  int32 status = 4;
+  // txList: L2TxSimpleDto[];
+  int32 createdTs = 5;
+  int32 finalizedTs = 6;
+}
+
+message QueryPartialByBlockHeightResp{
+  int32 code = 1;
+  message data {
+    repeated AssetsInBlockDto dto = 1;
   };
   string msg = 3;
 }
