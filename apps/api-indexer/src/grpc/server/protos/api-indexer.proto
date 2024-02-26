@@ -11,6 +11,8 @@ service ApiIndexer {
   rpc queryAcctViewKeyByAlias (QueryAcctViewKeyByAliasReq) returns (QueryAcctViewKeyByAliasResp){}
   rpc queryAliasByAcctViewKey (QueryAliasByAcctViewKeyReq) returns (QueryAliasByAcctViewKeyResp){}
   rpc queryAssetsInBlocks (QueryAssetsInBlocksReq) returns (QueryAssetsInBlocksResp){}
+  rpc queryPartialByBlockHeight (QueryPartialByBlockHeightReq) returns (QueryPartialByBlockHeightResp){}
+  rpc queryLatestBlockHeight () returns (QueryLatestBlockHeightResp){}
 }
 
 message CheckAcctViewKeyRegisteredReq{
@@ -171,5 +173,11 @@ message QueryPartialByBlockHeightResp{
   message data {
     repeated AssetsInBlockDto dto = 1;
   };
+  string msg = 3;
+}
+
+message QueryLatestBlockHeightResp {
+    int32 code = 1;
+  int32 data = 2;
   string msg = 3;
 }
