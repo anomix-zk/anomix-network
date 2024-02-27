@@ -839,3 +839,24 @@ export async function queryWithdrawalNotesx(dto: { commitments: string[], l1addr
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
+
+export async function queryUserTreeInfo(dto: { tokenId: string, ownerPk: string, includeUncommit: boolean }) {
+    const { tokenId, ownerPk, includeUncommit } = dto;
+    try {
+        const rs = await $axiosSeq.post<BaseResponse<{
+            treeId: string,
+            includeUncommit: boolean,
+            depth: number,
+            leafNum: string,
+            treeRoot: string
+        }>>('/user-nullifier-tree', { tokenId, ownerPk, includeUncommit }).then(r => {
+            return r.data
+        })
+        return rs;
+    } catch (err) {
+        console.error(err);
+        logger.error(err);
+
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
