@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package ApiSequencer;
+package apiSequencer;
 
 service ApiSequencer {
   rpc withdrawAsset (WithdrawAssetReq) returns (WithdrawAssetResp) {}
