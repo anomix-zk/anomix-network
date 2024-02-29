@@ -18,6 +18,10 @@ service ApiIndexer {
 
   rpc queryTxByNoteHashx (QueryTxByNoteHashxReq) returns (QueryTxByNoteHashxResp) {}
   rpc queryTxByNullifier (QueryTxByNullifierReq) returns (QueryTxByNullifierResp) {}
+
+
+  rpc queryWithdrawalNotesx (QueryWithdrawalNotesxReq) returns (QueryWithdrawalNotesxResp) {}
+  rpc queryUserTreeInfo (QueryUserTreeInfoReq) returns (QueryUserTreeInfoResp) {}
 }
 
 message CheckAcctViewKeyRegisteredReq{
@@ -280,4 +284,56 @@ message QueryTxByNullifierResp {
     // extraData
   };
   string msg = 3;
+}
+
+message QueryWithdrawalNotesxReq {
+  repeated string commitments = 1;
+  string l1addr = 2;
+}
+
+message QueryWithdrawalNotesxResp {
+  int32 code = 1;
+  message data {
+    int32 id = 1;
+
+    string ownerPk = 2;
+    string accountRequired = 3;
+
+    string creatorPk = 4;
+    string value = 5;
+    string assetId = 6;
+    string inputNullifier = 7;
+    string secret = 8;
+    string noteType = 9;
+
+    string l2TxHash = 10;
+
+    string outputNoteCommitment = 11;
+
+    string outputNoteCommitmentIdx = 12;
+
+    string l1TxHash = 13;
+
+    string l1TxBody = 14;
+
+    int32 status = 15;
+
+    int32 finalizedTs = 16;
+
+    int32 createdTs = 17;
+  };
+  string msg = 3;
+}
+
+message QueryUserTreeInfoReq{
+  string tokenId = 1;
+  string ownerPk = 2; 
+  bool includeUncommit = 3;
+}
+message QueryUserTreeInfoResp{
+  string treeId = 1;
+  bool includeUncommit =2;
+  int32 depth = 3;
+  string  leafNum = 4;
+  string  treeRoot = 5;
 }
