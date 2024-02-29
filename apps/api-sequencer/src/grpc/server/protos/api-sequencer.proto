@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package ApiSequencer;
+
+service ApiSequencer {
+  rpc withdrawAsset (WithdrawAssetReq) returns (WithdrawAssetResp) {}
+  rpc checkPoint (CheckPointReq) returns (CheckPointResp) {}
+  rpc queryTxByNoteHashx (QueryTxByNoteHashxReq) returns (QueryTxByNoteHashxResp){}
+  rpc queryTxByNullifier (QueryTxByNullifierReq) returns (QueryTxByNullifierResp){}
+  rpc queryUserTreeInfo (QueryUserTreeInfoReq) returns (QueryUserTreeInfoResp){}
+}
+
+message WithdrawAssetReq {
+  string l1addr = 1;
+  string noteCommitment = 2;
+}
+
+// flag: boolean, l2txStr: string
+message WithdrawAssetResp {
+  int32 code = 1;
+  message data {
+    string string = 1;
+  }
+  string msg = 3;
+}
+
+message QueryTxByNoteHashxReq {
+    repeated string notehashes = 1;
+}
+
+// from L2TxSimpleDto
+message QueryTxByNoteHashxResp {
+  int32 code = 1;
+  message data {
+    int32 id = 1;
+    string txHash = 2;
+    string actionType = 3;
+    string nullifier1 = 4;
+    string nullifierIdx1 = 5;
+    string nullifier2 = 6;
+    string  nullifierIdx2 = 7;
+    string outputNoteCommitment1 = 8;
+    string outputNoteCommitmentIdx1 = 9;
+    string outputNoteCommitment2 = 10;
+    string outputNoteCommitmentIdx2 = 11;
+    string publicValue= 12;
+    string publicOwner = 13;
+    string publicAssetId = 14;
+    string dataRoot = 15;
+    string depositRoot = 16;
+    string depositIndex = 17;
+    string txFee = 18;
+    string txFeeAssetId = 19;
+    // extraData
+  };
+  string msg = 3;
+}
+
+message QueryTxByNullifierReq {
+  repeated string nullifierList = 1;  
+}
+
+// from L2TxSimpleDto
+message QueryTxByNullifierResp {
+  int32 code = 1;
+  message data {
+    int32 id = 1;
+    string txHash = 2;
+    string actionType = 3;
+    string nullifier1 = 4;
+    string nullifierIdx1 = 5;
+    string nullifier2 = 6;
+    string  nullifierIdx2 = 7;
+    string outputNoteCommitment1 = 8;
+    string outputNoteCommitmentIdx1 = 9;
+    string outputNoteCommitment2 = 10;
+    string outputNoteCommitmentIdx2 = 11;
+    string publicValue= 12;
+    string publicOwner = 13;
+    string publicAssetId = 14;
+    string dataRoot = 15;
+    string depositRoot = 16;
+    string depositIndex = 17;
+    string txFee = 18;
+    string txFeeAssetId = 19;
+    // extraData
+  };
+  string msg = 3;
+}
+
+message QueryUserTreeInfoReq {
+  string tokenId = 1;
+  string ownerPk = 2; 
+  bool includeUncommit = 3;
+}
+message QueryUserTreeInfoResp {
+  string treeId = 1;
+  bool includeUncommit =2;
+  int32 depth = 3;
+  string  leafNum = 4;
+  string  treeRoot = 5;
+}

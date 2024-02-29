@@ -100,3 +100,105 @@ export async function checkPoint() {
 
     return blockEntity!.id;
 }
+
+export async function queryTxByNoteHashx(dto: string[]) {
+
+    const notehashes = dto
+
+    try {
+        const txHashList = await $axiosSeq.post<BaseResponse<string[]>>('/tx/notehashes', notehashes).then(r => {
+            return r.data.data
+        });
+
+        const connection = getConnection();
+        const txRepository = connection.getRepository(L2Tx)
+        // then query confirmed tx collection
+        const ctxList = await txRepository.find({
+            where: {
+                txHash: In(txHashList!)
+            }
+        }) ?? [];
+
+        const l2TxRespDtoList = await Promise.all(ctxList.map(async tx => {
+            const blockRepository = connection.getRepository(Block)
+            const block = await blockRepository.findOne({ select: ['createdAt', 'finalizedAt'], where: { id: tx.blockId } });
+
+            const { updatedAt, createdAt, proof, encryptedData1, encryptedData2, ...restObj } = tx;
+            const txDto = (restObj as any) as L2TxRespDto;
+            txDto.finalizedTs = block!.finalizedAt.getTime();
+            txDto.createdTs = block!.createdAt.getTime();
+
+            txDto.extraData = {} as any;
+            txDto.extraData.outputNote1 = encryptedData1 ? JSON.parse(encryptedData1) : undefined;
+            txDto.extraData.outputNote2 = encryptedData2 ? JSON.parse(encryptedData2) : undefined;
+
+            if (tx.actionType == ActionType.WITHDRAW.toString()) {// if Withdrawal
+                // query WithdrawInfoDto
+                const withdrawNoteRepo = connection.getRepository(WithdrawInfo);
+                const { createdAt, updatedAt, finalizedAt, blockIdWhenL1Tx, ...restPro } = (await withdrawNoteRepo.findOne({ where: { l2TxHash: txDto.txHash } }))!;
+                txDto.extraData.withdrawNote = restPro as any as WithdrawInfoDto;
+                txDto.extraData.withdrawNote.createdTs = txDto.createdTs;// !!!
+
+            } else if (tx.actionType == ActionType.ACCOUNT.toString()) {// if Account
+                // query Account
+                const accountRepo = connection.getRepository(Account);
+                const account = await accountRepo.findOne({ where: { l2TxHash: txDto.txHash } });
+                txDto.extraData.acctPk = account?.acctPk;
+                txDto.extraData.aliasHash = account?.aliasHash;
+                txDto.extraData.aliasInfo = account?.encrptedAlias;
+            }
+
+            return txDto;
+        }));
+
+        return {
+            code: 0,
+            data: l2TxRespDtoList,
+            msg: ''
+        };
+    } catch (err) {
+        logger.error(err);
+        console.error(err);
+
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
+export async function queryTxByNullifier(dto: string[]) {
+
+    const notehashes = dto;
+
+    try {
+        // request sequencer for the result.
+        const rs = await $axiosSeq.post<BaseResponse<L2Tx[]>>('/tx/nullifiers', notehashes).then(r => {
+            return r.data
+        })
+
+        return rs;
+    } catch (err) {
+        console.error(err);
+        logger.error(err);
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
+
+export async function queryUserTreeInfo(dto: { tokenId: string, ownerPk: string, includeUncommit: boolean }) {
+    const { tokenId, ownerPk, includeUncommit } = dto;
+    try {
+        const rs = await $axiosSeq.post<BaseResponse<{
+            treeId: string,
+            includeUncommit: boolean,
+            depth: number,
+            leafNum: string,
+            treeRoot: string
+        }>>('/user-nullifier-tree', { tokenId, ownerPk, includeUncommit }).then(r => {
+            return r.data
+        })
+        return rs;
+    } catch (err) {
+        console.error(err);
+        logger.error(err);
+
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
