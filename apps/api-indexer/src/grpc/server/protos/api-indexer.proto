@@ -55,10 +55,74 @@ message QueryBlockByBlockHashReq{
 message QueryBlockByBlockHashResp{
   int32 code = 1;
   message data {
-    string blockHash = 1;
-    // TODO BlockDto
-    //
-    //
+    int32 id = 1;
+
+    string blockHash = 2;
+
+
+   int32 rollupSize = 3;
+
+
+
+   string rootTreeRoot0 = 4;
+
+
+   string dataTreeRoot0 = 5;
+
+
+   string nullifierTreeRoot0 = 6;
+
+
+   string depositStartIndex0 = 7;
+
+
+   string rootTreeRoot1 = 8;
+
+
+   string dataTreeRoot1 = 9;
+
+
+   string dataTreeRoot1Indx = 10;
+
+
+   string nullifierTreeRoot1 = 11;
+
+
+   string depositStartIndex1 = 12;
+
+
+
+   string depositRoot = 13;
+
+
+   int32 depositCount = 14;
+
+
+   string totalTxFees = 15;
+
+
+   string txFeeReceiver = 16;
+
+
+   string txFeeCommitment = 17;
+
+
+   string l1TxHash = 18;
+
+
+   string status = 19;
+
+
+   int32 finalizedAt = 20;
+
+
+   int32 triggerProofAt = 21;
+
+
+   int32 updatedAt = 22;
+
+
+   int32 createdAt = 23;
   };
   string msg = 3;
 }
@@ -68,11 +132,75 @@ message QueryByTxHashesReq{
 }
 message QueryByTxHashesResp{
   int32 code = 1;
-  message data {
-    string blockHash = 1;
-    // TODO BlockDto
-    //
-    //
+ message data {
+    int32 id = 1;
+
+    string blockHash = 2;
+
+
+   int32 rollupSize = 3;
+
+
+
+   string rootTreeRoot0 = 4;
+
+
+   string dataTreeRoot0 = 5;
+
+
+   string nullifierTreeRoot0 = 6;
+
+
+   string depositStartIndex0 = 7;
+
+
+   string rootTreeRoot1 = 8;
+
+
+   string dataTreeRoot1 = 9;
+
+
+   string dataTreeRoot1Indx = 10;
+
+
+   string nullifierTreeRoot1 = 11;
+
+
+   string depositStartIndex1 = 12;
+
+
+
+   string depositRoot = 13;
+
+
+   int32 depositCount = 14;
+
+
+   string totalTxFees = 15;
+
+
+   string txFeeReceiver = 16;
+
+
+   string txFeeCommitment = 17;
+
+
+   string l1TxHash = 18;
+
+
+   string status = 19;
+
+
+   int32 finalizedAt = 20;
+
+
+   int32 triggerProofAt = 21;
+
+
+   int32 updatedAt = 22;
+
+
+   int32 createdAt = 23;
   };
   string msg = 3;
 }
@@ -82,11 +210,75 @@ message QueryBlockByBlockHeightReq{
 }
 message QueryBlockByBlockHeightResp{
   int32 code = 1;
-  message data {
-    string blockHash = 1;
-    // TODO BlockDto
-    //
-    //
+ message data {
+    int32 id = 1;
+
+    string blockHash = 2;
+
+
+   int32 rollupSize = 3;
+
+
+
+   string rootTreeRoot0 = 4;
+
+
+   string dataTreeRoot0 = 5;
+
+
+   string nullifierTreeRoot0 = 6;
+
+
+   string depositStartIndex0 = 7;
+
+
+   string rootTreeRoot1 = 8;
+
+
+   string dataTreeRoot1 = 9;
+
+
+   string dataTreeRoot1Indx = 10;
+
+
+   string nullifierTreeRoot1 = 11;
+
+
+   string depositStartIndex1 = 12;
+
+
+
+   string depositRoot = 13;
+
+
+   int32 depositCount = 14;
+
+
+   string totalTxFees = 15;
+
+
+   string txFeeReceiver = 16;
+
+
+   string txFeeCommitment = 17;
+
+
+   string l1TxHash = 18;
+
+
+   string status = 19;
+
+
+   int32 finalizedAt = 20;
+
+
+   int32 triggerProofAt = 21;
+
+
+   int32 updatedAt = 22;
+
+
+   int32 createdAt = 23;
   };
   string msg = 3;
 }
@@ -172,7 +364,7 @@ message AssetsInBlockDto {
   string blockHash = 2;
   string l1TxHash = 3;
   int32 status = 4;
-  // txList: L2TxSimpleDto[];
+  // txList = ;
   int32 createdTs = 5;
   int32 finalizedTs = 6;
 }
