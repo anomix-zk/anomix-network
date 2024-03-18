@@ -100,7 +100,7 @@ function fromBase(digits: bigint[], base: bigint) {
   if (base <= 0n) throw Error('fromBase: base must be positive');
   // compute powers base, base^2, base^4, ..., base^(2^k)
   // with largest k s.t. n = 2^k < digits.length
-  let basePowers = [];
+  let basePowers: bigint[] = [];
   for (let power = base, n = 1; n < digits.length; power **= 2n, n *= 2) {
     basePowers.push(power);
   }
@@ -126,7 +126,7 @@ function toBase(x: bigint, base: bigint) {
   if (base <= 0n) throw Error('toBase: base must be positive');
   // compute powers base, base^2, base^4, ..., base^(2^k)
   // with largest k s.t. base^(2^k) < x
-  let basePowers = [];
+  let basePowers: bigint[] = [];
   for (let power = base; power < x; power **= 2n) {
     basePowers.push(power);
   }
