@@ -1,0 +1,20 @@
+{
+  "name": "@anomix/grpc-protos",
+  "private": true,
+  "description": "common grpc-protos for Anomix-Network",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "lib:dev": "npm run lib:build && (concurrently \"tsc --build tsconfig.json --watch\" \"tsc-alias -w\")",
+    "lib:gen-schema": "npm run gen-schema-pvdto && npm run gen-schema-aibreqdto && npm run gen-schema-aibdto && npm run gen-schema-bkdto && npm run gen-schema-txreqdto && npm run gen-schema-txrespdto && npm run gen-schema-mpdto && npm run gen-schema-nsdto && npm run gen-schema-ptdto && npm run gen-schema-rtdto && npm run gen-schema-tfsdto && npm run gen-schema-widto && npm run gen-schema-wareqdto && npm run gen-schema-wsrespdto && npm run gen-schema-wwdto ",
+    "lib:build": "npm run lib:clean && npm run lib:gen-schema && tsc --build tsconfig.json && tsc-alias",
+    "lib:clean": "rimraf ./dist ./dist_es ./tsconfig.es.tsbuildinfo ./tsconfig.tsbuildinfo",
+    "lib:lint": "eslint \"src/**/*.ts\" --fix"
+  },
+  "peerDependencies": {
+    "o1js": "0.14.2"
+  }
+}
