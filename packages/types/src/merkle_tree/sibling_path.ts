@@ -27,10 +27,10 @@ export class BaseSiblingPath extends CircuitValue {
         hasher: Hasher = new PoseidonHasher()
     ): BaseSiblingPath {
         const path: Field[] = [];
-        let current = zeroElement;
+        let current = zeroElement.toBigInt();
         for (let i = 0; i < this.height; ++i) {
-            path.push(current);
-            current = hasher.compress(current, current);
+            path.push(Field(current));
+            current = hasher.hash(current, current);
         }
         return new this(path);
     }
@@ -42,16 +42,16 @@ export class BaseSiblingPath extends CircuitValue {
     ): Field {
         const h = this.height();
         const pathPosBits = leafIndex.toBits(h);
-        let node = leaf;
+        let node = leaf.toBigInt();
 
         for (let i = 0; i < h; i++) {
             const currentNode = this.path[i];
             const isRight = pathPosBits[i];
 
-            const [left, right] = maybeSwap(isRight, currentNode, node);
-            node = hasher.compress(left, right);
+            const [left, right] = maybeSwap(isRight, currentNode, Field(node));
+            node = hasher.hash(left.toBigInt(), right.toBigInt());
         }
-        return node; // root
+        return Field(node); // root
     }
 
     public getSubtreeSiblingPath(subtreeHeight: number): BaseSiblingPath {
