@@ -18,6 +18,19 @@ import { PrivateKey } from "o1js";
 import fs from "fs";
 import { $axiosSeq } from "../../../lib/api";
 
+import grpc from "@grpc/grpc-js";
+import protoLoader from "@grpc/proto-loader";
+
+const PROTO_PATH = __dirname + '../../../../../grpc-protos/src/seq-service/rollup-seq.proto';
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true
+});
+const seqService_proto = grpc.loadPackageDefinition(packageDefinition).rollupSeq;
+const seqClient = new seqService_proto.RollupSeq(config.sequencerHost + ':' + config.sequencerPort, grpc.credentials.createInsecure());
 
 const logger = getLogger('api-sequencer');
 
@@ -71,7 +84,13 @@ export async function withdrawAsset(dto: WithdrawAssetReqDto) {
         }
 
         //send to 'Sequencer' for further handle.
-        return await $axiosSeq.post<BaseResponse<string>>('/tx/withdraw', { l1addr, noteCommitment }).then(r => r.data);
+        await seqClient.withdrawAsset({ l1addr, noteCommitment }, function(err, response) {
+            if (err) {
+                throw new Error(err.message);
+            }
+            return response;
+          });
+        // return await $axiosSeq.post<BaseResponse<string>>('/tx/withdraw', { l1addr, noteCommitment }).then(r => r.data);
 
     } catch (err) {
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
