@@ -18,6 +18,7 @@ service RollupSeq {
   rpc appendTreeByHand(AppendTreeByHandReq) returns (AppendTreeByHandResp) {};
   rpc appendUserNullifierTreeByHand(AppendUserNullifierTreeByHandReq) returns (AppendUserNullifierTreeByHandResp) {};
   rpc queryMerkleProof(QueryMerkleProofReq) returns (QueryMerkleProofResp) {};
+  rpc queryUserTreeInfo(QueryUserTreeInfoReq) returns (QueryUserTreeInfoResp) {};
 }
 
 message QueryMerkleProofReq{
@@ -177,5 +178,21 @@ message ProofCallbackResp {
   string msg = 3;
 }
 
+message QueryUserTreeInfoReq {
+  string tokenId = 1;
+  string ownerPk = 2;
+  bool includeUncommit = 3;
+}
 
-
+message QueryUserTreeInfoResp{
+  int32 code = 1;
+  message data {
+    string treeId = 1;
+    string treeId = 2;
+    bool includeUncommit = 3;
+    number depth = 4;
+    string leafNum = 5;
+    string treeRoot = 6;
+  }
+  string msg = 3;
+}
