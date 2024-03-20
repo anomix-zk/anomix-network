@@ -683,3 +683,45 @@ export async function queryMerkleProof(worldState: WorldState, dto: { treeId: nu
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
+
+export async function queryUserTreeInfo(worldState: WorldState, withdrawDB: WithdrawDB, dto: { tokenId: string, ownerPk: string, includeUncommit: boolean }) {
+    const { tokenId, ownerPk, includeUncommit } = dto;
+
+    try {
+        const firstFlag = await worldState.indexDB.get(`${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:STATUS:${ownerPk}:${tokenId}`);
+        logger.info(`check if already init: firstFlag=${firstFlag?.toString()}`);
+        if (!firstFlag) {
+            return {
+                code: 0,
+                data: undefined as any,
+                msg: 'the tree is not init yet!'
+            }
+        }
+
+        logger.info(`loading tree: ${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${tokenId}:${ownerPk} ...`);
+        // loadTree from withdrawDB & obtain merkle witness
+        await withdrawDB.loadTree(PublicKey.fromBase58(ownerPk), tokenId);
+        logger.info(`load tree, done.`);
+
+        const depth = withdrawDB.getDepth();
+        const leafNum = withdrawDB.getNumLeaves(includeUncommit).toString();
+        const treeRoot = withdrawDB.getRoot(includeUncommit).toString();
+        await withdrawDB.reset();
+        logger.info(`withdrawDB.reset... done.`);
+
+        return {
+            code: 0,
+            data: {
+                treeId: `${MerkleTreeId[MerkleTreeId.USER_NULLIFIER_TREE]}:${tokenId}:${ownerPk}`,
+                includeUncommit,
+                depth,
+                leafNum,
+                treeRoot
+            }, msg: ''
+        };
+    } catch (err) {
+        logger.error(err);
+        console.error(err);
+        // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
