@@ -725,3 +725,41 @@ export async function queryUserTreeInfo(worldState: WorldState, withdrawDB: With
         // throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
     }
 }
+
+async function queryTxByNoteHashes(noteHashes: string[]){
+    const notehashes = req.body;
+
+    const connection = getConnection();
+
+    try {
+        // query confirmed tx
+        const txRepository = connection.getRepository(L2Tx);
+        let l2TxListNoteCommitment1 = await txRepository.find({
+            where: {
+                outputNoteCommitment1: In(notehashes)
+            }
+        }) ?? [];
+
+        let l2TxListNoteCommitment2 = await txRepository.find({
+            where: {
+                outputNoteCommitment2: In(notehashes)
+            }
+        }) ?? [];
+
+        let l2TxList = l2TxListNoteCommitment1.concat(l2TxListNoteCommitment2);
+        const map = new Map();
+        l2TxList.forEach(e => {
+            map.set(e.txHash, e);
+        });
+
+        const result = Array.from(map.values());
+
+        return {
+            code: 0,
+            data: result,
+            msg: ''
+        };
+    } catch (err) {
+        throw req.throwError(httpCodes.INTERNAL_SERVER_ERROR, "Internal server error")
+    }
+}
