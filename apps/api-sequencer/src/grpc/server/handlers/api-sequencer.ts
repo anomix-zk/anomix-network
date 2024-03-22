@@ -125,8 +125,12 @@ export async function queryTxByNoteHashx(dto: string[]) {
     const notehashes = dto
 
     try {
-        const txHashList = await $axiosSeq.post<BaseResponse<string[]>>('/tx/notehashes', notehashes).then(r => {
-            return r.data.data
+        //send to 'Sequencer' for further handle.
+        await seqClient.withdrawAsset({ l1addr, noteCommitment }, function(err, response) {
+            if (err) {
+                throw new Error(err.message);
+            }
+            return response;
         });
 
         const connection = getConnection();
@@ -189,9 +193,12 @@ export async function queryTxByNullifier(dto: string[]) {
 
     try {
         // request sequencer for the result.
-        const rs = await $axiosSeq.post<BaseResponse<L2Tx[]>>('/tx/nullifiers', notehashes).then(r => {
-            return r.data
-        })
+        const rs = seqClient.queryTxByNullifier(notehashes, function(err, response) {
+            if (err) {
+                throw new Error(err.message);
+            }
+            return response;
+        });
 
         return rs;
     } catch (err) {
@@ -204,6 +211,7 @@ export async function queryTxByNullifier(dto: string[]) {
 export async function queryUserTreeInfo(dto: { tokenId: string, ownerPk: string, includeUncommit: boolean }) {
     const { tokenId, ownerPk, includeUncommit } = dto;
     try {
+        /*
         const rs = await $axiosSeq.post<BaseResponse<{
             treeId: string,
             includeUncommit: boolean,
@@ -213,6 +221,15 @@ export async function queryUserTreeInfo(dto: { tokenId: string, ownerPk: string,
         }>>('/user-nullifier-tree', { tokenId, ownerPk, includeUncommit }).then(r => {
             return r.data
         })
+        */
+        
+        //send to 'Sequencer' for further handle.
+        await seqClient.queryUserTreeInfo({ tokenId, ownerPk, includeUncommit }, function(err, response) {
+            if (err) {
+                throw new Error(err.message);
+            }
+            return response;
+          });
         return rs;
     } catch (err) {
         console.error(err);
