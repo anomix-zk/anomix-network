@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package coordinator;
+
+service Coordinator {
+  rpc highFeeTxExist() returns (HighFeeTxExistResp) {};
+  rpc proofNotify(ProofNotifyReq) returns (ProofNotifyResp) {};
+}
+
+message ProofNotifyReq{
+  int32 taskType = 1 ;
+  string index = 2;,
+  message payload {
+    string l1addr = 1;
+  }
+}
+
+message ProofNotifyResp{
+  int32 code = 1;
+  string data = 2;
+  string msg = 3;
+}
+
+message HighFeeTxExistResp{
+  int32 code = 1;
+  string data = 2;
+  string msg = 3;
+}
+
+
+
+
