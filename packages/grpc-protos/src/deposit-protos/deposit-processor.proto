@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package depositProcessor;
+
+service DepositProcessor {
+  rpc triggerSeqDepositCommitment() returns (TriggerSeqDepositCommitmentResp) {};
+  rpc triggerContractCall(TriggerContractCallReq) returns (TriggerContractCallResp) {};
+  rpc queryLatestDepositTreeRoot() returns (QueryLatestDepositTreeRootResp) {};
+  rpc queryMerkleTreeInfo(QueryMerkleTreeInfoReq) returns (QueryMerkleTreeInfoResp) {};
+  rpc queryMerkleWitness(QueryMerkleWitnessReq) returns (QueryMerkleWitnessResp) {};
+  rpc syncLazyDepositTree(SyncLazyDepositTreeReq) returns (SyncLazyDepositTreeResp) {};
+}
+
+message SyncLazyDepositTreeResp{
+  int32 code = 1;
+  string data = 2;
+  string msg = 3;
+}
+
+message SyncLazyDepositTreeReq{
+   int32 transId = 1;
+}
+
+message QueryMerkleWitnessResp{
+    int32 code = 1;
+    message data: {
+      int32 treeId = 1;
+      string treeRoot = 2;
+      string witnesses = 3;
+    };
+   string msg = 3;
+}
+
+message QueryMerkleWitnessReq{
+   int32 treeId = 1;
+   repeated string leafIndexList = 2;
+}
+
+message QueryMerkleTreeInfoResp{
+    int32 code = 1;
+    message data: {
+      int32 treeId = 1;
+      bool includeUncommit = 2;
+      int32 depth = 3;
+      string leafNum = 4;
+      string treeRoot = 5;
+    };
+   string msg = 3;
+}
+
+message QueryMerkleTreeInfoReq{
+  int32 treeId = 1;
+  bool includeUncommit = 2;
+}
+
+message QueryLatestDepositTreeRootResp{
+  int32 code = 1;
+  string data = 2;
+  string msg = 3;
+}
+
+message TriggerContractCallResp{
+  int32 code = 1;
+  string data = 2;
+  string msg = 3;
+}
+
+message TriggerContractCallReq{
+   int32 transId = 1;
+}
+
+message TriggerSeqDepositCommitmentResp{
+  int32 code = 1;
+  bool data = 2;
+  string msg = 3;
+}
+
+message ProofNotifyReq{
+  int32 taskType = 1 ;
+  string index = 2;,
+  message payload {
+    string l1addr = 1;
+  }
+}
