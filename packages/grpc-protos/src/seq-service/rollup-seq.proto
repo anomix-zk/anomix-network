@@ -19,6 +19,7 @@ service RollupSeq {
   rpc appendUserNullifierTreeByHand(AppendUserNullifierTreeByHandReq) returns (AppendUserNullifierTreeByHandResp) {};
   rpc queryMerkleProof(QueryMerkleProofReq) returns (QueryMerkleProofResp) {};
   rpc queryUserTreeInfo(QueryUserTreeInfoReq) returns (QueryUserTreeInfoResp) {};
+  rpc queryTxByNoteHashes(QueryTxByNoteHashesReq) returns (QueryTxByNoteHashesResp) {};
 }
 
 message QueryMerkleProofReq{
@@ -195,4 +196,15 @@ message QueryUserTreeInfoResp{
     string treeRoot = 6;
   }
   string msg = 3;
+}
+
+message QueryTxByNoteHashxReq{
+  repeated string notehashes = 1;
+}
+
+message QueryTxByNoteHashxResp{
+  int32 code = 1;
+  message data {
+    repeated string notehashes = 1;
+  }
 }
