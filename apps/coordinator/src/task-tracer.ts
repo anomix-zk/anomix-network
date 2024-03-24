@@ -40,16 +40,27 @@ parentPort?.postMessage({// if it's a subThread
 
 logger.info('task-tracer is ready!');
 
-const PROTO_PATH = __dirname + '../../../../../grpc-protos/src/seq-service/rollup-seq.proto';
-const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+const PROTO_PATH_Seq = __dirname + '../../../../../grpc-protos/src/seq-service/rollup-seq.proto';
+const packageDefinition_Seq = protoLoader.loadSync(PROTO_PATH_Seq, {
     keepCase: true,
     longs: String,
     enums: String,
     defaults: true,
     oneofs: true
 });
-const seqService_proto = grpc.loadPackageDefinition(packageDefinition).rollupSeq;
+const seqService_proto = grpc.loadPackageDefinition(packageDefinition_Seq).rollupSeq;
 const seqClient = new seqService_proto.RollupSeq(config.sequencerHost + ':' + config.sequencerPort, grpc.credentials.createInsecure());
+
+const PROTO_PATH_Deposit = __dirname + '../../../../../grpc-protos/src/seq-service/rollup-seq.proto';
+const packageDefinition_Deposit = protoLoader.loadSync(PROTO_PATH_Deposit, {
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true
+});
+const depositService_proto = grpc.loadPackageDefinition(packageDefinition_Deposit).rollupSeq;
+const depositClient = new depositService_proto.DepositProcessor(config.depositProcessorHost + ':' + config.depositProcessorPort, grpc.credentials.createInsecure());
 
 await traceTasks();
 
@@ -187,8 +198,16 @@ async function traceTasks() {
                     case TaskType.DEPOSIT:
                         {
                             logger.info('sync deposit tree...');
+                            /*
                             await $axiosDeposit.get<BaseResponse<string>>(`/merkletree/sync/${task.targetId}`).then(rs => {
                                 if (rs.data.code != 0) {
+                                    throw new Error(`cannot sync sync_deposit_tree, due to: [${rs.data.msg}]`);
+                                }
+                            });
+                            */
+                            await depositClient.syncLazyDepositTree({transId: task.targetId}, (err, res) => {
+                                if (err) {
+                                    logger.error(err);
                                     throw new Error(`cannot sync sync_deposit_tree, due to: [${rs.data.msg}]`);
                                 }
                             });
