@@ -2,6 +2,17 @@ import { BaseResponse, RollupTaskDto, RollupTaskType } from "@anomix/types";
 import { parentPort } from "worker_threads";
 import { $axiosSeq } from "@/lib/api";
 
+const PROTO_PATH = __dirname + '../../../../../grpc-protos/src/seq-service/rollup-seq.proto';
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true
+});
+const seqService_proto = grpc.loadPackageDefinition(packageDefinition).rollupSeq;
+const seqClient = new seqService_proto.RollupSeq(config.sequencerHost + ':' + config.sequencerPort, grpc.credentials.createInsecure());
+
 export function highFeeTxExist() {
     try {
         // notify worker to seq.
@@ -28,8 +39,13 @@ export async function proofNotify(dto: RollupTaskDto<any, any>) {
         if (dto.taskType == RollupTaskType.DEPOSIT_JOINSPLIT) {// when join-split_deposit done, coordinator trigger ROLLUP_PROCESSOR to start rolluping; 
             // trigger ROLLUP_PROCESSOR to start rolluping; 
             dto.taskType = RollupTaskType.ROLLUP_PROCESS;
-            await $axiosSeq.post<BaseResponse<string>>('/rollup/proof-trigger', dto);
-
+            // await $axiosSeq.post<BaseResponse<string>>('/rollup/proof-trigger', dto);
+            seqClient.rollupProofTrigger(dto, (err, res) => {
+                if (err) {
+                    logger.error('call rollupProofTrigger rpc failed: ', err.message);
+                    throw new Error(err.message);
+                }
+            });
         }
 
         return { code: 0, data: respondData, msg: '' };

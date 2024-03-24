@@ -40,6 +40,17 @@ parentPort?.postMessage({// if it's a subThread
 
 logger.info('task-tracer is ready!');
 
+const PROTO_PATH = __dirname + '../../../../../grpc-protos/src/seq-service/rollup-seq.proto';
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true
+});
+const seqService_proto = grpc.loadPackageDefinition(packageDefinition).rollupSeq;
+const seqClient = new seqService_proto.RollupSeq(config.sequencerHost + ':' + config.sequencerPort, grpc.credentials.createInsecure());
+
 await traceTasks();
 
 setInterval(traceTasks, 1 * 60 * 1000); // exec/3mins
@@ -189,7 +200,9 @@ async function traceTasks() {
                         {
                             // sync data tree
                             logger.info('sync data tree...');
-                            await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync-data-tree`);
+                            // await $axiosSeq.get<BaseResponse<string>>(`/merkletree/sync-data-tree`);
+                            await seqClient.syncLazyDataTree();
+
                             logger.info(`sync data tree done.`);
                         }
                         break;
