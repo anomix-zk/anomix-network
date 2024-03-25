@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package proofGenerator;
+
+service ProofGenerator {
+  rpc proofGenReq (ProofGenReq) returns (ProofGenResp) {}
+  rpc proofVerifyReq (ProofVerifyReq) returns (ProofVerifyResp) {}
+  rpc joinsplitProofVerifyReq (JoinsplitProofVerifyReq) returns (JoinsplitProofVerifyResp) {}
+}
+
+message ProofGenReq {
+  int32 task = 1;
+  int32 index = 2;
+  string payload = 3;
+}
+
+message ProofGenResp {
+  int32 code = 1;
+  string data = 2;
+  string msg = 3;
+}
+
+message ProofVerifyReq {
+  int32 type = 1;
+  string index = 2;
+  message proof {
+    repeated string publicInput = 1;
+    repeated string publicOutput = 2;
+    int32 maxProofsVerified;
+    string proof;
+  };
+}
+
+// flag: boolean, l2txStr: string
+message ProofVerifyResp {
+  int32 code = 1;
+  message data {
+    bool flag = 1;
+    string l2txStr = 2;
+  }
+  string msg = 3;
+}
+
