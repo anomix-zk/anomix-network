@@ -24,6 +24,17 @@ parentPort?.postMessage({// when it's not a subThread, parentPort == null.
 const logger = getLogger('mempool-watcher');
 logger.info('hi, I am mempool-watcher!');
 
+const PROTO_PATH = __dirname + '../../../../../grpc-protos/src/seq-service/rollup-seq.proto';
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true
+});
+const seqService_proto = grpc.loadPackageDefinition(packageDefinition).rollupSeq;
+const seqClient = new seqService_proto.RollupSeq(config.sequencerHost + ':' + config.sequencerPort, grpc.credentials.createInsecure());
+
 await initORM();
 
 logger.info('mempool-watcher is ready!');
@@ -196,8 +207,18 @@ async function mempoolWatch() {
 
                 // trigger seq
                 logger.info('trigger /rollup/seq-trigger...');
+                /* 
                 await $axiosSeq.post<BaseResponse<string>>('/rollup/seq-trigger', rollupTaskDto).then(r => {
                     if (r.data.code == 1) {
+                        logger.error(r.data.msg);
+                        throw new Error(r.data.msg);
+                    }
+                }); 
+                */
+                await seqClient.rollupSeqTrigger(rollupTaskDto, (err, res) => {
+                    if (err) {
+                        logger.error(err);
+                    } else if (r.data.code == 1) {
                         logger.error(r.data.msg);
                         throw new Error(r.data.msg);
                     }
