@@ -28,6 +28,18 @@ const logger = getLogger('fetch-withdrawal-events');
 
 logger.info('hi, I am fetch-withdrawal-events');
 
+const PROTO_PATH = __dirname + '../../../../../grpc-protos/src/seq-service/rollup-seq.proto';
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true
+});
+const seqService_proto = grpc.loadPackageDefinition(packageDefinition).rollupSeq;
+const seqClient = new seqService_proto.RollupSeq(config.sequencerHost + ':' + config.sequencerPort, grpc.credentials.createInsecure());
+
+
 // init Mina tool
 await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
 
@@ -63,11 +75,22 @@ async function fetchWithdrawalEvents() {
 
     try {
         // trigger sync into user_nullifier_tree SEPERATELY
+        /*
         await $axiosSeq.get<BaseResponse<string>>(`/note/withdrawal-batch-sync`).then(r => {
             if (r.data.code == 1) {
                 logger.error(r.data.msg);
             }
         });
+        */
+       
+        await seqClient.syncUserWithdrawedNotes({}, (err, res) => {
+            if (err) {
+                logger.error(err);
+            } else if (r.data.code == 1) {
+                logger.error(r.data.msg);
+            }
+        });
+
     } catch (error) {
         logger.error(error);
     }
