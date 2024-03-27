@@ -22,6 +22,32 @@ import fs from "fs";
 
 const logger = getLogger('depositProcessor');
 
+
+// init Mina tool
+await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
+
+// init IndexDB
+const indexDB = new IndexDB(config.depositIndexedDBPath);// for cache
+logger.info('indexDB started.');
+
+// init mysqlDB
+const rollupDB = new RollupDB();
+await rollupDB.start();
+logger.info('rollupDB started.');
+
+// init worldStateDBLazy
+const existDBLazy = fs.existsSync(config.depositWorldStateDBLazyPath);
+// init leveldb for deposit state
+const worldStateDBLazy = new WorldStateDB(config.depositWorldStateDBLazyPath);// leveldown itself will mkdir underlyingly if dir not exists.
+if (!existDBLazy) {// check if network initialze
+    // init tree
+    await worldStateDBLazy.initTrees();
+    logger.info('worldStateDBLazy.initTrees completed.');
+} else {
+    await worldStateDBLazy.loadTrees();
+    logger.info('worldStateDBLazy.loadTrees completed.');
+}
+
 export async function triggerSeqDepositCommitment(worldState: WorldState) {
     try {
         // start a new flow! 
