@@ -47,8 +47,11 @@ if (!existDBLazy) {// check if network initialze
     await worldStateDBLazy.loadTrees();
     logger.info('worldStateDBLazy.loadTrees completed.');
 }
+// construct WorldState
+const worldState = new WorldState(worldStateDBLazy, worldStateDB, rollupDB, indexDB);
+logger.info('worldState prepared done.');
 
-export async function triggerSeqDepositCommitment(worldState: WorldState) {
+export async function triggerSeqDepositCommitment() {
     try {
         // start a new flow! 
         await worldState.startNewFlow();
@@ -107,7 +110,7 @@ export async function triggerContractCall(dto: { transId: number }) {
     }
 }
 
-export async function queryLatestDepositTreeRoot(worldState: WorldState) {
+export async function queryLatestDepositTreeRoot() {
     try {
         // if deposit_processor just send out a deposit-rollup L1tx that is not yet confirmed at Mina Chain, then return the latest DEPOSIT_TREE root !!
         // later if the seq-rollup L1Tx of the L2Block with this root is confirmed before this deposit-rollup L1tx (even though this case is rare), then the seq-rollup L1Tx fails!!
@@ -136,7 +139,7 @@ export async function queryLatestDepositTreeRoot(worldState: WorldState) {
     }
 }
 
-export async function queryMerkleTreeInfo(worldState: WorldState, dto: { treeId: number, includeUncommit: boolean }) {
+export async function queryMerkleTreeInfo( dto: { treeId: number, includeUncommit: boolean }) {
     const { treeId, includeUncommit } = dto;
 
     const worldStateDBTmp = treeId == MerkleTreeId.DEPOSIT_TREE ? worldState.worldStateDB : worldState.worldStateDBLazy;
@@ -158,7 +161,7 @@ export async function queryMerkleTreeInfo(worldState: WorldState, dto: { treeId:
     }
 }
 
-export async function queryMerkleWitness(worldState: WorldState, dto: { treeId: number, leafIndexList: string[] }) {
+export async function queryMerkleWitness( dto: { treeId: number, leafIndexList: string[] }) {
     const { treeId, leafIndexList } = dto;
 
     try {
@@ -181,7 +184,7 @@ export async function queryMerkleWitness(worldState: WorldState, dto: { treeId: 
     }
 }
 
-export async function syncLazyDepositTree(worldState: WorldState, dto: { transId: number }) {
+export async function syncLazyDepositTree( dto: { transId: number }) {
 
     const transId = dto.transId;
 
