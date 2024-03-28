@@ -109,6 +109,11 @@ if (latestBlock) {// skip some existing blocks!
                 dataTreeRoot1: dataTreeRoot
             }
         }));
+        if (!block0) {
+            logger.error(`cannot find the target block by DATA_TREE's root`);
+
+            throw new Error("sync DATA_TREE failed when restart network!!");
+        }
         for (let index = block0.id + 1; index <= latestBlock.id; index++) {
             logger.info(`sync DATA_TREE at blockId=${index}`);
 
