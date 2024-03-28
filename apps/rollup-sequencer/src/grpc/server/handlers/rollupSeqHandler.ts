@@ -48,6 +48,10 @@ if (!existDBLazy) {
     logger.info(`worldStateDBLazy.loadTrees done.`);
 }
 
+const connection = getConnection();
+const blockRepository = await connection.getRepository(Block);
+let latestBlock: Block = undefined as any;
+
 // init worldStateDB
 const existDB = fs.existsSync(config.worldStateDBPath);// must check ahead of connecting levelDB!
 const worldStateDB = new WorldStateDB(config.worldStateDBPath);
@@ -73,6 +77,65 @@ if (!existDB) {
 } else {
     await worldStateDB.loadTrees();
     logger.info(`worldStateDB.loadTrees done.`);
+
+        // query latest block
+        latestBlock = (await blockRepository.find({
+            order: {
+                id: 'DESC'
+            },
+            take: 1
+        }))[0];
+}
+
+
+// take a check if the trees are aligned with mysqlDB, if not then sync them now.
+if (latestBlock) {// skip some existing blocks!
+    const latestBlockIdInIndexDB: number = await indexDB.get('LATESTBLOCK');
+
+    // During rollup-seq, indexDB stores 'LATESTBLOCK' after committing worldState, 
+    //   thus all merkle trees of the blocks ahead of latestBlockIdInIndexDB has been synced already.
+    if (latestBlockIdInIndexDB < latestBlock.id) {// less then 
+        logger.info(`latestBlockId(${latestBlockIdInIndexDB}) in IndexDB is less than MysqlDB.latestBlock.id(${latestBlock.id})`);
+        logger.info(`start syncing trees...`);
+        const blockCacheRepo = await connection.getRepository(BlockCache);
+
+        logger.info(`start sync DATA_TREE...`);
+        // calc which block's dataTreeRoot0 == data_tree root
+        const dataTreeRoot = worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false).toString();
+        logger.info(`DATA_TREE's root is ${dataTreeRoot}`);
+
+        const block0 = (await blockRepository.findOne({
+            where: {
+                dataTreeRoot1: dataTreeRoot
+            }
+        }));
+        for (let index = block0.id + 1; index <= latestBlock.id; index++) {
+            logger.info(`sync DATA_TREE at blockId=${index}`);
+
+            const cache0 = await blockCacheRepo.findOne({
+                where: {
+                    blockId: index,
+                    type: BlockCacheType.DATA_TREE_UPDATES
+                }
+            });
+            if (!cache0) {
+                logger.info(`cannot find blockCache!`);
+
+                throw new Error("sync DATA_TREE failed when restart network: blockCache is undefined");
+            }
+            if (!cache0.cache || cache0.cache == '[]') {
+                logger.info(`blockCache.cache is ${cache0.cache} !`);
+
+                throw new Error("sync DATA_TREE failed when restart network: blockCache.cache is []");
+            }
+            const cachedUpdatesDataTree = (JSON.parse(cache0!.cache) as string[]).map(c => Field(c));
+            await worldStateDB.appendLeaves(MerkleTreeId.DATA_TREE, cachedUpdatesDataTree);
+            await worldStateDB.commit();
+
+            logger.info(`sync DATA_TREE at blockId=${index}, done.`);
+        }
+        logger.info(`sync DATA_TREE done.`);
+    }
 }
 
 // construct WorldState
