@@ -135,6 +135,44 @@ if (latestBlock) {// skip some existing blocks!
             logger.info(`sync DATA_TREE at blockId=${index}, done.`);
         }
         logger.info(`sync DATA_TREE done.`);
+
+        
+        logger.info(`start sync NULLIFIER_TREE...`);
+        // calc which block's nullifierTreeRoot0 == nullifier_tree root
+        const nullifierTreeRoot = worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, false).toString();
+        logger.info(`NULLIFIER_TREE's root is ${dataTreeRoot}`);
+
+        const block1 = (await blockRepository.findOne({
+            where: {
+                nullifierTreeRoot1: nullifierTreeRoot
+            }
+        }));
+        if (!block1) {
+            logger.error(`cannot find the target block by NULLIFIER_TREE's root`);
+
+            throw new Error("sync NULLIFIER_TREE failed when restart network!!");
+        }
+        for (let index = block1.id + 1; index <= latestBlock.id; index++) {
+            logger.info(`sync NULLIFIER_TREE at blockId=${index}`);
+
+            const cache1 = await blockCacheRepo.findOne({
+                where: {
+                    blockId: index,
+                    type: BlockCacheType.NULLIFIER_TREE_UPDATES
+                }
+            });
+            if (!cache1) {
+                logger.info(`cannot find blockCache!`);
+
+                throw new Error("sync NULLIFIER_TREE failed when restart network: blockCache is undefined");
+            }
+            const cachedUpdatesNullifierTree = (JSON.parse(cache1!.cache) as string[]).map(c => Field(c));
+            await worldStateDB.appendLeaves(MerkleTreeId.NULLIFIER_TREE, cachedUpdatesNullifierTree);
+            await worldStateDB.commit();
+
+            logger.info(`sync NULLIFIER_TREE at blockId=${index}, done.`);
+        }
+        logger.info(`sync NULLIFIER_TREE done.`);
     }
 }
 
