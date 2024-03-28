@@ -16,8 +16,69 @@ import {
 import { StandardIndexedTree } from "@anomix/merkle-tree";
 import { WorldState } from "@/worldstate";
 import { WithdrawDB } from "@/worldstate/withdraw-db";
+import { getLogger } from "@/lib/logUtils";
+import cp from "child_process";
+import { Worker as WorkerThread } from "worker_threads";
+import { RollupTaskType } from "@anomix/types";
+import { WorldState, WorldStateDB, RollupDB, IndexDB } from "./worldstate";
+import config from './lib/config';
+import { activeMinaInstance } from "@anomix/utils";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 const logger = getLogger('rollupSeqHandler');
+
+// init Mina tool
+await activeMinaInstance();// TODO improve it to configure graphyQL endpoint
+// init mysqlDB
+const rollupDB = new RollupDB();
+await rollupDB.start();
+// init IndexDB
+const indexDB = new IndexDB(config.indexedDBPath);
+
+// init worldStateDBLazy
+const existDBLazy = fs.existsSync(config.worldStateDBLazyPath);// must check ahead of connecting levelDB!
+const worldStateDBLazy = new WorldStateDB(config.worldStateDBLazyPath);
+if (!existDBLazy) {
+    logger.info(`worldStateDBLazyPath is not existing`)
+    await worldStateDBLazy.initTrees();
+    logger.info(`worldStateDBLazy.initTrees done.`);
+} else {
+    await worldStateDBLazy.loadTrees();
+    logger.info(`worldStateDBLazy.loadTrees done.`);
+}
+
+// init worldStateDB
+const existDB = fs.existsSync(config.worldStateDBPath);// must check ahead of connecting levelDB!
+const worldStateDB = new WorldStateDB(config.worldStateDBPath);
+if (!existDB) {
+    logger.info(`worldStateDBPath is not existing`)
+
+    if (config.networkStatus != 'SIMULATING_PRODUCTION') {// if dev are simulating production to make issues debug, then no need resetDB.
+        // reset mysql db
+        await rollupDB.resetDB();
+    }
+    await worldStateDB.initTrees();
+    logger.info(`worldStateDB.initTrees done.`);
+
+    // prepare data_tree root into indexDB & dataTreeRootsTree
+    const dataTreeRoot = worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false);
+    logger.info(`the initial dataTreeRoot: ${dataTreeRoot.toString()}`);
+    const index = worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, false);// 0n
+    await worldStateDB.appendLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, [dataTreeRoot]);
+    await worldStateDB.commit();
+    logger.info(`append the initial dataTreeRoot into DATA_TREE_ROOTS_TREE at index:${index}, done.`);
+    await indexDB.put(`${MerkleTreeId[MerkleTreeId.DATA_TREE_ROOTS_TREE]}:${dataTreeRoot.toString()}`, `${index.toString()}`);// '0'
+
+} else {
+    await worldStateDB.loadTrees();
+    logger.info(`worldStateDB.loadTrees done.`);
+}
+
+// construct WorldState
+const worldState = new WorldState(worldStateDBLazy, worldStateDB, rollupDB, indexDB);
+const withdrawDB = new WithdrawDB(config.withdrawDBPath);
+
 
 export const queryTxByNullifier = async (dto: string[]) => {
     const notehashes = dto;
@@ -58,7 +119,7 @@ export const queryTxByNullifier = async (dto: string[]) => {
 }
 
 
-export const withdrawAsset = async (worldState: WorldState, withdrawDB: WithdrawDB, dto: WithdrawAssetReqDto) => {
+export const withdrawAsset = async (  dto: WithdrawAssetReqDto) => {
     const { l1addr, noteCommitment } = dto
     try {
         const connection = getConnection();
@@ -199,7 +260,7 @@ export async function checkPoint() {
     return blockEntity!.id;
 }
 
-export async function proofCallback(worldState: WorldState, withdrawDB: WithdrawDB, dto: ProofTaskDto<any, any>) {
+export async function proofCallback(  dto: ProofTaskDto<any, any>) {
 
     const { taskType, index, payload } = dto
 
@@ -271,7 +332,7 @@ export async function rollupProofTrigger(dto: RollupTaskDto<any, any>) {
     }
 }
 
-export async function triggerStartNewFlow(worldState: WorldState) {
+export async function triggerStartNewFlow() {
     try {
         // start a new flow! 
         await worldState.startNewFlow();
@@ -282,7 +343,7 @@ export async function triggerStartNewFlow(worldState: WorldState) {
     }
 }
 
-export async function checkCommitmentsExist(worldState: WorldState, commitmentList: string[]) {
+export async function checkCommitmentsExist( commitmentList: string[]) {
     try {
         const rs = Object.fromEntries(
             await Promise.all(commitmentList.map(async c => {
@@ -298,7 +359,7 @@ export async function checkCommitmentsExist(worldState: WorldState, commitmentLi
 }
 
 
-export async function checkDataRootsExist(worldState: WorldState, commitmentList: string[]) {
+export async function checkDataRootsExist( commitmentList: string[]) {
 
     try {
         const rs = Object.fromEntries(
@@ -314,7 +375,7 @@ export async function checkDataRootsExist(worldState: WorldState, commitmentList
     }
 }
 
-export async function checkNullifiersExist(worldState: WorldState, nullifierList: string[]) {
+export async function checkNullifiersExist( nullifierList: string[]) {
 
     try {
 
@@ -332,7 +393,7 @@ export async function checkNullifiersExist(worldState: WorldState, nullifierList
     }
 }
 
-export async function syncUserWithdrawedNotes(withdrawDB: WithdrawDB) {
+export async function syncUserWithdrawedNotes() {
     logger.info(`a new round to sync withdrawed notes inside WithdrawEventFetchRecord...`);
 
     const connection = getConnection();
@@ -460,7 +521,7 @@ export async function syncUserWithdrawedNotes(withdrawDB: WithdrawDB) {
     return { code: 0, data: 1, msg: '' };
 }
 
-export async function queryWorldStateworldState(worldState: WorldState) {
+export async function queryWorldStateworldState() {
     try {
         // query sequencer
         return {
@@ -512,7 +573,7 @@ export async function queryNetworkMetaData() {
     }
 }
 
-export async function appendTreeByHand(worldState: WorldState, dto: { passcode: string, timestamp: number, treeId: number, leaves: string[] }) {
+export async function appendTreeByHand( dto: { passcode: string, timestamp: number, treeId: number, leaves: string[] }) {
     const { passcode, timestamp, treeId, leaves } = dto;
     if (passcode != 'LzxWxs@2023') {
         return {
@@ -577,7 +638,7 @@ export async function appendTreeByHand(worldState: WorldState, dto: { passcode: 
     }
 }
 
-export async function appendUserNullifierTreeByHand(withdrawDB: WithdrawDB, dto: { passcode: string, timestamp: number, tokenId: string, ownerPk: string, leaves: string[] }) {
+export async function appendUserNullifierTreeByHand( dto: { passcode: string, timestamp: number, tokenId: string, ownerPk: string, leaves: string[] }) {
     const { passcode, timestamp, tokenId, ownerPk, leaves } = dto;
     if (passcode != 'LzxWxs@2023') {
         return {
@@ -652,7 +713,7 @@ export async function appendUserNullifierTreeByHand(withdrawDB: WithdrawDB, dto:
     }
 }
 
-export async function queryMerkleProof(worldState: WorldState, dto: { treeId: number, commitmentList: string[] }) {
+export async function queryMerkleProof( dto: { treeId: number, commitmentList: string[] }) {
     const { treeId, commitmentList } = dto
 
     try {
@@ -684,7 +745,7 @@ export async function queryMerkleProof(worldState: WorldState, dto: { treeId: nu
     }
 }
 
-export async function queryUserTreeInfo(worldState: WorldState, withdrawDB: WithdrawDB, dto: { tokenId: string, ownerPk: string, includeUncommit: boolean }) {
+export async function queryUserTreeInfo(  dto: { tokenId: string, ownerPk: string, includeUncommit: boolean }) {
     const { tokenId, ownerPk, includeUncommit } = dto;
 
     try {
