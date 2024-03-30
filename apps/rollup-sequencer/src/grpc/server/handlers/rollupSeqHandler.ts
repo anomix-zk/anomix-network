@@ -178,6 +178,49 @@ if (latestBlock) {// skip some existing blocks!
             logger.info(`sync NULLIFIER_TREE at blockId=${index}, done.`);
         }
         logger.info(`sync NULLIFIER_TREE done.`);
+
+        
+        logger.info(`start sync DATA_TREE_ROOTS_TREE...`);
+        // calc which block's rootTreeRoot0 == root_tree root
+        const rootTreeRoot = worldStateDB.getRoot(MerkleTreeId.DATA_TREE_ROOTS_TREE, false).toString();
+        logger.info(`DATA_TREE_ROOTS_TREE's root is ${dataTreeRoot}`);
+        const block2 = (await blockRepository.findOne({
+            where: {
+                rootTreeRoot1: rootTreeRoot
+            }
+        }));
+        if (!block2) {
+            logger.error(`cannot find the target block by DATA_TREE_ROOTS_TREE's root`);
+
+            throw new Error("sync DATA_TREE_ROOTS_TREE failed when restart network!!");
+        }
+        for (let index = block2.id + 1; index <= latestBlock.id; index++) {
+            logger.info(`sync DATA_TREE_ROOTS_TREE at blockId=${index}`);
+
+            const cache2 = await blockCacheRepo.findOne({
+                where: {
+                    blockId: index,
+                    type: BlockCacheType.DATA_TREE_ROOTS_TREE_UPDATES
+                }
+            });
+            if (!cache2) {
+                logger.info(`cannot find blockCache!`);
+
+                throw new Error("sync DATA_TREE_ROOTS_TREE failed when restart network: blockCache is undefined");
+            }
+            if (!cache2.cache || cache2.cache == '[]') {
+                logger.info(`blockCache.cache is ${cache2.cache} !`);
+
+                throw new Error("sync DATA_TREE_ROOTS_TREE failed when restart network: blockCache.cache is []");
+            }
+            const cachedUpdatesRootTree = (JSON.parse(cache2.cache) as string[]).map(c => Field(c));
+            await worldStateDB.appendLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, cachedUpdatesRootTree);
+            await worldStateDB.commit();
+
+            logger.info(`sync DATA_TREE_ROOTS_TREE at blockId=${index}, done.`);
+        }
+        logger.info(`sync DATA_TREE_ROOTS_TREE done.`);
+
     }
 }
 
