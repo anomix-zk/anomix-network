@@ -224,6 +224,32 @@ if (latestBlock) {// skip some existing blocks!
     }
 }
 
+logger.info(`current network state:{`);
+// print network state
+logger.info(`  latest blockHeight: ${(latestBlock?.id) ?? 0}`);
+
+// print tree info
+logger.info(`treeId: DATA_TREE`);
+logger.info(`  depth: ${worldStateDB.getDepth(MerkleTreeId.DATA_TREE)}`);
+logger.info(`  leafNum: ${worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE, false).toString()}`);
+logger.info(`  treeRoot: ${worldStateDB.getRoot(MerkleTreeId.DATA_TREE, false).toString()}`)
+
+logger.info(`treeId: SYNC_DATA_TREE`);
+logger.info(`  depth: ${worldStateDBLazy.getDepth(MerkleTreeId.DATA_TREE)}`);
+logger.info(`  leafNum: ${worldStateDBLazy.getNumLeaves(MerkleTreeId.DATA_TREE, false).toString()}`);
+logger.info(`  treeRoot: ${worldStateDBLazy.getRoot(MerkleTreeId.DATA_TREE, false).toString()}`)
+
+logger.info(`treeId: NULLIFIER_TREE`);
+logger.info(`  depth: ${worldStateDB.getDepth(MerkleTreeId.NULLIFIER_TREE)}`);
+logger.info(`  leafNum: ${worldStateDB.getNumLeaves(MerkleTreeId.NULLIFIER_TREE, false).toString()}`);
+logger.info(`  treeRoot: ${worldStateDB.getRoot(MerkleTreeId.NULLIFIER_TREE, false).toString()}`)
+
+logger.info(`treeId: DATA_TREE_ROOTS_TREE`);
+logger.info(`  depth: ${worldStateDB.getDepth(MerkleTreeId.DATA_TREE_ROOTS_TREE)}`);
+logger.info(`  leafNum: ${worldStateDB.getNumLeaves(MerkleTreeId.DATA_TREE_ROOTS_TREE, false).toString()}`);
+logger.info(`  treeRoot: ${worldStateDB.getRoot(MerkleTreeId.DATA_TREE_ROOTS_TREE, false).toString()}`)
+
+logger.info(`}`);
 // construct WorldState
 const worldState = new WorldState(worldStateDBLazy, worldStateDB, rollupDB, indexDB);
 const withdrawDB = new WithdrawDB(config.withdrawDBPath);
