@@ -509,11 +509,17 @@ My resume:
 (5) **Active Grantee** in Mina ecology
 
 • **Navigators badge holder**
+
 • zkApp E2E Testing Program
+
 • zkApp Builders Program-Cohort1
+
 • zkIgnite cohort0
+
 • zk-peer-reviewer at 2022
+
 • zkapp-beta-tester
+
 • zkApps bootcamp at 2021
 
 ### Team Members
