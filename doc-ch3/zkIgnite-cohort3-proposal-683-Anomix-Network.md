@@ -342,9 +342,9 @@ In addition, given the emergency scaling of unexpected traffic spikes and contin
 
 **<2> Design detail improvement && Software development: 50000 MINA**
 
-We schedule to carry out an UI/UX coverring features below:
+We schedule to carry out an UI/UX && node service coverring features below:
 
-1) Implement Public Ledger 
+1) Implement Layer2 Ledger 
 
 2) Integrate WebAuth(PassKey) for new Account Management solution 
 
@@ -358,7 +358,7 @@ So the rough estimation on 3month(about 67 work days) salary is almost 50000U(�
 
 **<3> Marketing Costs Budgeting:    15000MINA**
 
-ZkCell Network currently is a running Layer2 on Berkeley, and could be quickly deployed at MAIN Network(after MAIN network upgrade). When it's on Main Network, we need budgets on Community Marketing, such as Layer2Tx Fee Delegation, Activity Incentive, Promotion Incentives,  Community Education, etc.
+After deployment on MainNet, We need budgets on Community Marketing, such as Layer2Tx Fee Delegation, Activity Incentive, Promotion Incentives,  Community Education, etc.
 
 
 ### Standard Scope Milestones
@@ -409,9 +409,9 @@ In addition, given the emergency scaling of unexpected traffic spikes and contin
 
 **<2> Design detail improvement && Software development: 68500 MINA**
 
-We schedule to carry out an UI/UX coverring features below:
+We schedule to carry out an UI/UX && node service coverring features below:
 
-1) Implement Public Ledger 
+1) Implement Layer2 Ledger 
 
 2) Integrate WebAuth(PassKey) for new Account Management solution 
 
@@ -419,13 +419,13 @@ We schedule to carry out an UI/UX coverring features below:
 
 4) Integrate ETH account 
 
-5) Network Explorer
+5) __Network Explorer__
 
 To ensure quality&ontime delivery, We team need consider employing 3 contractors: 1 UI Designer and 2 Backend Engineer. So the rough estimation on 3month(about 67 work days) salary is almost 68500U(≈170U/day * 6member * 67days)
 
 **<3> Marketing Costs Budgeting    15000MINA**
 
-ZkCell network currently is a running Layer2 on Berkeley, and could be quickly deployed at MAIN Network(after MAIN network upgrade). When it's on Main Network, we need budgets on Community Marketing, such as Layer2Tx Fee Delegation, Activity Incentive, Promotion Incentives,  Community Education, etc.
+After deployment on MainNet, we need budgets on Community Marketing, such as Layer2Tx Fee Delegation, Activity Incentive, Promotion Incentives,  Community Education, etc.
 
 ### Advanced Scope Milestones
 
