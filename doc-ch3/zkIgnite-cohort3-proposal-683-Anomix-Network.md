@@ -484,11 +484,11 @@ My resume:
 
 (1) Team Leader of Anomix Network
 
-    • **Funded Project at Mina ZkIgnite Cohort1**
+• **Funded Project at Mina ZkIgnite Cohort1**
 
-    • In charge of Design upon Archetecture, UI, etc.
+• In charge of Design upon Archetecture, UI, etc.
 
-    • In charge of team management and project delivery
+• In charge of team management and project delivery
 
 (2) co-Creator of **o1js-merkle** library - Merkle Trees for o1js (membership / non-membership merkle witness)
 
@@ -496,25 +496,25 @@ My resume:
 
 (3) **Mentor of zkIgnite cohort 2**
 
-    • Mentor of ‘[Tokenizk.finance](https://tokenizk.finance/)’ team and ‘Privacy Token On Mina’ team
+• Mentor of ‘[Tokenizk.finance](https://tokenizk.finance/)’ team and ‘Privacy Token On Mina’ team
 
-    • Provide guidance on technical design and issue solutions for projects
+• Provide guidance on technical design and issue solutions for projects
 
 (4) **The First translator of \<Foundry Book>** of Chinese version
 
-    • recognized & forked by a famous Chinese blockchain community -- lbc-team
+• recognized & forked by a famous Chinese blockchain community -- lbc-team
 
-    • As Repo Admin of the book: https://github.com/lbc-team/foundry-book-in-chinese
+• As Repo Admin of the book: https://github.com/lbc-team/foundry-book-in-chinese
 
 (5) **Active Grantee** in Mina ecology
 
-    • **Navigators badge holder**
-    • zkApp E2E Testing Program
-    • zkApp Builders Program-Cohort1
-    • zkIgnite cohort0
-    • zk-peer-reviewer at 2022
-    • zkapp-beta-tester
-    • zkApps bootcamp at 2021
+• **Navigators badge holder**
+• zkApp E2E Testing Program
+• zkApp Builders Program-Cohort1
+• zkIgnite cohort0
+• zk-peer-reviewer at 2022
+• zkapp-beta-tester
+• zkApps bootcamp at 2021
 
 ### Team Members
 
