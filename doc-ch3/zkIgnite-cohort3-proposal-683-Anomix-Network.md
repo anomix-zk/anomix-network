@@ -116,9 +116,10 @@ People are used to the convenience of sign-up and login in web2, so that they us
 4.  **Multiple mechanisms for Account Recovery** : Account recovery is straightforward using options such as social recovery, passkeys, and multiple devices, blockchain wallets, eliminating tedious mnemonic phrases.
 
 **<2> Protocol-Native AccountID**
+
 Within zkCell network, AccountID is the first-class citizen. zkCell would keep each AccountId unique among the whole network, and the AccountID rather than pure address is the only identifier for users. We expect users could directly transfer assets by AccountID, without caring about underlying Pure Address.
 
-Please go read 'Layer2 Ledgers design' && 'Multi-Level Keys design' in 'Architecture' below to take a look at the design of AccountID as well as keys hierarchy, and you could see that user could register several spending keys under an account(ID), and each spending key could be used to manage assets of the account, which further means pure address is no longer the identifier for users any more. <br>
+Please go read 'Layer2 Ledgers design' && 'Multi-Level Keys design' in 'Architecture' below to take a look at the design of AccountID as well as keys hierarchy, and you could see that user could register several spending keys under an account(ID), and each spending key could be used to manage assets of the account, which further means pure address is no longer the identifier for users any more. <br><br>
 
 On the other hand, we have high expectations for the design of AccountID from the beginning -- **Globally Verifiable OnchainID Middleware** among Mina eco. We expect to allow users to aggregate by a provable approach both their web2 PII(*Personal Identified Info)* and mainstream blockchain's accounts. For examples, 
 * as we know o1js from version-0.15.1 supports ECDSA signature verification, which provide users approach to provably aggregate their BTC/EVM chains' account addresses into our zkCell Account, based on which we could build web3 world's user portrait based on their activities among major chains. 
