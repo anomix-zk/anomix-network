@@ -125,8 +125,6 @@ On the other hand, we have high expectations for the design of AccountID from th
 * as we know o1js from version-0.15.1 supports ECDSA signature verification, which provide users approach to provably aggregate their BTC/EVM chains' account addresses into our zkCell Account, based on which we could build web3 world's user portrait based on their activities among major chains. 
 * When in the future o1js supports RSA signature verification, then we could leverage DKIM protocol to verifiably aggregate user's email address into zkCell Account.
 
-<img src="./pic/id-middleware.png" style="border-radius: 20px">
-
 <br>
 
 
