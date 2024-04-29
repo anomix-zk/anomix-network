@@ -116,8 +116,9 @@ People are used to the convenience of sign-up and login in web2, so that they us
 4.  **Multiple mechanisms for Account Recovery** : Account recovery is straightforward using options such as social recovery, passkeys, and multiple devices, blockchain wallets, eliminating tedious mnemonic phrases.
 
 **<2> Protocol-Native AccountID**
+Within zkCell network, AccountID is the first-class citizen. zkCell would keep each AccountId unique among the whole network, and the AccountID rather than pure address is the only identifier for users. We expect users could directly transfer assets by AccountID, without caring about underlying Pure Address.
 
-Unlike Ens, We move the mapping relationship between AccountID and Pure Address down to the protocol layer. This means that during the process of asset transfer, the mapping relationship between AccountID and Pure Address will undergo circuit verification. This helps mitigate the potential attack risks to AccountID in the asset management process mentioned earlier.
+Please go read 'Layer2 Ledgers design' && 'Multi-Level Keys design' in 'Architecture' below to take a look at the design of AccountID as well as keys hierarchy, and you could see that user could register several spending keys under an account(ID), and each spending key could be used to manage assets of the account, which further means pure address is no longer the identifier for users any more. <br>
 
 On the other hand, we have high expectations for the design of AccountID from the beginning -- **Globally Verifiable OnchainID Middleware** among Mina eco. We expect to allow users to aggregate by a provable approach both their web2 PII(*Personal Identified Info)* and mainstream blockchain's accounts. For examples, 
 * as we know o1js from version-0.15.1 supports ECDSA signature verification, which provide users approach to provably aggregate their BTC/EVM chains' account addresses into our zkCell Account, based on which we could build web3 world's user portrait based on their activities among major chains. 
@@ -168,7 +169,7 @@ Let's make a brief description on all components:
 
 **<2> Layer2 Ledgers section**
 
-The pic below is our design on Layer2 ledger.&#x20;
+The pic below is our design on Layer2 ledger:
 
 <img src="./pic/layer2-ledger-design.png" style="border-radius: 20px">
 
@@ -192,11 +193,12 @@ We design 'Multi-Level Keys' to support '**Eliminate wallet installation & Passw
 
 <img src="./pic/account-keys-hierarchy.png" style="border-radius: 20px">
 
-*   '**Account Viewing Key**' is used for L2Tx encryption & decryption to later rebuild all L2tx history at new device.
 *   '**Spending Key**' is used for asset management(transfer/withdraw). Normally 'one device, one spending key'.
 *   '**Manager Key**' is a new key at this upgrade, which is used for authorizing 'spending keys' for different devices.
 
-All the keys will be recorded on chain under your L2 account(at *User-Data Tree*, through L2Tx).<br>
+All the keys will be recorded on chain under your L2 account(at *User-Data Tree*, through L2Tx).
+
+*NOTE: well, at current design, we just support keys for asset management. But this could be extended by adding separate keys for separate role to support more scenarios in the future, like registerring one key just for authorizing login to thirdparty zkapps, one key only for votes, etc.* <br>
 
 
 **1) how to implement passwordless & mnemonics-free account**
@@ -226,8 +228,8 @@ But Since PassKey is new these years, different devices and operating systems ar
 Regarding these cases, if user lose the devices, we also provide other mechnisms for users to recover account, such as Social Revovery.
 
 *Tips: Here are some materials for brief introductions on device support of PassKey.*
-    * https://passkeys.dev/device-support
-    * https://caniuse.com/?search=Passkey
+* https://passkeys.dev/device-support
+* https://caniuse.com/?search=Passkey
 
 <br>
 
