@@ -48,7 +48,7 @@ Additionally, there are more cases, like that there are numbers of new users wit
 
 Apparently, by comparison to web2 operations, the above progress is so tedious & troublesome. Besides, you might risk losing your crypto assets by improper operations, such as 'install wallet from fake(evil) source', 'exposing/losing password/mnemonics', etc. Without doubt, these increase mental burden and blocks the common users at the first step.
 
-And one target of zkCell is\*\* to wipe out the above tedious & troublesome steps to make crypto account walletplugin-independent, passwordless and mnemonics-free\*\*. Meanwhile, other features like **multi-device support** and **account recovery**, etc, would also be supported to make your account management within zkCell really convenient.
+And one target of zkCell is *to wipe out the above tedious & troublesome steps to make crypto account walletplugin-independent, passwordless and mnemonics-free*. Meanwhile, other features like **multi-device support** and **account recovery**, etc, would also be supported to make your account management within zkCell really convenient.
 
 **<3> Readability issues with on-chain addresses**
 
@@ -56,7 +56,7 @@ The wallet address of the blockchain is not only difficult to remember and reada
 
 Replaces the wallet address with characters that are easy to remember by humans, which is a key step in the popularization of encryption. Users can choose a more user-friendly address to remember, making it easy to send and receive encrypted assets and reducing the probability of transferring to the wrong address when transferring money.
 
-Within zkCell Network, we schedule to solve this issue thoroughly with an efficient approach -- We introduce onchain AccountID to allow users to own a unique AccountID. Thus user could manage assets(deposit/transfer/receive) by directly ID rather than pure wallet address. **The AccountID solution works like ENS on ethereum, but it's protocol-native, i.e. zk-verifiable**.
+Within zkCell Network, we schedule to solve this issue thoroughly with an efficient approach -- We introduce onchain AccountID to allow users to own a unique AccountID. User could manage assets(deposit/transfer/receive) by directly ID rather than pure wallet address. **The AccountID solution works like ENS on ethereum, but it's protocol-native, i.e. zk-verifiable**.
 
 **why Ens pattern is not 100% secure?**
 
@@ -100,7 +100,7 @@ Regarding the listing Scalability issue above, we team specifically design **a z
 
 Firstly, zkCell is an layer2 based on **Account model**. Acting as an sub-ledger of Mina main ledger, zkCell migrate numbers of tx from mainnet into Layer2, but keep as safe as that on mainnet. Besides, zkCell internally batches numbers of L2 txs into one L1 tx on mainnet to make them finalized, which leads to much lower-cost of each L2 tx.&#x20;
 
-zkCell supports **both MINA token and Custom Token**, and provides smooth journeys on deposit/transfer/withdrawal scenarios as well as **Escape Mechanism** for user to securely withdraw layer2 assets back to Layer1 when meeting urgency.&#x20;
+zkCell supports **both MINA token and Custom Token**, and provides smooth journeys on deposit/transfer/withdrawal scenarios as well as **Escape Mechanism** for user to securely withdraw layer2 assets back to Layer1 when meeting urgency.<br>
 
 
 
@@ -119,10 +119,13 @@ People are used to the convenience of sign-up and login in web2, so that they us
 
 Unlike Ens, We move the mapping relationship between AccountID and Pure Address down to the protocol layer. This means that during the process of asset transfer, the mapping relationship between AccountID and Pure Address will undergo circuit verification. This helps mitigate the potential attack risks to AccountID in the asset management process mentioned earlier.
 
-On the other hand, we have high expectations for the design of AccountID from the beginning -- **Globally Verifiable OnchainID Middleware** among Mina eco. We expect to allow users to aggregate by a provable approach both their web2 PII(*Personal Identified Info)* and mainstream blockchain's accounts. For examples, as we know o1js from version-0.15.1 supports ECDSA signature verification, which provide users approach to provably aggregate their BTC/EVM chains' account addresses into our zkCell Account, based on which we could build web3 world's user portrait based on their activities among major chains. When in the future o1js supports RSA signature verification, then we could leverage DKIM protocol to verifiably aggregate user's email address into zkCell Account.
+On the other hand, we have high expectations for the design of AccountID from the beginning -- **Globally Verifiable OnchainID Middleware** among Mina eco. We expect to allow users to aggregate by a provable approach both their web2 PII(*Personal Identified Info)* and mainstream blockchain's accounts. For examples, 
+* as we know o1js from version-0.15.1 supports ECDSA signature verification, which provide users approach to provably aggregate their BTC/EVM chains' account addresses into our zkCell Account, based on which we could build web3 world's user portrait based on their activities among major chains. 
+* When in the future o1js supports RSA signature verification, then we could leverage DKIM protocol to verifiably aggregate user's email address into zkCell Account.
 
 <img src="./pic/id-middleware.png" style="border-radius: 20px">
 
+<br>
 
 
 The design of AccountID opens up possibilities for larger scenarios on the zkCell Network, such as 'off-chain identity authentication', 'on-chain reputation scoring', 'on-chain identity aggregation', 'compliance with regulatory requirements', and more. Examples are as follows:
@@ -207,7 +210,7 @@ Leveraging ‘**FIDO WebAuth Protocol(PassKey)**’ + '**Deterministic Signature
 
 Mature WebAuth(PassKey) Tech make you no worry about exposure & loss of your device PassKey(even if you lose your devices. *will describe why below*), and thus no worry about you lost your 'Manager Key' and 'Account Viewing Key'. **This further means you No need again to care about wallet-plugin installations, password/mnemonics backup.**
 
-Note: *Both 'Manager Key' and 'Account Viewing Key' are only generated in memory each time you need them and will be purged from memory after usage. This means the risk of exposure would be very low. Luckily,  this risk CAN be eliminated 100% when o1js supports secp256r1 curve of PassKey, Since user could directly manage assets by verifying within circuits the signatures generated from PassKey.*
+Note: *Both 'Manager Key' and 'Account Viewing Key' are only generated in memory each time you need them and will be purged from memory after usage. This means the risk of exposure would be very low. Luckily,  this risk CAN be eliminated 100% when o1js supports secp256r1 curve of PassKey in the future, Since user could directly manage assets by verifying within circuits the signatures generated from PassKey.*
 
 You could see that the full control over your private keys and funds is always kept by yourself (**Non-custodian**). Without your biometric authentication, others will not be able to access your L2 account. <br>
 
@@ -222,9 +225,9 @@ Apparently Newer devices and systems offer more comprehensive passkey support. T
 But Since PassKey is new these years, different devices and operating systems are in fact at different stages of passkey support. For example, Chrome on Windows stores passkeys in Windows Hello, which doesn’t synchronize them to other devices now.
 Regarding these cases, if user lose the devices, we also provide other mechnisms for users to recover account, such as Social Revovery.
 
-Tips: *Here are some materials for brief introductions on device support of PassKey.*
-   <https://passkeys.dev/device-support/>
-   <https://caniuse.com/?search=Passkey>
+*Tips: Here are some materials for brief introductions on device support of PassKey.*
+    * https://passkeys.dev/device-support
+    * https://caniuse.com/?search=Passkey
 
 <br>
 
@@ -248,7 +251,7 @@ We provide a series of mechinsm for Account Recovery, such as social recovery(ba
 
 The main goal of zkCell Network is: break down the barriers between web2 & web3, and let people seamlessly switch to web3. 
 
-In 3 months, We expect user could enjoy *convenient& innovative account management solution* and *asset management of non-compromised privacy* within ZkCell Network.
+In 3 months, We expect user could enjoy *convenient& innovative account management solution* within ZkCell Network.
 
 Strategy：
 
@@ -292,7 +295,7 @@ Our Profit Models:
 
 3) Value-added services
 
-    * case1 - computing outsourcing services: since circuit-compile & witness-calc & proof-gen usually costs much resources(time/cpu/memory) at user clients, 'computing outsourcing services' are provided for a fee for 'Layer2 Tx without privacy requirements' such as transactions generated inside Public Ledger.
+    * case1 - computing outsourcing services: since circuit-compile & witness-calc & proof-gen usually costs much resources(time/cpu/memory) at user clients, 'computing outsourcing services' are provided for a fee for 'Layer2 Tx without privacy requirements'.
 
     * case2 - Data aggregation and analysis services: Through the deep processing of the public data of layer2 users, high value analysis charts and reports are extracted, and the fees are generated. Examples include aggregated reports of on-chain activity for a specific user,
 
@@ -325,37 +328,37 @@ The whole design of ZkCell was almost completed. Within 3 months zkIgnite corhor
 
 **<1> Cloud Infra costs: 20000 MINA**  (≈3384.28U/month * 6 month)
 
-    Basically, in high-level overview, as a zkRollup-layer2, ZkCell mainly consists of 3 core components: Sequencer, Prover and Indexer.
+Basically, in high-level overview, as a zkRollup-layer2, ZkCell mainly consists of 3 core components: Sequencer, Prover and Indexer.
 
-    Considering the impending upgrade of MINA main Network, to ensure the stability of ZkCell Network running on the main network, we consider adopting AWS cloud hosting service. Here's our rough minimum plan:
+Considering the impending upgrade of MINA main Network, to ensure the stability of ZkCell Network running on the main network, we consider adopting AWS cloud hosting service. Here's our rough minimum plan:
 
-    * *Sequencer server*: at least 16c,32G memory, at least 2 instance(considerring load balance,etc), 
-    * *Prover server*: at least 32c,256G memory, at least 2 instance,
-    * *Indexer server*: at least 8c,64G memory, at least 2 instance, 
+* *Sequencer server*: at least 16c,32G memory, at least 2 instance(considerring load balance,etc), 
+* *Prover server*: at least 32c,256G memory, at least 2 instance,
+* *Indexer server*: at least 8c,64G memory, at least 2 instance, 
 
-    Totally，almost 3384.28U/month for Cloud Infra cost (seen at attached pic: [server-cloud-price-estimation.png](https://zkignite.minaprotocol.com/media/download/e55c1b1b963d13281287ff6bd8bd5c18))。
+Totally，almost 3384.28U/month for Cloud Infra cost (seen at attached pic: [server-cloud-price-estimation.png](https://zkignite.minaprotocol.com/media/download/e55c1b1b963d13281287ff6bd8bd5c18))。
 
-    In addition, given the emergency scaling of unexpected traffic spikes and continued operations beyond zkIgnite, we expect an additional 3 months of support beyond zkIgnite.
+In addition, given the emergency scaling of unexpected traffic spikes and continued operations beyond zkIgnite, we expect an additional 3 months of support beyond zkIgnite.
 
 **<2> Design detail improvement && Software development: 50000 MINA**
 
-    We schedule to carry out an UI/UX coverring features below:
+We schedule to carry out an UI/UX coverring features below:
 
-    1) Implement Public Ledger 
+1) Implement Public Ledger 
 
-    2) Integrate WebAuth(PassKey) for new Account Management solution 
+2) Integrate WebAuth(PassKey) for new Account Management solution 
 
-    3) Protocol-Native AccountID  
+3) Protocol-Native AccountID  
 
-    4) Integrate ETH account 
+4) Integrate ETH account 
 
-    To ensure quality\ontime delivery, We team need consider employing two contractors: UI Designer and Backend Engineer.
+To ensure quality/ontime delivery, We team need consider employing two contractors: UI Designer and Backend Engineer.
 
-    So the rough estimation on 3month(about 67 work days) salary is almost 50000U(≈150U/day * 5member * 67days)
+So the rough estimation on 3month(about 67 work days) salary is almost 50000U(≈150U/day * 5member * 67days)
 
 **<3> Marketing Costs Budgeting:    15000MINA**
 
-    ZkCell Network currently is a running Layer2 on Berkeley, and could be quickly deployed at MAIN Network(after MAIN network upgrade). When it's on Main Network, we need budgets on Community Marketing, such as Layer2Tx Fee Delegation, Activity Incentive, Promotion Incentives,  Community Education, etc.
+ZkCell Network currently is a running Layer2 on Berkeley, and could be quickly deployed at MAIN Network(after MAIN network upgrade). When it's on Main Network, we need budgets on Community Marketing, such as Layer2Tx Fee Delegation, Activity Incentive, Promotion Incentives,  Community Education, etc.
 
 
 ### Standard Scope Milestones
@@ -388,41 +391,41 @@ The whole design of ZkCell was almost completed. Within 3 months zkIgnite corhor
 
 <1> Cloud Infra costs: 24500 MINA  (≈4061U/month * 6 month)
 
-    Basically, in high-level overview, as a zkRollup-layer2, ZkCell mainly consists of 4 core components:* Sequencer, Prover, Indexer, and Network Explorer.
+Basically, in high-level overview, as a zkRollup-layer2, ZkCell mainly consists of 4 core components:* Sequencer, Prover, Indexer, and Network Explorer.
 
-    Considering the impending upgrade of MINA main Network, to ensure the stability of ZkCell Network running on the main network, we consider adopting AWS cloud hosting service. Here's our rough minimum plan:
+Considering the impending upgrade of MINA main Network, to ensure the stability of ZkCell Network running on the main network, we consider adopting AWS cloud hosting service. Here's our rough minimum plan:
 
-    * Sequencer server: at least 16c,32G memory, at least 2 instance(considerring load balance,etc), 
+* Sequencer server: at least 16c,32G memory, at least 2 instance(considerring load balance,etc), 
 
-    * Prover server: at least 32c,256G memory, at least 2 instance, 
+* Prover server: at least 32c,256G memory, at least 2 instance, 
 
-    * Indexer server: at least 8c,64G memory, at least 2 instance,
+* Indexer server: at least 8c,64G memory, at least 2 instance,
 
-    * Network Explorer: at least 16c,32G memory, at least 2 instance (price is roughly like Sequencer server's).
+* Network Explorer: at least 16c,32G memory, at least 2 instance (price is roughly like Sequencer server's).
 
-    Totally，almost 4061U/month for Cloud Infra cost (seen at attached pic: [anomix-cloud-price-estimation.png](https://zkignite.minaprotocol.com/media/download/e55c1b1b963d13281287ff6bd8bd5c18))。
+Totally，almost 4061U/month for Cloud Infra cost (seen at attached pic: [anomix-cloud-price-estimation.png](https://zkignite.minaprotocol.com/media/download/e55c1b1b963d13281287ff6bd8bd5c18))。
 
-    In addition, given the emergency scaling of unexpected traffic spikes and continued operations beyond zkIgnite, we expect an additional 3 months of support beyond zkIgnite.
+In addition, given the emergency scaling of unexpected traffic spikes and continued operations beyond zkIgnite, we expect an additional 3 months of support beyond zkIgnite.
 
 **<2> Design detail improvement && Software development: 68500 MINA**
 
-    We schedule to carry out an UI/UX coverring features below:
+We schedule to carry out an UI/UX coverring features below:
 
-    1) Implement Public Ledger 
+1) Implement Public Ledger 
 
-    2) Integrate WebAuth(PassKey) for new Account Management solution 
+2) Integrate WebAuth(PassKey) for new Account Management solution 
 
-    3) Protocol-Native AccountID  
+3) Protocol-Native AccountID  
 
-    4) Integrate ETH account 
+4) Integrate ETH account 
 
-    5) Network Explorer
+5) Network Explorer
 
-    To ensure quality&ontime delivery, We team need consider employing 3 contractors: 1 UI Designer and 2 Backend Engineer. So the rough estimation on 3month(about 67 work days) salary is almost 68500U(≈170U/day * 6member * 67days)
+To ensure quality&ontime delivery, We team need consider employing 3 contractors: 1 UI Designer and 2 Backend Engineer. So the rough estimation on 3month(about 67 work days) salary is almost 68500U(≈170U/day * 6member * 67days)
 
 **<3> Marketing Costs Budgeting    15000MINA**
 
-    ZkCell network currently is a running Layer2 on Berkeley, and could be quickly deployed at MAIN Network(after MAIN network upgrade). When it's on Main Network, we need budgets on Community Marketing, such as Layer2Tx Fee Delegation, Activity Incentive, Promotion Incentives,  Community Education, etc.
+ZkCell network currently is a running Layer2 on Berkeley, and could be quickly deployed at MAIN Network(after MAIN network upgrade). When it's on Main Network, we need budgets on Community Marketing, such as Layer2Tx Fee Delegation, Activity Incentive, Promotion Incentives,  Community Education, etc.
 
 ### Advanced Scope Milestones
 
