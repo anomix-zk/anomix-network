@@ -1,24 +1,24 @@
-# zkCell -- An Instant Payment Network with Native ID for Web3 Mass-adoption
+# Kiri -- An Instant Payment Protocol with Native ID for Web3 Mass-adoption
 
 # Pitch about your project
 
-zkCell is an Instant Payment Network with Protocol-Native ID. It not only scales layer1 upon the circulation of both MINA and Custom Tokens, but also allows you to build **A globally verifiable onchainID** through provably aggregating *mainstream blockchains' accounts and web2's PII*. And you could manage asset directly by onchainID.
+Kiri is an Instant Payment Protocol with Protocol-Native ID. It not only scales layer1 upon the circulation of both MINA and Custom Tokens, but also allows you to build **A Globally Verifiable onchainID** through provably aggregating *mainstream blockchains' accounts and web2's PII*. And you could manage asset directly by onchainID.
 
-Besides, zkCell provides **a passwordless && mnemonic-free account solution** based on FIDO Webauthn protocol. **No need again to care about wallet-plugin installations, password/mnemonics backup and long address**.
+Besides, Kiri provides **a Passwordless && Mnemonic-free Account Solution** based on FIDO Webauthn protocol. **No need again to care about wallet-plugin installations, password/mnemonics backup and long address**.
 
-Scalability & Convenience & Security, zkCell targets to break down barriers from Web2 to Web3, accelerates massive adoption of Web3.
+Scalability & Convenience & Security, Kiri targets to break down barriers from Web2 to Web3, accelerates massive adoption of Web3.
 
 # Describe the problem that your zkApp is solving
 
-According to a market sizing [report](https://contenthub-static.crypto.com/wp_media/2024/01/Crypto-Market-Sizing-2023.pdf) from cryptocurrency exchange [Crypto.com](http://crypto.com/), more than half a billion people had become cryptocurrency users or owners by the end of 2023. This number is still very small compared to the ones of web2 companies. From the view of zkCell, to bring massive users to web3, the most important approach is to break down the barrier between web2 and web3, and let the common users seamlessly enter web3 from web2. Here are some challenges impacting user experience.
+According to a market sizing [report](https://contenthub-static.crypto.com/wp_media/2024/01/Crypto-Market-Sizing-2023.pdf) from cryptocurrency exchange [Crypto.com](http://crypto.com/), more than half a billion people had become cryptocurrency users or owners by the end of 2023. This number is still very small compared to the ones of web2 companies. From the view of us, to bring massive users to web3, the most important approach is to break down the barrier between web2 and web3, and let the common users seamlessly enter web3 from web2. Here are some challenges impacting user experience.
 
 **<1> Scalability issue**
 
-Based on the current Mina chain, we can foresee the following issues.&#x20;
+Based on the current Mina chain, we can foresee the following issues:
 
 *   Slow block confirmation && Increasing transaction flow
 
-    Common users familiar to the smooth asset transfer journey on web2 world are always not used to web3's payment experience especially when they first enter.&#x20;
+    Common users familiar to the smooth asset transfer journey on web2 world are always not used to web3's payment experience especially when they first enter.
 
     Currently, though Mina's nominal block confirmation time is about 3 minutes, it's uncertain that each slot generate a block smoothly, which results in that total confirmation time of each block is over 5 minutes and further leads to bad user experience.
 
@@ -48,7 +48,7 @@ Additionally, there are more cases, like that there are numbers of new users wit
 
 Apparently, by comparison to web2 operations, the above progress is so tedious & troublesome. Besides, you might risk losing your crypto assets by improper operations, such as 'install wallet from fake(evil) source', 'exposing/losing password/mnemonics', etc. Without doubt, these increase mental burden and blocks the common users at the first step.
 
-And one target of zkCell is *to wipe out the above tedious & troublesome steps to make crypto account walletplugin-independent, passwordless and mnemonics-free*. Meanwhile, other features like **multi-device support** and **account recovery**, etc, would also be supported to make your account management within zkCell really convenient.
+And one target of Kiri is *to wipe out the above tedious & troublesome steps to make crypto account walletplugin-independent, passwordless and mnemonics-free*. Meanwhile, other features like **multi-device support** and **account recovery**, etc, would also be supported to make your account management within Kiri really convenient.
 
 **<3> Readability issues with on-chain addresses**
 
@@ -56,7 +56,7 @@ The wallet address of the blockchain is not only difficult to remember and reada
 
 Replaces the wallet address with characters that are easy to remember by humans, which is a key step in the popularization of encryption. Users can choose a more user-friendly address to remember, making it easy to send and receive encrypted assets and reducing the probability of transferring to the wrong address when transferring money.
 
-Within zkCell Network, we schedule to solve this issue thoroughly with an efficient approach -- We introduce onchain AccountID to allow users to own a unique AccountID. User could manage assets(deposit/transfer/receive) by directly ID rather than pure wallet address. **The AccountID solution works like ENS on ethereum, but it's protocol-native, i.e. zk-verifiable**.
+Within Kiri Protocol, we schedule to solve this issue thoroughly with an efficient approach -- We introduce onchain AccountID to allow users to own a unique AccountID. User could manage assets(deposit/transfer/receive) by directly ID rather than pure wallet address. **The AccountID solution works like ENS on ethereum, but it's protocol-native, i.e. zk-verifiable**.
 
 **why Ens pattern is not 100% secure?**
 
@@ -74,7 +74,7 @@ It helps improve user's confidence during asset transfer, but it could not thoro
 
 **<4> ID middleware is necessary to Web3 world**
 
-**The actual final real mission of Account-ID is to build a DID system in MINA world**, since we believe that as MINA's zkAPP ecosystem progresses to a certain point, it must also encounter situations where it is limited by 'Identity'(for the following reasons). Of course, DID is a big and complex concept, and we team schedules to take a small step forward with each future upgrades. And during this cohort, we schedule to enhance its features as **OnChain-ID** built into the account among zkCell Network.
+**The actual final real mission of Account-ID is to build a DID system in MINA world**, since we believe that as MINA's zkAPP ecosystem progresses to a certain point, it must also encounter situations where it is limited by 'Identity'(for the following reasons). Of course, DID is a big and complex concept, and we team schedules to take a small step forward with each future upgrades. And during this cohort, we schedule to enhance its features as **OnChain-ID** built into the account among Kiri Protocol.
 
 *Why DID is so important to Web3(MINA)?*
 
@@ -96,11 +96,11 @@ The improvement of key infrastructures could promote ecological enrichment, and 
 
 # Describe your proposed solution
 
-Regarding the listing Scalability issue above, we team specifically design **a zkRollup-style Layer2**, based on native ZK-capability on Mina. It is named as **zkCell Network**.
+Regarding the listing Scalability issue above, we team specifically design **a zkRollup-style Layer2**, based on native ZK-capability on Mina. It is named as **Kiri Protocol**.
 
-Firstly, zkCell is an layer2 based on **Account model**. Acting as an sub-ledger of Mina main ledger, zkCell migrate numbers of tx from mainnet into Layer2, but keep as safe as that on mainnet. Besides, zkCell internally batches numbers of L2 txs into one L1 tx on mainnet to make them finalized, which leads to much lower-cost of each L2 tx.&#x20;
+Firstly, Kiri is an layer2 based on **Account model**. Acting as an sub-ledger of Mina main ledger, Kiri migrate numbers of tx from mainnet into Layer2, but keep as safe as that on mainnet. Besides, Kiri internally batches numbers of L2 txs into one L1 tx on mainnet to make them finalized, which leads to much lower-cost of each L2 tx.&#x20;
 
-zkCell supports **both MINA token and Custom Token**, and provides smooth journeys on deposit/transfer/withdrawal scenarios as well as **Escape Mechanism** for user to securely withdraw layer2 assets back to Layer1 when meeting urgency.<br>
+Kiri supports **both MINA token and Custom Token**, and provides smooth journeys on deposit/transfer/withdrawal scenarios as well as **Escape Mechanism** for user to securely withdraw layer2 assets back to Layer1 when meeting urgency.<br>
 
 
 
@@ -108,7 +108,7 @@ A zkRollup Layer2 is the foundation for us to go further on below solutions:
 
 **<1> Address the challenges of account creation and usage**
 
-People are used to the convenience of sign-up and login in web2, so that they usually feel cumbersome in Web3 account operation. So our goal for zkCell Layer2 account is: **Make account operations as smooth as web2 while ensuring security**.
+People are used to the convenience of sign-up and login in web2, so that they usually feel cumbersome in Web3 account operation. So our goal for Kiri Layer2 account is: **Make account operations as smooth as web2 while ensuring security**.
 
 1.  **Eliminate wallet installation & Password & mnemonics**: Only your device and biometric information are required for easy access to your account. Wallet installation & password & mnemonics is history.
 2.  **Non-custodian**: The full control over your private keys and funds is always kept by yourself. Without your biometric authentication, others will not be able to access your wallet.
@@ -117,18 +117,18 @@ People are used to the convenience of sign-up and login in web2, so that they us
 
 **<2> Protocol-Native AccountID**
 
-Within zkCell network, AccountID is the first-class citizen. zkCell would keep each AccountId unique among the whole network, and the AccountID rather than pure address is the only identifier for users. We expect users could directly transfer assets by AccountID, without caring about underlying Pure Address.
+Within Kiri Protocol, AccountID is the first-class citizen. Kiri would keep each AccountId unique among the whole network, and the AccountID rather than pure address is the only identifier for users. We expect users could directly transfer assets by AccountID, without caring about underlying Pure Address.
 
 Please go read 'Layer2 Ledgers design' && 'Multi-Level Keys design' in 'Architecture' below to take a look at the design of AccountID as well as keys hierarchy, and you could see that user could register several spending keys under an account(ID), and each spending key could be used to manage assets of the account, which further means pure address is no longer the identifier for users any more. <br><br>
 
 On the other hand, we have high expectations for the design of AccountID from the beginning -- **Globally Verifiable OnchainID Middleware** among Mina eco. We expect to allow users to aggregate by a provable approach both their web2 PII(*Personal Identified Info)* and mainstream blockchain's accounts. For examples, 
-* as we know o1js from version-0.15.1 supports ECDSA signature verification, which provide users approach to provably aggregate their BTC/EVM chains' account addresses into our zkCell Account, based on which we could build web3 world's user portrait based on their activities among major chains. 
-* When o1js supports RSA signature verification, then we could leverage DKIM protocol(based on RSA) to verifiably aggregate user's email address into zkCell Account.
+* as we know o1js from version-0.15.1 supports ECDSA signature verification, which provide users approach to provably aggregate their BTC/EVM chains' account addresses into our Kiri Account, based on which we could build web3 world's user portrait based on their activities among major chains. 
+* When o1js supports RSA signature verification, then we could leverage DKIM protocol(based on RSA) to verifiably aggregate user's email address into Kiri Account.
 
 <br>
 <br>
 
-The design of AccountID opens up possibilities for larger scenarios on the zkCell Network, such as 'off-chain identity authentication', 'on-chain reputation scoring', 'on-chain identity aggregation', 'compliance with regulatory requirements', and more. Examples are as follows:
+The design of AccountID opens up possibilities for larger scenarios on the Kiri Protocol, such as 'off-chain identity authentication', 'on-chain reputation scoring', 'on-chain identity aggregation', 'compliance with regulatory requirements', and more. Examples are as follows:
 
 1.  **On-chain Reputation Scoring**:
 
@@ -138,12 +138,10 @@ The design of AccountID opens up possibilities for larger scenarios on the zkCel
 
 2.  **Regulatory Compliance**:
 
-    Privacy protection is a fundamental attribute of ZkCell Network, but the design of AccountID provides a way for regulatory compliance.
-
     Utilizing digital identity verification services, such as government agencies or authentication service providers, users can complete identity verification off-chain and then associate the obtained digital identity proof or authentication information with their AccountID. This approach protects user privacy while ensuring the authenticity of their identity.
 
 
-Besides, zkCell Account could act as a **Internet User PKI**. zkCell Account could be used as a container allowing user to register their own personal public keys (i.e. *verifiably&&securely associate a key with an entity*) for personal authentication and authorization scenarios. For examples, when a user registers his own public key into account, which means third-parties could directly leverage the public key to verify if the authentication and authorization is exactly from the user.
+Besides, Kiri Account could act as a **Internet User PKI**. Kiri Account could be used as a container allowing user to register their own personal public keys (i.e. *verifiably&&securely associate a key with an entity*) for personal authentication and authorization scenarios. For examples, when a user registers his own public key into account, which means third-parties could directly leverage the public key to verify if the authentication and authorization is exactly from the user.
 * The integrity and authenticity of the contracts/legal documents could be verified.
 * Email recievers could verify if the email is really sent by the user, which helps prevent email tampering and forgery.
 * Software downloaders could verify if the downloaded software is exactly from the developer, which helps prevent the propagation and tampering of malware.
@@ -213,7 +211,7 @@ As a background, let's take a look at the brief intro on '[WebAuthn](https://web
 *   'WebAuthn is an open standard developed by W3C for implementing modern, secure, and user-friendly authentication. It utilizes methods such as public key encryption, biometrics, and hardware keys to replace traditional usernames and passwords, offering a more robust and predictable authentication mechanism, thereby enhancing the security of internet services.'
 *   'Passkeys are a safer and easier alternative to passwords. With passkeys, users can sign in to apps and websites with a biometric sensor (such as a fingerprint or facial recognition), PIN, or pattern, freeing them from having to remember and manage passwords.'
 
-Leveraging ‘**FIDO WebAuth Protocol(PassKey)**’ + '**Deterministic Signature**', we could always generate the same (unique) 'Manager Key' and 'Account Viewing Key' at your device (*high-level process is that, we first conduct additional calculations in a browser environment to derive a stable entropy value from the unchanging part of the r1 algorithm. Then based on this entropy(as seed), we could derive final stable ’ManagerKey’/’ViewKey’ aligning with MINA private key standard.*).   That means you could access(signup & signin) ZkCell L2 Account on your device directly by your device's screen lock such as a fingerprint sensor, facial recognition or PIN.
+Leveraging ‘**FIDO WebAuth Protocol(PassKey)**’ + '**Deterministic Signature**', we could always generate the same (unique) 'Manager Key' and 'Account Viewing Key' at your device (*high-level process is that, we first conduct additional calculations in a browser environment to derive a stable entropy value from the unchanging part of the r1 algorithm. Then based on this entropy(as seed), we could derive final stable ’ManagerKey’/’ViewKey’ aligning with MINA private key standard.*).   That means you could access(signup & signin) Kiri L2 Account on your device directly by your device's screen lock such as a fingerprint sensor, facial recognition or PIN.
 
 Mature WebAuth(PassKey) Tech make you no worry about exposure & loss of your device PassKey(even if you lose your devices. *will describe why below*), and thus no worry about you lost your 'Manager Key' and 'Account Viewing Key'. **This further means you No need again to care about wallet-plugin installations, password/mnemonics backup.**
 
@@ -256,9 +254,9 @@ We provide a series of mechinsm for Account Recovery, such as social recovery(ba
 
 ## Share your go-to-market strategy, which includes:
 
-The main goal of zkCell Network is: break down the barriers between web2 & web3, and let people seamlessly switch to web3. 
+The main goal of Kiri Protocol is: break down the barriers between web2 & web3, and let people seamlessly switch to web3. 
 
-In 3 months, We expect user could enjoy *convenient& innovative account management solution* within ZkCell Network.
+In 3 months, We expect user could enjoy *convenient& innovative account management solution* within Kiri Protocol.
 
 Strategy：
 
@@ -268,9 +266,9 @@ Strategy：
 
 **Phase2 (in 6months):**
 
-* _Education and Training_: Create tutorials, videos and guides on all user journeys like from *Account Creation&Usage&Recovery* to asset management of non-compromised privacy within ZkCell。
+* _Education and Training_: Create tutorials, videos and guides on all user journeys like from *Account Creation&Usage&Recovery* to asset management of non-compromised privacy within Kiri。
 
-* _Social media Promotion_: Use social media platforms(discord/twitter mainly) for promotion, interact with the cryptocurrency community, and share the features and advantages of ZkCell. Work with industry partners to expand the user base.
+* _Social media Promotion_: Use social media platforms(discord/twitter mainly) for promotion, interact with the cryptocurrency community, and share the features and advantages of Kiri. Work with industry partners to expand the user base.
 
 * _Community Engagement_: Build an active community that facilitates communication and collaboration among users by hosting online or offline events, forums, and social media interactions.
 
@@ -310,15 +308,15 @@ Our Profit Models:
 
 4) Governance equity
 
-    The ZkCell network may consider introducing governance tokens in the future, where holders (founder team and community members) can participate in the decision-making process of the network, and these participations may bring certain gains.
+    The Kiri Protocol may consider introducing governance tokens in the future, where holders (founder team and community members) can participate in the decision-making process of the network, and these participations may bring certain gains.
 
-In the future (longer time horizon), as the number of active users grows up within ZkCell Network, we believe Revenue channels will be more diversified.
+In the future (longer time horizon), as the number of active users grows up within Kiri Protocol, we believe Revenue channels will be more diversified.
 
 ## What is your long-term vision for this project if your proposal is funded? What is your dream scenario for how this project could evolve?
 
-Aligning with the goal to break down barriers from Web2 to Web3 to accelerate massive adoption of Web3, zkCell Network try to make detailed & deep improvements to the user experience among their web3 journeys, from **Passwordless && mnemonic-free Account** to **Instant Transfer directly through ID by 𝗨𝗹𝘁𝗿𝗮-𝗟𝗼𝘄 fee**. We expect zkCell's light-client(as PWA form, i.e. Progressive web app) could act as the web wallet client among users' all journeys within Mina eco.
+Aligning with the goal to break down barriers from Web2 to Web3 to accelerate massive adoption of Web3, Kiri Protocol try to make detailed & deep improvements to the user experience among their web3 journeys, from **Passwordless && mnemonic-free Account** to **Instant Transfer directly through ID by 𝗨𝗹𝘁𝗿𝗮-𝗟𝗼𝘄 fee**. We expect Kiri's light-client(as PWA form, i.e. Progressive web app) could act as the web wallet client among users' all journeys within Mina eco.
 
-On the other hand, we also expect ZkCell's AccountID solution could act as **Globally Verifiable OnchainID Middleware** among Mina eco providing users with secure, convenient, and personalized identity management services. Based on this, third-parties could easily integrate ZkCell's AccountID solution into their own ecosystems .
+On the other hand, we also expect Kiri's AccountID solution could act as **Globally Verifiable OnchainID Middleware** among Mina eco providing users with secure, convenient, and personalized identity management services. Based on this, third-parties could easily integrate Kiri's AccountID solution into their own ecosystems .
 
 
 # Budget and milestones
@@ -331,13 +329,13 @@ On the other hand, we also expect ZkCell's AccountID solution could act as **Glo
 
 (Assuming a dollar denominated value of $1 per MINA (at time of proposal))
 
-The whole design of ZkCell was almost completed. Within 3 months zkIgnite corhort3, we team spends the budget mainly on Cloud Infra && Design Detail Improvement && Software upgrade && Team member expansion && Marketing Costs Budgeting .
+The whole design of Kiri was almost completed. Within 3 months zkIgnite corhort3, we team spends the budget mainly on Cloud Infra && Design Detail Improvement && Software upgrade && Team member expansion && Marketing Costs Budgeting .
 
 **<1> Cloud Infra costs: 20000 MINA**  (≈3384.28U/month * 6 month)
 
-Basically, in high-level overview, as a zkRollup-layer2, ZkCell mainly consists of 3 core components: Sequencer, Prover and Indexer.
+Basically, in high-level overview, as a zkRollup-layer2, Kiri mainly consists of 3 core components: Sequencer, Prover and Indexer.
 
-Considering the impending upgrade of MINA main Network, to ensure the stability of ZkCell Network running on the main network, we consider adopting AWS cloud hosting service. Here's our rough minimum plan:
+Considering the impending upgrade of MINA main Network, to ensure the stability of Kiri Protocol running on the main network, we consider adopting AWS cloud hosting service. Here's our rough minimum plan:
 
 * *Sequencer server*: at least 16c,32G memory, at least 2 instance(considerring load balance,etc), 
 * *Prover server*: at least 32c,256G memory, at least 2 instance,
@@ -392,15 +390,15 @@ Milestone5: Integration Test & BugFix (1 week)
 
 (Assuming a dollar denominated value of $1 per MINA (at time of proposal))
 
-The whole design of ZkCell was almost completed. Within 3 months zkIgnite corhort3, we team spends the budget mainly on design detail improvement && software upgrade && cloud infra && Team member expansion.
+The whole design of Kiri was almost completed. Within 3 months zkIgnite corhort3, we team spends the budget mainly on design detail improvement && software upgrade && cloud infra && Team member expansion.
 
-**Tips: Extending Standard Milestone, in Advanced milestone we mainly incrementally build the Layer2 Network Explorer for ZkCell Network**.
+**Tips: Extending Standard Milestone, in Advanced milestone we mainly incrementally build the Layer2 Network Explorer for Kiri Protocol**.
 
 <1> Cloud Infra costs: 24500 MINA  (≈4061U/month * 6 month)
 
-Basically, in high-level overview, as a zkRollup-layer2, ZkCell mainly consists of 4 core components:* Sequencer, Prover, Indexer, and Network Explorer.
+Basically, in high-level overview, as a zkRollup-layer2, Kiri mainly consists of 4 core components:* Sequencer, Prover, Indexer, and Network Explorer.
 
-Considering the impending upgrade of MINA main Network, to ensure the stability of ZkCell Network running on the main network, we consider adopting AWS cloud hosting service. Here's our rough minimum plan:
+Considering the impending upgrade of MINA main Network, to ensure the stability of Kiri Protocol running on the main network, we consider adopting AWS cloud hosting service. Here's our rough minimum plan:
 
 * Sequencer server: at least 16c,32G memory, at least 2 instance(considerring load balance,etc), 
 
@@ -457,7 +455,7 @@ Milestone6: Integration Test & BugFix (1 week)
 
 * Risks from Performance
 
-    As a zkRollup layer2 consisting of multiple merkle trees, the complexity of ZkCell might lead to significant circuit size. This might impact the performance of the ‘compiling’ section and ‘proof-generation’ section. We team raises several solutions to improve the performance, such as leveraging high-performance cloud infra,  separating a service intended for proof generation, optimize circuit design to decrease extra constraints, etc.
+    As a zkRollup layer2 consisting of multiple merkle trees, the complexity of Kiri might lead to significant circuit size. This might impact the performance of the ‘compiling’ section and ‘proof-generation’ section. We team raises several solutions to improve the performance, such as leveraging high-performance cloud infra,  separating a service intended for proof generation, optimize circuit design to decrease extra constraints, etc.
 
     Though this might matter, the risk just slow down the performance and does NOT block us to complete the project.
 
@@ -467,7 +465,7 @@ Milestone6: Integration Test & BugFix (1 week)
 
 * Risks from potential bugs of o1js
 
-    The circuits in ZkCell covers most features of o1js. Potential bugs of o1jsimpact our project. But with gradually stabilized features of o1js as well as the supports from Mina community(in discord channels, etc.), we estimate this risk could be reduced gradually.
+    The circuits in Kiri covers most features of o1js. Potential bugs of o1jsimpact our project. But with gradually stabilized features of o1js as well as the supports from Mina community(in discord channels, etc.), we estimate this risk could be reduced gradually.
 
 * Risks from Mina network issues
 
