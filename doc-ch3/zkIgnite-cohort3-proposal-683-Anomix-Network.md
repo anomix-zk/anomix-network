@@ -100,7 +100,7 @@ Regarding the listing Scalability issue above, we team specifically design **a z
 
 Firstly, Kiri is an layer2 based on **Account model**. Acting as an sub-ledger of Mina main ledger, Kiri migrate numbers of tx from mainnet into Layer2, but keep as safe as that on mainnet. Besides, Kiri internally batches numbers of L2 txs into one L1 tx on mainnet to make them finalized, which leads to much lower-cost of each L2 tx.&#x20;
 
-Kiri supports **both MINA token and Custom Token**, and provides smooth journeys on deposit/transfer/withdrawal scenarios as well as **Escape Mechanism** for user to securely withdraw layer2 assets back to Layer1 when meeting urgency.<br>
+Kiri supports **both MINA token and Custom Token**, and provides smooth journeys on deposit/transfer/withdrawal scenarios as well as **Escape Mechanism** for user to securely withdraw layer2 assets back to Layer1 when meeting urgency.<br><br>
 
 
 
@@ -122,7 +122,7 @@ Within Kiri Protocol, AccountID is the first-class citizen. Kiri would keep each
 Please go read 'Layer2 Ledgers design' && 'Multi-Level Keys design' in 'Architecture' below to take a look at the design of AccountID as well as keys hierarchy, and you could see that user could register several spending keys under an account(ID), and each spending key could be used to manage assets of the account, which further means pure address is no longer the identifier for users any more. <br><br>
 
 On the other hand, we have high expectations for the design of AccountID from the beginning -- **Globally Verifiable OnchainID Middleware** among Mina eco. We expect to allow users to aggregate by a provable approach both their web2 PII(*Personal Identified Info)* and mainstream blockchain's accounts. For examples, 
-* as we know o1js from version-0.15.1 supports ECDSA signature verification, which provide users approach to provably aggregate their BTC/EVM chains' account addresses into our Kiri Account, based on which we could build web3 world's user portrait based on their activities among major chains. 
+* O1js from version-0.15.1 supports ECDSA signature verification, which provide users approach to provably aggregate their BTC/EVM chains' account addresses into our Kiri Account, based on which we could build web3 world's user portrait based on their activities among major chains. 
 * When o1js supports RSA signature verification, then we could leverage DKIM protocol(based on RSA) to verifiably aggregate user's email address into Kiri Account.
 
 <br>
@@ -160,7 +160,7 @@ The pic below describe major layer2 components and how they cooperate with each 
 
 <img src="./pic/layer2-components-process-flows.png" style="border-radius: 20px">
 
-Let's make a brief description on all components:
+Let's make a brief description on all roles:
 
 *   **Client zkProvers**: They are circuits integrated into zkapps, working at client sides(e.g. explorers) for the zk proof generation during scenarios involving *Deposit/Transfer/Withdrawal/Account Maintenance.*
 *   **Rollup Sequencer**: it's the core of layer2, in charge of receiving L2Tx from client sides and recursively compressing them into L2 Block. Besides, it maintains L2 ledger(merkle trees, described below).
@@ -408,7 +408,7 @@ Considering the impending upgrade of MINA main Network, to ensure the stability 
 
 * Network Explorer: at least 16c,32G memory, at least 2 instance (price is roughly like Sequencer server's).
 
-Totally，almost 4061U/month for Cloud Infra cost (seen at attached pic: [anomix-cloud-price-estimation.png](https://zkignite.minaprotocol.com/media/download/e55c1b1b963d13281287ff6bd8bd5c18))。
+Totally，almost 4061U/month for Cloud Infra cost (seen at attached pic: [server-cloud-price-estimation.png](https://zkignite.minaprotocol.com/media/download/e55c1b1b963d13281287ff6bd8bd5c18))。
 
 In addition, given the emergency scaling of unexpected traffic spikes and continued operations beyond zkIgnite, we expect an additional 3 months of support beyond zkIgnite.
 
