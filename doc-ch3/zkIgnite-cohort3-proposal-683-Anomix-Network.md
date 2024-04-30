@@ -2,7 +2,7 @@
 
 # Pitch about your project
 
-zkCell is an Instant Payment Network with Protocol-Native ID. It not only scales layer1 upon the circulation of both MINA and Custom Tokens, but also allows you to build a globally verifiable onchain ID through provably aggregating mainstream blockchains' accounts and web2's PII. And you could manage asset directly by onchainID.
+zkCell is an Instant Payment Network with Protocol-Native ID. It not only scales layer1 upon the circulation of both MINA and Custom Tokens, but also allows you to build **A globally verifiable onchainID** through provably aggregating *mainstream blockchains' accounts and web2's PII*. And you could manage asset directly by onchainID.
 
 Besides, zkCell provides **a passwordless && mnemonic-free account solution** based on FIDO Webauthn protocol. **No need again to care about wallet-plugin installations, password/mnemonics backup and long address**.
 
@@ -123,10 +123,10 @@ Please go read 'Layer2 Ledgers design' && 'Multi-Level Keys design' in 'Architec
 
 On the other hand, we have high expectations for the design of AccountID from the beginning -- **Globally Verifiable OnchainID Middleware** among Mina eco. We expect to allow users to aggregate by a provable approach both their web2 PII(*Personal Identified Info)* and mainstream blockchain's accounts. For examples, 
 * as we know o1js from version-0.15.1 supports ECDSA signature verification, which provide users approach to provably aggregate their BTC/EVM chains' account addresses into our zkCell Account, based on which we could build web3 world's user portrait based on their activities among major chains. 
-* When in the future o1js supports RSA signature verification, then we could leverage DKIM protocol to verifiably aggregate user's email address into zkCell Account.
+* When o1js supports RSA signature verification, then we could leverage DKIM protocol(based on RSA) to verifiably aggregate user's email address into zkCell Account.
 
 <br>
-
+<br>
 
 The design of AccountID opens up possibilities for larger scenarios on the zkCell Network, such as 'off-chain identity authentication', 'on-chain reputation scoring', 'on-chain identity aggregation', 'compliance with regulatory requirements', and more. Examples are as follows:
 
@@ -142,6 +142,12 @@ The design of AccountID opens up possibilities for larger scenarios on the zkCel
 
     Utilizing digital identity verification services, such as government agencies or authentication service providers, users can complete identity verification off-chain and then associate the obtained digital identity proof or authentication information with their AccountID. This approach protects user privacy while ensuring the authenticity of their identity.
 
+
+Besides, zkCell Account could act as a **Internet User PKI**. zkCell Account could be used as a container allowing user to register their own personal public keys (i.e. *verifiably&&securely associate a key with an entity*) for personal authentication and authorization scenarios. For examples, when a user registers his own public key into account, which means third-parties could directly leverage the public key to verify if the authentication and authorization is exactly from the user.
+* The integrity and authenticity of the contracts/legal documents could be verified.
+* Email recievers could verify if the email is really sent by the user, which helps prevent email tampering and forgery.
+* Software downloaders could verify if the downloaded software is exactly from the developer, which helps prevent the propagation and tampering of malware.
+* Employers could verify if the academic certificates are exactly issued by the school.
 
 
 # Architecture
@@ -310,10 +316,10 @@ In the future (longer time horizon), as the number of active users grows up with
 
 ## What is your long-term vision for this project if your proposal is funded? What is your dream scenario for how this project could evolve?
 
-dddddd
-dddddd
-dddddd
-dddddd
+Aligning with the goal to break down barriers from Web2 to Web3 to accelerate massive adoption of Web3, zkCell Network try to make detailed & deep improvements to the user experience among their web3 journeys, from **Passwordless && mnemonic-free Account** to **Instant Transfer directly through ID by 𝗨𝗹𝘁𝗿𝗮-𝗟𝗼𝘄 fee**. We expect zkCell's light-client(as PWA form, i.e. Progressive web app) could act as the web wallet client among users' all journeys within Mina eco.
+
+On the other hand, we also expect ZkCell's AccountID solution could act as **Globally Verifiable OnchainID Middleware** among Mina eco providing users with secure, convenient, and personalized identity management services. Based on this, third-parties could easily integrate ZkCell's AccountID solution into their own ecosystems .
+
 
 # Budget and milestones
 
