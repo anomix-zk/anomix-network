@@ -104,6 +104,17 @@
                         }
                     },
                     "type": "object"
+                },
+                "syncDataTree": {
+                    "properties": {
+                        "root": {
+                            "type": "string"
+                        },
+                        "totalNum": {
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
                 }
             },
             "type": "object"
