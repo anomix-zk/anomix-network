@@ -1,4 +1,5 @@
-import { SiblingPath } from '../types/sibling_path';
+import { Field } from 'o1js';
+import { BaseSiblingPath } from '@anomix/types';
 
 /**
  * Defines the interface for a source of sibling paths.
@@ -9,11 +10,12 @@ export interface SiblingPathSource {
    * @param index - The index of the leaf for which a sibling path is required.
    * @param includeUncommitted - Set to true to include uncommitted updates in the sibling path.
    */
-  getSiblingPath<N extends number>(
+  getSiblingPath(
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<SiblingPath<N>>;
+  ): Promise<BaseSiblingPath>;
 }
+
 /**
  * Defines the interface for a Merkle tree.
  */
@@ -22,7 +24,7 @@ export interface MerkleTree extends SiblingPathSource {
    * Returns the current root of the tree.
    * @param includeUncommitted - Set to true to include uncommitted updates in the calculated root.
    */
-  getRoot(includeUncommitted: boolean): bigint;
+  getRoot(includeUncommitted: boolean): Field;
 
   /**
    * Returns the number of leaves in the tree.
@@ -53,16 +55,5 @@ export interface MerkleTree extends SiblingPathSource {
   getLeafValue(
     index: bigint,
     includeUncommitted: boolean
-  ): Promise<bigint | Uint8Array | undefined>;
-
-  /**
-   * Returns the index of a leaf given its value, or undefined if no leaf with that value is found.
-   * @param leaf - The leaf value to look for.
-   * @param includeUncommitted - Indicates whether to include uncommitted data.
-   * @returns The index of the first leaf found with a given value (undefined if not found).
-   */
-  findLeafIndex(
-    leaf: bigint | Uint8Array,
-    includeUncommitted: boolean
-  ): Promise<bigint | undefined>;
+  ): Promise<Field | undefined>;
 }

@@ -1,6 +1,6 @@
+import { LevelUp } from 'levelup';
+import { Hasher } from '@anomix/types';
 import { TreeBase, decodeMeta } from './tree_base.js';
-import { Hasher } from './hasher/hasher.js';
-import { TreeDB } from './tree_db/tree_db.js';
 
 /**
  * Creates a new tree and sets its root, depth and size based on the meta data which are associated with the name.
@@ -11,21 +11,14 @@ import { TreeDB } from './tree_db/tree_db.js';
  * @returns The newly created tree.
  */
 export async function loadTree<T extends TreeBase>(
-  c: new (
-    db: TreeDB,
-    hasher: Hasher,
-    name: string,
-    depth: number,
-    size: bigint,
-    root: bigint
-  ) => T,
-  db: TreeDB,
+  c: new (...args: any[]) => T,
+  db: LevelUp,
   hasher: Hasher,
   name: string
 ): Promise<T> {
-  const meta: Uint8Array = await db.get(name);
+  const meta: Buffer = await db.get(name);
   const { root, depth, size } = decodeMeta(meta);
-
   const tree = new c(db, hasher, name, depth, size, root);
+  await tree.initFromDb();
   return tree;
 }

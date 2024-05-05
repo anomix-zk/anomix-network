@@ -1,48 +1,24 @@
-import { IndexedTreeLeafPreimage } from '../standard_indexed_tree/indexed_tree_leaf.js';
-import { SiblingPath } from '../types/sibling_path.js';
-import { AppendOnlyTree } from './append_only_tree.js';
+import { Field } from 'o1js';
+import { BaseSiblingPath } from '@anomix/types';
+import { LowLeafWitnessData } from '../standard_indexed_tree/standard_indexed_tree';
+import { AppendOnlyTree } from './append_only_tree';
 
 /**
- * All of the data to be return during batch insertion.
+ * A leaf of a tree.
  */
-export interface LowLeafWitnessData<N extends number> {
+export interface LeafData {
   /**
-   * Preimage of the low nullifier that proves non membership.
+   * A value of the leaf.
    */
-  leafPreimage: IndexedTreeLeafPreimage;
+  value: bigint;
   /**
-   * Sibling path to prove membership of low nullifier.
+   * An index of the next leaf.
    */
-  siblingPath: SiblingPath<N>;
+  nextIndex: bigint;
   /**
-   * The index of low nullifier.
+   * A value of the next leaf.
    */
-  index: bigint;
-}
-
-/**
- * The result of a batch insertion in an indexed merkle tree.
- */
-export interface BatchInsertionResult<
-  TreeHeight extends number,
-  SubtreeSiblingPathHeight extends number
-> {
-  /**
-   * Data for the leaves to be updated when inserting the new ones.
-   */
-  lowLeavesWitnessData?: LowLeafWitnessData<TreeHeight>[];
-  /**
-   * Sibling path "pointing to" where the new subtree should be inserted into the tree.
-   */
-  newSubtreeSiblingPath: SiblingPath<SubtreeSiblingPathHeight>;
-  /**
-   * The new leaves being inserted in high to low order. This order corresponds with the order of the low leaves witness.
-   */
-  sortedNewLeaves: Uint8Array[];
-  /**
-   * The indexes of the sorted new leaves to the original ones.
-   */
-  sortedNewLeavesIndexes: number[];
+  nextValue: bigint;
 }
 
 /**
@@ -55,47 +31,52 @@ export interface IndexedTree extends AppendOnlyTree {
    * @param includeUncommitted - If true, the uncommitted changes are included in the search.
    * @returns The found leaf index and a flag indicating if the corresponding leaf's value is equal to `newValue`.
    */
-  findIndexOfPreviousKey(
+  findIndexOfPreviousValue(
     newValue: bigint,
     includeUncommitted: boolean
-  ): Promise<
-    | {
-        /**
-         * The index of the found leaf.
-         */
-        index: bigint;
-        /**
-         * A flag indicating if the corresponding leaf's value is equal to `newValue`.
-         */
-        alreadyPresent: boolean;
-      }
-    | undefined
-  >;
+  ): {
+    /**
+     * The index of the found leaf.
+     */
+    index: number;
+    /**
+     * A flag indicating if the corresponding leaf's value is equal to `newValue`.
+     */
+    alreadyPresent: boolean;
+  };
 
   /**
-   * Gets the latest LeafPreimage copy.
-   * @param index - Index of the leaf of which to obtain the LeafPreimage copy.
+   * Gets the latest LeafData copy.
+   * @param index - Index of the leaf of which to obtain the LeafData copy.
    * @param includeUncommitted - If true, the uncommitted changes are included in the search.
-   * @returns A copy of the leaf preimage at the given index or undefined if the leaf was not found.
+   * @returns A copy of the leaf data at the given index or undefined if the leaf was not found.
    */
-  getLatestLeafPreimageCopy(
-    index: bigint,
+  getLatestLeafDataCopy(
+    index: number,
     includeUncommitted: boolean
-  ): Promise<IndexedTreeLeafPreimage | undefined>;
+  ): LeafData | undefined;
+
+  /**
+   * Exposes the underlying tree's update leaf method.
+   * @param leaf - The hash to set at the leaf.
+   * @param index - The index of the element.
+   */
+  // TODO: remove once the batch insertion functionality is moved to StandardIndexedTree from circuit_block_builder.ts
+  updateLeaf(leaf: LeafData, index: bigint): Promise<void>;
 
   /**
    * Batch insert multiple leaves into the tree.
    * @param leaves - Leaves to insert into the tree.
+   * @param treeHeight - Height of the tree.
    * @param subtreeHeight - Height of the subtree.
    * @param includeUncommitted - If true, the uncommitted changes are included in the search.
    */
-  batchInsert<
-    TreeHeight extends number,
-    SubtreeHeight extends number,
-    SubtreeSiblingPathHeight extends number
-  >(
-    leaves: Uint8Array[],
-    subtreeHeight: SubtreeHeight,
+  batchInsert(
+    leaves: Field[],
+    treeHeight: number,
+    subtreeHeight: number,
     includeUncommitted: boolean
-  ): Promise<BatchInsertionResult<TreeHeight, SubtreeSiblingPathHeight>>;
+  ): Promise<
+    [LowLeafWitnessData[], BaseSiblingPath] | [undefined, BaseSiblingPath]
+  >;
 }
